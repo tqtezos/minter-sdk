@@ -22,7 +22,7 @@
 
 ## make this agnostic to wallet providers/"signers" (as per Taquito's definition)
 
-specifically not Beacon
+not hardcoded to Beacon
 
 
 <a id="orgb2dc005"></a>
