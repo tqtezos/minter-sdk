@@ -43,7 +43,6 @@ type configure_param =
   }
 
 type auction_entrypoints =
-  | Configure of configure_param
   | Bid of nat
   | Cancel of nat
   | Resolve of nat
@@ -118,7 +117,7 @@ let valid_bid_amount (auction : auction) : bool =
   (Tezos.amount >= auction.current_bid + auction.min_raise)                                            ||
   ((Tezos.amount >= auction.current_bid) && first_bid(auction))
 
-let configure_auction(configure_param, storage : configure_param * storage) : return = begin
+let configure_auction(configure_param, storage, selfAddress : configure_param * storage * address) : return = begin
     assert_msg (configure_param.end_time > configure_param.start_time, "end_time must be after start_time");
     assert_msg (abs(configure_param.end_time - configure_param.start_time) <= storage.max_auction_time, "Auction time must be less than max_auction_time");
     
@@ -143,29 +142,29 @@ let configure_auction(configure_param, storage : configure_param * storage) : re
       last_bid_time = configure_param.start_time; 
     } in
     let updated_auctions : (nat, auction) big_map = Big_map.update storage.current_id (Some auction_data) storage.auctions in
-    let fa2_transfers : operation list = tokens_to_operation_list(configure_param.asset, Tezos.sender, Tezos.self_address) in
+    let fa2_transfers : operation list = tokens_to_operation_list(configure_param.asset, Tezos.sender, selfAddress) in
     (fa2_transfers, {storage with auctions = updated_auctions; current_id = storage.current_id + 1n})
   end
 
-let resolve_auction(asset_id, storage : nat * storage) : return = begin
+let resolve_auction(asset_id, storage, selfAddress : nat * storage * address) : return = begin
     let auction : auction = get_auction_data(asset_id, storage) in
     assert_msg (auction_ended(auction) , "Auction must have ended");
     assert_msg (Tezos.amount = 0mutez, "Amount must be 0mutez");
 
-    let fa2_transfers : operation list = tokens_to_operation_list(auction.asset, Tezos.self_address, auction.highest_bidder) in
+    let fa2_transfers : operation list = tokens_to_operation_list(auction.asset, selfAddress, auction.highest_bidder) in
     let seller_contract : unit contract = resolve_contract(auction.seller) in
     let send_fee = Tezos.transaction unit auction.current_bid seller_contract in
     let updated_auctions = Big_map.remove asset_id storage.auctions in
     (send_fee :: fa2_transfers, {storage with auctions = updated_auctions})
   end
 
-let cancel_auction(asset_id, storage : nat * storage) : return = begin
+let cancel_auction(asset_id, storage, selfAddress : nat * storage * address) : return = begin
     let auction : auction = get_auction_data(asset_id, storage) in
     assert_msg (Tezos.sender = auction.seller, "Only seller can cancel the auction");
     assert_msg (not auction_ended(auction), "Auction must not have ended");
     assert_msg (Tezos.amount = 0mutez, "Amount must be 0mutez");
 
-    let fa2_transfers : operation list = tokens_to_operation_list(auction.asset, Tezos.self_address, auction.seller) in
+    let fa2_transfers : operation list = tokens_to_operation_list(auction.asset, selfAddress, auction.seller) in
     let highest_bidder_contract : unit contract = resolve_contract(auction.highest_bidder) in
     let return_bid = Tezos.transaction unit auction.current_bid highest_bidder_contract in
     let updated_auctions = Big_map.remove asset_id storage.auctions in
@@ -187,10 +186,9 @@ let place_bid(asset_id, storage : nat * storage) : return = begin
     ([return_bid] , {storage with auctions = updated_auctions})
   end
   
-let english_auction_tez_main (p,storage : auction_entrypoints * storage) : return = 
+let english_auction_tez_api (p,storage, selfAddress : auction_entrypoints * storage * address) : return = 
   let u : unit = assert_msg (Tezos.sender = Tezos.source, "Sender must be an implicit account") in
   match p with
-    | Configure config -> configure_auction(config, storage)
     | Bid asset_id -> place_bid(asset_id, storage)
-    | Cancel asset_id -> cancel_auction(asset_id, storage)
-    | Resolve asset_id -> resolve_auction(asset_id, storage)
+    | Cancel asset_id -> cancel_auction(asset_id, storage, selfAddress)
+    | Resolve asset_id -> resolve_auction(asset_id, storage, selfAddress)

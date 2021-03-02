@@ -163,7 +163,7 @@ async function compileEnglishAuctionTezAdminContract(env: LigoEnv): Promise<void
 }
 
 async function compileEnglishAuctionTezPermitContract(env: LigoEnv): Promise<void> {
-  $log.info('compiling english auction tez contract');
+  $log.info('compiling english auction tez permit contract');
 
   await compileContract(
       env,

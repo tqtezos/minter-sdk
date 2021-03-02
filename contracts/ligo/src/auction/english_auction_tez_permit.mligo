@@ -1,4 +1,4 @@
-#include "./english_auction_tez.mligo"
+#include "./english_auction_tez_api.mligo"
 
 type permit = 
   [@layout:comb]
@@ -26,10 +26,12 @@ type permit_auction_entrypoints =
   | Auction of auction_entrypoints
   | Permit_config of permit_config_param
 
-let config_with_permit (p, permit_storage : permit_config_param * permit_storage) = begin
+type permit_return = operation list * permit_storage
+
+let config_with_permit (p, permit_storage, selfAddress : permit_config_param * permit_storage * address) = begin
   match p.optional_permit with 
     | None -> 
-      let ops, auction_storage = configure_auction(p.config, permit_storage.auction_storage) in
+      let ops, auction_storage = configure_auction(p.config, permit_storage.auction_storage, selfAddress) in
       ops, {permit_storage with auction_storage = auction_storage; counter = permit_storage.counter + 1n}
     | Some permit -> 
         let unsigned : bytes = ([%Michelson ({| { SELF; ADDRESS; CHAIN_ID; PAIR; PAIR; PACK } |} : nat * bytes -> bytes)] (permit_storage.counter, permit.paramHash) : bytes) in
@@ -68,6 +70,8 @@ let config_with_permit (p, permit_storage : permit_config_param * permit_storage
         (fa2_transfers, {permit_storage with auction_storage = auction_storage; counter = permit_storage.counter + 1n})
 end
 
-let english_auction_tez_permit_main (p,storage : permit_auction_entrypoints * storage) : return = match p with
-  | Auction auction -> english_auction_tez_main(auction, storage) 
-  | Permit_config p -> ([] : operation list), storage
+let english_auction_tez_permit_main (params,permit_storage : permit_auction_entrypoints * permit_storage) : permit_return = match params with
+  | Auction auction -> 
+      let ops, auction_storage  = english_auction_tez_api(auction, permit_storage.auction_storage, Tezos.self_address) in
+      ops, {permit_storage with auction_storage = auction_storage}
+  | Permit_config p -> config_with_permit(p, permit_storage, Tezos.self_address)
