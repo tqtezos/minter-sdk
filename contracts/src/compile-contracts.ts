@@ -19,6 +19,7 @@ async function main(): Promise<void> {
     await compileFtContract(env);
     await compileFixedPriceSaleMarketPlaceWithAdminContract(env);
     await compileFixedPriceSaleTezMarketPlaceWithAdminContract(env);
+    await compileEnglishAuctionTezPermitContract(env)
     // add other contracts here
 
     process.exit(0);
@@ -142,7 +143,7 @@ async function compileEnglishAuctionTezContract(env: LigoEnv): Promise<void> {
 
   await compileContract(
       env,
-      'english_auction_tez.mligo',
+      'auction/english_auction_tez.mligo',
       'english_auction_tez_main',
       'english_auction_tez.tz'
   );
@@ -154,11 +155,23 @@ async function compileEnglishAuctionTezAdminContract(env: LigoEnv): Promise<void
 
   await compileContract(
       env,
-      'english_auction_tez_admin.mligo',
+      'auction/english_auction_tez_admin.mligo',
       'english_auction_tez_admin_main',
       'english_auction_tez_admin.tz'
   );
   $log.info('compiled english auction tez admin contract');
+}
+
+async function compileEnglishAuctionTezPermitContract(env: LigoEnv): Promise<void> {
+  $log.info('compiling english auction tez contract');
+
+  await compileContract(
+      env,
+      'auction/english_auction_tez_permit.mligo',
+      'english_auction_tez_permit_main',
+      'english_auction_tez_permit.tz'
+  );
+  $log.info('compiled english auction tez permit contract');
 }
 
 function prepareNftFactoryContract(env: LigoEnv): void {

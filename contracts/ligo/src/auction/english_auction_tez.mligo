@@ -1,4 +1,4 @@
-#include "../fa2/fa2_interface.mligo"
+#include "../../fa2/fa2_interface.mligo"
 
 type fa2_tokens =
   [@layout:comb]
