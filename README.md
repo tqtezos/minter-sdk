@@ -1,4 +1,4 @@
-![Minter SDK header](/docs/minterhead.png)
+![Minter SDK header](/docs/mintersdkhead.png)
 
 [![](https://img.shields.io/badge/license-MIT-brightgreen)](LICENSE)
 
