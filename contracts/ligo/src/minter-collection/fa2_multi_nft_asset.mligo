@@ -1,7 +1,7 @@
 
 #include "fa2_multi_nft_token.mligo"
 #include "fa2_multi_nft_manager.mligo"
-#include "../fa2_modules/simple_admin.mligo"
+#include "../../fa2_modules/simple_admin.mligo"
 
 type nft_asset_storage = {
   assets : nft_token_storage;

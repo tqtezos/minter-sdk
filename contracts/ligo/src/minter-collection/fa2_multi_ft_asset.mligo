@@ -11,7 +11,7 @@
 *)
 
 #include "fa2_multi_ft_token_manager.mligo"
-#include "../fa2_modules/simple_admin.mligo"
+#include "../../fa2_modules/simple_admin.mligo"
 
 type multi_ft_asset_storage = {
   admin : simple_admin_storage;
