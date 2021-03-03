@@ -115,7 +115,7 @@ let auction_in_progress (auction : auction) : bool =
 let first_bid (auction : auction) : bool =
   auction.highest_bidder = auction.seller
 
-let valid_bid_amount (auction, storage : auction * storage) : bool =
+let valid_bid_amount (auction : auction) : bool =
   (Tezos.amount >= (auction.current_bid + ((auction.min_raise_percent *  auction.current_bid)/ 100n))) ||
   (Tezos.amount >= auction.current_bid + auction.min_raise)                                            ||
   ((Tezos.amount >= auction.current_bid) && first_bid(auction))
@@ -183,7 +183,7 @@ let place_bid(asset_id, storage : nat * storage) : return = begin
     assert_msg (Tezos.sender = Tezos.source, "Bidder must be an implicit account");
     (fail_if_paused storage.simple_admin);
     assert_msg (auction_in_progress(auction), "Auction must be in progress");
-    assert_msg (valid_bid_amount(auction, storage), "Bid must raised by at least min_raise_percent of the previous bid or at least opening price if it is the first bid");
+    assert_msg (valid_bid_amount(auction), "Bid must raised by at least min_raise_percent of the previous bid or at least opening price if it is the first bid");
     assert_msg(Tezos.sender <> auction.seller, "Seller cannot place a bid");
 
     let highest_bidder_contract : unit contract = resolve_contract(auction.highest_bidder) in
