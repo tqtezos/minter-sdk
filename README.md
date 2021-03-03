@@ -1,5 +1,12 @@
 
-# TODO LIST
+## Notice
+
+This repository is a work in progress. The Minter SDK will contain various functions, such as:
+- Contract definitions and tests
+- An NPM module that allows users to interact with tokens programmatically
+- A CLI that brings SDK functions to the command line
+
+### TODO List
 
 1.  [minter-sdk](#org33105a6)
     1.  [make this agnostic to wallet providers/"signers" (as per Taquito's definition)](#org8958b5a)
