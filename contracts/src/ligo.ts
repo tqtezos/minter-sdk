@@ -47,7 +47,7 @@ export async function compileAndLoadContract(
   await compileContractImpl(env.cwd, src, main, out);
   const code = await loadFile(out);
   return code;
-}
+en}
 
 export async function loadFile(fileName: string): Promise<string> {
   return new Promise<string>((resolve, reject) =>
@@ -75,7 +75,7 @@ async function compileContractImpl(
   dstFilePath: string
 ): Promise<void> {
   // const cmd = `ligo compile-contract ${srcFilePath} ${main} --output=${dstFilePath}`;
-  const cmd = `docker run --rm -v $PWD:$PWD -w $PWD ligolang/ligo:0.5.0 compile-contract ${srcFilePath} ${main} --output=${dstFilePath}`;
+  const cmd = `docker run --rm -v $PWD:$PWD -w $PWD ligolang/ligo:0.11.0 compile-contract ${srcFilePath} ${main} --output=${dstFilePath}`;
   await runCmd(cwd, cmd);
 }
 
