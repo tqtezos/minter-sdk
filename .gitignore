@@ -1,2 +1,14 @@
-jsout
+# Node / Yarn
 node_modules
+.node_repl_history
+.yarn-integrity
+.env
+
+# Misc
+.DS_Store
+.vscode
+*.log
+
+# Ligo
+*.pp.mligo
+*.pp.ligo
