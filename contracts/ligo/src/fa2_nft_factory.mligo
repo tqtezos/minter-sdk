@@ -26,20 +26,24 @@ let create_contract : (key_hash option * tez * nft_asset_storage) -> (operation 
                   (or (pair %add_operator (address %owner) (pair (address %operator) (nat %token_id)))
                       (pair %remove_operator (address %owner) (pair (address %operator) (nat %token_id)))))))
         (list %mint
-           (pair (pair %token_metadata (nat %token_id) (map %token_metadata_map string bytes))
+           (pair (pair %token_metadata (nat %token_id) (map %token_info string bytes))
                  (address %owner)))) ;
   storage
     (pair (pair (pair %admin (pair (address %admin) (bool %paused)) (option %pending_admin address))
                 (pair %assets
                    (pair (big_map %ledger nat address) (nat %next_token_id))
                    (pair (big_map %operators (pair address (pair address nat)) unit)
-                         (big_map %token_metadata
-                            nat
-                            (pair (nat %token_id) (map %token_metadata_map string bytes))))))
+                         (big_map %token_metadata nat (pair (nat %token_id) (map %token_info string bytes))))))
           (big_map %metadata string bytes)) ;
-  code { PUSH string "FA2_INSUFFICIENT_BALANCE" ;
+  code { PUSH string "FA2_TOKEN_UNDEFINED" ;
+         PUSH string "FA2_INSUFFICIENT_BALANCE" ;
+         SWAP ;
+         DUP ;
+         DUG 2 ;
+         SWAP ;
+         PAIR ;
          LAMBDA
-           (pair string
+           (pair (pair string string)
                  (pair (pair (list (pair (option address) (list (pair (option address) (pair nat nat)))))
                              (lambda
                                 (pair (pair address address) (pair nat (big_map (pair address (pair address nat)) unit)))
@@ -55,7 +59,11 @@ let create_contract : (key_hash option * tez * nft_asset_storage) -> (operation 
              CDR ;
              SWAP ;
              CAR ;
+             DUP ;
+             CDR ;
              SWAP ;
+             CAR ;
+             DIG 2 ;
              DUP ;
              CDR ;
              DUP ;
@@ -134,7 +142,14 @@ let create_contract : (key_hash option * tez * nft_asset_storage) -> (operation 
                                 CDR ;
                                 COMPARE ;
                                 EQ ;
-                                IF { DROP }
+                                IF { SWAP ;
+                                     DUP ;
+                                     DUG 2 ;
+                                     SWAP ;
+                                     CDR ;
+                                     CAR ;
+                                     GET ;
+                                     IF_NONE { DROP ; DIG 4 ; DUP ; DUG 5 ; FAILWITH } { DROP } }
                                    { DUP ;
                                      DUG 2 ;
                                      CDR ;
@@ -165,7 +180,7 @@ let create_contract : (key_hash option * tez * nft_asset_storage) -> (operation 
                                          DUG 3 ;
                                          GET ;
                                          IF_NONE
-                                           { DROP 3 ; DIG 4 ; DUP ; DUG 5 ; FAILWITH }
+                                           { DROP 3 ; DIG 5 ; DUP ; DUG 6 ; FAILWITH }
                                            { COMPARE ;
                                              EQ ;
                                              IF { NONE address ; SWAP ; UPDATE }
@@ -195,6 +210,8 @@ let create_contract : (key_hash option * tez * nft_asset_storage) -> (operation 
              DROP ;
              DIG 2 ;
              DROP ;
+             DIG 2 ;
+             DROP ;
              SWAP ;
              DUP ;
              DUG 2 ;
@@ -211,22 +228,36 @@ let create_contract : (key_hash option * tez * nft_asset_storage) -> (operation 
          APPLY ;
          LAMBDA
            (pair (pair address bool) (option address))
-           unit
-           { CAR ;
-             CAR ;
-             SENDER ;
-             COMPARE ;
-             NEQ ;
-             IF { PUSH string "NOT_AN_ADMIN" ; FAILWITH } { UNIT } } ;
-         DIG 2 ;
-         DUP ;
-         DUG 3 ;
-         CDR ;
+           (lambda (option string) unit)
+           { LAMBDA
+               (pair (pair (pair address bool) (option address)) (option string))
+               unit
+               { DUP ;
+                 CDR ;
+                 SWAP ;
+                 CAR ;
+                 CAR ;
+                 CAR ;
+                 SENDER ;
+                 COMPARE ;
+                 NEQ ;
+                 IF { IF_NONE
+                        { PUSH string "NOT_AN_ADMIN" ; FAILWITH }
+                        { PUSH string " " ; CONCAT ; PUSH string "NOT_AN_ADMIN" ; CONCAT ; FAILWITH } }
+                    { DROP ; UNIT } } ;
+             SWAP ;
+             APPLY } ;
          DIG 3 ;
+         DUP ;
+         DUG 4 ;
+         CDR ;
+         DIG 4 ;
          CAR ;
          IF_LEFT
            { IF_LEFT
                { DIG 3 ;
+                 DROP ;
+                 DIG 3 ;
                  DROP ;
                  SWAP ;
                  DUP ;
@@ -345,7 +376,7 @@ let create_contract : (key_hash option * tez * nft_asset_storage) -> (operation 
                                CDR ;
                                GET ;
                                IF_NONE
-                                 { DROP ; PUSH string "FA2_TOKEN_UNDEFINED" ; FAILWITH }
+                                 { DROP ; DIG 4 ; DUP ; DUG 5 ; FAILWITH }
                                  { SWAP ;
                                    DUP ;
                                    DUG 2 ;
@@ -358,6 +389,8 @@ let create_contract : (key_hash option * tez * nft_asset_storage) -> (operation 
                                    PAIR } } ;
                          DIG 2 ;
                          DROP ;
+                         DIG 4 ;
+                         DROP ;
                          SWAP ;
                          CDR ;
                          PUSH mutez 0 ;
@@ -368,7 +401,9 @@ let create_contract : (key_hash option * tez * nft_asset_storage) -> (operation 
                          DIG 2 ;
                          CONS ;
                          PAIR }
-                       { MAP { DUP ;
+                       { DIG 4 ;
+                         DROP ;
+                         MAP { DUP ;
                                CDR ;
                                MAP { DUP ;
                                      CDR ;
@@ -427,6 +462,8 @@ let create_contract : (key_hash option * tez * nft_asset_storage) -> (operation 
                          SWAP ;
                          EXEC } }
                    { DIG 3 ;
+                     DROP ;
+                     DIG 3 ;
                      DROP ;
                      SWAP ;
                      DUP ;
@@ -525,7 +562,9 @@ let create_contract : (key_hash option * tez * nft_asset_storage) -> (operation 
                  SWAP ;
                  CAR ;
                  PAIR } }
-           { SWAP ;
+           { DIG 4 ;
+             DROP ;
+             SWAP ;
              DUP ;
              DUG 2 ;
              CAR ;
