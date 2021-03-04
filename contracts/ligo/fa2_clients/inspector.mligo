@@ -23,12 +23,12 @@ let main (p, s : param * storage) : (operation list) * storage =
     let bp : balance_of_param = {
       requests = q.requests;
       callback =
-        (Operation.get_entrypoint "%response" Current.self_address :
+        (Tezos.get_entrypoint "%response" Current.self_address :
           (balance_of_response list) contract);
     } in
     let fa2 : balance_of_param contract = 
-      Operation.get_entrypoint "%balance_of" q.fa2 in
-    let q_op = Operation.transaction bp 0mutez fa2 in
+      Tezos.get_entrypoint "%balance_of" q.fa2 in
+    let q_op = Tezos.transaction bp 0mutez fa2 in
     [q_op], s
 
   | Response responses ->
