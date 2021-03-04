@@ -107,44 +107,7 @@ describe('test NFT auction', () => {
     const opAuctionPromise = nftAuctionAlice.methods.configure(new BigNumber(10000000), new BigNumber(10), new BigNumber(10000000), new BigNumber(3600), new BigNumber(300), [auction_tokens], startTime, endTime).send({amount : 10});
     return expect(opAuctionPromise).rejects.toHaveProperty('message', "NOT_AN_ADMIN");
   });  
-  test('bid of less than asking price should fail', async() => {
-    $log.info(`Alice bids 9tz expecting it to fail`);
-    const failedOpeningBid = nftAuctionAlice.methods.bid(0).send({amount : 9});
-    return expect(failedOpeningBid).rejects.toHaveProperty('message', 'Bid must raised by at least min_raise_percent of the previous bid or at least opening price if it is the first bid');
-  });
-  test('place bid meeting opening price and then raise it by valid amount by min_raise_percent', async () => {
-    $log.info(`Alice bids 10tz`);
-    const opBid = await nftAuctionAlice.methods.bid(0).send({amount : 10});
-    await opBid.confirmation();
-    $log.info(`Bid placed. Amount sent: ${opBid.amount} mutez`);
-    
-    $log.info(`Alice bids 11tz, a 10% raise of previous bid but less than a 10tz increase`)
-    const opBid2 = await nftAuctionAlice.methods.bid(0).send({amount : 11});
-    await opBid2.confirmation();
-    $log.info(`Bid placed. Amount sent: ${opBid2.amount} mutez`);
-  });
-
-  test('place bid meeting opening price and then raise it by valid amount by min_raise', async () => {
-    $log.info(`Alice bids 200tz`);
-    const opBid = await nftAuctionAlice.methods.bid(0).send({amount : 200});
-    await opBid.confirmation();
-    $log.info(`Bid placed. Amount sent: ${opBid.amount} mutez`);
-    
-    $log.info(`Alice bids 210tz, a 10tz increase but less than a 10% raise of previous bid `)
-    const opBid2 = await nftAuctionAlice.methods.bid(0).send({amount : 210});
-    await opBid2.confirmation();
-    $log.info(`Bid placed. Amount sent: ${opBid2.amount} mutez`);
-  });
-
-  test('bid too small should fail', async () => {
-    $log.info(`Alice bids 20tz`);
-    const opBid = await nftAuctionAlice.methods.bid(0).send({amount : 20});
-    await opBid.confirmation();
-    $log.info(`Bid placed. Amount sent: ${opBid.amount}`);
-    $log.info(`Alice bids 21tz and we expect it to fail`);
-    const smallBidPromise = nftAuctionAlice.methods.bid(0).send({amount : 21});
-    return expect(smallBidPromise).rejects.toHaveProperty('message', 'Bid must raised by at least min_raise_percent of the previous bid or at least opening price if it is the first bid');
-  });
+  
 });
 
 

@@ -1,8 +1,8 @@
 #if !FA2_BEHAVIORS
 #define FA2_BEHAVIORS
 
-(** 
-Generic implementation of the permission logic for sender and receiver hooks. 
+(**
+Generic implementation of the permission logic for sender and receiver hooks.
 Actual behavior is driven by a `permissions_descriptor`.
 To be used in FA2 and/or FA2 permission transfer hook contract implementation
 which supports sender/receiver hooks.
@@ -27,10 +27,10 @@ Extracts a set of unique `from_` or `to_` addresses from the transfer batch.
 @param get_owner selector of `from_` or `to_` addresses from each individual `transfer_descriptor`
  *)
 let get_owners_from_batch (batch, get_owners : (transfer_descriptor list) * get_owners) : address set =
-  List.fold 
+  List.fold
     (fun (acc, tx : (address set) * transfer_descriptor) ->
       let owners = get_owners tx in
-      List.fold 
+      List.fold
         (fun (acc, o: (address set) * (address option)) ->
           match o with
           | None -> acc
@@ -46,7 +46,7 @@ let validate_owner_hook (p, get_owners, to_hook, is_required :
     transfer_descriptor_param * get_owners * to_hook * bool)
     : hook_entry_point list =
   let owners = get_owners_from_batch (p.batch, get_owners) in
-  Set.fold 
+  Set.fold
     (fun (eps, owner : (hook_entry_point list) * address) ->
       match to_hook owner with
       | Hook_entry_point h -> h :: eps
@@ -58,7 +58,7 @@ let validate_owner_hook (p, get_owners, to_hook, is_required :
       )
     owners ([] : hook_entry_point list)
 
-let validate_owner(p, policy, get_owners, to_hook : 
+let validate_owner(p, policy, get_owners, to_hook :
     transfer_descriptor_param * owner_hook_policy * get_owners * to_hook)
     : hook_entry_point list =
   match policy with
@@ -71,8 +71,8 @@ Given an address of the token receiver, tries to get an entrypoint for
 `fa2_token_receiver` interface.
  *)
 let to_receiver_hook : to_hook = fun (a : address) ->
-    let c : hook_entry_point option = 
-    Operation.get_entrypoint_opt "%tokens_received" a in
+    let c : hook_entry_point option =
+    Tezos.get_entrypoint_opt "%tokens_received" a in
     match c with
     | Some c -> Hook_entry_point c
     | None -> Hook_undefined fa2_receiver_hook_undefined
@@ -84,7 +84,7 @@ cannot be met.
  *)
 let validate_receivers (p, receiver_policy : transfer_descriptor_param * owner_hook_policy)
     : hook_entry_point list =
-  let get_receivers : get_owners = fun (tx : transfer_descriptor) -> 
+  let get_receivers : get_owners = fun (tx : transfer_descriptor) ->
     List.map (fun (t : transfer_destination_descriptor) -> t.to_ )tx.txs in
   validate_owner (p, receiver_policy, get_receivers, to_receiver_hook)
 
@@ -93,8 +93,8 @@ Given an address of the token sender, tries to get an entrypoint for
 `fa2_token_sender` interface.
  *)
 let to_sender_hook : to_hook = fun (a : address) ->
-    let c : hook_entry_point option = 
-    Operation.get_entrypoint_opt "%tokens_sent" a in
+    let c : hook_entry_point option =
+    Tezos.get_entrypoint_opt "%tokens_sent" a in
     match c with
     | Some c -> Hook_entry_point c
     | None -> Hook_undefined fa2_sender_hook_undefined
@@ -125,9 +125,9 @@ let get_owner_transfer_hooks (p, descriptor : transfer_descriptor_param * permis
     receiver_entries sender_entries
 
 let transfers_to_descriptors (txs : transfer list) : transfer_descriptor list =
-  List.map 
+  List.map
     (fun (tx : transfer) ->
-      let txs = List.map 
+      let txs = List.map
         (fun (dst : transfer_destination) ->
           {
             to_ = Some dst.to_;
@@ -139,7 +139,7 @@ let transfers_to_descriptors (txs : transfer list) : transfer_descriptor list =
           from_ = Some tx.from_;
           txs = txs;
         }
-    ) txs 
+    ) txs
 
 let transfers_to_transfer_descriptor_param
     (txs, operator : (transfer list) * address) : transfer_descriptor_param =
@@ -157,9 +157,9 @@ let get_owner_hook_ops_for (tx_descriptor, pd
   let hook_calls = get_owner_transfer_hooks (tx_descriptor, pd) in
   match hook_calls with
   | [] -> ([] : operation list)
-  | h :: t -> 
-    List.map (fun(call: hook_entry_point) -> 
-      Operation.transaction tx_descriptor 0mutez call) 
+  | h :: t ->
+    List.map (fun(call: hook_entry_point) ->
+      Tezos.transaction tx_descriptor 0mutez call)
       hook_calls
 
 #endif

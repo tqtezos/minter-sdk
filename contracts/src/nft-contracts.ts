@@ -188,7 +188,8 @@ export async function originateEnglishAuctionTez(
         'english_auction_tez_main',
         'english_auction_tez.tz',
     );
-    const storage = `(Pair 0 (Pair 86400 (Pair 86400 {})))`;
+    const tzAddress = await tz.signer.publicKeyHash();
+    const storage = `(Pair None (Pair 0 (Pair 86400 (Pair 86400 {}))))`;
     return originateContract(tz, code, storage, 'english_auction_tez');
 }
 
@@ -197,11 +198,11 @@ export async function originateEnglishAuctionTezAdmin(
 ): Promise<Contract> {
     const code = await compileAndLoadContract(
         defaultEnv,
-        'english_auction_tez_admin.mligo',
-        'english_auction_tez_admin_main',
-        'english_auction_tez_admin.tz',
+        'english_auction_tez.mligo',
+        'english_auction_tez_main',
+        'english_auction_tez.tz',
     );
     const tzAddress = await tz.signer.publicKeyHash();
-    const storage = `(Pair (Pair (Pair "${tzAddress}" False) None) (Pair 0 (Pair 86400 (Pair 86400 {}))))`;
+    const storage = `(Pair (Some (Pair (Pair "${tzAddress}" False) None)) (Pair 0 (Pair 86400 (Pair 86400 {}))))`;
     return originateContract(tz, code, storage, 'english_auction_tez_admin');
 }
