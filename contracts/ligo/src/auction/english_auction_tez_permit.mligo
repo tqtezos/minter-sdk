@@ -24,11 +24,15 @@ type permit_config_param =
 
 type permit_auction_entrypoints = 
   | Auction of auction_entrypoints
-  | Permit_config of permit_config_param
+  | Permit_config of permit_config_param list
 
 type permit_return = operation list * permit_storage
 
-let config_with_permit (p, permit_storage, selfAddress : permit_config_param * permit_storage * address) = begin
+let concat (l1, l2 : operation list * operation list) : operation list = 
+  let concat = ([%Michelson ({| {UNPAIR; NIL operation; SWAP; ITER {CONS}; ITER {CONS}} |} : operation list * operation list -> operation list)]) 
+  in concat (l1, l2)
+
+let config_with_permit (p, permit_storage, selfAddress : permit_config_param * permit_storage * address)  : permit_return = begin
   match p.optional_permit with 
     | None -> 
       let ops, auction_storage = configure_auction(p.config, permit_storage.auction_storage, selfAddress) in
@@ -70,8 +74,24 @@ let config_with_permit (p, permit_storage, selfAddress : permit_config_param * p
         (fa2_transfers, {permit_storage with auction_storage = auction_storage; counter = permit_storage.counter + 1n})
 end
 
+let rec config_with_permits_helper (possible_permits, permit_storage, selfAddress, returnOps : (permit_config_param list * permit_storage * address * (operation list))) : permit_return =
+    let permit = List.head_opt possible_permits in
+    let remaining_permits = List.tail_opt possible_permits in 
+    match permit with
+      | Some p -> 
+          let ops, new_storage = config_with_permit(p, permit_storage, selfAddress) in
+          (match remaining_permits with 
+            | Some rps -> 
+                let concatenated_ops : operation list = concat(ops, returnOps) in
+                config_with_permits_helper(rps, new_storage, selfAddress, concatenated_ops)
+            | None -> (failwith "INTERNAL_ERROR" : permit_return))
+      | None -> (returnOps, permit_storage)
+
+let configure_auction_with_permits (possible_permits, permit_storage, selfAddress: (permit_config_param list * permit_storage * address)) : permit_return =
+  config_with_permits_helper(possible_permits, permit_storage, selfAddress, ([] : operation list))
+
 let english_auction_tez_permit_main (params,permit_storage : permit_auction_entrypoints * permit_storage) : permit_return = match params with
   | Auction auction -> 
       let ops, auction_storage  = english_auction_tez_api(auction, permit_storage.auction_storage, Tezos.self_address) in
       ops, {permit_storage with auction_storage = auction_storage}
-  | Permit_config p -> config_with_permit(p, permit_storage, Tezos.self_address)
+  | Permit_config pps -> configure_auction_with_permits(pps, permit_storage, Tezos.self_address)
