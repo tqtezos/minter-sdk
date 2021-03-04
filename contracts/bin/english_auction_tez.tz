@@ -258,31 +258,17 @@
                                { DUP ; CDR ; DIG 2 ; CAR ; DIG 2 ; CAR ; CAR ; PAIR ; PAIR ; SOME } ;
                              NIL operation ;
                              PAIR } }
-                       { SWAP ;
+                       { PAIR ;
                          DUP ;
-                         DUG 2 ;
+                         CDR ;
+                         DUP ;
+                         DIG 4 ;
+                         SWAP ;
+                         EXEC ;
+                         DROP ;
                          IF_NONE
-                           { SWAP ;
-                             DROP ;
-                             DIG 2 ;
-                             DROP ;
-                             NONE address ;
-                             PUSH bool False ;
-                             DIG 2 ;
-                             PAIR ;
-                             PAIR ;
-                             SOME }
-                           { DIG 2 ;
-                             DIG 4 ;
-                             SWAP ;
-                             EXEC ;
-                             DROP ;
-                             SWAP ;
-                             SOME ;
-                             SWAP ;
-                             CAR ;
-                             PAIR ;
-                             SOME } ;
+                           { DROP ; PUSH string "NO_ADMIN_CAPABILITIES_CONFIGURED" ; FAILWITH }
+                           { SWAP ; CAR ; SOME ; SWAP ; CAR ; PAIR ; SOME } ;
                          NIL operation ;
                          PAIR } ;
                      SWAP ;

@@ -39,6 +39,7 @@ let confirm_new_admin (storage : simple_admin_storage) : simple_admin_storage =
             else (failwith "NOT_A_PENDING_ADMIN" : simple_admin_storage))
     | None -> (failwith "NO_ADMIN_CAPABILITIES_CONFIGURED" : simple_admin_storage)
 
+(*Only fails if admin is enabled and sender is not admin*)
 let fail_if_not_admin (storage : simple_admin_storage) (extra_msg : string option) : unit =
   match storage with 
     | Some a -> 
@@ -49,17 +50,15 @@ let fail_if_not_admin (storage : simple_admin_storage) (extra_msg : string optio
         else unit
     | None -> unit
 
+(*Only callable by admin*)
 let set_admin (new_admin, storage : address * simple_admin_storage) : simple_admin_storage =
+  let u = fail_if_not_admin storage in
   match storage with 
     | Some s -> 
-        let u = fail_if_not_admin storage in
         (Some ({ s with pending_admin = Some new_admin; } : simple_admin_storage_record)) 
-    | None -> (Some ({
-        admin = new_admin;
-        pending_admin = (None : address option);
-        paused = false;
-      } : simple_admin_storage_record ))
+    | None -> (failwith "NO_ADMIN_CAPABILITIES_CONFIGURED" : simple_admin_storage)
 
+(*Only callable by admin*)
 let pause (paused, storage: bool * simple_admin_storage) : simple_admin_storage =
   let u = fail_if_not_admin storage in
   match storage with 
