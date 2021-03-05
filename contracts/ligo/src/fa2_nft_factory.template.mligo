@@ -27,11 +27,11 @@ let factory_main (name, storage : string * storage) : operation list * storage =
       next_token_id = 0n;
       operators = (Big_map.empty : operator_storage);
     };
-    admin = {
+    admin = Some ({
       admin = Tezos.sender;
       pending_admin = (None : address option);
       paused = false;
-    };
+    } : simple_admin_storage_record);
     metadata = (Big_map.empty : (string, bytes) big_map);
   } in
  let op, fa2_nft = create_contract ((None: key_hash option), 0tez, init_storage) in

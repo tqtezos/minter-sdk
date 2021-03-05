@@ -29,7 +29,8 @@ let create_contract : (key_hash option * tez * nft_asset_storage) -> (operation 
            (pair (pair %token_metadata (nat %token_id) (map %token_info string bytes))
                  (address %owner)))) ;
   storage
-    (pair (pair (pair %admin (pair (address %admin) (bool %paused)) (option %pending_admin address))
+    (pair (pair (option %admin
+                   (pair (pair (address %admin) (bool %paused)) (option %pending_admin address)))
                 (pair %assets
                    (pair (big_map %ledger nat address) (nat %next_token_id))
                    (pair (big_map %operators (pair address (pair address nat)) unit)
@@ -227,24 +228,26 @@ let create_contract : (key_hash option * tez * nft_asset_storage) -> (operation 
          SWAP ;
          APPLY ;
          LAMBDA
-           (pair (pair address bool) (option address))
+           (option (pair (pair address bool) (option address)))
            (lambda (option string) unit)
            { LAMBDA
-               (pair (pair (pair address bool) (option address)) (option string))
+               (pair (option (pair (pair address bool) (option address))) (option string))
                unit
                { DUP ;
                  CDR ;
                  SWAP ;
                  CAR ;
-                 CAR ;
-                 CAR ;
-                 SENDER ;
-                 COMPARE ;
-                 NEQ ;
-                 IF { IF_NONE
-                        { PUSH string "NOT_AN_ADMIN" ; FAILWITH }
-                        { PUSH string " " ; CONCAT ; PUSH string "NOT_AN_ADMIN" ; CONCAT ; FAILWITH } }
-                    { DROP ; UNIT } } ;
+                 IF_NONE
+                   { DROP ; UNIT }
+                   { CAR ;
+                     CAR ;
+                     SENDER ;
+                     COMPARE ;
+                     NEQ ;
+                     IF { IF_NONE
+                            { PUSH string "NOT_AN_ADMIN" ; FAILWITH }
+                            { PUSH string " " ; CONCAT ; PUSH string "NOT_AN_ADMIN" ; CONCAT ; FAILWITH } }
+                        { DROP ; UNIT } } } ;
              SWAP ;
              APPLY } ;
          DIG 3 ;
@@ -270,53 +273,43 @@ let create_contract : (key_hash option * tez * nft_asset_storage) -> (operation 
                        { DROP ;
                          DIG 2 ;
                          DROP ;
-                         DUP ;
-                         CDR ;
                          IF_NONE
-                           { DROP ; PUSH string "NO_PENDING_ADMIN" ; FAILWITH }
-                           { SENDER ;
-                             COMPARE ;
-                             EQ ;
-                             IF { NONE address ; SWAP ; CAR ; CDR ; SENDER ; PAIR ; PAIR }
-                                { DROP ; PUSH string "NOT_A_PENDING_ADMIN" ; FAILWITH } } ;
+                           { PUSH string "NO_ADMIN_CAPABILITIES_CONFIGURED" ; FAILWITH }
+                           { DUP ;
+                             CDR ;
+                             IF_NONE
+                               { DROP ; PUSH string "NO_PENDING_ADMIN" ; FAILWITH }
+                               { SENDER ;
+                                 COMPARE ;
+                                 EQ ;
+                                 IF { NONE address ; SWAP ; CAR ; CDR ; SENDER ; PAIR ; PAIR ; SOME }
+                                    { DROP ; PUSH string "NOT_A_PENDING_ADMIN" ; FAILWITH } } } ;
                          NIL operation ;
                          PAIR }
-                       { SWAP ;
+                       { PAIR ;
                          DUP ;
-                         DUG 2 ;
+                         CDR ;
+                         DUP ;
                          DIG 4 ;
                          SWAP ;
                          EXEC ;
                          DROP ;
-                         PAIR ;
-                         DUP ;
-                         CDR ;
-                         DUP ;
-                         CDR ;
-                         DIG 2 ;
-                         CAR ;
-                         DIG 2 ;
-                         CAR ;
-                         CAR ;
-                         PAIR ;
-                         PAIR ;
+                         IF_NONE
+                           { DROP ; PUSH string "NO_ADMIN_CAPABILITIES_CONFIGURED" ; FAILWITH }
+                           { DUP ; CDR ; DIG 2 ; CAR ; DIG 2 ; CAR ; CAR ; PAIR ; PAIR ; SOME } ;
                          NIL operation ;
                          PAIR } }
-                   { SWAP ;
+                   { PAIR ;
                      DUP ;
-                     DUG 2 ;
+                     CDR ;
+                     DUP ;
                      DIG 4 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
-                     PAIR ;
-                     DUP ;
-                     CAR ;
-                     SOME ;
-                     SWAP ;
-                     CDR ;
-                     CAR ;
-                     PAIR ;
+                     IF_NONE
+                       { DROP ; PUSH string "NO_ADMIN_CAPABILITIES_CONFIGURED" ; FAILWITH }
+                       { SWAP ; CAR ; SOME ; SWAP ; CAR ; PAIR ; SOME } ;
                      NIL operation ;
                      PAIR } ;
                  DUP ;
@@ -342,9 +335,10 @@ let create_contract : (key_hash option * tez * nft_asset_storage) -> (operation 
                  DUG 2 ;
                  CAR ;
                  CAR ;
-                 CAR ;
-                 CDR ;
-                 IF { PUSH string "PAUSED" ; FAILWITH } {} ;
+                 IF_NONE
+                   { UNIT }
+                   { CAR ; CDR ; IF { PUSH string "PAUSED" ; FAILWITH } { UNIT } } ;
+                 DROP ;
                  SWAP ;
                  DUP ;
                  DUG 2 ;
@@ -703,11 +697,11 @@ let factory_main (name, storage : string * storage) : operation list * storage =
       next_token_id = 0n;
       operators = (Big_map.empty : operator_storage);
     };
-    admin = {
+    admin = Some ({
       admin = Tezos.sender;
       pending_admin = (None : address option);
       paused = false;
-    };
+    } : simple_admin_storage_record);
     metadata = (Big_map.empty : (string, bytes) big_map);
   } in
  let op, fa2_nft = create_contract ((None: key_hash option), 0tez, init_storage) in
