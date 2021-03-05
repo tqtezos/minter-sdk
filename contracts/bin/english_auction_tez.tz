@@ -424,8 +424,17 @@
                      CAR ;
                      MUL ;
                      EDIV ;
-                     IF_NONE { PUSH string "DIV by 0" ; FAILWITH } {} ;
-                     CAR ;
+                     IF_NONE
+                       { PUSH string "DIVISION_BY_ZERO" ; FAILWITH }
+                       { DUP ;
+                         CDR ;
+                         SWAP ;
+                         CAR ;
+                         PUSH mutez 0 ;
+                         DIG 2 ;
+                         COMPARE ;
+                         GT ;
+                         IF { PUSH mutez 1 ; ADD } {} } ;
                      DIG 4 ;
                      DUP ;
                      DUG 5 ;
