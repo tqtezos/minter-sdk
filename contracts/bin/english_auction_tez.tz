@@ -62,18 +62,22 @@
          LAMBDA
            (pair bool string)
            unit
-           { UNPAIR ; NOT ; IF { FAILWITH } { DROP ; UNIT } } ;
+           { DUP ; CAR ; NOT ; IF { CDR ; FAILWITH } { DROP ; UNIT } } ;
          LAMBDA
            (pair (pair (list (pair address (list (pair nat nat)))) address) address)
            (list operation)
-           { UNPAIR ;
-             UNPAIR ;
-             MAP { DIG 2 ;
+           { DUP ;
+             CAR ;
+             CAR ;
+             MAP { SWAP ;
                    DUP ;
-                   DUG 3 ;
+                   DUG 2 ;
+                   CDR ;
                    DIG 2 ;
                    DUP ;
                    DUG 3 ;
+                   CAR ;
+                   CDR ;
                    PAIR ;
                    LAMBDA
                      (pair (pair address address) (pair address (list (pair nat nat))))
@@ -90,12 +94,17 @@
                        DUP ;
                        DUG 3 ;
                        CDR ;
-                       MAP { DIG 2 ; DUP ; DUG 3 ; PAIR } ;
-                       DIG 2 ;
-                       DROP ;
+                       PAIR ;
+                       PAIR ;
+                       DUP ;
+                       CAR ;
+                       CAR ;
+                       MAP { SWAP ; DUP ; DUG 2 ; CDR ; PAIR } ;
                        NIL (pair address (list (pair address (pair nat nat)))) ;
                        SWAP ;
                        DIG 2 ;
+                       CAR ;
+                       CDR ;
                        PAIR ;
                        CONS ;
                        SWAP ;
@@ -111,8 +120,6 @@
                    APPLY ;
                    SWAP ;
                    EXEC } ;
-             SWAP ;
-             DROP ;
              SWAP ;
              DROP } ;
          LAMBDA
@@ -139,13 +146,14 @@
                                          (pair int
                                                (pair (list (pair address (list (pair nat nat))))
                                                      (pair nat (pair mutez (pair timestamp address))))))))))
-           { UNPAIR ;
+           { DUP ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
              SWAP ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             SWAP ;
+             CAR ;
              GET ;
              IF_NONE
                { PUSH string "Auction does not exist for given asset_id" ; FAILWITH }
@@ -200,7 +208,11 @@
              GE ;
              OR } ;
          DIG 7 ;
-         UNPAIR ;
+         DUP ;
+         DUG 8 ;
+         CDR ;
+         DIG 8 ;
+         CAR ;
          IF_LEFT
            { IF_LEFT
                { DIG 5 ;
@@ -214,6 +226,9 @@
                      DROP ;
                      DIG 3 ;
                      DROP ;
+                     PAIR ;
+                     DUP ;
+                     CDR ;
                      PUSH string "Amount must be 0mutez" ;
                      PUSH mutez 0 ;
                      AMOUNT ;
@@ -224,11 +239,10 @@
                      SWAP ;
                      EXEC ;
                      DROP ;
-                     SWAP ;
                      DUP ;
-                     DUG 2 ;
                      CAR ;
-                     SWAP ;
+                     DIG 2 ;
+                     CAR ;
                      IF_LEFT
                        { IF_LEFT
                            { DROP ;
@@ -247,33 +261,36 @@
                                         { DROP ; PUSH string "NOT_A_PENDING_ADMIN" ; FAILWITH } } } ;
                              NIL operation ;
                              PAIR }
-                           { SWAP ;
+                           { PAIR ;
                              DUP ;
-                             DUG 2 ;
+                             CDR ;
+                             DUP ;
                              DIG 4 ;
                              SWAP ;
                              EXEC ;
                              DROP ;
-                             SWAP ;
                              IF_NONE
                                { DROP ; PUSH string "NO_ADMIN_CAPABILITIES_CONFIGURED" ; FAILWITH }
-                               { DUP ; CDR ; DUG 2 ; CAR ; CAR ; PAIR ; PAIR ; SOME } ;
+                               { DUP ; CDR ; DIG 2 ; CAR ; DIG 2 ; CAR ; CAR ; PAIR ; PAIR ; SOME } ;
                              NIL operation ;
                              PAIR } }
-                       { SWAP ;
+                       { PAIR ;
                          DUP ;
-                         DUG 2 ;
+                         CDR ;
+                         DUP ;
                          DIG 4 ;
                          SWAP ;
                          EXEC ;
                          DROP ;
-                         SWAP ;
                          IF_NONE
                            { DROP ; PUSH string "NO_ADMIN_CAPABILITIES_CONFIGURED" ; FAILWITH }
-                           { SWAP ; SOME ; SWAP ; CAR ; PAIR ; SOME } ;
+                           { SWAP ; CAR ; SOME ; SWAP ; CAR ; PAIR ; SOME } ;
                          NIL operation ;
                          PAIR } ;
-                     UNPAIR ;
+                     DUP ;
+                     CDR ;
+                     SWAP ;
+                     CAR ;
                      DIG 2 ;
                      CDR ;
                      DIG 2 ;
@@ -407,8 +424,17 @@
                      CAR ;
                      MUL ;
                      EDIV ;
-                     IF_NONE { PUSH string "DIV by 0" ; FAILWITH } {} ;
-                     CAR ;
+                     IF_NONE
+                       { PUSH string "DIVISION_BY_ZERO" ; FAILWITH }
+                       { DUP ;
+                         CDR ;
+                         SWAP ;
+                         CAR ;
+                         PUSH mutez 0 ;
+                         DIG 2 ;
+                         COMPARE ;
+                         GT ;
+                         IF { PUSH mutez 1 ; ADD } {} } ;
                      DIG 4 ;
                      DUP ;
                      DUG 5 ;
@@ -822,7 +848,8 @@
                      DROP ;
                      DUP ;
                      CAR ;
-                     SELF_ADDRESS ;
+                     SELF ;
+                     ADDRESS ;
                      DIG 2 ;
                      DUP ;
                      DUG 3 ;
@@ -1178,7 +1205,8 @@
                      PAIR ;
                      SENDER ;
                      PAIR ;
-                     SELF_ADDRESS ;
+                     SELF ;
+                     ADDRESS ;
                      SENDER ;
                      DIG 3 ;
                      CDR ;
@@ -1302,7 +1330,8 @@
              CDR ;
              CDR ;
              CDR ;
-             SELF_ADDRESS ;
+             SELF ;
+             ADDRESS ;
              DIG 2 ;
              DUP ;
              DUG 3 ;

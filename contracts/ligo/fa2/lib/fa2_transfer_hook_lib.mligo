@@ -13,16 +13,19 @@
 #include "../fa2_hook.mligo"
 
 let get_hook_entrypoint (hook_contract : address) (u : unit)
-    : transfer_descriptor_param contract =
+    : transfer_descriptor_param contract option =
   let hook_entry : transfer_descriptor_param contract =
-    Tezos.get_entrypoint "%tokens_transferred_hook" hook_contract in
+    Tezos.get_entrypoint_opt "%tokens_transferred_hook" hook_contract in
   hook_entry
 
 
 let create_register_hook_op
     (fa2, descriptor : (fa2_with_hook_entry_points contract) * permissions_descriptor) : operation =
-  let hook_fn = get_hook_entrypoint Current.self_address in
-  let p : set_hook_param = {
+  let mhook_fn = get_hook_entrypoint Current.self_address in
+  let hook_fn = match mhook_fn with
+    | None -> (failwith "CANNOT_GET_HOOK_FUNCTION" : transfer_descriptor_param contract)
+    | Some hook_fn -> hook_fn
+  in let p : set_hook_param = {
     hook = hook_fn;
     permissions_descriptor = descriptor;
   } in

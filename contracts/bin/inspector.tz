@@ -6,32 +6,33 @@
   storage
     (or (unit %empty)
         (list %state (pair (pair %request (address %owner) (nat %token_id)) (nat %balance)))) ;
-  code { DUP ;
-         CDR ;
-         SWAP ;
-         CAR ;
+  code { UNPAIR ;
          IF_LEFT
            { IF_LEFT
                { DROP ; NIL operation ; PAIR }
-               { SELF ;
-                 ADDRESS ;
+               { SELF_ADDRESS ;
                  CONTRACT %response
                    (list (pair (pair %request (address %owner) (nat %token_id)) (nat %balance))) ;
-                 IF_NONE { PUSH string "bad address for get_entrypoint" ; FAILWITH } {} ;
+                 IF_NONE
+                   { PUSH string "CANNOT_GET_CONTRACT_ENTRYPOINT_RESPONSE" ; FAILWITH }
+                   {} ;
                  SWAP ;
                  DUP ;
                  DUG 2 ;
-                 CDR ;
-                 PAIR ;
-                 SWAP ;
                  CAR ;
                  CONTRACT %balance_of
                    (pair (list %requests (pair (address %owner) (nat %token_id)))
                          (contract %callback
                             (list (pair (pair %request (address %owner) (nat %token_id)) (nat %balance))))) ;
-                 IF_NONE { PUSH string "bad address for get_entrypoint" ; FAILWITH } {} ;
+                 IF_NONE
+                   { PUSH string "CANNOT_ACCESS_CONTRACT_ENTRYPOINT_BALANCE_OF_PARAM" ;
+                     FAILWITH }
+                   {} ;
                  PUSH mutez 0 ;
                  DIG 2 ;
+                 DIG 3 ;
+                 CDR ;
+                 PAIR ;
                  TRANSFER_TOKENS ;
                  SWAP ;
                  NIL operation ;

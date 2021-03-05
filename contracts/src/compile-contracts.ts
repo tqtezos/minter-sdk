@@ -16,8 +16,6 @@ async function main(): Promise<void> {
     await compileEnglishAuctionTezContract(env);
     await compileFtFaucetContract(env);
     await compileFtContract(env);
-    await compileFixedPriceSaleMarketPlaceWithAdminContract(env);
-    await compileFixedPriceSaleTezMarketPlaceWithAdminContract(env);
     // add other contracts here
 
     process.exit(0);
@@ -98,19 +96,6 @@ async function compileFixedPriceSaleMarketPlaceContract(env: LigoEnv): Promise<v
     $log.info('compiled fixed price sale marketplace contract');
 }
 
-
-async function compileFixedPriceSaleMarketPlaceWithAdminContract(env: LigoEnv): Promise<void> {
-    $log.info('compiling fixed price sale marketplace (with admin) contract');
-
-    await await compileContract(
-        env,
-        'fixed_price_sale_market_with_admin.mligo',
-        'fixed_price_sale_main',
-        'fixed_price_sale_market_with_admin.tz'
-    );
-    $log.info('compiled fixed price sale marketplace (with admin) contract');
-}
-
 async function compileFixedPriceSaleTezMarketPlaceContract(env: LigoEnv): Promise<void> {
     $log.info('compiling fixed price sale (sold in tez) marketplace contract');
 
@@ -121,19 +106,6 @@ async function compileFixedPriceSaleTezMarketPlaceContract(env: LigoEnv): Promis
         'fixed_price_sale_market_tez.tz'
     );
     $log.info('compiled fixed price sale (sold in tez) marketplace contract');
-}
-
-
-async function compileFixedPriceSaleTezMarketPlaceWithAdminContract(env: LigoEnv): Promise<void> {
-    $log.info('compiling fixed price sale (sold in tez) marketplace (with admin) contract');
-
-    await compileContract(
-        env,
-        'fixed_price_sale_market_tez_with_admin.mligo',
-        'fixed_price_sale_tez_main',
-        'fixed_price_sale_market_tez_with_admin.tz'
-    );
-    $log.info('compiled fixed price sale (sold in tez) marketplace (with admin) contract');
 }
 
 async function compileEnglishAuctionTezContract(env: LigoEnv): Promise<void> {
