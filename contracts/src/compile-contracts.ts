@@ -29,7 +29,7 @@ async function compileNftFaucetContract(env: LigoEnv): Promise<void> {
   $log.info('compiling NFT faucet contract');
   await await compileContract(
     env,
-    'fa2_multi_nft_faucet.mligo',
+    'minter-collection/fa2_multi_nft_faucet.mligo',
     'nft_faucet_main',
     'fa2_multi_nft_faucet.tz'
   );
@@ -40,7 +40,7 @@ async function compileNftContract(env: LigoEnv): Promise<void> {
   $log.info('compiling NFT contract');
   await await compileContract(
     env,
-    'fa2_multi_nft_asset.mligo',
+    'minter-collection/fa2_multi_nft_asset.mligo',
     'nft_asset_main',
     'fa2_multi_nft_asset.tz'
   );
@@ -52,7 +52,7 @@ async function compileFtFaucetContract(env: LigoEnv): Promise<void> {
   $log.info('compiling FT faucet contract');
   await await compileContract(
     env,
-    'fa2_multi_ft_faucet.mligo',
+    'minter-collection/fa2_multi_ft_faucet.mligo',
     'ft_faucet_main',
     'fa2_multi_ft_faucet.tz'
   );
@@ -63,7 +63,7 @@ async function compileFtContract(env: LigoEnv): Promise<void> {
   $log.info('compiling FT contract');
   await await compileContract(
     env,
-    'fa2_multi_ft_asset.mligo',
+    'minter-collection/fa2_multi_ft_asset.mligo',
     'multi_ft_asset_main',
     'fa2_multi_ft_asset.tz'
   );
@@ -77,7 +77,7 @@ async function compileNftFactoryContract(env: LigoEnv): Promise<void> {
 
   await compileContract(
     env,
-    'fa2_nft_factory.mligo',
+    'minter-collection/fa2_nft_factory.mligo',
     'factory_main',
     'fa2_nft_factory.tz'
   );
@@ -89,7 +89,7 @@ async function compileFixedPriceSaleMarketPlaceContract(env: LigoEnv): Promise<v
 
     await await compileContract(
         env,
-        'fixed_price_sale_market.mligo',
+        'fixed-price-sale/fixed_price_sale_market.mligo',
         'fixed_price_sale_main',
         'fixed_price_sale_market.tz'
     );
@@ -101,7 +101,7 @@ async function compileFixedPriceSaleTezMarketPlaceContract(env: LigoEnv): Promis
 
     await compileContract(
         env,
-        'fixed_price_sale_market_tez.mligo',
+        'fixed-price-sale/fixed_price_sale_market_tez.mligo',
         'fixed_price_sale_tez_main',
         'fixed_price_sale_market_tez.tz'
     );
@@ -113,7 +113,7 @@ async function compileEnglishAuctionTezContract(env: LigoEnv): Promise<void> {
 
   await compileContract(
       env,
-      'english_auction_tez.mligo',
+      'english-auction/english_auction_tez.mligo',
       'english_auction_tez_main',
       'english_auction_tez.tz'
   );
@@ -121,13 +121,13 @@ async function compileEnglishAuctionTezContract(env: LigoEnv): Promise<void> {
 }
 
 function prepareNftFactoryContract(env: LigoEnv): void {
-  const templatePath = env.srcFilePath('fa2_nft_factory.template.mligo');
+  const templatePath = env.srcFilePath('minter-collection/fa2_nft_factory.template.mligo');
   const template = fs.readFileSync(templatePath).toString();
   const fs2CodePath = env.outFilePath('fa2_multi_nft_asset.tz');
   const fs2Code = fs.readFileSync(fs2CodePath).toString();
 
   const factoryCode = template.replace('${code}', fs2Code);
-  const factoryPath = env.srcFilePath('fa2_nft_factory.mligo');
+  const factoryPath = env.srcFilePath('minter-collection/fa2_nft_factory.mligo');
   fs.writeFileSync(factoryPath, factoryCode);
 }
 
