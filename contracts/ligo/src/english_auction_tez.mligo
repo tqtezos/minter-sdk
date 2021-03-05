@@ -191,8 +191,10 @@ let place_bid(asset_id, storage : nat * storage) : return = begin
     assert_msg (Tezos.sender = Tezos.source, "Bidder must be an implicit account");
     (fail_if_paused storage.simple_admin);
     assert_msg (auction_in_progress(auction), "Auction must be in progress");
-    assert_msg (valid_bid_amount(auction), "Bid must raised by at least min_raise_percent of the previous bid or at least opening price if it is the first bid");
     assert_msg(Tezos.sender <> auction.seller, "Seller cannot place a bid");
+    (if not valid_bid_amount(auction) 
+      then ([%Michelson ({| { FAILWITH } |} : string * tez * tez * address * timestamp * timestamp-> unit)] ("Invalid Bid amount", auction.current_bid, Tezos.amount, auction.highest_bidder, auction.last_bid_time, Tezos.now) : unit)
+      else ());
 
     let highest_bidder_contract : unit contract = resolve_contract(auction.highest_bidder) in
     let return_bid = Tezos.transaction unit auction.current_bid highest_bidder_contract in
