@@ -115,8 +115,16 @@ let auction_in_progress (auction : auction) : bool =
 let first_bid (auction : auction) : bool =
   auction.highest_bidder = auction.seller
 
+let ceil_div (tz_qty, nat_qty : tez * nat) : tez = 
+  let ediv1 : (tez * tez) option = ediv tz_qty nat_qty in 
+  match ediv1 with 
+    | None -> (failwith "DIVISION_BY_ZERO"  : tez) 
+    | Some e -> 
+       let (quotient, remainder) = e in
+       if remainder > 0mutez then (quotient + 1mutez) else quotient
+
 let valid_bid_amount (auction : auction) : bool =
-  (Tezos.amount >= (auction.current_bid + ((auction.min_raise_percent *  auction.current_bid)/ 100n))) ||
+  (Tezos.amount >= (auction.current_bid + (ceil_div (auction.min_raise_percent *  auction.current_bid, 100n)))) ||
   (Tezos.amount >= auction.current_bid + auction.min_raise)                                            ||
   ((Tezos.amount >= auction.current_bid) && first_bid(auction))
 
