@@ -134,7 +134,7 @@ export async function originateFixedPriceSale(
         'fixed_price_sale_main',
         'fixed_price_sale_market.tz',
     );
-    const storage = `{}`;
+    const storage = `(Pair None {})`;
     return originateContract(tz, code, storage, 'fixed-price-sale-market');
 }
 
@@ -147,7 +147,7 @@ export async function originateFixedPriceTezSale(
         'fixed_price_sale_tez_main',
         'fixed_price_sale_market_tez.tz',
     );
-    const storage = `{}`;
+    const storage = `(Pair None {})`;
     return originateContract(tz, code, storage, 'fixed-price-sale-market-tez');
 }
 
@@ -157,11 +157,11 @@ export async function originateFixedPriceAdminSale(
 ): Promise<Contract> {
     const code = await compileAndLoadContract(
         defaultEnv,
-        'fixed_price_sale_market_with_admin.mligo',
+        'fixed_price_sale_market.mligo',
         'fixed_price_sale_main',
-        'fixed_price_sale_market_with_admin.tz'
+        'fixed_price_sale_market.tz'
     );
-    const storage = `(Pair (Pair (Pair \"${adminAddress}\" False) None) {})`;
+    const storage = `(Pair (Some (Pair (Pair "${adminAddress}" False) None)) {})`;
     return originateContract(tz, code, storage, 'fixed-price-sale-market-with-admin');
 }
 
@@ -171,11 +171,11 @@ export async function originateFixedPriceTezAdminSale(
 ): Promise<Contract> {
     const code = await compileAndLoadContract(
         defaultEnv,
-        'fixed_price_sale_market_tez_with_adminx.mligo',
+        'fixed_price_sale_market_tez.mligo',
         'fixed_price_sale_tez_main',
-        'fixed_price_sale_market_tez_with_admin.tz',
+        'fixed_price_sale_market_tez.tz',
     );
-    const storage = `(Pair (Pair (Pair \"${adminAddress}\" False) None) {})`;
+    const storage = `(Pair (Some (Pair (Pair "${adminAddress}" False) None)) {})`
     return originateContract(tz, code, storage, 'fixed-price-sale-market-tez-with-admin');
 }
 

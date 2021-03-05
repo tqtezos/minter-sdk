@@ -26,8 +26,8 @@ type simple_admin_storage_record = {
 type simple_admin_storage = simple_admin_storage_record option
 
 let confirm_new_admin (storage : simple_admin_storage) : simple_admin_storage =
-  match storage with 
-    | Some s ->  
+  match storage with
+    | Some s ->
         ( match s.pending_admin with
           | None -> (failwith "NO_PENDING_ADMIN" : simple_admin_storage)
           | Some pending ->
@@ -41,8 +41,8 @@ let confirm_new_admin (storage : simple_admin_storage) : simple_admin_storage =
 
 (*Only fails if admin is enabled and sender is not admin*)
 let fail_if_not_admin (storage : simple_admin_storage) (extra_msg : string option) : unit =
-  match storage with 
-    | Some a -> 
+  match storage with
+    | Some a ->
         if Tezos.sender <> a.admin
         then match extra_msg with
              | None -> failwith "NOT_AN_ADMIN"
@@ -53,22 +53,22 @@ let fail_if_not_admin (storage : simple_admin_storage) (extra_msg : string optio
 (*Only callable by admin*)
 let set_admin (new_admin, storage : address * simple_admin_storage) : simple_admin_storage =
   let u = fail_if_not_admin storage in
-  match storage with 
-    | Some s -> 
-        (Some ({ s with pending_admin = Some new_admin; } : simple_admin_storage_record)) 
+  match storage with
+    | Some s ->
+        (Some ({ s with pending_admin = Some new_admin; } : simple_admin_storage_record))
     | None -> (failwith "NO_ADMIN_CAPABILITIES_CONFIGURED" : simple_admin_storage)
 
 (*Only callable by admin*)
 let pause (paused, storage: bool * simple_admin_storage) : simple_admin_storage =
   let u = fail_if_not_admin storage in
-  match storage with 
-    | Some s -> 
+  match storage with
+    | Some s ->
         (Some ({ s with paused = paused; } : simple_admin_storage_record ))
     | None -> (failwith "NO_ADMIN_CAPABILITIES_CONFIGURED" : simple_admin_storage)
 
 let fail_if_paused (storage : simple_admin_storage) : unit =
-  match storage with 
-    | Some a -> 
+  match storage with
+    | Some a ->
         if a.paused
         then failwith "PAUSED"
         else unit
