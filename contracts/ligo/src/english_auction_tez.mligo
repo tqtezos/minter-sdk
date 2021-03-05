@@ -193,7 +193,7 @@ let place_bid(asset_id, storage : nat * storage) : return = begin
     assert_msg (auction_in_progress(auction), "Auction must be in progress");
     assert_msg(Tezos.sender <> auction.seller, "Seller cannot place a bid");
     (if not valid_bid_amount(auction) 
-      then ([%Michelson ({| { FAILWITH } |} : string * tez * tez * address * timestamp * timestamp-> unit)] ("Invalid Bid amount", auction.current_bid, Tezos.amount, auction.highest_bidder, auction.last_bid_time, Tezos.now) : unit)
+      then ([%Michelson ({| { FAILWITH } |} : string * (tez * tez * address * timestamp * timestamp) -> unit)] ("Invalid Bid amount", (auction.current_bid, Tezos.amount, auction.highest_bidder, auction.last_bid_time, Tezos.now)) : unit)
       else ());
 
     let highest_bidder_contract : unit contract = resolve_contract(auction.highest_bidder) in
