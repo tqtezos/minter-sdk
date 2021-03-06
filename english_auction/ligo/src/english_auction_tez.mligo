@@ -1,5 +1,5 @@
-#include "../fa2/fa2_interface.mligo"
-#include "../fa2_modules/simple_admin_option.mligo"
+#include "../../fa2/fa2_interface.mligo"
+#include "../../fa2_modules/simple_admin_option.mligo"
 
 type fa2_tokens =
   [@layout:comb]
