@@ -49,8 +49,10 @@ sub-project has `ligo` directory that contains all LIGO-related files:
 ## Implemented FA2 Contracts
 
 ### [English Auction](english_auction)
-<to-be-filled-in>
+An implementation of an English auction marketplace that allows users to initiate auctions of NFTs. There are (as of writing this) 
+two versions of this contract: one with administration capabilities and one without. For now, in the positive case, this means that
+a configured administrator is responsible for configuring and managing access to important entrypoints. 
 ### [Fixed Price Sale](fixed_price_sale)
-A implementation of an NFT marketplace that allows users to initiate NFT sales at a fixed price. There are multiple flavors of this contract that vary along two variables: admin capabilities, and NFT sale type (fungible tokens/tez).
-### [Minter Collection](minter-collection)
-<to-be-filled-in>
+An implementation of an NFT marketplace that allows users to initiate NFT sales at a fixed price. There are multiple flavors of this contract that vary along two variables: admin capabilities, and NFT sale type (fungible tokens/tez).
+### [Minter Collection](minter_collection)
+Implementations of various token types.
