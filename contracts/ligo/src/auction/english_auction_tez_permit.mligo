@@ -28,15 +28,15 @@ type permit_auction_entrypoints =
 
 type permit_return = operation list * permit_storage
 
-let concat (l1, l2 : operation list * operation list) : operation list = 
-  let concat = ([%Michelson ({| {UNPAIR; NIL operation; SWAP; ITER {CONS}; ITER {CONS}} |} : operation list * operation list -> operation list)]) 
-  in concat (l1, l2)
+let address_from_key (key : key) : address =
+  let a = Tezos.address (Tezos.implicit_account (Crypto.hash_key key)) in
+  a
 
-let config_with_permit (p, permit_storage : permit_config_param * permit_storage)  : permit_return = begin
+let config_storage_with_permit (p, permit_storage : permit_config_param * permit_storage)  : permit_storage = begin
   match p.optional_permit with 
     | None -> 
-      let ops, auction_storage = configure_auction(p.config, permit_storage.auction_storage, Tezos.self_address) in
-      ops, {permit_storage with auction_storage = auction_storage; counter = permit_storage.counter + 1n}
+      let auction_storage = configure_auction_storage(p.config, permit_storage.auction_storage, Tezos.self_address) in
+      {permit_storage with auction_storage = auction_storage; counter = permit_storage.counter + 1n}
     | Some permit -> 
         let unsigned : bytes = ([%Michelson ({| { SELF; ADDRESS; CHAIN_ID; PAIR; PAIR; PACK } |} : nat * bytes -> bytes)] (permit_storage.counter, permit.paramHash) : bytes) in
         assert_msg (Crypto.check permit.signerKey permit.signature unsigned, "INVALID_PERMIT"); 
@@ -44,7 +44,7 @@ let config_with_permit (p, permit_storage : permit_config_param * permit_storage
         
         let configure_param = p.config in
         let storage = permit_storage.auction_storage in
-        let signer_address = Tezos.address (Tezos.implicit_account (Crypto.hash_key permit.signerKey)) in
+        let signer_address = address_from_key permit.signerKey in
         
         assert_msg (configure_param.end_time > configure_param.start_time, "end_time must be after start_time");
         assert_msg (abs(configure_param.end_time - configure_param.start_time) <= storage.max_auction_time, "Auction time must be less than max_auction_time");
@@ -69,26 +69,29 @@ let config_with_permit (p, permit_storage : permit_config_param * permit_storage
           last_bid_time = configure_param.start_time; 
         } in
         let updated_auctions : (nat, auction) big_map = Big_map.update storage.current_id (Some auction_data) storage.auctions in
-        let fa2_transfers : operation list = tokens_to_operation_list(configure_param.asset, Tezos.sender, Tezos.self_address) in
         let auction_storage = {storage with auctions = updated_auctions; current_id = storage.current_id + 1n} in
-        (fa2_transfers, {permit_storage with auction_storage = auction_storage; counter = permit_storage.counter + 1n})
+        {permit_storage with auction_storage = auction_storage; counter = permit_storage.counter + 1n}
 end
 
-let rec config_with_permits_helper (possible_permits, permit_storage, returnOps : (permit_config_param list * permit_storage * (operation list))) : permit_return =
-    let permit = List.head_opt possible_permits in
-    let remaining_permits = List.tail_opt possible_permits in 
-    match permit with
+let rec config_with_permits_helper (params, permit_storage, op_list : (permit_config_param list * permit_storage * operation list)) : permit_return =
+    let param = List.head_opt params in
+    let remaining_params = List.tail_opt params in 
+    match param with
       | Some p -> 
-          let ops, new_storage = config_with_permit(p, permit_storage) in
-          (match remaining_permits with 
+          let new_storage = config_storage_with_permit(p, permit_storage) in
+          let transfer_from = (match p.optional_permit with 
+            | Some permit -> address_from_key permit.signerKey
+            | None -> Tezos.sender) in
+          let ops = tokens_list_to_operation_list_append(transfer_from, Tezos.self_address, p.config.asset, op_list) in
+          (match remaining_params with 
             | Some rps -> 
-                let concatenated_ops : operation list = concat(ops, returnOps) in
-                config_with_permits_helper(rps, new_storage, concatenated_ops)
+                config_with_permits_helper(rps, new_storage, ops)
             | None -> (failwith "INTERNAL_ERROR" : permit_return))
-      | None -> (returnOps, permit_storage)
+      | None -> (op_list, permit_storage)
 
 let configure_auction_with_permits (possible_permits, permit_storage: (permit_config_param list * permit_storage)) : permit_return =
-  config_with_permits_helper(possible_permits, permit_storage, ([] : operation list))
+  let ops, storage = config_with_permits_helper(possible_permits, permit_storage, ([] : operation list)) in
+  (ops, storage)
 
 let english_auction_tez_permit_main (params,permit_storage : permit_auction_entrypoints * permit_storage) : permit_return = match params with
   | Auction auction -> 

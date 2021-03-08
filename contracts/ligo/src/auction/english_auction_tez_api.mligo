@@ -87,6 +87,18 @@ let tokens_to_operation(from_ : address) (to_ : address) (tokens : tokens): oper
 let tokens_to_operation_list((tokens_list, from_, to_) : tokens list * address * address) : (operation list) =
    (List.map (tokens_to_operation from_ to_) tokens_list)
 
+let rec tokens_list_to_operation_list_append (from_, to_, tokens_list, op_list : address * address * tokens list * (operation list)) :  (operation list) =
+  let tokens = List.head_opt tokens_list in 
+  let new_tokens_list = List.tail_opt tokens_list in 
+  match tokens with 
+    | Some t -> 
+        let op = (tokens_to_operation from_ to_ t) in 
+        let new_op_list : operation list = (op :: op_list) in
+        (match new_tokens_list with 
+          | Some tl -> tokens_list_to_operation_list_append(from_, to_, tl, new_op_list)
+          | None -> (failwith "INTERNAL_ERROR" : operation list))
+    | None -> op_list
+
 let get_auction_data ((asset_id, storage) : nat * storage) : auction =
   match (Big_map.find_opt asset_id storage.auctions) with
       None -> (failwith "Auction does not exist for given asset_id" : auction)
@@ -117,7 +129,7 @@ let valid_bid_amount (auction : auction) : bool =
   (Tezos.amount >= auction.current_bid + auction.min_raise)                                            ||
   ((Tezos.amount >= auction.current_bid) && first_bid(auction))
 
-let configure_auction(configure_param, storage, selfAddress : configure_param * storage * address) : return = begin
+let configure_auction_storage(configure_param, storage, selfAddress : configure_param * storage * address) : storage = begin
     assert_msg (configure_param.end_time > configure_param.start_time, "end_time must be after start_time");
     assert_msg (abs(configure_param.end_time - configure_param.start_time) <= storage.max_auction_time, "Auction time must be less than max_auction_time");
     
@@ -142,8 +154,7 @@ let configure_auction(configure_param, storage, selfAddress : configure_param * 
       last_bid_time = configure_param.start_time; 
     } in
     let updated_auctions : (nat, auction) big_map = Big_map.update storage.current_id (Some auction_data) storage.auctions in
-    let fa2_transfers : operation list = tokens_to_operation_list(configure_param.asset, Tezos.sender, selfAddress) in
-    (fa2_transfers, {storage with auctions = updated_auctions; current_id = storage.current_id + 1n})
+    {storage with auctions = updated_auctions; current_id = storage.current_id + 1n}
   end
 
 let resolve_auction(asset_id, storage, selfAddress : nat * storage * address) : return = begin
