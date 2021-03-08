@@ -28,3 +28,7 @@ a configured administrator is responsible for configuring and managing access to
 An implementation of an NFT marketplace that allows users to initiate NFT sales at a fixed price. There are multiple flavors of this contract that vary along two variables: admin capabilities, and NFT sale type (fungible tokens/tez).
 ### [Minter Collection](minter_collection)
 Implementations of various token types.
+
+## [Ticket NFTs](tickets)  
+
+**EXPERIMENTAL** An implementation of a dutch auction using ticket based NFTs, along with wallet contracts for the NFTs. *Tickets are a new Tezos feature and care should be taken when using them as they have not been heavily tested in production.*
