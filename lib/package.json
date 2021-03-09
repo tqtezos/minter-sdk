@@ -1,0 +1,19 @@
+{
+  "name": "@tqtezos/minter-sdk",
+  "version": "0.0.1",
+  "description": "Minter SDK",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tqtezos/minter-sdk.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/tqtezos/minter-sdk/issues"
+  },
+  "homepage": "https://github.com/tqtezos/minter-sdk#readme"
+}
