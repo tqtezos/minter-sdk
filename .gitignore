@@ -12,3 +12,4 @@ node_modules
 # Ligo
 *.pp.mligo
 *.pp.ligo
+contracts/bisect*.coverage

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 IMAGE="registry.gitlab.com/tezos/flextesa:56f651af-run"
-ENTRY="eodbox"
+ENTRY="edobox"
 
 
 docker run --rm --name flextesa-sandbox \
