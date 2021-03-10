@@ -4,7 +4,8 @@ import { bootstrap, TestTz } from '../bootstrap-sandbox';
 import { Contract, nat, bytes, address } from '../../src/type-aliases';
 import {
   originateEnglishAuctionTezAdmin,
-  MintNftParam
+  MintNftParam,
+  originateNftFaucet
 } from '../../src/nft-contracts';
 import { TezosToolkit, MichelsonMap } from '@taquito/taquito';
 
@@ -24,7 +25,7 @@ describe('test NFT auction', () => {
   let nftAuction: Contract;
   let nftAuctionBob : Contract;
   let nftAuctionAlice : Contract;
-  // let nftFactory: Contract;
+  let nftContract : Contract;
   let bobAddress : address;
   let aliceAddress : address;
   let startTime : Date;
@@ -37,9 +38,7 @@ describe('test NFT auction', () => {
 
   beforeAll(async () => {
     tezos = await bootstrap();
-    // $log.info('originating nft factory...');
-    // TODO: FIXME
-    // nftFactory = await originateNftFactory(tezos.bob);
+    nftContract = await originateNftFaucet(tezos.bob, bobAddress);
   });
 
   beforeEach(async() => {
@@ -48,14 +47,7 @@ describe('test NFT auction', () => {
     nftAuctionBob = await tezos.bob.contract.at(nftAuction.address);
     nftAuctionAlice = await tezos.alice.contract.at(nftAuction.address);
 
-    $log.info('creating nft contract');
-    const opCreate = await nftFactory.methods.default('test contract').send();
-    await opCreate.confirmation();
-    const nftAddress = extractOriginatedContractAddress(opCreate);
-    $log.info(`new nft contract is created at ${nftAddress}`);
-
     $log.info('minting token')
-    const nftContract = await tezos.bob.contract.at(nftAddress);
 
     bobAddress = await tezos.bob.signer.publicKeyHash();
     aliceAddress = await tezos.alice.signer.publicKeyHash();
@@ -84,7 +76,7 @@ describe('test NFT auction', () => {
     }
 
     auction_tokens = {
-        fa2_address : nftAddress,
+        fa2_address : nftContract.address,
         fa2_batch : [fa2_tokens]
     }
     
@@ -109,19 +101,3 @@ describe('test NFT auction', () => {
   });  
   
 });
-
-
-function extractOriginatedContractAddress(op: TransactionOperation): string {
-  const result = op.results[0];
-  if (result.kind !== OpKind.TRANSACTION)
-    throw new Error(`Unexpected operation result ${result.kind}`);
-  const txResult = result as OperationContentsAndResultTransaction;
-  if (!txResult.metadata.internal_operation_results)
-    throw new Error('Unavailable internal origination operation');
-  const internalResult = txResult.metadata.internal_operation_results[0]
-    .result as OperationResultTransaction;
-  if (!internalResult.originated_contracts)
-    throw new Error('Originated contract address is unavailable');
-
-  return internalResult.originated_contracts[0];
-}
