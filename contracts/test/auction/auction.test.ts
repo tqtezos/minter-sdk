@@ -4,7 +4,8 @@ import { bootstrap, TestTz } from '../bootstrap-sandbox';
 import { Contract, nat, bytes, address } from '../../src/type-aliases';
 import {
   originateEnglishAuctionTez,
-  MintNftParam
+  MintNftParam,
+  originateNftFaucet
 } from '../../src/nft-contracts';
 import { TezosToolkit, MichelsonMap } from '@taquito/taquito';
 
@@ -24,17 +25,28 @@ describe('test NFT auction', () => {
   let nftAuction: Contract;
   let nftAuctionBob : Contract;
   let nftAuctionAlice : Contract;
-  // let nftFactory: Contract;
+  let nftContract : Contract;
   let bobAddress : address;
   let aliceAddress : address;
   let startTime : Date;
   let endTime : Date;
+  let tokenId : BigNumber;
+  let empty_metadata_map : MichelsonMap<string, bytes>;
+  let mintToken : MintNftParam;
 
   beforeAll(async () => {
     tezos = await bootstrap();
-    // TODO: FIXME
-    // $log.info('originating nft factory...');
-    // nftFactory = await originateNftFactory(tezos.bob);
+    empty_metadata_map = new MichelsonMap();
+    tokenId = new BigNumber(0);
+    bobAddress = await tezos.bob.signer.publicKeyHash();
+    aliceAddress = await tezos.alice.signer.publicKeyHash();
+    mintToken = {
+      token_metadata: {
+        token_id: tokenId,
+        token_info: empty_metadata_map
+      },
+      owner: bobAddress
+    };
   });
 
   beforeEach(async() => {
@@ -43,29 +55,12 @@ describe('test NFT auction', () => {
     nftAuctionBob = await tezos.bob.contract.at(nftAuction.address);
     nftAuctionAlice = await tezos.alice.contract.at(nftAuction.address);
 
-    $log.info('creating nft contract');
-    const opCreate = await nftFactory.methods.default('test contract').send();
-    await opCreate.confirmation();
-    const nftAddress = extractOriginatedContractAddress(opCreate);
-    $log.info(`new nft contract is created at ${nftAddress}`);
+    $log.info('originating nft faucets...');
+    nftContract = await originateNftFaucet(tezos.bob, bobAddress);
 
     $log.info('minting token')
-    const nftContract = await tezos.bob.contract.at(nftAddress);
 
-    bobAddress = await tezos.bob.signer.publicKeyHash();
-    aliceAddress = await tezos.alice.signer.publicKeyHash();
-    const empty_metadata_map: MichelsonMap<string, bytes> = new MichelsonMap();
-
-    const tokenId = new BigNumber(0);
-
-    const token: MintNftParam = {
-      token_metadata: {
-        token_id: tokenId,
-        token_info: empty_metadata_map
-      },
-      owner: bobAddress
-    };
-    const opMint = await nftContract.methods.mint([token]).send();
+    const opMint = await nftContract.methods.mint([mintToken]).send();
     const hash = await opMint.confirmation();
     $log.info(`Minted tokens. Consumed gas: ${opMint.consumedGas}`);
 
@@ -79,7 +74,7 @@ describe('test NFT auction', () => {
     }
 
     const tokens : Tokens = {
-        fa2_address : nftAddress,
+        fa2_address : nftContract.address,
         fa2_batch : [fa2_tokens]
     }
     
@@ -133,19 +128,3 @@ describe('test NFT auction', () => {
     return expect(smallBidPromise).rejects.toHaveProperty('errors' );
   });
 });
-
-
-function extractOriginatedContractAddress(op: TransactionOperation): string {
-  const result = op.results[0];
-  if (result.kind !== OpKind.TRANSACTION)
-    throw new Error(`Unexpected operation result ${result.kind}`);
-  const txResult = result as OperationContentsAndResultTransaction;
-  if (!txResult.metadata.internal_operation_results)
-    throw new Error('Unavailable internal origination operation');
-  const internalResult = txResult.metadata.internal_operation_results[0]
-    .result as OperationResultTransaction;
-  if (!internalResult.originated_contracts)
-    throw new Error('Originated contract address is unavailable');
-
-  return internalResult.originated_contracts[0];
-}
