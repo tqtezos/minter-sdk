@@ -8,7 +8,9 @@ node_modules
 .DS_Store
 .vscode
 *.log
+contracts/bin/tezos-client
 
 # Ligo
 *.pp.mligo
 *.pp.ligo
+contracts/bisect*.coverage
