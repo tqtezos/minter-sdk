@@ -64,16 +64,6 @@ export async function originateNft(
     return originateContract(tz, code, storage, 'nft');
 }
 
-export async function originateNftFactory(tz: TezosToolkit): Promise<Contract> {
-    const code = await compileAndLoadContract(
-        defaultEnv,
-        'minter_collection/fa2_nft_factory.mligo',
-        'factory_main',
-        'fa2_nft_factory.tz'
-    );
-    return originateContract(tz, code, '{}', 'nftFactory');
-}
-
 export async function originateNftFaucet(
     tz: TezosToolkit,
     admin: address

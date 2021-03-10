@@ -1,6 +1,6 @@
 #!/bin/bash
 
-IMAGE="registry.gitlab.com/tezos/flextesa:56f651af-run"
+IMAGE="tqtezos/flextesa:20210216"
 ENTRY="edobox"
 
 

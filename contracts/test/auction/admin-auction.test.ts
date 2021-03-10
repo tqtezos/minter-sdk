@@ -4,7 +4,6 @@ import { bootstrap, TestTz } from '../bootstrap-sandbox';
 import { Contract, nat, bytes, address } from '../../src/type-aliases';
 import {
   originateEnglishAuctionTezAdmin,
-  originateNftFactory,
   MintNftParam
 } from '../../src/nft-contracts';
 import { TezosToolkit, MichelsonMap } from '@taquito/taquito';
@@ -25,7 +24,7 @@ describe('test NFT auction', () => {
   let nftAuction: Contract;
   let nftAuctionBob : Contract;
   let nftAuctionAlice : Contract;
-  let nftFactory: Contract;
+  // let nftFactory: Contract;
   let bobAddress : address;
   let aliceAddress : address;
   let startTime : Date;
@@ -38,8 +37,9 @@ describe('test NFT auction', () => {
 
   beforeAll(async () => {
     tezos = await bootstrap();
-    $log.info('originating nft factory...');
-    nftFactory = await originateNftFactory(tezos.bob);
+    // $log.info('originating nft factory...');
+    // TODO: FIXME
+    // nftFactory = await originateNftFactory(tezos.bob);
   });
 
   beforeEach(async() => {

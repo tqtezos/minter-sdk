@@ -10,7 +10,6 @@ async function main(): Promise<void> {
 
     await compileNftFaucetContract(env);
     await compileNftContract(env);
-    await compileNftFactoryContract(env);
     await compileFixedPriceSaleMarketPlaceContract(env);
     await compileFixedPriceSaleTezMarketPlaceContract(env);
     await compileEnglishAuctionTezContract(env);
@@ -70,20 +69,6 @@ async function compileFtContract(env: LigoEnv): Promise<void> {
   $log.info('compiled NFT contract');
 }
 
-async function compileNftFactoryContract(env: LigoEnv): Promise<void> {
-  $log.info('compiling NFT factory contract');
-
-  prepareNftFactoryContract(env);
-
-  await compileContract(
-    env,
-    'minter_collection/fa2_nft_factory.mligo',
-    'factory_main',
-    'fa2_nft_factory.tz'
-  );
-  $log.info('compiled NFT factory contract');
-}
-
 async function compileFixedPriceSaleMarketPlaceContract(env: LigoEnv): Promise<void> {
     $log.info('compiling fixed price sale marketplace contract');
 
@@ -118,17 +103,6 @@ async function compileEnglishAuctionTezContract(env: LigoEnv): Promise<void> {
       'english_auction_tez.tz'
   );
   $log.info('compiled english auction tez contract');
-}
-
-function prepareNftFactoryContract(env: LigoEnv): void {
-  const templatePath = env.srcFilePath('minter_collection/fa2_nft_factory.template.mligo');
-  const template = fs.readFileSync(templatePath).toString();
-  const fs2CodePath = env.outFilePath('fa2_multi_nft_asset.tz');
-  const fs2Code = fs.readFileSync(fs2CodePath).toString();
-
-  const factoryCode = template.replace('${code}', fs2Code);
-  const factoryPath = env.srcFilePath('minter_collection/fa2_nft_factory.mligo');
-  fs.writeFileSync(factoryPath, factoryCode);
 }
 
 main();
