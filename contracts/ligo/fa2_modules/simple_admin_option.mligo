@@ -1,10 +1,11 @@
+
 (*
   One of the possible implementations of admin API for FA2 contract.
-  The admin API can change an admin address using two step confirmation pattern and
-  pause/unpause the contract. Only current admin can initiate those operations.
+  The admin API can change an admin address using two step confirmation pattern.
+  Only current admin can initiate those operations.
 
   Other entry points may guard their access using helper functions
-  `fail_if_not_admin` and `fail_if_paused`.
+  `fail_if_not_admin`.
 *)
 
 #if !SIMPLE_ADMIN
@@ -14,13 +15,11 @@
 type simple_admin =
   | Set_admin of address
   | Confirm_admin of unit
-  | Pause of bool
 
 
 type simple_admin_storage_record = {
   admin : address;
   pending_admin : address option;
-  paused : bool;
 }
 
 type simple_admin_storage = simple_admin_storage_record option
@@ -58,22 +57,6 @@ let set_admin (new_admin, storage : address * simple_admin_storage) : simple_adm
         (Some ({ s with pending_admin = Some new_admin; } : simple_admin_storage_record))
     | None -> (failwith "NO_ADMIN_CAPABILITIES_CONFIGURED" : simple_admin_storage)
 
-(*Only callable by admin*)
-let pause (paused, storage: bool * simple_admin_storage) : simple_admin_storage =
-  let u = fail_if_not_admin storage in
-  match storage with
-    | Some s ->
-        (Some ({ s with paused = paused; } : simple_admin_storage_record ))
-    | None -> (failwith "NO_ADMIN_CAPABILITIES_CONFIGURED" : simple_admin_storage)
-
-let fail_if_paused (storage : simple_admin_storage) : unit =
-  match storage with
-    | Some a ->
-        if a.paused
-        then failwith "PAUSED"
-        else unit
-    | None -> unit
-
 let simple_admin (param, storage : simple_admin *simple_admin_storage)
     : (operation list) * (simple_admin_storage) =
   match param with
@@ -85,8 +68,5 @@ let simple_admin (param, storage : simple_admin *simple_admin_storage)
       let new_s = confirm_new_admin storage in
       (([]: operation list), new_s)
 
-  | Pause paused ->
-      let new_s = pause (paused, storage) in
-      (([]: operation list), new_s)
 
 #endif

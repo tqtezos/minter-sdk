@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import * as fs from 'fs';
-import { defaultEnv, LigoEnv, compileContract } from './ligo';
+import { defaultEnv, LigoEnv, compileContract} from './ligo';
 import { $log } from '@tsed/logger';
 
 async function main(): Promise<void> {
