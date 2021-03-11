@@ -1217,7 +1217,7 @@
                      SWAP ;
                      EXEC ;
                      DROP ;
-                     PUSH string "Opening price must be greater than 0mutez" ;
+                     PUSH string "Opening price must be greater than 0 tokens" ;
                      PUSH nat 0 ;
                      DIG 2 ;
                      DUP ;
