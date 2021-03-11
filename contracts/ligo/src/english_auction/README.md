@@ -36,7 +36,7 @@ bigmap %auctions nat %asset_id {
 #The admin API can change an admin address using two step confirmation pattern.
 #Admin can also pause/unpause the contract. 
 #This functionality is optional. 
-simple_admin_storage %simple_admin 
+pauseable_admin_storage %pauseable_admin 
 
 ```
 These storage variables are used to determine the state of the auction as follows: 

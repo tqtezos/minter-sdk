@@ -13,7 +13,7 @@
                                                  (pair (timestamp %start_time) (timestamp %end_time))))))))))
         (nat %resolve)) ;
   storage
-    (pair (option %simple_admin
+    (pair (option %pauseable_admin
              (pair (pair (address %admin) (bool %paused)) (option %pending_admin address)))
           (pair (nat %current_id)
                 (pair (nat %max_auction_time)
