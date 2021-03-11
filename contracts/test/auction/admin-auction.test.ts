@@ -4,8 +4,8 @@ import { bootstrap, TestTz } from '../bootstrap-sandbox';
 import { Contract, nat, bytes, address } from '../../src/type-aliases';
 import {
   originateEnglishAuctionTezAdmin,
-  originateNftFactory,
-  MintNftParam
+  MintNftParam,
+  originateNftFaucet
 } from '../../src/nft-contracts';
 import { TezosToolkit, MichelsonMap } from '@taquito/taquito';
 
@@ -25,7 +25,7 @@ describe('test NFT auction', () => {
   let nftAuction: Contract;
   let nftAuctionBob : Contract;
   let nftAuctionAlice : Contract;
-  let nftFactory: Contract;
+  let nftContract : Contract;
   let bobAddress : address;
   let aliceAddress : address;
   let startTime : Date;
@@ -38,8 +38,7 @@ describe('test NFT auction', () => {
 
   beforeAll(async () => {
     tezos = await bootstrap();
-    $log.info('originating nft factory...');
-    nftFactory = await originateNftFactory(tezos.bob);
+    nftContract = await originateNftFaucet(tezos.bob, bobAddress);
   });
 
   beforeEach(async() => {
@@ -48,14 +47,7 @@ describe('test NFT auction', () => {
     nftAuctionBob = await tezos.bob.contract.at(nftAuction.address);
     nftAuctionAlice = await tezos.alice.contract.at(nftAuction.address);
 
-    $log.info('creating nft contract');
-    const opCreate = await nftFactory.methods.default('test contract').send();
-    await opCreate.confirmation();
-    const nftAddress = extractOriginatedContractAddress(opCreate);
-    $log.info(`new nft contract is created at ${nftAddress}`);
-
     $log.info('minting token')
-    const nftContract = await tezos.bob.contract.at(nftAddress);
 
     bobAddress = await tezos.bob.signer.publicKeyHash();
     aliceAddress = await tezos.alice.signer.publicKeyHash();
@@ -84,7 +76,7 @@ describe('test NFT auction', () => {
     }
 
     auction_tokens = {
-        fa2_address : nftAddress,
+        fa2_address : nftContract.address,
         fa2_batch : [fa2_tokens]
     }
     
@@ -107,58 +99,5 @@ describe('test NFT auction', () => {
     const opAuctionPromise = nftAuctionAlice.methods.configure(new BigNumber(10000000), new BigNumber(10), new BigNumber(10000000), new BigNumber(3600), new BigNumber(300), [auction_tokens], startTime, endTime).send({amount : 10});
     return expect(opAuctionPromise).rejects.toHaveProperty('message', "NOT_AN_ADMIN");
   });  
-  test('bid of less than asking price should fail', async() => {
-    $log.info(`Alice bids 9tz expecting it to fail`);
-    const failedOpeningBid = nftAuctionAlice.methods.bid(0).send({amount : 9});
-    return expect(failedOpeningBid).rejects.toHaveProperty('message', 'Bid must raised by at least min_raise_percent of the previous bid or at least opening price if it is the first bid');
-  });
-  test('place bid meeting opening price and then raise it by valid amount by min_raise_percent', async () => {
-    $log.info(`Alice bids 10tz`);
-    const opBid = await nftAuctionAlice.methods.bid(0).send({amount : 10});
-    await opBid.confirmation();
-    $log.info(`Bid placed. Amount sent: ${opBid.amount} mutez`);
-    
-    $log.info(`Alice bids 11tz, a 10% raise of previous bid but less than a 10tz increase`)
-    const opBid2 = await nftAuctionAlice.methods.bid(0).send({amount : 11});
-    await opBid2.confirmation();
-    $log.info(`Bid placed. Amount sent: ${opBid2.amount} mutez`);
-  });
-
-  test('place bid meeting opening price and then raise it by valid amount by min_raise', async () => {
-    $log.info(`Alice bids 200tz`);
-    const opBid = await nftAuctionAlice.methods.bid(0).send({amount : 200});
-    await opBid.confirmation();
-    $log.info(`Bid placed. Amount sent: ${opBid.amount} mutez`);
-    
-    $log.info(`Alice bids 210tz, a 10tz increase but less than a 10% raise of previous bid `)
-    const opBid2 = await nftAuctionAlice.methods.bid(0).send({amount : 210});
-    await opBid2.confirmation();
-    $log.info(`Bid placed. Amount sent: ${opBid2.amount} mutez`);
-  });
-
-  test('bid too small should fail', async () => {
-    $log.info(`Alice bids 20tz`);
-    const opBid = await nftAuctionAlice.methods.bid(0).send({amount : 20});
-    await opBid.confirmation();
-    $log.info(`Bid placed. Amount sent: ${opBid.amount}`);
-    $log.info(`Alice bids 21tz and we expect it to fail`);
-    const smallBidPromise = nftAuctionAlice.methods.bid(0).send({amount : 21});
-    return expect(smallBidPromise).rejects.toHaveProperty('message', 'Bid must raised by at least min_raise_percent of the previous bid or at least opening price if it is the first bid');
-  });
+  
 });
-
-
-function extractOriginatedContractAddress(op: TransactionOperation): string {
-  const result = op.results[0];
-  if (result.kind !== OpKind.TRANSACTION)
-    throw new Error(`Unexpected operation result ${result.kind}`);
-  const txResult = result as OperationContentsAndResultTransaction;
-  if (!txResult.metadata.internal_operation_results)
-    throw new Error('Unavailable internal origination operation');
-  const internalResult = txResult.metadata.internal_operation_results[0]
-    .result as OperationResultTransaction;
-  if (!internalResult.originated_contracts)
-    throw new Error('Originated contract address is unavailable');
-
-  return internalResult.originated_contracts[0];
-}
