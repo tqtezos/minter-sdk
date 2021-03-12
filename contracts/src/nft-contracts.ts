@@ -45,7 +45,7 @@ export async function originateNft(
 ): Promise<Contract> {
     const code = await compileAndLoadContract(
         defaultEnv,
-        'fa2_multi_nft_asset.mligo',
+        'minter_collection/fa2_multi_nft_asset.mligo',
         'nft_asset_main',
         'fa2_multi_nft_asset.tz'
     );
@@ -64,23 +64,13 @@ export async function originateNft(
     return originateContract(tz, code, storage, 'nft');
 }
 
-export async function originateNftFactory(tz: TezosToolkit): Promise<Contract> {
-    const code = await compileAndLoadContract(
-        defaultEnv,
-        'fa2_nft_factory.mligo',
-        'factory_main',
-        'fa2_nft_factory.tz'
-    );
-    return originateContract(tz, code, '{}', 'nftFactory');
-}
-
 export async function originateNftFaucet(
     tz: TezosToolkit,
     admin: address
 ): Promise<Contract> {
     const code = await compileAndLoadContract(
         defaultEnv,
-        'fa2_multi_nft_faucet.mligo',
+        'minter_collection/fa2_multi_nft_faucet.mligo',
         'nft_faucet_main',
         'fa2_multi_nft_faucet.tz'
     );
@@ -105,7 +95,7 @@ export async function originateFtFaucet(
 ): Promise<Contract> {
     const code = await compileAndLoadContract(
         defaultEnv,
-        'fa2_multi_ft_faucet.mligo',
+        'minter_collection/fa2_multi_ft_faucet.mligo',
         'ft_faucet_main',
         'fa2_multi_ft_faucet.tz'
     );
@@ -130,11 +120,11 @@ export async function originateFixedPriceSale(
 ): Promise<Contract> {
     const code = await compileAndLoadContract(
         defaultEnv,
-        'fixed_price_sale_market.mligo',
+        'fixed_price_sale/fixed_price_sale_market.mligo',
         'fixed_price_sale_main',
         'fixed_price_sale_market.tz',
     );
-    const storage = `{}`;
+    const storage = `(Pair None {})`;
     return originateContract(tz, code, storage, 'fixed-price-sale-market');
 }
 
@@ -143,11 +133,11 @@ export async function originateFixedPriceTezSale(
 ): Promise<Contract> {
     const code = await compileAndLoadContract(
         defaultEnv,
-        'fixed_price_sale_market_tez.mligo',
+        'fixed_price_sale/fixed_price_sale_market_tez.mligo',
         'fixed_price_sale_tez_main',
         'fixed_price_sale_market_tez.tz',
     );
-    const storage = `{}`;
+    const storage = `(Pair None {})`;
     return originateContract(tz, code, storage, 'fixed-price-sale-market-tez');
 }
 
@@ -157,11 +147,11 @@ export async function originateFixedPriceAdminSale(
 ): Promise<Contract> {
     const code = await compileAndLoadContract(
         defaultEnv,
-        'fixed_price_sale_market_with_admin.mligo',
+        'fixed_price_sale/fixed_price_sale_market.mligo',
         'fixed_price_sale_main',
-        'fixed_price_sale_market_with_admin.tz'
+        'fixed_price_sale_market.tz'
     );
-    const storage = `(Pair (Pair (Pair \"${adminAddress}\" False) None) {})`;
+    const storage = `(Pair (Some (Pair (Pair "${adminAddress}" False) None)) {})`;
     return originateContract(tz, code, storage, 'fixed-price-sale-market-with-admin');
 }
 
@@ -171,11 +161,11 @@ export async function originateFixedPriceTezAdminSale(
 ): Promise<Contract> {
     const code = await compileAndLoadContract(
         defaultEnv,
-        'fixed_price_sale_market_tez_with_adminx.mligo',
+        'fixed_price_sale/fixed_price_sale_market_tez.mligo',
         'fixed_price_sale_tez_main',
-        'fixed_price_sale_market_tez_with_admin.tz',
+        'fixed_price_sale_market_tez.tz',
     );
-    const storage = `(Pair (Pair (Pair \"${adminAddress}\" False) None) {})`;
+    const storage = `(Pair (Some (Pair (Pair "${adminAddress}" False) None)) {})`
     return originateContract(tz, code, storage, 'fixed-price-sale-market-tez-with-admin');
 }
 
@@ -184,11 +174,12 @@ export async function originateEnglishAuctionTez(
 ): Promise<Contract> {
     const code = await compileAndLoadContract(
         defaultEnv,
-        'auction/english_auction_tez.mligo',
+        'english_auction/english_auction_tez.mligo',
         'english_auction_tez_main',
         'english_auction_tez.tz',
     );
-    const storage = `(Pair 0 (Pair 86400 (Pair 86400 {})))`;
+    const tzAddress = await tz.signer.publicKeyHash();
+    const storage = `(Pair None (Pair 0 (Pair 86400 (Pair 86400 {}))))`;
     return originateContract(tz, code, storage, 'english_auction_tez');
 }
 
@@ -197,12 +188,12 @@ export async function originateEnglishAuctionTezAdmin(
 ): Promise<Contract> {
     const code = await compileAndLoadContract(
         defaultEnv,
-        'auction/english_auction_tez_admin.mligo',
-        'english_auction_tez_admin_main',
-        'english_auction_tez_admin.tz',
+        'english_auction/english_auction_tez.mligo',
+        'english_auction_tez_main',
+        'english_auction_tez.tz',
     );
     const tzAddress = await tz.signer.publicKeyHash();
-    const storage = `(Pair (Pair (Pair "${tzAddress}" False) None) (Pair 0 (Pair 86400 (Pair 86400 {}))))`;
+    const storage = `(Pair (Some (Pair (Pair "${tzAddress}" False) None)) (Pair 0 (Pair 86400 (Pair 86400 {}))))`;
     return originateContract(tz, code, storage, 'english_auction_tez_admin');
 }
 

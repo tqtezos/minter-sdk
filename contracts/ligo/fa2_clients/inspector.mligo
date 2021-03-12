@@ -20,19 +20,24 @@ let main (p, s : param * storage) : (operation list) * storage =
 
   | Query q ->
     (* preparing balance_of request and invoking FA2 *)
-    let bp : balance_of_param = {
+    let mcb = (Tezos.get_entrypoint_opt "%response" Current.self_address : (balance_of_response list) contract option) in
+    let cb = match mcb with
+      | None -> (failwith "CANNOT_GET_CONTRACT_ENTRYPOINT_RESPONSE" : (balance_of_response list) contract)
+      | Some cb -> cb
+    in let bp : balance_of_param = {
       requests = q.requests;
-      callback =
-        (Operation.get_entrypoint "%response" Current.self_address :
-          (balance_of_response list) contract);
+      callback = cb;
     } in
-    let fa2 : balance_of_param contract = 
-      Operation.get_entrypoint "%balance_of" q.fa2 in
-    let q_op = Operation.transaction bp 0mutez fa2 in
+    let mfa2 : balance_of_param contract option =
+      Tezos.get_entrypoint_opt "%balance_of" q.fa2 in
+    let fa2 : balance_of_param contract = match mfa2 with
+      | None -> (failwith "CANNOT_ACCESS_CONTRACT_ENTRYPOINT_BALANCE_OF_PARAM" : balance_of_param contract)
+      | Some fa2 -> fa2
+    in let q_op = Tezos.transaction bp 0mutez fa2 in
     [q_op], s
 
   | Response responses ->
-    (* 
+    (*
     getting FA2 balance_of_response and putting it into storage
     for off-chain inspection
     *)

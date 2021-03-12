@@ -1,9 +1,9 @@
 #if !FA2_MAC_TOKEN
 #define FA2_MAC_TOKEN
 
-#include "../fa2/fa2_interface.mligo"
-#include "../fa2/fa2_errors.mligo"
-#include "../fa2/lib/fa2_operator_lib.mligo"
+#include "../../fa2/fa2_interface.mligo"
+#include "../../fa2/fa2_errors.mligo"
+#include "../../fa2/lib/fa2_operator_lib.mligo"
 
 (* (owner,token_id) -> balance *)
 type ledger = ((address * token_id), nat) big_map

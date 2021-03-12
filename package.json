@@ -1,25 +1,25 @@
 {
-  "name": "minter-contracts",
+  "name": "minter-sdk",
   "version": "1.0.0",
   "description": "smart contracts tests using flextesa sandbox and taquito",
   "main": "index.js",
   "scripts": {
     "test": "jest --runInBand",
-    "start-sandbox": "../flextesa/start-sandbox.sh",
-    "kill-sandbox": "../flextesa/kill-sandbox.sh",
+    "start-sandbox": "flextesa/start-sandbox.sh",
+    "kill-sandbox": "flextesa/kill-sandbox.sh",
     "build:watch": "tsc -w -p .",
-    "compile-contracts": "ts-node src/compile-contracts.ts",
-    "bootstrap": "ts-node src/bootstrap-contracts-config.ts",
-    "bootstrap-sandbox": "env TZ_NETWORK=sandbox ts-node src/bootstrap-contracts-config.ts",
-    "bootstrap-testnet": "env TZ_NETWORK=testnet ts-node src/bootstrap-contracts-config.ts",
-    "bootstrap-mainnet": "env TZ_NETWORK=mainnet ts-node src/bootstrap-contracts-config.ts"
+    "compile-contracts": "ts-node contracts/src/compile-contracts.ts",
+    "bootstrap": "ts-node contracts/src/bootstrap-contracts-config.ts",
+    "bootstrap-sandbox": "env TZ_NETWORK=sandbox ts-node contracts/src/bootstrap-contracts-config.ts",
+    "bootstrap-testnet": "env TZ_NETWORK=testnet ts-node contracts/src/bootstrap-contracts-config.ts",
+    "bootstrap-mainnet": "env TZ_NETWORK=mainnet ts-node contracts/src/bootstrap-contracts-config.ts"
   },
   "bin": {
     "compile-contracts": "ts-node src/compile-contracts.ts",
     "bootstrap": "ts-node src/bootstrap-contracts-config.ts",
-    "bootstrap-sandbox": "env TZ_NETWORK=sandbox ts-node src/bootstrap-contracts-config.ts",
-    "bootstrap-testnet": "env TZ_NETWORK=testnet ts-node src/bootstrap-contracts-config.ts",
-    "bootstrap-mainnet": "env TZ_NETWORK=mainnet ts-node src/bootstrap-contracts-config.ts"
+    "bootstrap-sandbox": "env TZ_NETWORK=sandbox ts-node contracts/src/bootstrap-contracts-config.ts",
+    "bootstrap-testnet": "env TZ_NETWORK=testnet ts-node contracts/src/bootstrap-contracts-config.ts",
+    "bootstrap-mainnet": "env TZ_NETWORK=mainnet ts-node contracts/src/bootstrap-contracts-config.ts"
   },
   "author": "",
   "license": "MIT",

@@ -60,9 +60,8 @@ export async function bootstrap(): Promise<TestTz> {
 
 export async function adminBootstrap(): Promise<TezosToolkit> {
 
-    // NOTE: MAKE SURE TO CHANGE THIS PIECE OF CODE
-    // I HAD TO CREATE AN ACCOUNT WITH TEZOS-CLIENT. THIS WILL NOT WORK IN FUTURE TESTS.
-    const secret = 'edsk3hkSt6KzF1DmAiASq8xgZTdnvEtgP1fFeW2wEh3oJbAozpb8Ke';
+    // SECRET MAY HAVE TO BE UPDATED
+    const secret = 'edsk3g1kc8UzJJhZn6kTecW6vb6m1qnaWXYDFahGHqcmLbepUT3pFe';
     const adminSigner = await InMemorySigner.fromSecretKey(secret);
     const rpc = 'http://localhost:20000';
     return signerToToolkit(adminSigner, rpc);

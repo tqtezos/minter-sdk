@@ -33,7 +33,7 @@
   code { LAMBDA
            (pair bool string)
            unit
-           { DUP ; CAR ; NOT ; IF { CDR ; FAILWITH } { DROP ; UNIT } } ;
+           { UNPAIR ; NOT ; IF { FAILWITH } { DROP ; UNIT } } ;
          LAMBDA
            address
            (lambda address (lambda (pair address (list (pair nat nat))) operation))
@@ -63,17 +63,12 @@
                      DUP ;
                      DUG 3 ;
                      CDR ;
-                     PAIR ;
-                     PAIR ;
-                     DUP ;
-                     CAR ;
-                     CAR ;
-                     MAP { SWAP ; DUP ; DUG 2 ; CDR ; PAIR } ;
+                     MAP { DIG 2 ; DUP ; DUG 3 ; PAIR } ;
+                     DIG 2 ;
+                     DROP ;
                      NIL (pair address (list (pair address (pair nat nat)))) ;
                      SWAP ;
                      DIG 2 ;
-                     CAR ;
-                     CDR ;
                      PAIR ;
                      CONS ;
                      SWAP ;
@@ -99,27 +94,25 @@
              SWAP ;
              CAR ;
              SWAP ;
-             DUP ;
-             CAR ;
-             CAR ;
-             MAP { SWAP ;
+             UNPAIR ;
+             UNPAIR ;
+             MAP { DIG 2 ;
                    DUP ;
-                   DUG 2 ;
-                   CDR ;
+                   DUG 3 ;
                    DIG 2 ;
                    DUP ;
                    DUG 3 ;
-                   CAR ;
-                   CDR ;
-                   DIG 4 ;
+                   DIG 5 ;
                    DUP ;
-                   DUG 5 ;
+                   DUG 6 ;
                    SWAP ;
                    EXEC ;
                    SWAP ;
                    EXEC ;
                    SWAP ;
                    EXEC } ;
+             SWAP ;
+             DROP ;
              SWAP ;
              DROP ;
              SWAP ;
@@ -149,13 +142,12 @@
                                          (pair int
                                                (pair (list (pair address (list (pair nat nat))))
                                                      (pair nat (pair mutez (pair timestamp address))))))))))
-           { DUP ;
-             CDR ;
+           { UNPAIR ;
+             SWAP ;
              CDR ;
              CDR ;
              CDR ;
              SWAP ;
-             CAR ;
              GET ;
              IF_NONE
                { PUSH string "Auction does not exist for given asset_id" ; FAILWITH }
@@ -209,32 +201,18 @@
              OR } ;
          LAMBDA key address { HASH_KEY ; IMPLICIT_ACCOUNT ; ADDRESS } ;
          DIG 7 ;
-         DUP ;
-         DUG 8 ;
-         CDR ;
-         DIG 8 ;
-         CAR ;
+         UNPAIR ;
          IF_LEFT
            { DIG 2 ;
              DROP ;
              DIG 6 ;
              DROP ;
-             SELF ;
-             ADDRESS ;
+             SELF_ADDRESS ;
              DIG 2 ;
              DUP ;
              DUG 3 ;
              CAR ;
              DIG 2 ;
-             PAIR ;
-             PAIR ;
-             DUP ;
-             CDR ;
-             SWAP ;
-             DUP ;
-             DUG 2 ;
-             CAR ;
-             CDR ;
              PUSH string "Sender must be an implicit account" ;
              SOURCE ;
              SENDER ;
@@ -247,9 +225,6 @@
              SWAP ;
              EXEC ;
              DROP ;
-             DIG 2 ;
-             CAR ;
-             CAR ;
              IF_LEFT
                { IF_LEFT
                    { DIG 2 ;
@@ -704,17 +679,7 @@
                      DIG 2 ;
                      CONS ;
                      PAIR }
-                   { PAIR ;
-                     PAIR ;
-                     DUP ;
-                     CAR ;
-                     CDR ;
-                     SWAP ;
-                     DUP ;
-                     DUG 2 ;
-                     CAR ;
-                     CAR ;
-                     SWAP ;
+                   { SWAP ;
                      DUP ;
                      DUG 2 ;
                      SWAP ;
@@ -767,7 +732,6 @@
                      DUP ;
                      CAR ;
                      DIG 4 ;
-                     CDR ;
                      DIG 2 ;
                      DUP ;
                      DUG 3 ;
@@ -840,17 +804,7 @@
                      DUG 2 ;
                      CONS ;
                      PAIR } }
-               { PAIR ;
-                 PAIR ;
-                 DUP ;
-                 CAR ;
-                 CDR ;
-                 SWAP ;
-                 DUP ;
-                 DUG 2 ;
-                 CAR ;
-                 CAR ;
-                 SWAP ;
+               { SWAP ;
                  DUP ;
                  DUG 2 ;
                  SWAP ;
@@ -896,7 +850,6 @@
                  CDR ;
                  CDR ;
                  DIG 4 ;
-                 CDR ;
                  DIG 2 ;
                  DUP ;
                  DUG 3 ;
@@ -960,15 +913,12 @@
                  DUG 2 ;
                  CONS ;
                  PAIR } ;
-             SWAP ;
+             UNPAIR ;
+             DIG 2 ;
              CDR ;
-             SWAP ;
-             DUP ;
-             DUG 2 ;
-             CDR ;
+             DIG 2 ;
              PAIR ;
              SWAP ;
-             CAR ;
              PAIR }
            { DIG 3 ;
              DROP ;
@@ -998,16 +948,8 @@
                                                                                              (pair nat (pair mutez (pair timestamp address))))))))))))))
                               nat)) ;
              LOOP_LEFT
-               { DUP ;
-                 CDR ;
-                 SWAP ;
-                 DUP ;
-                 DUG 2 ;
-                 CAR ;
-                 CDR ;
-                 DIG 2 ;
-                 CAR ;
-                 CAR ;
+               { UNPAIR ;
+                 UNPAIR ;
                  DUP ;
                  IF_CONS
                    { SWAP ; DROP ; SOME }
@@ -1050,8 +992,7 @@
                      DUP ;
                      CDR ;
                      IF_NONE
-                       { SELF ;
-                         ADDRESS ;
+                       { SELF_ADDRESS ;
                          DIG 2 ;
                          DUP ;
                          DUG 3 ;
@@ -1059,13 +1000,9 @@
                          DIG 2 ;
                          CAR ;
                          PAIR ;
-                         PAIR ;
-                         DUP ;
-                         CAR ;
-                         CDR ;
                          SWAP ;
-                         CAR ;
-                         CAR ;
+                         DROP ;
+                         UNPAIR ;
                          PUSH string "end_time must be after start_time" ;
                          SWAP ;
                          DUP ;
@@ -1717,44 +1654,33 @@
                      CDR ;
                      CAR ;
                      PAIR ;
-                     SELF ;
-                     ADDRESS ;
+                     SELF_ADDRESS ;
                      DIG 2 ;
                      PAIR ;
                      PAIR ;
                      LEFT (list operation) ;
                      LOOP_LEFT
-                       { DUP ;
-                         CDR ;
-                         CDR ;
-                         SWAP ;
-                         DUP ;
-                         DUG 2 ;
-                         CDR ;
-                         CAR ;
+                       { UNPAIR ;
+                         UNPAIR ;
                          DIG 2 ;
+                         UNPAIR ;
                          DUP ;
-                         DUG 3 ;
-                         CAR ;
-                         CDR ;
-                         DIG 3 ;
-                         CAR ;
-                         CAR ;
-                         DIG 2 ;
-                         DUP ;
-                         DUG 3 ;
                          IF_CONS { SWAP ; DROP ; SOME } { NONE (pair address (list (pair nat nat))) } ;
                          IF_NONE
-                           { DROP 3 ;
+                           { DROP ;
+                             SWAP ;
+                             DROP ;
+                             SWAP ;
+                             DROP ;
                              RIGHT
                                (pair (pair address address)
                                      (pair (list (pair address (list (pair nat nat)))) (list operation))) }
-                           { DIG 2 ;
+                           { DIG 4 ;
                              DUP ;
-                             DUG 3 ;
-                             DIG 2 ;
+                             DUG 5 ;
+                             DIG 4 ;
                              DUP ;
-                             DUG 3 ;
+                             DUG 5 ;
                              DIG 10 ;
                              DUP ;
                              DUG 11 ;
@@ -1764,19 +1690,11 @@
                              EXEC ;
                              SWAP ;
                              EXEC ;
-                             DIG 3 ;
+                             SWAP ;
                              IF_CONS { DROP ; SOME } { NONE (list (pair address (list (pair nat nat)))) } ;
                              IF_NONE
                                { DROP 4 ; PUSH string "INTERNAL_ERROR" ; FAILWITH }
-                               { DIG 4 ;
-                                 DIG 2 ;
-                                 CONS ;
-                                 SWAP ;
-                                 PAIR ;
-                                 DUG 2 ;
-                                 PAIR ;
-                                 PAIR ;
-                                 LEFT (list operation) } } } ;
+                               { DUG 2 ; CONS ; SWAP ; PAIR ; DUG 2 ; PAIR ; PAIR ; LEFT (list operation) } } } ;
                      DIG 2 ;
                      IF_CONS
                        { DROP ; SOME }
