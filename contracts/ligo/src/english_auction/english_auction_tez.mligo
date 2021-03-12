@@ -43,12 +43,15 @@ type configure_param =
     end_time : timestamp;
   }
 
-type auction_entrypoints =
-  | Configure of configure_param
+type auction_without_configure_entrypoints =
   | Bid of nat
   | Cancel of nat
   | Resolve of nat
   | Admin of pauseable_admin
+
+type auction_entrypoints =
+  | Configure of configure_param
+  | AdminAndInteract of auction_without_configure_entrypoints
 
 type storage =
   [@layout:comb]
@@ -91,6 +94,18 @@ let tokens_to_operation(from_ : address) (to_ : address) (tokens : tokens): oper
 let tokens_to_operation_list((tokens_list, from_, to_) : tokens list * address * address) : (operation list) =
    (List.map (tokens_to_operation from_ to_) tokens_list)
 
+let rec tokens_list_to_operation_list_append (from_, to_, tokens_list, op_list : address * address * tokens list * (operation list)) :  (operation list) =
+  let tokens = List.head_opt tokens_list in 
+  let new_tokens_list = List.tail_opt tokens_list in 
+  match tokens with 
+    | Some t -> 
+        let op = (tokens_to_operation from_ to_ t) in 
+        let new_op_list : operation list = (op :: op_list) in
+        (match new_tokens_list with 
+          | Some tl -> tokens_list_to_operation_list_append(from_, to_, tl, new_op_list)
+          | None -> (failwith "INTERNAL_ERROR" : operation list))
+    | None -> op_list
+
 let get_auction_data ((asset_id, storage) : nat * storage) : auction =
   match (Big_map.find_opt asset_id storage.auctions) with
       None -> (failwith "Auction does not exist for given asset_id" : auction)
@@ -128,15 +143,13 @@ let valid_bid_amount (auction : auction) : bool =
   (Tezos.amount >= auction.current_bid + auction.min_raise)                                            ||
   ((Tezos.amount >= auction.current_bid) && first_bid(auction))
 
-let configure_auction(configure_param, storage : configure_param * storage) : return = begin
-    (fail_if_not_admin storage.pauseable_admin (None : string option));
-    (fail_if_paused storage.pauseable_admin);
+let configure_auction_storage(configure_param, storage : configure_param * storage ) : storage = begin
     assert_msg (configure_param.end_time > configure_param.start_time, "end_time must be after start_time");
     assert_msg (abs(configure_param.end_time - configure_param.start_time) <= storage.max_auction_time, "Auction time must be less than max_auction_time");
-
+    
     assert_msg (configure_param.start_time >= Tezos.now, "Start_time must not have already passed");
     assert_msg (abs(configure_param.start_time - Tezos.now) <= storage.max_config_to_start_time, "start_time must not be greater than the sum of current time and max_config_to_start_time");
-
+    
     assert_msg (configure_param.opening_price > 0mutez, "Opening price must be greater than 0mutez");
     assert_msg (Tezos.amount = configure_param.opening_price, "Amount must be equal to opening_price");
     assert_msg (configure_param.round_time > 0n, "Round_time must be greater than 0 seconds");
@@ -152,12 +165,16 @@ let configure_auction(configure_param, storage : configure_param * storage) : re
       min_raise = configure_param.min_raise;
       end_time = configure_param.end_time;
       highest_bidder = Tezos.sender;
-      last_bid_time = configure_param.start_time;
+      last_bid_time = configure_param.start_time; 
     } in
     let updated_auctions : (nat, auction) big_map = Big_map.update storage.current_id (Some auction_data) storage.auctions in
-    let fa2_transfers : operation list = tokens_to_operation_list(configure_param.asset, Tezos.sender, Tezos.self_address) in
-    (fa2_transfers, {storage with auctions = updated_auctions; current_id = storage.current_id + 1n})
+    {storage with auctions = updated_auctions; current_id = storage.current_id + 1n}
   end
+
+let configure_auction(configure_param, storage : configure_param * storage) : return = 
+    let new_storage = configure_auction_storage(configure_param, storage) in
+    let fa2_transfers : operation list = tokens_to_operation_list(configure_param.asset, Tezos.sender, Tezos.self_address) in
+    (fa2_transfers, new_storage)
 
 let resolve_auction(asset_id, storage : nat * storage) : return = begin
     (fail_if_paused storage.pauseable_admin);
@@ -211,9 +228,13 @@ let admin(admin_param, storage : pauseable_admin * storage) : return =
     let new_storage = { storage with pauseable_admin = pauseable_admin; } in
     ops, new_storage
 
-let english_auction_tez_main (p,storage : auction_entrypoints * storage) : return = match p with
-    | Configure config -> configure_auction(config, storage)
+let english_auction_tez_no_configure (p,storage : auction_without_configure_entrypoints * storage) : return = 
+  match p with
     | Bid asset_id -> place_bid(asset_id, storage)
     | Cancel asset_id -> cancel_auction(asset_id, storage)
     | Resolve asset_id -> resolve_auction(asset_id, storage)
     | Admin a -> admin(a, storage)
+
+let english_auction_tez_main (p,storage : auction_entrypoints * storage) : return = match p with
+    | Configure config -> configure_auction(config, storage)
+    | AdminAndInteract ai -> english_auction_tez_no_configure(ai, storage)
