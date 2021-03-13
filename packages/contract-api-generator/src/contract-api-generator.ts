@@ -85,9 +85,10 @@ ${tabs(indent)}`;
             return `${typeToCode(t.array.item, indent)}[]`;
         }
         if (t.map) {
-            return `{
-${tabs(indent + 1)}[key: ${typeToCode(t.map.key, indent)}]: ${typeToCode(t.map.value, indent + 1)};
-${tabs(indent)}}`;
+            //             return `{
+            // ${tabs(indent + 1)}[key: ${typeToCode(t.map.key, indent)}]: ${typeToCode(t.map.value, indent + 1)};
+            // ${tabs(indent)}}`;
+            return `Map<${typeToCode(t.map.key, indent)}, ${typeToCode(t.map.value, indent)}>`;
         }
         if (t.fields) {
             return `{${toIndentedItems(indent, ``,
