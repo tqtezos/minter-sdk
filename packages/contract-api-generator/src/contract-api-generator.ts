@@ -85,7 +85,9 @@ ${tabs(indent)}`;
             return `${typeToCode(t.array.item, indent)}[]`;
         }
         if (t.map) {
-            return `{ [key: ${typeToCode(t.map.key, indent)}]:${typeToCode(t.map.value, indent)}}`;
+            return `{
+${tabs(indent + 1)}[key: ${typeToCode(t.map.key, indent)}]: ${typeToCode(t.map.value, indent + 1)};
+${tabs(indent)}}`;
         }
         if (t.fields) {
             return `{${toIndentedItems(indent, ``,
