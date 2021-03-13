@@ -31,14 +31,17 @@ export const generateContractApi = (contractScript: string): {
         throw new GenerateApiError(`Could not parse contract script`, contractScript);
     }
 
-    const storage = contract.find(x => x.prim === `storage`) as undefined | M.MichelsonContractStorage;
-    const parameter = contract.find(x => x.prim === `parameter`) as undefined | M.MichelsonContractParameter;
+    const contractStorage = contract.find(x => x.prim === `storage`) as undefined | M.MichelsonContractStorage;
+    const contractParameter = contract.find(x => x.prim === `parameter`) as undefined | M.MichelsonContractParameter;
 
-    const parameterResult = parameter && visitContractParameter(parameter);
+    const storageResult = contractStorage && visitContractStorage(contractStorage);
+    const storage = storageResult ?? { storage: { raw: ``, fields: [] } };
+
+    const parameterResult = contractParameter && visitContractParameter(contractParameter);
     const methods = parameterResult?.methods ?? [];
     const { schemaMethods } = toSchema(methods);
 
-    const typescriptCode = toTypescriptCode(methods);
+    const typescriptCode = toTypescriptCode(storage, methods);
 
     // console.log(`methods`);
     // console.log(methods);
@@ -60,7 +63,7 @@ export const generateContractApi = (contractScript: string): {
     };
 };
 
-const toTypescriptCode = (methods: TypedMethod[]): {
+const toTypescriptCode = (storage: TypedStorage, methods: TypedMethod[]): {
     final: string;
     methods: string;
 } => {
@@ -127,8 +130,13 @@ ${tabs(indent)}`;
         return methodsTypeCode;
     };
 
+    const storageToCode = (indent: number) => {
+        const storageTypeCode = `type Storage = ${typeToCode(storage.storage, indent)};`;
+        return storageTypeCode;
+    };
+
     const methodsCode = methodsToCode(0);
-    const storageCode = `type Storage = {};`;
+    const storageCode = storageToCode(0);
 
     const finalCode = `
 ${storageCode}
@@ -192,6 +200,12 @@ const toSchema = (methods: TypedMethod[]) => {
     };
 };
 
+type TypedStorage = {
+    storage: {
+        raw: unknown;
+        fields: TypedVar[];
+    };
+};
 type TypedParameter = {
     methods: TypedMethod[];
 };
@@ -214,6 +228,22 @@ type TypedType = {
     array?: { item: TypedType };
     map?: { key: TypedType, value: TypedType };
     unknown?: boolean;
+};
+
+const toDebugSource = (node: M.MichelsonType) => {
+    return JSON.stringify(node);
+};
+
+const visitContractStorage = (storage: M.MichelsonContractStorage): TypedStorage => {
+    const fields = storage.args
+        .map(x => visitVar(x))
+        .flatMap(x => x);
+    return {
+        storage: {
+            raw: storage,
+            fields: fields,
+        },
+    };
 };
 
 const visitContractParameter = (parameter: M.MichelsonContractParameter): TypedParameter => {
@@ -262,6 +292,7 @@ const visitContractParameterEndpoint = (node: MMethod): TypedMethod[] => {
 type MVarArgs = M.MichelsonType;
 const visitVar = (node: MVarArgs): TypedVar[] => {
     // console.log('visitMethodArgs', { node });
+    const debug_source = toDebugSource(node);
 
     if (typeof node === `string`) {
         return [{
@@ -288,12 +319,17 @@ const visitVar = (node: MVarArgs): TypedVar[] => {
         }
     }
 
-    throw new GenerateApiError(`Unknown method args ${JSON.stringify(node, null, 2)} `, { node });
+    // Assume type?
+    return [{
+        type: visitType(node),
+    }];
+    // throw new GenerateApiError(`Unknown visitVar node: ${JSON.stringify(node, null, 2)} `, { node });
 };
 
 type MType = M.MichelsonType;
 const visitType = (node: MType): TypedType => {
     // console.log('visitType', { node });
+    const debug_source = toDebugSource(node);
 
     if (typeof node === `string`) {
         return { raw: node, value: node };
@@ -342,8 +378,8 @@ const visitType = (node: MType): TypedType => {
     }
 
     // map
-    if (node.prim === `big_map`
-        || node.prim === `map`
+    if (node.prim === `map`
+        || node.prim === `big_map`
         || node.prim === `set`
     ) {
         if (node.args.length !== 2) {
