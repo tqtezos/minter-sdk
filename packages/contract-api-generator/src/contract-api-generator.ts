@@ -146,7 +146,7 @@ ${storageCode}
 ${methodsCode}
 
 export type Contract = { methods: Methods, storage: Storage };
-    `;
+`;
     return {
         final: finalCode,
         methods: methodsCode,
