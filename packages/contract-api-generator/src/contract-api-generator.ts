@@ -35,7 +35,7 @@ export const generateContractApi = (contractScript: string): {
     const contractParameter = contract.find(x => x.prim === `parameter`) as undefined | M.MichelsonContractParameter;
 
     const storageResult = contractStorage && visitContractStorage(contractStorage);
-    const storage = storageResult ?? { storage: { raw: ``, fields: [] } };
+    const storage = storageResult ?? { storage: { raw: { prim: `never` } as M.MichelsonType, fields: [] } };
 
     const parameterResult = contractParameter && visitContractParameter(contractParameter);
     const methods = parameterResult?.methods ?? [];
@@ -79,7 +79,13 @@ ${tabs(indent)}`;
 
     const typeToCode = (t: TypedType, indent: number): string => {
         if (t.typescriptType) {
-            return `${t.typescriptType}`;
+            //return `${t.typescriptType}`;
+            // Strict mode
+            if (t.typescriptType === `boolean`) {
+                return `${t.typescriptType}`;
+            }
+
+            return `${t.typescriptType} & { __type: '${`prim` in t.raw ? t.raw.prim : `unknown`}' }`;
         }
         if (t.array) {
             return `${typeToCode(t.array.item, indent)}[]`;
@@ -182,7 +188,7 @@ const toSchema = (methods: TypedMethod[]) => {
             ?? (t.fields ? getSchemaObjectType(t.fields) : null)
             ?? (t.unit ? `unit` : null)
             ?? (t.never ? `never` : null)
-            ?? `${t.raw as string}`;
+            ?? `${t.raw as unknown as string}`;
     };
 
     const schemaMethods = methods.reduce((out, x) => {
@@ -205,7 +211,7 @@ const toSchema = (methods: TypedMethod[]) => {
 
 type TypedStorage = {
     storage: {
-        raw: unknown;
+        raw: M.MichelsonType;
         fields: TypedVar[];
     };
 };
@@ -221,7 +227,7 @@ type TypedVar = {
     type: TypedType;
 };
 type TypedType = {
-    raw: unknown;
+    raw: M.MichelsonType;
     unit?: boolean;
     never?: boolean;
     optional?: boolean;
@@ -243,7 +249,7 @@ const visitContractStorage = (storage: M.MichelsonContractStorage): TypedStorage
         .flatMap(x => x);
     return {
         storage: {
-            raw: storage,
+            raw: storage as unknown as M.MichelsonType,
             fields: fields,
         },
     };
@@ -341,7 +347,7 @@ const visitType = (node: MType): TypedType => {
     if (!(`prim` in node)) {
         // Unknown
         console.error(`visitType no prim`, { node });
-        return { raw: `${node as unknown as string}`, unknown: true };
+        return { raw: node, unknown: true };
     }
 
     // Union
