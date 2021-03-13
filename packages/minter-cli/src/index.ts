@@ -1,15 +1,34 @@
-import fs from 'fs';
+import fsRaw from 'fs';
+import path from 'path';
 import { generateContractApiFromMichelsonCode } from '@minter-sdk/contract-api-generator';
+const fs = fsRaw.promises;
 
 export const run = async (): Promise<void> => {
     const argv = process.argv;
-    const argsGenerateFile = (argv.includes(`--g`) || argv.includes(`--generate`)) ? argv.slice(argv.findIndex(a => a.startsWith(`--g`)) + 1, 2) : undefined;
+    const argsGenerateFile = argv.some(a => a.startsWith(`--g`)) ? argv.slice(argv.findIndex(a => a.startsWith(`--g`)) + 1) : undefined;
+
+    console.log(`minter-cli\n\t${argv.join(`\n\t`)}`);
 
     if (argsGenerateFile) {
-        const [michelsonCodeFilePath, outputTypescriptFilePath] = argsGenerateFile;
-        const michelsonCode = await fs.promises.readFile(michelsonCodeFilePath, { encoding: `utf8` });
-        const { typescriptCode } = generateContractApiFromMichelsonCode(michelsonCode);
-        await fs.promises.writeFile(outputTypescriptFilePath, typescriptCode);
+        const [michelsonCodePath, outputTypescriptPath] = argsGenerateFile;
+        console.log(`Generating Api: ${path.resolve(michelsonCodePath)} => ${path.resolve(outputTypescriptPath)}`);
+
+        // Make dir
+        await fs.mkdir(outputTypescriptPath, { recursive: true });
+
+        const allFiles = await fs.readdir(michelsonCodePath);
+        const files = allFiles.filter(x => x.endsWith(`.tz`));
+        console.log(`Contracts Found: ${[``, ...files].join(`\n\t- `)}`);
+
+        for (const fileRelativePath of files) {
+            const inputFilePath = path.join(michelsonCodePath, fileRelativePath);
+            const outputFilePath = path.join(outputTypescriptPath, fileRelativePath.replace(`.tz`, `.ts`));
+            console.log(`Processing ${fileRelativePath}...`);
+
+            const michelsonCode = await fs.readFile(inputFilePath, { encoding: `utf8` });
+            const { typescriptCode } = generateContractApiFromMichelsonCode(michelsonCode);
+            await fs.writeFile(outputFilePath, typescriptCode);
+        }
 
         return;
     }
