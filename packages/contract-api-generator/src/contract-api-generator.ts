@@ -128,8 +128,17 @@ ${tabs(indent)}`;
     };
 
     const methodsCode = methodsToCode(0);
+    const storageCode = `type Storage = {};`;
+
+    const finalCode = `
+${storageCode}
+
+${methodsCode}
+
+export type Contract = { methods: Methods, storage: Storage };
+    `;
     return {
-        final: methodsCode,
+        final: finalCode,
         methods: methodsCode,
     };
 
