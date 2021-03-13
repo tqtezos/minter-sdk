@@ -28,3 +28,24 @@ a configured administrator is responsible for configuring and managing access to
 An implementation of an NFT marketplace that allows users to initiate NFT sales at a fixed price. There are multiple flavors of this contract that vary along two variables: admin capabilities, and NFT sale type (fungible tokens/tez).
 ### [Minter Collection](minter_collection)
 Implementations of various token types.
+
+
+## Development Tasks
+
+### Setup
+
+- `yarn`
+
+### Lint
+
+Run eslint and auto fix errors
+
+- `yarn run lint`
+
+### Test
+
+Run tests in the flextesa sandbox
+
+- `yarn run start-sandbox`
+- `yarn run test`
+
