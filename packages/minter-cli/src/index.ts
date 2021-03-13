@@ -25,9 +25,13 @@ export const run = async (): Promise<void> => {
             const outputFilePath = path.join(outputTypescriptPath, fileRelativePath.replace(`.tz`, `.ts`));
             console.log(`Processing ${fileRelativePath}...`);
 
-            const michelsonCode = await fs.readFile(inputFilePath, { encoding: `utf8` });
-            const { typescriptCode } = generateContractApiFromMichelsonCode(michelsonCode);
-            await fs.writeFile(outputFilePath, typescriptCode);
+            try {
+                const michelsonCode = await fs.readFile(inputFilePath, { encoding: `utf8` });
+                const { typescriptCode } = generateContractApiFromMichelsonCode(michelsonCode);
+                await fs.writeFile(outputFilePath, typescriptCode);
+            } catch (err: unknown) {
+                console.error(`❌ Could not process ${fileRelativePath}`, { err });
+            }
         }
 
         return;
