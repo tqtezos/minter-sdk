@@ -6,8 +6,9 @@ module.exports = {
     },
     plugins: [
         '@typescript-eslint',
-        `promise`,
+        'import-quotes',
         'jest',
+        `promise`,
     ],
     extends: [
         'eslint:recommended',
