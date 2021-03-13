@@ -22,6 +22,12 @@
     "emitDecoratorMetadata": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
+    "baseUrl": "packages",
+    "paths": {
+      "@minter-sdk/contract-api-generator": [
+        "./contract-api-generator/src"
+      ],
+    },
   },
   "include": [
     "**/src",

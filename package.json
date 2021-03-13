@@ -6,6 +6,7 @@
   "scripts": {
     "lint": "eslint . --fix",
     "test": "jest --runInBand",
+    "cli": "ts-node -r tsconfig-paths/register ./packages/minter-cli/src/index.ts",
     "start-sandbox": "flextesa/start-sandbox.sh",
     "kill-sandbox": "flextesa/kill-sandbox.sh",
     "build:watch": "tsc -w -p .",
@@ -57,6 +58,11 @@
     "source-map-support": "0.5.19",
     "ts-jest": "26.1.3",
     "ts-node": "9.0.0",
+    "tsconfig-paths": "^3.9.0",
     "typescript": "^4.2.3"
-  }
+  },
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ]
 }
