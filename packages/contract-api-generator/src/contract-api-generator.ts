@@ -452,7 +452,6 @@ const visitType = (node: MType): TypedType => {
     if (node.prim === `nat`
         || node.prim === `int`
         || node.prim === `mutez`
-        || node.prim === `timestamp`
     ) {
         return {
             raw: node,
@@ -475,6 +474,8 @@ const visitType = (node: MType): TypedType => {
         || node.prim === `sapling_state`
         || node.prim === `sapling_transaction`
         || node.prim === `contract`
+        || node.prim === `timestamp`
+
     ) {
         return {
             raw: node,

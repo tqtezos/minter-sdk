@@ -2,7 +2,7 @@
 type address = string & { __type: 'address' };
 type nat = number & { __type: 'nat' };
 type mutez = number & { __type: 'mutez' };
-type timestamp = number & { __type: 'timestamp' };
+type timestamp = string & { __type: 'timestamp' };
 type int = number & { __type: 'int' };
 
 type Storage = {
