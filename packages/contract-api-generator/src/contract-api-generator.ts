@@ -65,8 +65,11 @@ export const generateContractApi = (contractScript: string): {
 
 const toTypescriptCode = (storage: TypedStorage, methods: TypedMethod[]): {
     final: string;
+    typeMapping: string;
+    storage: string;
     methods: string;
 } => {
+    const usedStrictTypes = [] as { baseType: string, strictType: string }[];
 
     // Not really tabs :)
     const tabs = (indent: number) => Array(indent).fill(`    `).join(``);
@@ -80,12 +83,25 @@ ${tabs(indent)}`;
     const typeToCode = (t: TypedType, indent: number): string => {
         if (t.typescriptType) {
             //return `${t.typescriptType}`;
+
+            const prim = `prim` in t.raw ? t.raw.prim : `unknown`;
+
             // Strict mode
-            if (t.typescriptType === `boolean`) {
+            if (t.typescriptType === `boolean`
+                || t.typescriptType === `string` && prim === `string`
+            ) {
                 return `${t.typescriptType}`;
             }
 
-            return `${t.typescriptType} & { __type: '${`prim` in t.raw ? t.raw.prim : `unknown`}' }`;
+            // Inline strict type
+            //return `${t.typescriptType} & { __type: '${`prim` in t.raw ? t.raw.prim : `unknown`}' }`;
+
+            const strictType = { baseType: t.typescriptType, strictType: prim };
+            if (!usedStrictTypes.some(x => x.strictType === strictType.strictType)) {
+                usedStrictTypes.push(strictType);
+            }
+
+            return strictType.strictType;
         }
         if (t.array) {
             return `${typeToCode(t.array.item, indent)}[]`;
@@ -147,7 +163,11 @@ ${tabs(indent)}`;
     const methodsCode = methodsToCode(0);
     const storageCode = storageToCode(0);
 
+    const typeMapping = usedStrictTypes.map(x => `type ${x.strictType} = ${x.baseType} & { __type: ${x.strictType} };`).join(`\n`);
+
     const finalCode = `
+${typeMapping}
+
 ${storageCode}
 
 ${methodsCode}
@@ -156,7 +176,9 @@ export type Contract = { methods: Methods, storage: Storage };
 `;
     return {
         final: finalCode,
+        storage: storageCode,
         methods: methodsCode,
+        typeMapping,
     };
 
 };
