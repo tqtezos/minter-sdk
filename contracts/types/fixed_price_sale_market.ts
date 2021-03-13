@@ -5,8 +5,7 @@ type Storage = {
         paused: boolean;
         pending_admin?: string;
     };
-    sales: {
-        [key: {
+    sales: Map<{
         sale_seller: string;
         tokens: {
             token_for_sale_address: string;
@@ -14,8 +13,7 @@ type Storage = {
             money_token_address: string;
             money_token_token_id: number;
         };
-    }]: number;
-    };
+    }, number>;
 };
 
 type Methods = {

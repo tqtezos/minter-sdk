@@ -5,15 +5,13 @@ type Storage = {
         paused: boolean;
         pending_admin?: string;
     };
-    sales: {
-        [key: {
+    sales: Map<{
         sale_seller: string;
         sale_token: {
             token_for_sale_address: string;
             token_for_sale_token_id: number;
         };
-    }]: number;
-    };
+    }, number>;
 };
 
 type Methods = {

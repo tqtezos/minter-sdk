@@ -6,29 +6,19 @@ type Storage = {
         pending_admin?: string;
     };
     assets: {
-        ledger: {
-            [key: number]: string;
-        };
+        ledger: Map<number, string>;
         next_token_id: number;
-        operators: {
-            [key: {
+        operators: Map<{
             0: string;
             1: string;
             2: number;
-        }]: void;
-        };
-        token_metadata: {
-            [key: number]: {
-                token_id: number;
-                token_info: {
-                    [key: string]: string;
-                };
-            };
-        };
+        }, void>;
+        token_metadata: Map<number, {
+            token_id: number;
+            token_info: Map<string, string>;
+        }>;
     };
-    metadata: {
-        [key: string]: string;
-    };
+    metadata: Map<string, string>;
 };
 
 type Methods = {
@@ -72,17 +62,13 @@ type Methods = {
         0: {
             token_metadata: {
                 token_id: number;
-                token_info: {
-                    [key: string]: string;
-                };
+                token_info: Map<string, string>;
             };
             owner: string;
         }[];
         token_metadata: {
             token_id: number;
-            token_info: {
-                [key: string]: string;
-            };
+            token_info: Map<string, string>;
         };
         owner: string;
     }) => Promise<void>;
