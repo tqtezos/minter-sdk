@@ -1,0 +1,262 @@
+{ parameter
+    (or (or (nat %accept) (nat %cancel))
+        (pair %start
+           (list %assets_offered
+              (pair (address %fa2_address) (list %tokens (pair (nat %token_id) (nat %amount)))))
+           (list %assets_requested
+              (pair (address %fa2_address) (list %tokens (pair (nat %token_id) (nat %amount))))))) ;
+  storage
+    (pair (nat %next_swap_id)
+          (big_map %swaps
+             nat
+             (pair (pair %swap_offer
+                      (list %assets_offered
+                         (pair (address %fa2_address) (list %tokens (pair (nat %token_id) (nat %amount)))))
+                      (list %assets_requested
+                         (pair (address %fa2_address) (list %tokens (pair (nat %token_id) (nat %amount))))))
+                   (pair (address %seller)
+                         (or %status (unit %open) (or (address %finished) (unit %cancelled))))))) ;
+  code { PUSH mutez 0 ;
+         AMOUNT ;
+         COMPARE ;
+         EQ ;
+         IF {} { PUSH string "XTZ_TRANSFER" ; FAILWITH } ;
+         LAMBDA
+           (pair (pair address address) string)
+           (lambda (pair address (list (pair nat nat))) operation)
+           { UNPAIR ;
+             UNPAIR ;
+             PAIR 3 ;
+             LAMBDA
+               (pair (pair address (pair address string)) (pair address (list (pair nat nat))))
+               operation
+               { UNPAIR ;
+                 UNPAIR 3 ;
+                 DIG 3 ;
+                 DIG 3 ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CAR ;
+                 CONTRACT %transfer
+                   (list (pair (address %from_)
+                               (list %txs (pair (address %to_) (pair (nat %token_id) (nat %amount)))))) ;
+                 IF_NONE { FAILWITH } { SWAP ; DROP } ;
+                 SWAP ;
+                 CDR ;
+                 MAP { DUP 4 ; PAIR } ;
+                 DIG 3 ;
+                 DROP ;
+                 DIG 2 ;
+                 PAIR ;
+                 SWAP ;
+                 PUSH mutez 0 ;
+                 NIL (pair address (list (pair address (pair nat nat)))) ;
+                 DIG 3 ;
+                 CONS ;
+                 TRANSFER_TOKENS } ;
+             SWAP ;
+             APPLY } ;
+         LAMBDA
+           (pair (pair (list (pair address (list (pair nat nat)))) (list (pair address (list (pair nat nat)))))
+                 (pair address (or unit (or address unit))))
+           unit
+           { CDR ;
+             CDR ;
+             IF_LEFT
+               { DROP ; PUSH unit Unit }
+               { IF_LEFT
+                   { DROP ; PUSH string "SWAP_FINISHED" ; FAILWITH }
+                   { DROP ; PUSH string "SWAP_CANCELLED" ; FAILWITH } } } ;
+         DIG 2 ;
+         UNPAIR ;
+         IF_LEFT
+           { IF_LEFT
+               { SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 SWAP ;
+                 CDR ;
+                 SWAP ;
+                 GET ;
+                 IF_NONE { PUSH string "SWAP_NOT_EXIST" ; FAILWITH } {} ;
+                 DUP ;
+                 DIG 4 ;
+                 SWAP ;
+                 EXEC ;
+                 DROP ;
+                 SENDER ;
+                 LEFT unit ;
+                 RIGHT unit ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CDR ;
+                 CAR ;
+                 PAIR ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CAR ;
+                 PAIR ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CAR ;
+                 CAR ;
+                 MAP { PUSH string "SWAP_OFFERED_FA2_INVALID" ;
+                       SENDER ;
+                       SELF_ADDRESS ;
+                       PAIR ;
+                       PAIR ;
+                       DUP 7 ;
+                       SWAP ;
+                       EXEC ;
+                       SWAP ;
+                       EXEC } ;
+                 DUP 3 ;
+                 CAR ;
+                 CDR ;
+                 MAP { PUSH string "SWAP_REQUESTED_FA2_INVALID" ;
+                       DUP 5 ;
+                       CDR ;
+                       CAR ;
+                       SENDER ;
+                       PAIR ;
+                       PAIR ;
+                       DUP 8 ;
+                       SWAP ;
+                       EXEC ;
+                       SWAP ;
+                       EXEC } ;
+                 DIG 3 ;
+                 DROP ;
+                 DIG 5 ;
+                 DROP ;
+                 SWAP ;
+                 ITER { CONS } ;
+                 DUP 4 ;
+                 CDR ;
+                 DIG 2 ;
+                 DIG 3 ;
+                 SWAP ;
+                 SOME ;
+                 SWAP ;
+                 UPDATE ;
+                 DIG 2 ;
+                 CAR ;
+                 PAIR ;
+                 SWAP ;
+                 PAIR }
+               { SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 SWAP ;
+                 CDR ;
+                 SWAP ;
+                 GET ;
+                 IF_NONE { PUSH string "SWAP_NOT_EXIST" ; FAILWITH } {} ;
+                 SENDER ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CDR ;
+                 CAR ;
+                 COMPARE ;
+                 EQ ;
+                 IF {} { PUSH string "NOT_SWAP_SELLER" ; FAILWITH } ;
+                 DUP ;
+                 DIG 4 ;
+                 SWAP ;
+                 EXEC ;
+                 DROP ;
+                 DUP ;
+                 CAR ;
+                 CAR ;
+                 MAP { PUSH string "SWAP_OFFERED_FA2_INVALID" ;
+                       DUP 3 ;
+                       CDR ;
+                       CAR ;
+                       SELF_ADDRESS ;
+                       PAIR ;
+                       PAIR ;
+                       DUP 6 ;
+                       SWAP ;
+                       EXEC ;
+                       SWAP ;
+                       EXEC } ;
+                 DIG 4 ;
+                 DROP ;
+                 DUP 4 ;
+                 CDR ;
+                 PUSH unit Unit ;
+                 RIGHT address ;
+                 RIGHT unit ;
+                 DUP 4 ;
+                 CDR ;
+                 CAR ;
+                 PAIR ;
+                 DIG 3 ;
+                 CAR ;
+                 PAIR ;
+                 DIG 3 ;
+                 SWAP ;
+                 SOME ;
+                 SWAP ;
+                 UPDATE ;
+                 DIG 2 ;
+                 CAR ;
+                 PAIR ;
+                 SWAP ;
+                 PAIR } }
+           { DIG 2 ;
+             DROP ;
+             SENDER ;
+             DUP 3 ;
+             CDR ;
+             PUSH nat 1 ;
+             DUP 5 ;
+             CAR ;
+             ADD ;
+             PAIR ;
+             DUP 4 ;
+             CDR ;
+             PUSH unit Unit ;
+             LEFT (or address unit) ;
+             DUP 4 ;
+             PAIR ;
+             DUP 5 ;
+             PAIR ;
+             DIG 5 ;
+             CAR ;
+             SWAP ;
+             SOME ;
+             SWAP ;
+             UPDATE ;
+             SWAP ;
+             CAR ;
+             PAIR ;
+             DIG 2 ;
+             CAR ;
+             MAP { PUSH string "SWAP_OFFERED_FA2_INVALID" ;
+                   SELF_ADDRESS ;
+                   DUP 5 ;
+                   PAIR ;
+                   PAIR ;
+                   DUP 5 ;
+                   SWAP ;
+                   EXEC ;
+                   SWAP ;
+                   EXEC } ;
+             DIG 2 ;
+             DROP ;
+             DIG 2 ;
+             DROP ;
+             PAIR } } }
+
