@@ -6,7 +6,7 @@
   "scripts": {
     "lint": "eslint . --fix",
     "test": "jest --runInBand",
-    "cli": "ts-node -r tsconfig-paths/register ./packages/minter-cli/src/index.ts",
+    "generate-api": "ts-node -r tsconfig-paths/register ./packages/minter-cli/src/index.ts --g ./contracts/bin ./contracts/types",
     "start-sandbox": "flextesa/start-sandbox.sh",
     "kill-sandbox": "flextesa/kill-sandbox.sh",
     "build:watch": "tsc -w -p .",
