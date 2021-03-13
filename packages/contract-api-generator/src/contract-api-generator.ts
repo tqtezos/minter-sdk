@@ -118,7 +118,7 @@ ${tabs(indent)}}`;
         }
 
         return `params: {${toIndentedItems(indent, ``,
-            args.filter(x => x.name || !x.type.unit).map((a, i) => varToCode(a, i, indent + 2) + `;`),
+            args.filter(x => x.name || !x.type.unit).map((a, i) => varToCode(a, i, indent + 1) + `;`),
         )}}`;
     };
 
