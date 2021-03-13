@@ -397,7 +397,9 @@ const visitType = (node: MType): TypedType => {
     }
 
     // list
-    if (node.prim === `list`) {
+    if (node.prim === `list`
+        || node.prim === `set`
+    ) {
         const arrayItem = visitType(node.args[0]);
         if (!arrayItem) {
             throw new GenerateApiError(`arrayItem are null`, { node, args: node.args, arrayItem });
@@ -411,7 +413,6 @@ const visitType = (node: MType): TypedType => {
     // map
     if (node.prim === `map`
         || node.prim === `big_map`
-        || node.prim === `set`
     ) {
         if (node.args.length !== 2) {
             throw new GenerateApiError(`map does not have 2 args`, { node, args: node.args });
