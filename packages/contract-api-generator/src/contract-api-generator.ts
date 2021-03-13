@@ -400,6 +400,10 @@ const visitType = (node: MType): TypedType => {
     if (node.prim === `list`
         || node.prim === `set`
     ) {
+        if (node.args.length !== 1) {
+            throw new GenerateApiError(`list does not have 1 arg`, { node, args: node.args });
+        }
+
         const arrayItem = visitType(node.args[0]);
         if (!arrayItem) {
             throw new GenerateApiError(`arrayItem are null`, { node, args: node.args, arrayItem });
