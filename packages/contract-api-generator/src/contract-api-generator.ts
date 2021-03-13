@@ -163,7 +163,7 @@ ${tabs(indent)}`;
     const methodsCode = methodsToCode(0);
     const storageCode = storageToCode(0);
 
-    const typeMapping = usedStrictTypes.map(x => `type ${x.strictType} = ${x.baseType} & { __type: ${x.strictType} };`).join(`\n`);
+    const typeMapping = usedStrictTypes.map(x => `type ${x.strictType} = ${x.baseType} & { __type: '${x.strictType}' };`).join(`\n`);
 
     const finalCode = `
 ${typeMapping}
