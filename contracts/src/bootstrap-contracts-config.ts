@@ -57,9 +57,9 @@ function toHexString(input: string) {
 }
 
 async function createToolkit(config: Configstore): Promise<TezosToolkit> {
-  const key = config.get(`admin.secret`);
+  const key = config.get(`admin.secret`) as string;
   const signer = await InMemorySigner.fromSecretKey(key);
-  const rpc = config.get(`rpc`);
+  const rpc = config.get(`rpc`) as string;
   if (!rpc) throw new Error(`cannot read node rpc`);
 
   const toolkit = new TezosToolkit(rpc);
@@ -89,7 +89,7 @@ async function shouldOriginate(
   tz: TezosToolkit,
   configKey: string,
 ): Promise<boolean> {
-  const existingAddress = config.get(configKey);
+  const existingAddress = config.get(configKey) as string;
   if (!existingAddress) return true;
 
   return tz.contract
@@ -128,7 +128,7 @@ export async function originateNftFaucet(
 
     const contract = await originationOp.contract();
     $log.info(`originated contract ${name} with address ${contract.address}`);
-    $log.info(`consumed gas: ${originationOp.consumedGas}`);
+    $log.info(`consumed gas: ${originationOp.consumedGas ?? `?`}`);
     return Promise.resolve(contract);
   } catch (error) {
     const jsonError = JSON.stringify(error, null, 2);
@@ -175,4 +175,4 @@ async function main() {
   }
 }
 
-main();
+void main();
