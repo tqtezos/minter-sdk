@@ -5,7 +5,7 @@ import { Contract, nat, bytes, address } from '../../src/type-aliases';
 import {
   originateEnglishAuctionTezAdmin,
   MintNftParam,
-  originateNftFaucet
+  originateNftFaucet,
 } from '../../src/nft-contracts';
 import { TezosToolkit, MichelsonMap } from '@taquito/taquito';
 
@@ -13,14 +13,14 @@ import { TransactionOperation } from '@taquito/taquito/dist/types/operations/tra
 import {
   OpKind,
   OperationContentsAndResultTransaction,
-  OperationResultTransaction
+  OperationResultTransaction,
 } from '@taquito/rpc';
-import {addOperator} from '../../src/fa2-interface'
-import {Fa2_tokens, Tokens } from '../../src/auction-interface'
+import {addOperator} from '../../src/fa2-interface';
+import {Fa2_tokens, Tokens } from '../../src/auction-interface';
 
 jest.setTimeout(180000); // 3 minutes
 
-describe('test NFT auction', () => {
+describe(`test NFT auction`, () => {
   let tezos: TestTz;
   let nftAuction: Contract;
   let nftAuctionBob : Contract;
@@ -42,12 +42,12 @@ describe('test NFT auction', () => {
   });
 
   beforeEach(async() => {
-    $log.info('originating nft auction...');
+    $log.info(`originating nft auction...`);
     nftAuction = await originateEnglishAuctionTezAdmin(tezos.bob);
     nftAuctionBob = await tezos.bob.contract.at(nftAuction.address);
     nftAuctionAlice = await tezos.alice.contract.at(nftAuction.address);
 
-    $log.info('minting token')
+    $log.info(`minting token`);
 
     bobAddress = await tezos.bob.signer.publicKeyHash();
     aliceAddress = await tezos.alice.signer.publicKeyHash();
@@ -58,27 +58,27 @@ describe('test NFT auction', () => {
     token = {
       token_metadata: {
         token_id: tokenId,
-        token_info: empty_metadata_map
+        token_info: empty_metadata_map,
       },
-      owner: bobAddress
+      owner: bobAddress,
     };
     const opMint = await nftContract.methods.mint([token]).send();
     const hash = await opMint.confirmation();
     $log.info(`Minted tokens. Consumed gas: ${opMint.consumedGas}`);
 
-    $log.info('adding auction contract as operator');
+    $log.info(`adding auction contract as operator`);
     await addOperator(nftContract.address, tezos.bob, nftAuction.address, tokenId);
-    $log.info('Auction contract added as operator');
+    $log.info(`Auction contract added as operator`);
     
     fa2_tokens = {
         token_id : tokenId,
-        amount : new BigNumber(1)
-    }
+        amount : new BigNumber(1),
+    };
 
     auction_tokens = {
         fa2_address : nftContract.address,
-        fa2_batch : [fa2_tokens]
-    }
+        fa2_batch : [fa2_tokens],
+    };
     
     startTime = new Date();
     startTime.setSeconds(startTime.getSeconds() + 7);
@@ -90,14 +90,14 @@ describe('test NFT auction', () => {
     await opAuction.confirmation();
     $log.info(`Auction configured. Consumed gas: ${opAuction.consumedGas}`);
   });
-  test('configuration not from admin should fail', async() => {
+  test(`configuration not from admin should fail`, async() => {
     startTime = new Date();
     startTime.setSeconds(startTime.getSeconds() + 7);
     tokenId = tokenId.plus(1);
     $log.info(`Alice attempts to configure auction, we expect it to fail`);
     //opening price = 10 tz, percent raise =10, min_raise = 10tz, round_time = 1 hr, extend_time = 5 mins, end_time = start_time + 1hr, 
     const opAuctionPromise = nftAuctionAlice.methods.configure(new BigNumber(10000000), new BigNumber(10), new BigNumber(10000000), new BigNumber(3600), new BigNumber(300), [auction_tokens], startTime, endTime).send({amount : 10});
-    return expect(opAuctionPromise).rejects.toHaveProperty('message', "NOT_AN_ADMIN");
+    return expect(opAuctionPromise).rejects.toHaveProperty(`message`, `NOT_AN_ADMIN`);
   });  
   
 });

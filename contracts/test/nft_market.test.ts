@@ -8,25 +8,25 @@ import { Contract, address, bytes } from '../src/type-aliases';
 import {
     originateNftFaucet,
     MintNftParam,
-    originateFixedPriceTezSale
+    originateFixedPriceTezSale,
 } from '../src/nft-contracts';
 import {
     BalanceOfRequest,
-    addOperator
+    addOperator,
 } from '../src/fa2-interface';
 import { originateInspector, queryBalances } from './fa2-balance-inspector';
 
 jest.setTimeout(180000); // 3 minutes
 
 describe.each([originateFixedPriceTezSale])
-    ('marketplace test', (originateMarketplace) => {
+    (`marketplace test`, (originateMarketplace) => {
         let tezos: TestTz;
         let nft: Contract;
         let inspector: Contract;
         let marketplace: Contract;
         let marketAddress: address;
         let bobAddress: address;
-        let aliceAddress: address
+        let aliceAddress: address;
         let tokenId: BigNumber;
         let tokenMetadata: MichelsonMap<string, bytes>;
         let salePrice: BigNumber;
@@ -62,13 +62,13 @@ describe.each([originateFixedPriceTezSale])
             tz: TezosToolkit,
             tokens: MintNftParam[],
         ): Promise<void> {
-            $log.info('minting...');
+            $log.info(`minting...`);
             const op = await nft.methods.mint(tokens).send();
             const hash = await op.confirmation();
             $log.info(`Minted tokens. Consumed gas: ${op.consumedGas}`);
         }
 
-        test('bob makes sale, and alice buys nft', async () => {
+        test(`bob makes sale, and alice buys nft`, async () => {
 
             await mintTokens(tezos.bob, [
                 {
@@ -76,28 +76,28 @@ describe.each([originateFixedPriceTezSale])
                         token_id: tokenId,
                         token_info: tokenMetadata,
                     },
-                    owner: bobAddress
-                }
+                    owner: bobAddress,
+                },
             ]);
 
             const [aliceHasATokenBefore, bobHasATokenBefore] = await hasTokens([
                 { owner: aliceAddress, token_id: tokenId },
-                { owner: bobAddress, token_id: tokenId }
+                { owner: bobAddress, token_id: tokenId },
             ]);
             expect(aliceHasATokenBefore).toBe(false);
             expect(bobHasATokenBefore).toBe(true);
 
-            $log.info('making marketplace an operator of bob\'s token');
+            $log.info(`making marketplace an operator of bob's token`);
             await addOperator(nft.address, tezos.bob, marketAddress, tokenId);
 
             try {
-                $log.info('starting sale...');
+                $log.info(`starting sale...`);
                 const bobSaleContract = await tezos.bob.contract.at(marketplace.address);
                 const sellOp = await bobSaleContract.methods.sell(salePrice, nft.address, tokenId).send({ source: bobAddress, amount: 0 });
                 $log.info(`Waiting for ${sellOp.hash} to be confirmed...`);
                 const sellOpHash = await sellOp.confirmation(1).then(() => sellOp.hash);
                 $log.info(`Operation injected at hash=${sellOpHash}`);
-                $log.info('alice buys nft...');
+                $log.info(`alice buys nft...`);
 
 
                 const aliceSaleContract = await tezos.alice.contract.at(marketplace.address);
@@ -113,7 +113,7 @@ describe.each([originateFixedPriceTezSale])
 
         });
 
-        test('bob makes sale, cancels it, then alice unsuccessfully tries to buy', async () => {
+        test(`bob makes sale, cancels it, then alice unsuccessfully tries to buy`, async () => {
 
             await mintTokens(tezos.bob, [
                 {
@@ -121,28 +121,28 @@ describe.each([originateFixedPriceTezSale])
                         token_id: tokenId,
                         token_info: tokenMetadata,
                     },
-                    owner: bobAddress
-                }
+                    owner: bobAddress,
+                },
             ]);
 
             const [aliceHasATokenBefore, bobHasATokenBefore] = await hasTokens([
                 { owner: aliceAddress, token_id: tokenId },
-                { owner: bobAddress, token_id: tokenId }
+                { owner: bobAddress, token_id: tokenId },
             ]);
             expect(aliceHasATokenBefore).toBe(false);
             expect(bobHasATokenBefore).toBe(true);
 
-            $log.info('making marketplace an operator of bob\'s token');
+            $log.info(`making marketplace an operator of bob's token`);
             await addOperator(nft.address, tezos.bob, marketAddress, tokenId);
 
             try {
-                $log.info('starting sale...');
+                $log.info(`starting sale...`);
                 const bobSaleContract = await tezos.bob.contract.at(marketplace.address);
                 const sellOp = await bobSaleContract.methods.sell(salePrice, nft.address, tokenId).send({ source: bobAddress, amount: 0 });
                 $log.info(`Waiting for ${sellOp.hash} to be confirmed...`);
                 const sellOpHash = await sellOp.confirmation(1).then(() => sellOp.hash);
                 $log.info(`Operation injected at hash=${sellOpHash}`);
-                $log.info('bob cancels sale');
+                $log.info(`bob cancels sale`);
                 const removeSaleOp = await bobSaleContract.methods.cancel(salePrice, nft.address, tokenId).send({ source: bobAddress, amount: 0 });
                 $log.info(`Waiting for ${removeSaleOp.hash} to be confirmed...`);
                 const removeSaleOpHash = await removeSaleOp.confirmation(1).then(() => removeSaleOp.hash);

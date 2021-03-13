@@ -30,9 +30,9 @@ export class LigoEnv {
 export const defaultEnv: LigoEnv = defaultLigoEnv();
 
 function defaultLigoEnv(): LigoEnv {
-  const cwd = path.join(__dirname, '..');
-  const src = path.join(cwd, 'ligo/src');
-  const out = path.join(cwd, 'bin');
+  const cwd = path.join(__dirname, `..`);
+  const src = path.join(cwd, `ligo/src`);
+  const out = path.join(cwd, `bin`);
   return new LigoEnv(cwd, src, out);
 }
 
@@ -40,7 +40,7 @@ export async function compileAndLoadContract(
   env: LigoEnv,
   srcFile: string,
   main: string,
-  dstFile: string
+  dstFile: string,
 ): Promise<string> {
   const src = env.srcFilePath(srcFile);
   const out = env.outFilePath(dstFile);
@@ -52,8 +52,8 @@ export async function compileAndLoadContract(
 export async function loadFile(fileName: string): Promise<string> {
   return new Promise<string>((resolve, reject) =>
     fs.readFile(fileName, (err, buff) =>
-      err ? reject(err) : resolve(buff.toString())
-    )
+      err ? reject(err) : resolve(buff.toString()),
+    ),
   );
 }
 
@@ -61,7 +61,7 @@ export async function compileContract(
   env: LigoEnv,
   srcFile: string,
   main: string,
-  dstFile: string
+  dstFile: string,
 ): Promise<void> {
   const src = env.srcFilePath(srcFile);
   const out = env.outFilePath(dstFile);
@@ -72,7 +72,7 @@ async function compileContractImpl(
   cwd: string,
   srcFilePath: string,
   main: string,
-  dstFilePath: string
+  dstFilePath: string,
 ): Promise<void> {
   // const cmd = `ligo compile-contract ${srcFilePath} ${main} --output=${dstFilePath}`;
   const cmd = `docker run --rm -v $PWD:$PWD -w $PWD ligolang/ligo:0.11.0 compile-contract ${srcFilePath} ${main} --output=${dstFilePath}  && rm bisect*.coverage`;
@@ -83,8 +83,8 @@ export async function runCmd(cwd: string, cmd: string): Promise<void> {
   // const shell = "/bin/zsh";
   return new Promise<void>((resolve, reject) =>
     child.exec(cmd, { cwd }, (err, stdout, errout) =>
-      err ? reject(err) : resolve()
-    )
+      err ? reject(err) : resolve(),
+    ),
   );
 }
 
@@ -92,12 +92,12 @@ export async function originateContract(
   tz: TezosToolkit,
   code: string,
   storage: any,
-  name: string
+  name: string,
 ): Promise<Contract> {
   try {
     const originationOp = await tz.contract.originate({
       code: code,
-      init: storage
+      init: storage,
     });
 
     const contract = await originationOp.contract();
