@@ -18,6 +18,45 @@
       "error",
       "always"
     ],
+    "quotes": [
+      "off",
+      "backtick"
+    ],
+    "@typescript-eslint/quotes": [
+      "error",
+      "backtick"
+    ],
+    "jsx-quotes": [
+      "error",
+      "prefer-single"
+    ],
+    "import-quotes/import-quotes": [
+      "error",
+      "single"
+    ],
+    "comma-dangle": [
+      "error",
+      {
+        "arrays": "always-multiline",
+        "objects": "always-multiline",
+        "imports": "always-multiline",
+        "exports": "always-multiline",
+        "functions": "always-multiline"
+      }
+    ],
+    "@typescript-eslint/member-delimiter-style": [
+      "error",
+      {
+        "multiline": {
+          "delimiter": "semi",
+          "requireLast": true
+        },
+        "singleline": {
+          "delimiter": "comma",
+          "requireLast": false
+        }
+      }
+    ],
     "promise/always-return": [
       "error"
     ],
