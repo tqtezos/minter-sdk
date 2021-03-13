@@ -1,2 +1,4 @@
 jsout
 node_modules
+*.cabal
+.stack-work
