@@ -8,25 +8,27 @@ type Storage = {
     current_id: number;
     max_auction_time: number;
     max_config_to_start_time: number;
-    auctions: { [key: number]:{
-        seller: string;
-        current_bid: number;
-        start_time: number;
-        last_bid_time: number;
-        round_time: number;
-        extend_time: number;
-        asset: {
-            fa2_address: string;
-            fa2_batch: {
-                token_id: number;
-                amount: number;
+    auctions: {
+        [key: number]: {
+            seller: string;
+            current_bid: number;
+            start_time: number;
+            last_bid_time: number;
+            round_time: number;
+            extend_time: number;
+            asset: {
+                fa2_address: string;
+                fa2_batch: {
+                    token_id: number;
+                    amount: number;
+                }[];
             }[];
-        }[];
-        min_raise_percent: number;
-        min_raise: number;
-        end_time: number;
-        highest_bidder: string;
-    }};
+            min_raise_percent: number;
+            min_raise: number;
+            end_time: number;
+            highest_bidder: string;
+        };
+    };
 };
 
 type Methods = {
@@ -42,12 +44,12 @@ type Methods = {
         round_time: number;
         extend_time: number;
         asset: {
-                fa2_address: string;
-                fa2_batch: {
-                    token_id: number;
-                    amount: number;
-                }[];
+            fa2_address: string;
+            fa2_batch: {
+                token_id: number;
+                amount: number;
             }[];
+        }[];
         start_time: number;
         end_time: number;
     }) => Promise<void>;
@@ -55,4 +57,3 @@ type Methods = {
 };
 
 export type Contract = { methods: Methods, storage: Storage };
-    

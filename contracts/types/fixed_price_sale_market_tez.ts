@@ -5,13 +5,15 @@ type Storage = {
         paused: boolean;
         pending_admin?: string;
     };
-    sales: { [key: {
+    sales: {
+        [key: {
         sale_seller: string;
         sale_token: {
             token_for_sale_address: string;
             token_for_sale_token_id: number;
         };
-    }]:number};
+    }]: number;
+    };
 };
 
 type Methods = {
@@ -21,25 +23,24 @@ type Methods = {
     buy: (params: {
         sale_seller: string;
         sale_token: {
-                token_for_sale_address: string;
-                token_for_sale_token_id: number;
-            };
+            token_for_sale_address: string;
+            token_for_sale_token_id: number;
+        };
     }) => Promise<void>;
     cancel: (params: {
         sale_seller: string;
         sale_token: {
-                token_for_sale_address: string;
-                token_for_sale_token_id: number;
-            };
+            token_for_sale_address: string;
+            token_for_sale_token_id: number;
+        };
     }) => Promise<void>;
     sell: (params: {
         sale_price: number;
         sale_token_param_tez: {
-                token_for_sale_address: string;
-                token_for_sale_token_id: number;
-            };
+            token_for_sale_address: string;
+            token_for_sale_token_id: number;
+        };
     }) => Promise<void>;
 };
 
 export type Contract = { methods: Methods, storage: Storage };
-    
