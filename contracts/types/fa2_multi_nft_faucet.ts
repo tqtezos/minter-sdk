@@ -1,68 +1,73 @@
 
+type address = string & { __type: 'address' };
+type nat = number & { __type: 'nat' };
+type contract = string & { __type: 'contract' };
+type bytes = string & { __type: 'bytes' };
+
 type Storage = {
     assets: {
-        ledger: Map<number, string>;
-        next_token_id: number;
+        ledger: Map<nat, address>;
+        next_token_id: nat;
         operators: Map<{
-            0: string;
-            1: string;
-            2: number;
+            0: address;
+            1: address;
+            2: nat;
         }, void>;
-        token_metadata: Map<number, {
-            token_id: number;
-            token_info: Map<string, string>;
+        token_metadata: Map<nat, {
+            token_id: nat;
+            token_info: Map<string, bytes>;
         }>;
     };
-    metadata: Map<string, string>;
+    metadata: Map<string, bytes>;
 };
 
 type Methods = {
     balance_of: (params: {
         requests: {
-            owner: string;
-            token_id: number;
+            owner: address;
+            token_id: nat;
         }[];
-        callback: string;
+        callback: contract;
     }) => Promise<void>;
     transfer: (params: {
         0: {
-            from_: string;
+            from_: address;
             txs: {
-                to_: string;
-                token_id: number;
-                amount: number;
+                to_: address;
+                token_id: nat;
+                amount: nat;
             }[];
         }[];
-        from_: string;
+        from_: address;
         txs: {
-            to_: string;
-            token_id: number;
-            amount: number;
+            to_: address;
+            token_id: nat;
+            amount: nat;
         }[];
     }) => Promise<void>;
     add_operator: (params: {
-        owner: string;
-        operator: string;
-        token_id: number;
+        owner: address;
+        operator: address;
+        token_id: nat;
     }) => Promise<void>;
     remove_operator: (params: {
-        owner: string;
-        operator: string;
-        token_id: number;
+        owner: address;
+        operator: address;
+        token_id: nat;
     }) => Promise<void>;
     mint: (params: {
         0: {
             token_metadata: {
-                token_id: number;
-                token_info: Map<string, string>;
+                token_id: nat;
+                token_info: Map<string, bytes>;
             };
-            owner: string;
+            owner: address;
         }[];
         token_metadata: {
-            token_id: number;
-            token_info: Map<string, string>;
+            token_id: nat;
+            token_info: Map<string, bytes>;
         };
-        owner: string;
+        owner: address;
     }) => Promise<void>;
 };
 

@@ -1,13 +1,16 @@
 
+type address = string & { __type: 'address' };
+type nat = number & { __type: 'nat' };
+
 type Storage = {
     0: {
         empty: void;
         state: {
             request: {
-                owner: string;
-                token_id: number;
+                owner: address;
+                token_id: nat;
             };
-            balance: number;
+            balance: nat;
         }[];
     };
 };
@@ -15,25 +18,25 @@ type Storage = {
 type Methods = {
     default: () => Promise<void>;
     query: (params: {
-        fa2: string;
+        fa2: address;
         requests: {
-            owner: string;
-            token_id: number;
+            owner: address;
+            token_id: nat;
         }[];
     }) => Promise<void>;
     response: (params: {
         0: {
             request: {
-                owner: string;
-                token_id: number;
+                owner: address;
+                token_id: nat;
             };
-            balance: number;
+            balance: nat;
         }[];
         request: {
-            owner: string;
-            token_id: number;
+            owner: address;
+            token_id: nat;
         };
-        balance: number;
+        balance: nat;
     }) => Promise<void>;
 };
 

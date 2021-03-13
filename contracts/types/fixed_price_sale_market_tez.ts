@@ -1,42 +1,46 @@
 
+type address = string & { __type: 'address' };
+type nat = number & { __type: 'nat' };
+type mutez = number & { __type: 'mutez' };
+
 type Storage = {
     admin?: {
-        admin: string;
+        admin: address;
         paused: boolean;
-        pending_admin?: string;
+        pending_admin?: address;
     };
     sales: Map<{
-        sale_seller: string;
+        sale_seller: address;
         sale_token: {
-            token_for_sale_address: string;
-            token_for_sale_token_id: number;
+            token_for_sale_address: address;
+            token_for_sale_token_id: nat;
         };
-    }, number>;
+    }, mutez>;
 };
 
 type Methods = {
     confirm_admin: () => Promise<void>;
     pause: (param: boolean) => Promise<void>;
-    set_admin: (param: string) => Promise<void>;
+    set_admin: (param: address) => Promise<void>;
     buy: (params: {
-        sale_seller: string;
+        sale_seller: address;
         sale_token: {
-            token_for_sale_address: string;
-            token_for_sale_token_id: number;
+            token_for_sale_address: address;
+            token_for_sale_token_id: nat;
         };
     }) => Promise<void>;
     cancel: (params: {
-        sale_seller: string;
+        sale_seller: address;
         sale_token: {
-            token_for_sale_address: string;
-            token_for_sale_token_id: number;
+            token_for_sale_address: address;
+            token_for_sale_token_id: nat;
         };
     }) => Promise<void>;
     sell: (params: {
-        sale_price: number;
+        sale_price: mutez;
         sale_token_param_tez: {
-            token_for_sale_address: string;
-            token_for_sale_token_id: number;
+            token_for_sale_address: address;
+            token_for_sale_token_id: nat;
         };
     }) => Promise<void>;
 };

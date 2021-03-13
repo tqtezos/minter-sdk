@@ -1,57 +1,63 @@
 
+type address = string & { __type: 'address' };
+type nat = number & { __type: 'nat' };
+type mutez = number & { __type: 'mutez' };
+type timestamp = number & { __type: 'timestamp' };
+type int = number & { __type: 'int' };
+
 type Storage = {
     pauseable_admin?: {
-        admin: string;
+        admin: address;
         paused: boolean;
-        pending_admin?: string;
+        pending_admin?: address;
     };
-    current_id: number;
-    max_auction_time: number;
-    max_config_to_start_time: number;
-    auctions: Map<number, {
-        seller: string;
-        current_bid: number;
-        start_time: number;
-        last_bid_time: number;
-        round_time: number;
-        extend_time: number;
+    current_id: nat;
+    max_auction_time: nat;
+    max_config_to_start_time: nat;
+    auctions: Map<nat, {
+        seller: address;
+        current_bid: mutez;
+        start_time: timestamp;
+        last_bid_time: timestamp;
+        round_time: int;
+        extend_time: int;
         asset: {
-            fa2_address: string;
+            fa2_address: address;
             fa2_batch: {
-                token_id: number;
-                amount: number;
+                token_id: nat;
+                amount: nat;
             }[];
         }[];
-        min_raise_percent: number;
-        min_raise: number;
-        end_time: number;
-        highest_bidder: string;
+        min_raise_percent: nat;
+        min_raise: mutez;
+        end_time: timestamp;
+        highest_bidder: address;
     }>;
 };
 
 type Methods = {
     confirm_admin: () => Promise<void>;
     pause: (param: boolean) => Promise<void>;
-    set_admin: (param: string) => Promise<void>;
-    bid: (param: number) => Promise<void>;
-    cancel: (param: number) => Promise<void>;
+    set_admin: (param: address) => Promise<void>;
+    bid: (param: nat) => Promise<void>;
+    cancel: (param: nat) => Promise<void>;
     configure: (params: {
-        opening_price: number;
-        min_raise_percent: number;
-        min_raise: number;
-        round_time: number;
-        extend_time: number;
+        opening_price: mutez;
+        min_raise_percent: nat;
+        min_raise: mutez;
+        round_time: nat;
+        extend_time: nat;
         asset: {
-            fa2_address: string;
+            fa2_address: address;
             fa2_batch: {
-                token_id: number;
-                amount: number;
+                token_id: nat;
+                amount: nat;
             }[];
         }[];
-        start_time: number;
-        end_time: number;
+        start_time: timestamp;
+        end_time: timestamp;
     }) => Promise<void>;
-    resolve: (param: number) => Promise<void>;
+    resolve: (param: nat) => Promise<void>;
 };
 
 export type Contract = { methods: Methods, storage: Storage };

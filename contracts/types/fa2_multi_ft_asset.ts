@@ -1,89 +1,94 @@
 
+type address = string & { __type: 'address' };
+type nat = number & { __type: 'nat' };
+type contract = string & { __type: 'contract' };
+type bytes = string & { __type: 'bytes' };
+
 type Storage = {
     admin?: {
-        admin: string;
+        admin: address;
         paused: boolean;
-        pending_admin?: string;
+        pending_admin?: address;
     };
     assets: {
         ledger: Map<{
-            0: string;
-            1: number;
-        }, number>;
+            0: address;
+            1: nat;
+        }, nat>;
         operators: Map<{
-            0: string;
-            1: string;
-            2: number;
+            0: address;
+            1: address;
+            2: nat;
         }, void>;
-        token_metadata: Map<number, {
-            token_id: number;
-            token_info: Map<string, string>;
+        token_metadata: Map<nat, {
+            token_id: nat;
+            token_info: Map<string, bytes>;
         }>;
-        token_total_supply: Map<number, number>;
+        token_total_supply: Map<nat, nat>;
     };
-    metadata: Map<string, string>;
+    metadata: Map<string, bytes>;
 };
 
 type Methods = {
     confirm_admin: () => Promise<void>;
     pause: (param: boolean) => Promise<void>;
-    set_admin: (param: string) => Promise<void>;
+    set_admin: (param: address) => Promise<void>;
     balance_of: (params: {
         requests: {
-            owner: string;
-            token_id: number;
+            owner: address;
+            token_id: nat;
         }[];
-        callback: string;
+        callback: contract;
     }) => Promise<void>;
     transfer: (params: {
         0: {
-            from_: string;
+            from_: address;
             txs: {
-                to_: string;
-                token_id: number;
-                amount: number;
+                to_: address;
+                token_id: nat;
+                amount: nat;
             }[];
         }[];
-        from_: string;
+        from_: address;
         txs: {
-            to_: string;
-            token_id: number;
-            amount: number;
+            to_: address;
+            token_id: nat;
+            amount: nat;
         }[];
     }) => Promise<void>;
     add_operator: (params: {
-        owner: string;
-        operator: string;
-        token_id: number;
+        owner: address;
+        operator: address;
+        token_id: nat;
     }) => Promise<void>;
     remove_operator: (params: {
-        owner: string;
-        operator: string;
-        token_id: number;
+        owner: address;
+        operator: address;
+        token_id: nat;
     }) => Promise<void>;
     burn_tokens: (params: {
         0: {
-            owner: string;
-            token_id: number;
-            amount: number;
+            owner: address;
+            token_id: nat;
+            amount: nat;
         }[];
-        owner: string;
-        token_id: number;
-        amount: number;
+        owner: address;
+        token_id: nat;
+        amount: nat;
     }) => Promise<void>;
     create_token: (params: {
-        token_id: number;
-        token_info: Map<string, string>;
+        token_id: nat;
+        token_info: Map<string, bytes>;
     }) => Promise<void>;
     mint_tokens: (params: {
         0: {
-            owner: string;
-            token_id: number;
-            amount: number;
+            owner: address;
+            token_id: nat;
+            amount: nat;
         }[];
-        owner: string;
-        token_id: number;
-        amount: number;
+        owner: address;
+        token_id: nat;
+        amount: nat;
     }) => Promise<void>;
 };
 
