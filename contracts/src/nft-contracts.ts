@@ -41,19 +41,19 @@ interface AdminStorage {
 
 export async function originateNft(
     tz: TezosToolkit,
-    admin: address,
+    admin: address
 ): Promise<Contract> {
     const code = await compileAndLoadContract(
         defaultEnv,
-        `minter_collection/fa2_multi_nft_asset.mligo`,
-        `nft_asset_main`,
-        `fa2_multi_nft_asset.tz`,
+        'minter_collection/fa2_multi_nft_asset.mligo',
+        'nft_asset_main',
+        'fa2_multi_nft_asset.tz'
     );
-    const meta_uri = char2Bytes(`tezos-storage:content`);
+    const meta_uri = char2Bytes('tezos-storage:content');
     const meta = {
-        name: `example_name`,
-        description: `sample_token`,
-        interfaces: [`TZIP-012`,`TZIP-016`],
+        name: 'example_name',
+        description: 'sample_token',
+        interfaces: ['TZIP-012','TZIP-016']
     };
 
     const meta_content = char2Bytes(JSON.stringify(meta,null,2));
@@ -61,50 +61,50 @@ export async function originateNft(
     const storage = `(Pair (Pair (Pair (Pair "tz1YPSCGWXwBdTncK2aCctSZAXWvGsGwVJqU" True) None)
             (Pair (Pair {} 0) (Pair {} {})))
       { Elt "" 0x${meta_uri} ; Elt "contents" 0x${meta_content} })`;
-    return originateContract(tz, code, storage, `nft`);
+    return originateContract(tz, code, storage, 'nft');
 }
 
 export async function originateNftFaucet(
     tz: TezosToolkit,
-    admin: address,
+    admin: address
 ): Promise<Contract> {
     const code = await compileAndLoadContract(
         defaultEnv,
-        `minter_collection/fa2_multi_nft_faucet.mligo`,
-        `nft_faucet_main`,
-        `fa2_multi_nft_faucet.tz`,
+        'minter_collection/fa2_multi_nft_faucet.mligo',
+        'nft_faucet_main',
+        'fa2_multi_nft_faucet.tz'
     );
 
-    const meta_uri = char2Bytes(`tezos-storage:content`);
+    const meta_uri = char2Bytes('tezos-storage:content');
     const meta = {
-        name: `example_name`,
-        description: `sample_token`,
-        interfaces: [`TZIP-012`,`TZIP-016`],
+        name: 'example_name',
+        description: 'sample_token',
+        interfaces: ['TZIP-012','TZIP-016']
     };
 
     const meta_content = char2Bytes(JSON.stringify(meta,null,2));
 
     const storage = `(Pair (Pair (Pair {} 0) (Pair {} {}))
       { Elt "" 0x${meta_uri} ; Elt "contents" 0x${meta_content} })`;
-    return originateContract(tz, code, storage, `nftFaucet`);
+    return originateContract(tz, code, storage, 'nftFaucet');
 }
 
 export async function originateFtFaucet(
     tz: TezosToolkit,
-    admin: address,
+    admin: address
 ): Promise<Contract> {
     const code = await compileAndLoadContract(
         defaultEnv,
-        `minter_collection/fa2_multi_ft_faucet.mligo`,
-        `ft_faucet_main`,
-        `fa2_multi_ft_faucet.tz`,
+        'minter_collection/fa2_multi_ft_faucet.mligo',
+        'ft_faucet_main',
+        'fa2_multi_ft_faucet.tz'
     );
 
-    const meta_uri = char2Bytes(`tezos-storage:content`);
+    const meta_uri = char2Bytes('tezos-storage:content');
     const meta = {
-        name: `example_name`,
-        description: `sample_token`,
-        interfaces: [`TZIP-012`,`TZIP-106`],
+        name: 'example_name',
+        description: 'sample_token',
+        interfaces: ['TZIP-012','TZIP-106']
     };
 
     const meta_content = char2Bytes(JSON.stringify(meta,null,2));
@@ -112,7 +112,7 @@ export async function originateFtFaucet(
     const storage = `(Pair (Pair (Pair {} {}) (Pair {} {}))
         { Elt "" 0x${meta_uri} ; Elt "contents" 0x${meta_content} })`;
 
-    return originateContract(tz,code,storage,`ftFaucet`);
+    return originateContract(tz,code,storage,'ftFaucet');
 }
 
 export async function originateFixedPriceSale(
@@ -120,12 +120,12 @@ export async function originateFixedPriceSale(
 ): Promise<Contract> {
     const code = await compileAndLoadContract(
         defaultEnv,
-        `fixed_price_sale/fixed_price_sale_market.mligo`,
-        `fixed_price_sale_main`,
-        `fixed_price_sale_market.tz`,
+        'fixed_price_sale/fixed_price_sale_market.mligo',
+        'fixed_price_sale_main',
+        'fixed_price_sale_market.tz',
     );
     const storage = `(Pair None {})`;
-    return originateContract(tz, code, storage, `fixed-price-sale-market`);
+    return originateContract(tz, code, storage, 'fixed-price-sale-market');
 }
 
 export async function originateFixedPriceTezSale(
@@ -133,40 +133,40 @@ export async function originateFixedPriceTezSale(
 ): Promise<Contract> {
     const code = await compileAndLoadContract(
         defaultEnv,
-        `fixed_price_sale/fixed_price_sale_market_tez.mligo`,
-        `fixed_price_sale_tez_main`,
-        `fixed_price_sale_market_tez.tz`,
+        'fixed_price_sale/fixed_price_sale_market_tez.mligo',
+        'fixed_price_sale_tez_main',
+        'fixed_price_sale_market_tez.tz',
     );
     const storage = `(Pair None {})`;
-    return originateContract(tz, code, storage, `fixed-price-sale-market-tez`);
+    return originateContract(tz, code, storage, 'fixed-price-sale-market-tez');
 }
 
 export async function originateFixedPriceAdminSale(
     tz: TezosToolkit,
-    adminAddress: address,
+    adminAddress: address
 ): Promise<Contract> {
     const code = await compileAndLoadContract(
         defaultEnv,
-        `fixed_price_sale/fixed_price_sale_market.mligo`,
-        `fixed_price_sale_main`,
-        `fixed_price_sale_market.tz`,
+        'fixed_price_sale/fixed_price_sale_market.mligo',
+        'fixed_price_sale_main',
+        'fixed_price_sale_market.tz'
     );
     const storage = `(Pair (Some (Pair (Pair "${adminAddress}" False) None)) {})`;
-    return originateContract(tz, code, storage, `fixed-price-sale-market-with-admin`);
+    return originateContract(tz, code, storage, 'fixed-price-sale-market-with-admin');
 }
 
 export async function originateFixedPriceTezAdminSale(
     tz: TezosToolkit,
-    adminAddress: address,
+    adminAddress: address
 ): Promise<Contract> {
     const code = await compileAndLoadContract(
         defaultEnv,
-        `fixed_price_sale/fixed_price_sale_market_tez.mligo`,
-        `fixed_price_sale_tez_main`,
-        `fixed_price_sale_market_tez.tz`,
+        'fixed_price_sale/fixed_price_sale_market_tez.mligo',
+        'fixed_price_sale_tez_main',
+        'fixed_price_sale_market_tez.tz',
     );
-    const storage = `(Pair (Some (Pair (Pair "${adminAddress}" False) None)) {})`;
-    return originateContract(tz, code, storage, `fixed-price-sale-market-tez-with-admin`);
+    const storage = `(Pair (Some (Pair (Pair "${adminAddress}" False) None)) {})`
+    return originateContract(tz, code, storage, 'fixed-price-sale-market-tez-with-admin');
 }
 
 export async function originateEnglishAuctionTez(
@@ -174,13 +174,13 @@ export async function originateEnglishAuctionTez(
 ): Promise<Contract> {
     const code = await compileAndLoadContract(
         defaultEnv,
-        `english_auction/english_auction_tez.mligo`,
-        `english_auction_tez_main`,
-        `english_auction_tez.tz`,
+        'english_auction/english_auction_tez.mligo',
+        'english_auction_tez_main',
+        'english_auction_tez.tz',
     );
     const tzAddress = await tz.signer.publicKeyHash();
     const storage = `(Pair None (Pair 0 (Pair 86400 (Pair 86400 {}))))`;
-    return originateContract(tz, code, storage, `english_auction_tez`);
+    return originateContract(tz, code, storage, 'english_auction_tez');
 }
 
 export async function originateEnglishAuctionTezAdmin(
@@ -188,11 +188,11 @@ export async function originateEnglishAuctionTezAdmin(
 ): Promise<Contract> {
     const code = await compileAndLoadContract(
         defaultEnv,
-        `english_auction/english_auction_tez.mligo`,
-        `english_auction_tez_main`,
-        `english_auction_tez.tz`,
+        'english_auction/english_auction_tez.mligo',
+        'english_auction_tez_main',
+        'english_auction_tez.tz',
     );
     const tzAddress = await tz.signer.publicKeyHash();
     const storage = `(Pair (Some (Pair (Pair "${tzAddress}" False) None)) (Pair 0 (Pair 86400 (Pair 86400 {}))))`;
-    return originateContract(tz, code, storage, `english_auction_tez_admin`);
+    return originateContract(tz, code, storage, 'english_auction_tez_admin');
 }

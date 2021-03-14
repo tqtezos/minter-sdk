@@ -7,7 +7,7 @@ import {
   compileAndLoadContract,
   originateContract,
   defaultEnv,
-  LigoEnv,
+  LigoEnv
 } from '../src/ligo';
 import { address, Contract } from '../src/type-aliases';
 import { BalanceOfRequest, BalanceOfResponse } from '../src/fa2-interface';
@@ -15,26 +15,26 @@ import { BalanceOfRequest, BalanceOfResponse } from '../src/fa2-interface';
 export type InspectorStorage = BalanceOfResponse[] | {};
 
 export async function originateInspector(tz: TezosToolkit): Promise<Contract> {
-  const inspectorSrcDir = path.join(defaultEnv.cwd, `ligo/fa2_clients`);
+  const inspectorSrcDir = path.join(defaultEnv.cwd, 'ligo/fa2_clients');
   const env = new LigoEnv(defaultEnv.cwd, inspectorSrcDir, defaultEnv.outDir);
 
   const code = await compileAndLoadContract(
     env,
-    `inspector.mligo`,
-    `main`,
-    `inspector.tz`,
+    'inspector.mligo',
+    'main',
+    'inspector.tz'
   );
   const storage = `(Left Unit)`;
-  const c = await originateContract(tz, code, storage, `inspector`);
+  const c = await originateContract(tz, code, storage, 'inspector');
   return c;
 }
 
 export async function queryBalances(
   inspector: Contract,
   fa2: address,
-  requests: BalanceOfRequest[],
+  requests: BalanceOfRequest[]
 ): Promise<BalanceOfResponse[]> {
-  $log.info(`checking token balance`);
+  $log.info('checking token balance');
 
   const op = await inspector.methods.query(fa2, requests).send();
   const hash = await op.confirmation(3);
@@ -42,5 +42,5 @@ export async function queryBalances(
 
   const storage = await inspector.storage<InspectorStorage>();
   if (Array.isArray(storage)) return storage;
-  else return Promise.reject(`Invalid inspector storage state Empty.`);
+  else return Promise.reject('Invalid inspector storage state Empty.');
 }

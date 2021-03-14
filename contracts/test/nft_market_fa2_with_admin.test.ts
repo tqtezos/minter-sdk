@@ -11,13 +11,13 @@ import {
     originateFtFaucet,
     MintNftParam,
     MintFtParam,
-    originateFixedPriceAdminSale,
+    originateFixedPriceAdminSale
 } from '../src/nft-contracts';
 import {
     BalanceOfRequest,
     addOperator,
     TokenMetadata,
-    transfer,
+    transfer
 } from '../src/fa2-interface';
 import { originateInspector, queryBalances } from './fa2-balance-inspector';
 
@@ -25,7 +25,7 @@ jest.setTimeout(180000); // 3 minutes
 
 
 describe.each([originateFixedPriceAdminSale])
-    (`marketplace test`, (originateMarketplace) => {
+    ('marketplace test', (originateMarketplace) => {
         let tezos: TestTz;
         let nft: Contract;
         let ft: Contract;
@@ -33,7 +33,7 @@ describe.each([originateFixedPriceAdminSale])
         let marketplace: Contract;
         let marketAddress: address;
         let bobAddress: address;
-        let aliceAddress: address;
+        let aliceAddress: address
         let ftTokenId: BigNumber;
         let nftTokenId: BigNumber;
         let tokenMetadata: MichelsonMap<string, bytes>;
@@ -85,7 +85,7 @@ describe.each([originateFixedPriceAdminSale])
             tz: TezosToolkit,
             tokens: MintNftParam[],
         ): Promise<void> {
-            $log.info(`minting...`);
+            $log.info('minting...');
             const op = await nft.methods.mint(tokens).send();
             const hash = await op.confirmation();
             $log.info(`Minted non-fungible tokens. Consumed gas: ${op.consumedGas}`);
@@ -95,7 +95,7 @@ describe.each([originateFixedPriceAdminSale])
             tz: TezosToolkit,
             tokens: MintFtParam[],
         ): Promise<void> {
-            $log.info(`minting...`);
+            $log.info('minting...');
             const op = await ft.methods.mint_tokens(tokens).send();
             const hash = await op.confirmation();
             $log.info(`Minted fungible tokens. Consumed gas: ${op.consumedGas}`);
@@ -105,32 +105,32 @@ describe.each([originateFixedPriceAdminSale])
             tz: TezosToolkit,
             token_metadata: TokenMetadata,
         ): Promise<void> {
-            $log.info(`minting...`);
+            $log.info('minting...');
             const op =
                 await ft.methods.create_token(token_metadata.token_id,token_metadata.token_info).send();
             const hash = await op.confirmation();
             $log.info(`Created fungible token. Consumed gas: ${op.consumedGas}`);
         }
 
-        test(`bob makes sale, and alice buys nft`, async () => {
+        test('bob makes sale, and alice buys nft', async () => {
 
             // $log.info(`bruh`);
             // let methods = ft.parameterSchema.ExtractSignatures();
             // $log.info(`Error: ${JSON.stringify(methods, null, 2)}`);
 
-            await createFtToken(tezos.alice, { token_id : ftTokenId, token_info: tokenMetadata });
+            await createFtToken(tezos.alice, { token_id : ftTokenId, token_info: tokenMetadata, });
             await mintFtTokens(tezos.alice, [
                 {
 
                     token_id: ftTokenId,
                     owner: aliceAddress,
-                    amount: new BigNumber(1000),
-                },
+                    amount: new BigNumber(1000)
+                }
             ]);
 
             const [aliceHasFTTokenBefore, bobHasFTTokenBefore] = await hasFtTokens([
                 { owner: aliceAddress, token_id: ftTokenId },
-                { owner: bobAddress, token_id: ftTokenId },
+                { owner: bobAddress, token_id: ftTokenId }
             ]);
 
             expect(aliceHasFTTokenBefore).toBe(true);
@@ -142,26 +142,26 @@ describe.each([originateFixedPriceAdminSale])
                         token_id: nftTokenId,
                         token_info: tokenMetadata,
                     },
-                    owner: bobAddress,
-                },
+                    owner: bobAddress
+                }
             ]);
 
             const [aliceHasNFTTokenBefore, bobHasNFTTokenBefore] = await hasNftTokens([
                 { owner: aliceAddress, token_id: nftTokenId },
-                { owner: bobAddress, token_id: nftTokenId },
+                { owner: bobAddress, token_id: nftTokenId }
             ]);
             expect(aliceHasNFTTokenBefore).toBe(false);
             expect(bobHasNFTTokenBefore).toBe(true);
 
-            $log.info(`making marketplace an operator of alice's FT tokens`);
+            $log.info('making marketplace an operator of alice\'s FT tokens');
             await addOperator(ft.address, tezos.alice, marketAddress, ftTokenId);
 
-            $log.info(`making marketplace an operator of bob's NFT token`);
+            $log.info('making marketplace an operator of bob\'s NFT token');
             await addOperator(nft.address, tezos.bob, marketAddress, nftTokenId);
 
-            $log.info(`starting sale...`);
+            $log.info('starting sale...');
 
-            $log.info(`pause marketplace`);
+            $log.info('pause marketplace');
             const pauseOp = await marketplace.methods.pause(true).send({ amount: 0 });
             $log.info(`Waiting for ${pauseOp.hash} to be confirmed...`);
             const pauseOpHash = await pauseOp.confirmation().then(() => pauseOp.hash);
@@ -173,7 +173,7 @@ describe.each([originateFixedPriceAdminSale])
             }
             catch (error) {$log.info(`Confirmation: Cannot create sale while contract is paused`);}
 
-            $log.info(`unpause marketplace`);
+            $log.info('unpause marketplace');
             const unpauseOp = await marketplace.methods.pause(false).send({ amount: 0 });
             $log.info(`Waiting for ${unpauseOp.hash} to be confirmed...`);
             const unpauseOpHash = await unpauseOp.confirmation().then(() => unpauseOp.hash);
@@ -193,19 +193,19 @@ describe.each([originateFixedPriceAdminSale])
             const buyOpHash = await buyOp.confirmation().then(() => buyOp.hash);
             $log.info(`Operation injected at hash=${buyOpHash}`);
 
-        });
+        })
 
-        test.only(`bob makes sale, cancels it, then alice unsuccessfully tries to buy`, async () => {
+        test.only('bob makes sale, cancels it, then alice unsuccessfully tries to buy', async () => {
 
 
-            await createFtToken(tezos.alice, { token_id : ftTokenId, token_info: tokenMetadata });
+            await createFtToken(tezos.alice, { token_id : ftTokenId, token_info: tokenMetadata, });
             await mintFtTokens(tezos.alice, [
                 {
 
                     token_id: ftTokenId,
                     owner: aliceAddress,
-                    amount: new BigNumber(1000),
-                },
+                    amount: new BigNumber(1000)
+                }
             ]);
 
             await mintNftTokens(tezos.bob, [
@@ -214,15 +214,15 @@ describe.each([originateFixedPriceAdminSale])
                         token_id: nftTokenId,
                         token_info: tokenMetadata,
                     },
-                    owner: bobAddress,
-                },
+                    owner: bobAddress
+                }
             ]);
 
 
-            $log.info(`making marketplace an operator of bob's token`);
+            $log.info('making marketplace an operator of bob\'s token');
             await addOperator(nft.address, tezos.bob, marketAddress, nftTokenId);
 
-            $log.info(`making marketplace an operator of alice's FT tokens`);
+            $log.info('making marketplace an operator of alice\'s FT tokens');
             await addOperator(ft.address, tezos.alice, marketAddress, ftTokenId);
 
             $log.info(`Creating sale`);
@@ -232,13 +232,13 @@ describe.each([originateFixedPriceAdminSale])
             $log.info(`Operation injected at hash=${sellOpHash}`);
 
             try {
-                $log.info(`alice cancels sale (not admin nor seller)`);
+                $log.info('alice cancels sale (not admin nor seller)');
                 const removeSaleOp = await marketplace.methods.cancel(aliceAddress, nft.address, nftTokenId, ft.address, ftTokenId).send({source:aliceAddress, amount: 0 });
             } catch (error) {
                 $log.info(`Alice cannot cancel sale, since she is not admin`);
             }
 
-            $log.info(`bob cancels sale`);
+            $log.info('bob cancels sale');
             const removeSaleOp = await marketplace.methods.cancel(bobAddress, nft.address, nftTokenId, ft.address, ftTokenId).send({source:bobAddress, amount: 0 });
             $log.info(`Waiting for ${removeSaleOp.hash} to be confirmed...`);
             const removeSaleOpHash = await removeSaleOp.confirmation().then(() => removeSaleOp.hash);
@@ -253,6 +253,6 @@ describe.each([originateFixedPriceAdminSale])
                 $log.info(`alice cannot buy`);
             }
 
-        });
+        })
 
     });
