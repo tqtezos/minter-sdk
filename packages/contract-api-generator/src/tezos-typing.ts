@@ -5,7 +5,7 @@ import { Context } from '@taquito/taquito';
 import { TezosToolkit } from '@taquito/taquito';
 import { OriginationOperation } from '@taquito/taquito/dist/types/operations/origination-operation';
 import { OriginateParams } from '@taquito/taquito/dist/types/operations/types';
-import { TezosTypes } from './tezos-types';
+import { tas, TezosTypes } from './tezos-types';
 import { TestContractType } from './test-contract-type';
 import { TestContractType2 } from './test-contract-type-2';
 
@@ -41,22 +41,22 @@ const test = async () => {
 
 
     const contract = await Tezos.contract.at(``);
-    contract.methods.bid(TezosTypes.nat.fromNumber(0));
+    contract.methods.bid(tas.nat(0));
     contract.methods.configure({
         asset: [{
-            fa2_address: TezosTypes.address.fromString(`tz123`),
+            fa2_address: tas.address(`tz123`),
             fa2_batch: [{
-                amount: TezosTypes.nat.fromNumber(100),
-                token_id: TezosTypes.nat.fromString(`100000000000000`),
+                amount: tas.nat(100),
+                token_id: tas.nat(`100000000000000`),
             }],
         }],
-        start_time: TezosTypes.timestamp.fromDate(new Date()),
-        end_time: TezosTypes.timestamp.fromDate(new Date()),
-        extend_time: TezosTypes.nat.fromNumber(10),
-        min_raise: TezosTypes.mutez.fromNumber(10),
-        min_raise_percent: TezosTypes.nat.fromNumber(10),
-        opening_price: TezosTypes.mutez.fromNumber(10),
-        round_time: TezosTypes.nat.fromNumber(10),
+        start_time: tas.timestamp(new Date()),
+        end_time: tas.timestamp(`2020-01-01`),
+        extend_time: tas.nat(10),
+        min_raise: tas.mutez(10),
+        min_raise_percent: tas.nat(10),
+        opening_price: tas.mutez(10),
+        round_time: tas.nat(10),
     });
 
     const Tezos2 = new TezosToolkit(`https://YOUR_PREFERRED_RPC_URL`) as unknown as TezosToolkitTyped<TestContractType2>;
@@ -66,13 +66,20 @@ const test = async () => {
         storage: {},
     });
     const contract2 = await originationResult.contract(5);
-    contract2.methods.set_admin(TezosTypes.address.fromString(`tz123`));
+    contract2.methods.set_admin(tas.address(`tz123`));
     contract2.methods.create_token({
-        token_id: TezosTypes.nat.fromString(`100000000000000`),
-        token_info: TezosTypes.map.from<string, ReturnType<typeof TezosTypes['bytes']['fromString']>>([
-            { key: `0`, value: TezosTypes.bytes.fromString(`abc`) },
-            { key: `1`, value: TezosTypes.bytes.fromString(`def`) },
+        token_id: tas.nat(`100000000000000`),
+        token_info: tas.map([
+            { key: `0`, value: tas.bytes(`abc`) },
+            { key: `1`, value: tas.bytes(`def`) },
         ]),
+    });
+    contract2.methods.create_token({
+        token_id: tas.nat(`100000000000000`),
+        token_info: tas.map({
+            0: tas.bytes(`abc`),
+            1: tas.bytes(`def`),
+        }),
     });
 
     // contract2.
