@@ -2,25 +2,9 @@
 
 This project implements a dutch style auction, using NFTs represented by tickets instead of traditional FA2 based NFTs.
 
-## Build instructions
-
-This directory contains two contracts written in CamelLigo, as well as a directory containing the generated Michelson contracts. Michelson contracts can be generated as follows:
-
-* `ligo compile-contract --protocol edo --disable-michelson-typechecking nft_wallet.mligo main > ./michelson/nft_wallet.tz`
-* `ligo compile-contract --protocol edo --disable-michelson-typechecking nft_auction.mligo main > ./michelson/nft_auction.tz`
-
-The ligo version used is:
-
-```
-$ ligo --version
-Rolling release
-Commit SHA: d2310a1366a2ec1348c51bb77f4f34ff5b93539e
-Commit Date: 2020-12-22 16:19:43 +0000
-```
-
 # Demo
 
-The two nft-wallet contracts as well as Alice's nft-auction contract were added to edonet and can be viewed on tzstats.
+The two nft-wallet contracts (compiled using an older ligo version so possibly with slightly different Michelson) as well as Alice's nft-auction contract were added to edonet and can be viewed on tzstats.
 
 * Alice's wallet: https://edo.tzstats.com/KT1EAMUQC1yJ2sRPNPpLHVMGCzroYGe1C1ea
 * Bob's wallet: https://edo.tzstats.com/KT1QQukCBULzFu6samB5FpbLNBXmNzArSpTs
