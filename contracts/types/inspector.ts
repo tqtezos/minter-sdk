@@ -25,13 +25,6 @@ type Methods = {
         }[];
     }) => Promise<void>;
     response: (params: {
-        0: {
-            request: {
-                owner: address;
-                token_id: nat;
-            };
-            balance: nat;
-        }[];
         request: {
             owner: address;
             token_id: nat;

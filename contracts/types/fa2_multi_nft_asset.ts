@@ -38,14 +38,6 @@ type Methods = {
         callback: contract;
     }) => Promise<void>;
     transfer: (params: {
-        0: {
-            from_: address;
-            txs: {
-                to_: address;
-                token_id: nat;
-                amount: nat;
-            }[];
-        }[];
         from_: address;
         txs: {
             to_: address;
@@ -64,13 +56,6 @@ type Methods = {
         token_id: nat;
     }) => Promise<void>;
     mint: (params: {
-        0: {
-            token_metadata: {
-                token_id: nat;
-                token_info: Map<string, bytes>;
-            };
-            owner: address;
-        }[];
         token_metadata: {
             token_id: nat;
             token_info: Map<string, bytes>;
