@@ -27,7 +27,7 @@ type parameter =
   | Buy of (nat ticket contract)
   | Cancel of (nat ticket contract)
 
-let main (arg : parameter * storage) : operation list * storage =
+let ticket_auction_main (arg : parameter * storage) : operation list * storage =
   begin
     let (p,storage) = arg in
     let {data = data; tickets = tickets} = storage in

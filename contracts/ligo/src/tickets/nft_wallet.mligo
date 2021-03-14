@@ -41,7 +41,7 @@ type storage =
    token_metadata :  token_metadata
    }
 
-let main (arg : parameter * storage) : operation list * storage =
+let ticket_wallet_main (arg : parameter * storage) : operation list * storage =
   begin
     assert (Tezos.amount = 0mutez);
     let (p,storage) = arg in

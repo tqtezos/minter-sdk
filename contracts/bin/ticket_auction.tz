@@ -248,6 +248,17 @@
                      DUP ;
                      DUG 3 ;
                      CDR ;
+                     CAR ;
+                     DIG 2 ;
+                     DUP ;
+                     DUG 3 ;
+                     COMPARE ;
+                     LT ;
+                     IF {} { PUSH string "failed assertion" ; FAILWITH } ;
+                     DIG 2 ;
+                     DUP ;
+                     DUG 3 ;
+                     CDR ;
                      CDR ;
                      CAR ;
                      DIG 2 ;
