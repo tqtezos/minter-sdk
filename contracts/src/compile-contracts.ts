@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import * as fs from 'fs';
-import { defaultEnv, LigoEnv, compileContract } from './ligo';
+import { defaultEnv, LigoEnv, compileContract} from './ligo';
 import { $log } from '@tsed/logger';
 
 async function main(): Promise<void> {
@@ -26,7 +26,7 @@ async function main(): Promise<void> {
 
 async function compileNftFaucetContract(env: LigoEnv): Promise<void> {
   $log.info(`compiling NFT faucet contract`);
-  await compileContract(
+  await await compileContract(
     env,
     `minter_collection/fa2_multi_nft_faucet.mligo`,
     `nft_faucet_main`,
@@ -37,7 +37,7 @@ async function compileNftFaucetContract(env: LigoEnv): Promise<void> {
 
 async function compileNftContract(env: LigoEnv): Promise<void> {
   $log.info(`compiling NFT contract`);
-  await compileContract(
+  await await compileContract(
     env,
     `minter_collection/fa2_multi_nft_asset.mligo`,
     `nft_asset_main`,
@@ -49,7 +49,7 @@ async function compileNftContract(env: LigoEnv): Promise<void> {
 
 async function compileFtFaucetContract(env: LigoEnv): Promise<void> {
   $log.info(`compiling FT faucet contract`);
-  await compileContract(
+  await await compileContract(
     env,
     `minter_collection/fa2_multi_ft_faucet.mligo`,
     `ft_faucet_main`,
@@ -60,7 +60,7 @@ async function compileFtFaucetContract(env: LigoEnv): Promise<void> {
 
 async function compileFtContract(env: LigoEnv): Promise<void> {
   $log.info(`compiling FT contract`);
-  await compileContract(
+  await await compileContract(
     env,
     `minter_collection/fa2_multi_ft_asset.mligo`,
     `multi_ft_asset_main`,
@@ -70,39 +70,39 @@ async function compileFtContract(env: LigoEnv): Promise<void> {
 }
 
 async function compileFixedPriceSaleMarketPlaceContract(env: LigoEnv): Promise<void> {
-  $log.info(`compiling fixed price sale marketplace contract`);
+    $log.info(`compiling fixed price sale marketplace contract`);
 
-  await compileContract(
-    env,
-    `fixed_price_sale/fixed_price_sale_market.mligo`,
-    `fixed_price_sale_main`,
-    `fixed_price_sale_market.tz`,
-  );
-  $log.info(`compiled fixed price sale marketplace contract`);
+    await await compileContract(
+        env,
+        `fixed_price_sale/fixed_price_sale_market.mligo`,
+        `fixed_price_sale_main`,
+        `fixed_price_sale_market.tz`,
+    );
+    $log.info(`compiled fixed price sale marketplace contract`);
 }
 
 async function compileFixedPriceSaleTezMarketPlaceContract(env: LigoEnv): Promise<void> {
-  $log.info(`compiling fixed price sale (sold in tez) marketplace contract`);
+    $log.info(`compiling fixed price sale (sold in tez) marketplace contract`);
 
-  await compileContract(
-    env,
-    `fixed_price_sale/fixed_price_sale_market_tez.mligo`,
-    `fixed_price_sale_tez_main`,
-    `fixed_price_sale_market_tez.tz`,
-  );
-  $log.info(`compiled fixed price sale (sold in tez) marketplace contract`);
+    await compileContract(
+        env,
+        `fixed_price_sale/fixed_price_sale_market_tez.mligo`,
+        `fixed_price_sale_tez_main`,
+        `fixed_price_sale_market_tez.tz`,
+    );
+    $log.info(`compiled fixed price sale (sold in tez) marketplace contract`);
 }
 
 async function compileEnglishAuctionTezContract(env: LigoEnv): Promise<void> {
   $log.info(`compiling english auction tez contract`);
 
   await compileContract(
-    env,
-    `english_auction/english_auction_tez.mligo`,
-    `english_auction_tez_main`,
-    `english_auction_tez.tz`,
+      env,
+      `english_auction/english_auction_tez.mligo`,
+      `english_auction_tez_main`,
+      `english_auction_tez.tz`,
   );
   $log.info(`compiled english auction tez contract`);
 }
 
-void main();
+main();
