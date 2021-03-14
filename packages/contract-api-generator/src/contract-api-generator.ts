@@ -309,7 +309,7 @@ const visitContractParameterEndpoint = (node: MMethod): TypedMethod[] => {
             return [{
                 name: name.substr(1),
                 args: [
-                    ...node.prim !== `pair` ? [{ type: visitType(node) }] : [],
+                    ...node.prim !== `pair` && !node.args ? [{ type: visitType(node) }] : [],
                     ...(node.args ?? []).map(x => visitVar(x)),
                 ].flatMap(x => x),
             }];
