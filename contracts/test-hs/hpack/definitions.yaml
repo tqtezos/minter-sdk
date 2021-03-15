@@ -27,6 +27,7 @@ _definitions:
         - DeriveTraversable
         - DerivingStrategies
         - DerivingVia
+        - DuplicateRecordFields
         - EmptyCase
         - FlexibleContexts
         - FlexibleInstances

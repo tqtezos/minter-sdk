@@ -27,6 +27,18 @@ extra-deps:
     - code/cleveland
     - code/morley-client
 
+- git:
+    https://gitlab.com/morley-framework/indigo.git
+  commit:
+    a7c93b410683ec6d86dfcda157f6d7ab9eeda778  # master
+  subdirs:
+    - .
+
+- git: https://gitlab.com/morley-framework/morley-ledgers.git
+  commit: c6a5b84cf15ed494f0a711ba4f1b646bbc6ef3d7  # master
+  subdirs:
+    - code/morley-ledgers
+
 - git: https://github.com/serokell/base-noprelude.git
   commit: 87df0899801dcdffd08ef7c3efd3c63e67e623c2
 - git: https://github.com/serokell/elliptic-curve.git
@@ -43,3 +55,7 @@ extra-deps:
 - named-0.3.0.1@sha256:2975d50c9c5d88095026ffc1303d2d9be52e5f588a8f8bcb7003a04b79f10a06,2312
 - show-type-0.1.1@sha256:24f681a3481b3f9630e619d816054804ba1bd6cc05b5978ddd2cece8499ff2fa,1154
 - base16-bytestring-1.0.1.0@sha256:33b9d57afa334d06485033e930c6b13fc760baf88fd8f715ae2f9a4b46e19a54
+- summoner-2.0.1.1
+- generic-data-0.8.3.0
+- neat-interpolation-0.3.2.6
+- megaparsec-8.0.0

@@ -57,6 +57,32 @@ packages:
     git: https://gitlab.com/morley-framework/morley.git
     commit: 121bf833899d3bcdce63daa3c917f575cf3476ea
 - completed:
+    subdir: .
+    name: indigo
+    version: 0.5.0
+    git: https://gitlab.com/morley-framework/indigo.git
+    pantry-tree:
+      size: 14289
+      sha256: 1a929a186ac8ed7d0552ad45af487b8d710075570f6020263ae8657d5bfa3465
+    commit: a7c93b410683ec6d86dfcda157f6d7ab9eeda778
+  original:
+    subdir: .
+    git: https://gitlab.com/morley-framework/indigo.git
+    commit: a7c93b410683ec6d86dfcda157f6d7ab9eeda778
+- completed:
+    subdir: code/morley-ledgers
+    name: morley-ledgers
+    version: 0.2.0.1
+    git: https://gitlab.com/morley-framework/morley-ledgers.git
+    pantry-tree:
+      size: 1524
+      sha256: fa2bbd245683f8830182c2cdbe8b44cd5a11ffb60ebacebda4579eb043626118
+    commit: c6a5b84cf15ed494f0a711ba4f1b646bbc6ef3d7
+  original:
+    subdir: code/morley-ledgers
+    git: https://gitlab.com/morley-framework/morley-ledgers.git
+    commit: c6a5b84cf15ed494f0a711ba4f1b646bbc6ef3d7
+- completed:
     name: base-noprelude
     version: 4.14.1.0
     git: https://github.com/serokell/base-noprelude.git
@@ -146,6 +172,34 @@ packages:
       sha256: 24661ef9b1089d468227300f8ceb89194b5cce68b9f6ed8109b01f63c07f54e3
   original:
     hackage: base16-bytestring-1.0.1.0@sha256:33b9d57afa334d06485033e930c6b13fc760baf88fd8f715ae2f9a4b46e19a54
+- completed:
+    hackage: summoner-2.0.1.1@sha256:8ced26ff256e012447e2c6a49a20102511adbea605624f00a059e1e85c366719,6993
+    pantry-tree:
+      size: 6092
+      sha256: d4650b53899bda375f27f2b82a3729f7f5a235e4dd732cb50b22a4e838a3d45d
+  original:
+    hackage: summoner-2.0.1.1
+- completed:
+    hackage: generic-data-0.8.3.0@sha256:fef21320697370fa1fadc14f72ac3ad8092b021f5371b315be3c9f3bde44c274,3710
+    pantry-tree:
+      size: 2061
+      sha256: bac628a423a6f86675d062f513278285b2a370f8f4a350c65a880b7043b6fb86
+  original:
+    hackage: generic-data-0.8.3.0
+- completed:
+    hackage: neat-interpolation-0.3.2.6@sha256:05a7516f4ffc86ba1ca4e9c1cddda5a062131ae518e1d423d6f162c214be4cc1,3066
+    pantry-tree:
+      size: 514
+      sha256: f8f5b320c436ee1316fa1b7c38235af8f0a3d11cbba714d57e3ffeedeb05ed7a
+  original:
+    hackage: neat-interpolation-0.3.2.6
+- completed:
+    hackage: megaparsec-8.0.0@sha256:362f85e243ecbcb550e1de6e5c74ba5a50c09edaa1208c99bc5b9fd242227fc6,3808
+    pantry-tree:
+      size: 1446
+      sha256: 955117c00a86970f2d0c215f33cf5293b16589c04678a0a790c03368ab6fd0aa
+  original:
+    hackage: megaparsec-8.0.0
 snapshots:
 - completed:
     size: 563099

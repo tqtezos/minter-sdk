@@ -15,21 +15,28 @@ library:
 
   dependencies:
     - cleveland
+    - filepath
     - file-embed
-    - fmt
     - lorentz
     - morley
     - morley-prelude
+    - morley-ledgers
 
 tests:
   minter-sdk-tests:
     <<: *test-common
 
     dependencies:
+      - containers
       - cleveland
+      - fmt
       - lens
       - lorentz
+      - named
       - morley
+      - morley-ledgers
       - morley-prelude
       - minter-sdk
+      - sized
       - tasty
+      - type-natural
