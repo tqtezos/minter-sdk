@@ -101,6 +101,7 @@ type operator_transfer_policy =
   | No_transfer
   | Owner_transfer
   | Owner_or_operator_transfer
+  | Operator_transfer
 
 type owner_hook_policy =
   [@layout:comb]

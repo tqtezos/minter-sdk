@@ -15,6 +15,7 @@ async function main(): Promise<void> {
     await compileEnglishAuctionTezContract(env);
     await compileFtFaucetContract(env);
     await compileFtContract(env);
+    await compileNftWithRoyaltyFaucetContract(env);
     // add other contracts here
 
     process.exit(0);
@@ -46,6 +47,17 @@ async function compileNftContract(env: LigoEnv): Promise<void> {
   $log.info('compiled NFT contract');
 }
 
+async function compileNftWithRoyaltyFaucetContract(env: LigoEnv): Promise<void> {
+  $log.info('compiling nft with royalty faucet contract');
+
+  await compileContract(
+      env,
+      'minter_collection/fa2_multi_nft_faucet_with_royalty.mligo',
+      'nft_royalty_faucet_main',
+      'nft_royalty_faucet.tz'
+  );
+  $log.info('compiled nft with royalty faucet contract');
+}
 
 async function compileFtFaucetContract(env: LigoEnv): Promise<void> {
   $log.info('compiling FT faucet contract');
