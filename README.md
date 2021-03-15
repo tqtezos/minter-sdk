@@ -30,6 +30,13 @@ two versions of this contract: one with administration capabilities and one with
 a configured administrator is responsible for configuring and managing access to important entrypoints.
 
 ### [Fixed Price Sale](fixed_price_sale)
+An implementation of an NFT marketplace that allows users to initiate NFT sales at a fixed price. There are multiple flavors of this contract that vary along two variables: admin capabilities, and NFT sale type (fungible tokens/tez).
+### [Minter Collection](minter_collection)
+Implementations of various token types.
+
+## [Ticket NFTs](tickets)  
+
+**EXPERIMENTAL** An implementation of NFTs using tickets and a dutch auction example, along with wallet contracts for the NFTs. *Please note: tickets are a new Tezos feature and care should be taken when using them as they have not been heavily tested in production.*
 An implementation of an NFT marketplace that allows users to initiate NFT sales at a fixed price in either FA2 or tez. There are multiple flavors of this contract that vary along two variables: admin capabilities, and NFT sale type (fungible tokens/tez).
 
 ## Work-in-progress
