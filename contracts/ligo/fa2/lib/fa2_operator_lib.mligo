@@ -13,6 +13,7 @@ helper functions
 To be part of FA2 storage to manage permitted operators
 *)
 type operator_storage = ((address * (address * token_id)), unit) big_map
+type contract_operator_storage = address list
 
 (** 
   Updates operator storage using an `update_operator` command.
@@ -66,6 +67,7 @@ let make_operator_validator (tx_policy : operator_transfer_policy) : operator_va
   | No_transfer -> (failwith fa2_tx_denied : bool * bool)
   | Owner_transfer -> true, false
   | Owner_or_operator_transfer -> true, true
+  | Operator_transfer -> false, true
   in
   (fun (owner, operator, token_id, ops_storage 
       : address * address * token_id * operator_storage) ->
