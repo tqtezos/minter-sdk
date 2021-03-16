@@ -28,14 +28,12 @@ type TypedContractProviderOf<T extends ContractTypeBase> = Omit<ContractProvider
 type TypedSentParams = ({
     mutez?: false;
     amount: tez;
-    fee?: tez;
-    gasLimit?: tez;
 } | {
     mutez: true;
     amount: mutez;
-    fee?: mutez;
-    gasLimit?: mutez;
 }) & {
+    fee?: mutez;
+    gasLimit?: nat;
     source?: address;
     storageLimit?: nat;
 };
