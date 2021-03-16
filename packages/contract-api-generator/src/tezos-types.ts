@@ -1,53 +1,15 @@
 import { MichelsonMap } from '@taquito/taquito';
 import { BigNumber } from 'bignumber.js';
+import * as MTypes from '../../../contracts/src/type-aliases';
 
-export type address = string & { __type: 'address' };
-export type timestamp = string & { __type: 'timestamp' };
-export type nat = BigNumber & { __type: 'nat' };
-export type mutez = BigNumber & { __type: 'mutez' };
-export type tez = BigNumber & { __type: 'tez' };
-export type int = BigNumber & { __type: 'int' };
-export type contract = string & { __type: 'contract' };
-export type bytes = string & { __type: 'bytes' };
-
-const createStringType = <T extends string>() => {
-    return {
-        fromString: (value: string): T => value as T,
-        toString: (value: T): string => value as string,
-    };
-};
-
-const createBigNumberType = <T extends BigNumber>() => {
-    return {
-        fromBigNumber: (value: BigNumber): T => value as T,
-        fromNumber: (value: number): T => new BigNumber(value) as T,
-        fromString: (value: string): T => new BigNumber(value) as T,
-        toBigNumber: (value: T): BigNumber => value as BigNumber,
-    };
-};
-
-export const TezosTypes = {
-    address: createStringType<address>(),
-    bytes: createStringType<bytes>(),
-    contract: createStringType<contract>(),
-    timestamp: {
-        ...createStringType<timestamp>(),
-        fromDate: (value: Date): timestamp => value.toISOString() as timestamp,
-    },
-
-    int: createBigNumberType<int>(),
-    nat: createBigNumberType<nat>(),
-    mutez: createBigNumberType<mutez>(),
-    tez: createBigNumberType<tez>(),
-
-    map: {
-        from: <K, V>(value: { key: K, value: V }[]): MichelsonMap<K, V> => {
-            const m = new MichelsonMap<K, V>();
-            value.forEach(x => m.set(x.key, x.value));
-            return m;
-        },
-    },
-};
+export type address = MTypes.address & { __type: 'address' };
+export type timestamp = MTypes.timestamp & { __type: 'timestamp' };
+export type nat = MTypes.nat & { __type: 'nat' };
+export type mutez = MTypes.mutez & { __type: 'mutez' };
+export type tez = MTypes.mutez & { __type: 'tez' };
+export type int = MTypes.nat & { __type: 'int' };
+export type contract = MTypes.address & { __type: 'contract' };
+export type bytes = MTypes.bytes & { __type: 'bytes' };
 
 
 const createStringTypeTas = <T extends string>() => {
@@ -73,7 +35,6 @@ function asMap<K, V>(value: asMapParamOf<K, V>): MichelsonMap<K, V> {
     }
     return m;
 }
-
 
 function add<T extends BigNumber>(a: T, b: T): T {
     return a.plus(b) as T;
