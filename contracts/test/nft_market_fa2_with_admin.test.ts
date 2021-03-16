@@ -20,7 +20,7 @@ import {
     transfer,
     BalanceOfResponse
 } from '../src/fa2-interface';
-import { QueryBalances, queryBalancesWithLambdaView } from './fa2-balance-inspector';
+import { queryBalances, QueryBalances } from './fa2-balance-inspector';
 
 jest.setTimeout(180000); // 3 minutes
 
@@ -197,7 +197,7 @@ describe.each([originateFixedPriceAdminSale])
 
         })
 
-        test.only('bob makes sale, cancels it, then alice unsuccessfully tries to buy', async () => {
+        test('bob makes sale, cancels it, then alice unsuccessfully tries to buy', async () => {
 
 
             await createFtToken(tezos.alice, { token_id : ftTokenId, token_info: tokenMetadata, });
