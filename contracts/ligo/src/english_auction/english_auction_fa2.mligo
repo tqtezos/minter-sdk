@@ -1,7 +1,7 @@
 #include "../../fa2/fa2_interface.mligo"
 #include "../../fa2_modules/pauseable_admin_option.mligo"
 
-type fa2_tokens =
+type fa2_token =
   [@layout:comb]
   {
     token_id : token_id;
@@ -11,7 +11,7 @@ type tokens =
   [@layout:comb]
   {
     fa2_address : address;
-    fa2_batch : (fa2_tokens list);
+    fa2_batch : (fa2_token list);
   }
 
 type bid_currency = 
@@ -86,36 +86,31 @@ let address_to_contract_transfer_entrypoint(add : address) : ((transfer list) co
     None -> (failwith "Invalid FA2 Address" : (transfer list) contract)
   | Some c ->  c
 
-let fa2_batch_to_transfer_param(fa2_batch, from_, to_ : fa2_tokens list * address * address) : (transfer list) =
-  let to_tx (fa2_tokens : fa2_tokens) : transfer_destination = {
+let transfer_tokens_in_single_contract (from_ : address) (to_ : address) (tokens : tokens) : operation = 
+  let to_tx (fa2_token : fa2_token) : transfer_destination = {
       to_ = to_;
-      token_id = fa2_tokens.token_id;
-      amount = fa2_tokens.amount;
-  } in
-  let txs = List.map to_tx fa2_batch in
-  let transfer_param = {from_ = from_; txs = txs} in
-  [transfer_param]
+      token_id = fa2_token.token_id;
+      amount = fa2_token.amount;
+   } in
+   let txs = List.map to_tx tokens.fa2_batch in
+   let transfer_param = [{from_ = from_; txs = txs}] in
+   let c = address_to_contract_transfer_entrypoint(tokens.fa2_address) in
+   (Tezos.transaction transfer_param 0mutez c) 
 
-(*Transfers tokens in batch from a single FA2 contract*)
-let tokens_to_operation(from_ : address) (to_ : address) (tokens : tokens): operation =
-  let param = fa2_batch_to_transfer_param(tokens.fa2_batch, from_, to_) in
-  let c = address_to_contract_transfer_entrypoint(tokens.fa2_address) in
-  (Tezos.transaction param 0mutez c)
+(*Handles transfers of tokens across FA2 Contracts*)
+let transfer_tokens(tokens_list, from_, to_ : tokens list * address * address) : (operation list) =
+   (List.map (transfer_tokens_in_single_contract from_ to_) tokens_list)
 
 let fa2_fee_transfer (from_, to_, qty, bid_currency : address * address * nat * bid_currency) : operation = 
   let tx_param : tokens = 
     ({
         fa2_address = bid_currency.fa2_address;
-        fa2_batch = [({token_id = bid_currency.token_id; amount = qty} : fa2_tokens)]
+        fa2_batch = [({token_id = bid_currency.token_id; amount = qty} : fa2_token)]
     }) in
-  let op = tokens_to_operation from_ to_ tx_param in
+  let op = transfer_tokens_in_single_contract from_ to_ tx_param in
   op
 
-(*Handles transfers of tokens across FA2 Contracts*)
-let tokens_to_operation_list((tokens_list, from_, to_) : tokens list * address * address) : (operation list) =
-   (List.map (tokens_to_operation from_ to_) tokens_list)
-
-let get_auction_data ((asset_id, storage) : nat * storage) : auction =
+let get_auction_data (asset_id, storage : nat * storage) : auction =
   match (Big_map.find_opt asset_id storage.auctions) with
       None -> (failwith "Auction does not exist for given asset_id" : auction)
     | Some auction -> auction
@@ -168,7 +163,7 @@ let configure_auction(configure_param, storage : configure_param * storage) : re
       last_bid_time = configure_param.start_time;
     } in
     let updated_auctions : (nat, auction) big_map = Big_map.update storage.current_id (Some auction_data) storage.auctions in
-    let asset_transfers : operation list = tokens_to_operation_list(configure_param.asset, Tezos.sender, Tezos.self_address) in
+    let asset_transfers : operation list = transfer_tokens(configure_param.asset, Tezos.sender, Tezos.self_address) in
     let fee_transfer : operation = fa2_fee_transfer(Tezos.sender, Tezos.self_address, configure_param.opening_price, storage.bid_currency) in
     ((fee_transfer :: asset_transfers), {storage with auctions = updated_auctions; current_id = storage.current_id + 1n})
   end
@@ -179,7 +174,7 @@ let resolve_auction(asset_id, storage : nat * storage) : return = begin
     assert_msg (auction_ended(auction) , "Auction must have ended");
     assert_msg (Tezos.amount = 0mutez, "Amount must be 0mutez");
 
-    let asset_transfers : operation list = tokens_to_operation_list(auction.asset, Tezos.self_address, auction.highest_bidder) in
+    let asset_transfers : operation list = transfer_tokens(auction.asset, Tezos.self_address, auction.highest_bidder) in
     let fee_transfer : operation = fa2_fee_transfer(Tezos.self_address, auction.seller, auction.current_bid, storage.bid_currency) in
     let updated_auctions = Big_map.remove asset_id storage.auctions in
     (fee_transfer :: asset_transfers, {storage with auctions = updated_auctions})
@@ -192,7 +187,7 @@ let cancel_auction(asset_id, storage : nat * storage) : return = begin
     assert_msg (not auction_ended(auction), "Auction must not have ended");
     assert_msg (Tezos.amount = 0mutez, "Amount must be 0mutez");
 
-    let asset_transfers : operation list = tokens_to_operation_list(auction.asset, Tezos.self_address, auction.seller) in
+    let asset_transfers : operation list = transfer_tokens(auction.asset, Tezos.self_address, auction.seller) in
     let fee_transfer : operation = fa2_fee_transfer(Tezos.self_address, auction.highest_bidder, auction.current_bid, storage.bid_currency) in
     let updated_auctions = Big_map.remove asset_id storage.auctions in
     (fee_transfer :: asset_transfers, {storage with auctions = updated_auctions})

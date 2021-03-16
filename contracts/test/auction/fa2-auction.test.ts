@@ -1,5 +1,6 @@
 import { $log } from '@tsed/logger';
 import { BigNumber } from 'bignumber.js';
+import moment from 'moment'
 import { bootstrap, TestTz } from '../bootstrap-sandbox';
 import { Contract, nat, bytes, address } from '../../src/type-aliases';
 import {
@@ -18,7 +19,7 @@ import {
   OperationResultTransaction
 } from '@taquito/rpc';
 import {addOperator, TokenMetadata} from '../../src/fa2-interface'
-import {Fa2_tokens, Tokens } from '../../src/auction-interface'
+import {Fa2_token, Tokens } from '../../src/auction-interface'
 import { Token } from '@taquito/michelson-encoder/dist/types/tokens/token';
 
 jest.setTimeout(180000); // 3 minutes
@@ -112,23 +113,36 @@ describe('test NFT auction', () => {
     await addOperator(ftContract.address, tezos.bob, nftAuction.address, tokenIdBidToken);
     $log.info('Auction contract added as operator for bid token for bob');
     
-    const fa2_tokens : Fa2_tokens = {
+    const fa2_token : Fa2_token = {
         token_id : tokenIdNft,
         amount : new BigNumber(1)
     }
 
     const tokens : Tokens = {
         fa2_address : nftContract.address,
-        fa2_batch : [fa2_tokens]
+        fa2_batch : [fa2_token]
     }
     
-    startTime = new Date();
-    startTime.setSeconds(startTime.getSeconds() + 7);
-    endTime = new Date(startTime.valueOf());
-    endTime.setHours(endTime.getHours() + 1);
+    startTime = moment.utc().add(7, 'seconds').toDate()
+    endTime = moment(startTime).add(1, 'hours').toDate()
     $log.info(`Configuring auction`);
-    //opening price = 1, percent raise =10, min_raise = 10, round_time = 1 hr, extend_time = 5 mins, end_time = start_time + 1hr, 
-    const opAuction = await nftAuctionBob.methods.configure(new BigNumber(10), new BigNumber(10), new BigNumber(10), new BigNumber(3600), new BigNumber(300), [tokens], startTime, endTime).send();
+    const opAuction = await nftAuctionBob.methods.configure(
+      //opening price = 1 
+      new BigNumber(10), 
+      //percent raise =10
+      new BigNumber(10), 
+      //min_raise = 10
+      new BigNumber(10),
+      //round_time = 1 hr
+      new BigNumber(3600),
+      //extend_time = 5 mins
+      new BigNumber(300), 
+      //asset
+      [tokens], 
+      //start_time = now + 7seconds
+      startTime, 
+      //end_time = start_time + 1hr,  
+      endTime).send();
     await opAuction.confirmation();
     $log.info(`Auction configured. Consumed gas: ${opAuction.consumedGas}`);
   });
