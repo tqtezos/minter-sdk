@@ -117,6 +117,11 @@ ${tabs(indent)}`;
                 t.fields.map((a, i) => varToCode(a, i, indent + 1) + `;`),
             )}}`;
         }
+        if (t.union) {
+            return `(${toIndentedItems(indent, ` | `,
+                t.union.map((a, i) => `{ ${varToCode(a, i, indent + 1)} }`),
+            )})`;
+        }
         if (t.unit) {
             return `void`;
         }
@@ -256,6 +261,7 @@ type TypedType = {
     value?: string;
     typescriptType?: 'string' | 'boolean' | 'number';
     fields?: TypedVar[];
+    union?: TypedVar[];
     array?: { item: TypedType };
     map?: { key: TypedType, value: TypedType };
     unknown?: boolean;
@@ -374,13 +380,21 @@ const visitType = (node: MType): TypedType => {
 
     // Union
     if (node.prim === `or`) {
-        const fields = node.args.map(x => visitVar(x)).flatMap(x => x);
-        if (fields.some(x => !x)) {
+        const union = node.args.map(x => visitVar(x)).flatMap(x => x);
+
+        // Flatten
+        const rightSide = union[1];
+        if (rightSide.type.union) {
+            union.pop();
+            union.push(...rightSide.type.union);
+        }
+
+        if (union.some(x => !x)) {
             throw new GenerateApiError(`or: Some fields are null`, { node });
         }
         return {
             raw: node,
-            fields,
+            union,
         };
     }
 
