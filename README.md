@@ -22,7 +22,7 @@ Minter SDK aims to include the following
 ## Smart Contracts
 
 ### [Minter Collection](minter_collection)
-A smart contracts for FA2 collections.
+Customizable smart contracts for minting FA2 NFTs as collections.
 
 ### [English Auction](english_auction)
 An implementation of an English auction marketplace that allows users to initiate auctions of NFTs in either tez or FA2. There are 
