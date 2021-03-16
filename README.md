@@ -34,7 +34,8 @@ An implementation of an NFT marketplace that allows users to initiate NFT sales 
 
 ## [Ticket NFTs](tickets)  
 
-**EXPERIMENTAL** An implementation of NFTs using tickets and a dutch auction example, along with wallet contracts for the NFTs. *Please note: tickets are a new Tezos feature and care should be taken when using them as they have not been heavily tested in production.*
+**EXPERIMENTAL** An implementation of NFTs using tickets and a dutch auction example, along with wallet contracts for the NFTs. 
+*Please note: tickets are a new Tezos feature and care should be taken when using them as they have not been heavily tested in production.*
 
 ## Work-in-progress
 
