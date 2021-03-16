@@ -3,16 +3,16 @@ type address = string & { __type: 'address' };
 type nat = number & { __type: 'nat' };
 
 type Storage = {
-    0: {
-        empty: void;
-        state: {
+    0: (
+        { empty: void } | 
+        { state: {
             request: {
                 owner: address;
                 token_id: nat;
             };
             balance: nat;
-        }[];
-    };
+        }[] }
+    );
 };
 
 type Methods = {
