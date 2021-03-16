@@ -2,6 +2,7 @@ import { TezosToolkit, VIEW_LAMBDA } from '@taquito/taquito';
 import { Signer } from '@taquito/taquito/dist/types/signer/interface';
 import { InMemorySigner } from '@taquito/signer';
 import { $log } from '@tsed/logger';
+import retry from 'async-retry';
 
 type TestKeys = {
     bob: Signer;
@@ -51,11 +52,25 @@ function signerToToolkit(signer: Signer, rpc: string): TezosToolkit {
     return tezos;
 }
 
+export async function awaitForNetwork(tz: TezosToolkit): Promise<void> {
+    await retry(
+      async () => {
+        $log.info('connecting to Tezos network...');
+        await tz.rpc.getBlockHeader({ block: '2' });
+      },
+      { retries: 8 }
+    );
+  
+    $log.info('connected to Tezos network');
+  }
+
 export async function bootstrap(): Promise<TestTz> {
     const { bob, alice } = await flextesaKeys();
     const rpc = 'http://localhost:20000';
     const bobToolkit = signerToToolkit(bob, rpc);
     const aliceToolkit = signerToToolkit(alice, rpc);
+
+    await awaitForNetwork(bobToolkit);
 
     $log.info('originating lambda view contract...');
     const op = await bobToolkit.contract.originate({
