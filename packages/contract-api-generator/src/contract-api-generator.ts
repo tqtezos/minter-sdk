@@ -123,7 +123,11 @@ ${tabs(indent)}`;
             )})`;
         }
         if (t.unit) {
-            return `void`;
+            const strictType = { baseType: `( true | undefined )`, strictType: `unit` };
+            if (!usedStrictTypes.some(x => x.strictType === strictType.strictType)) {
+                usedStrictTypes.push(strictType);
+            }
+            return `unit`;
         }
         if (t.never) {
             return `never`;
