@@ -1,6 +1,4 @@
 import { TezosToolkit } from '@taquito/taquito';
-import BigNumber from 'bignumber.js';
-import { address } from '../../../contracts/src/type-aliases';
 import { TestContractType } from './test-contract-type-1';
 import { TestContractType2 } from './test-contract-type-2';
 import { nat, tas } from './tezos-types';
