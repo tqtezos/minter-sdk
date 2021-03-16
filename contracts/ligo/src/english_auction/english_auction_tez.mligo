@@ -143,7 +143,10 @@ let valid_bid_amount (auction : auction) : bool =
   (Tezos.amount >= auction.current_bid + auction.min_raise)                                            ||
   ((Tezos.amount >= auction.current_bid) && first_bid(auction))
 
-let configure_auction_storage(configure_param, storage : configure_param * storage ) : storage = begin
+let configure_auction_storage(configure_param, seller, storage : configure_param * address * storage ) : storage = begin
+    (fail_if_not_admin storage.pauseable_admin (None : string option));
+    (fail_if_paused storage.pauseable_admin);
+
     assert_msg (configure_param.end_time > configure_param.start_time, "end_time must be after start_time");
     assert_msg (abs(configure_param.end_time - configure_param.start_time) <= storage.max_auction_time, "Auction time must be less than max_auction_time");
     
@@ -155,7 +158,7 @@ let configure_auction_storage(configure_param, storage : configure_param * stora
     assert_msg (configure_param.round_time > 0n, "Round_time must be greater than 0 seconds");
 
     let auction_data : auction = {
-      seller = Tezos.sender;
+      seller = seller;
       current_bid = configure_param.opening_price;
       start_time = configure_param.start_time;
       round_time = int(configure_param.round_time);
@@ -164,7 +167,7 @@ let configure_auction_storage(configure_param, storage : configure_param * stora
       min_raise_percent = configure_param.min_raise_percent;
       min_raise = configure_param.min_raise;
       end_time = configure_param.end_time;
-      highest_bidder = Tezos.sender;
+      highest_bidder = seller;
       last_bid_time = configure_param.start_time; 
     } in
     let updated_auctions : (nat, auction) big_map = Big_map.update storage.current_id (Some auction_data) storage.auctions in
@@ -172,9 +175,10 @@ let configure_auction_storage(configure_param, storage : configure_param * stora
   end
 
 let configure_auction(configure_param, storage : configure_param * storage) : return = 
-    let new_storage = configure_auction_storage(configure_param, storage) in
-    let fa2_transfers : operation list = tokens_to_operation_list(configure_param.asset, Tezos.sender, Tezos.self_address) in
-    (fa2_transfers, new_storage)
+  let new_storage = configure_auction_storage(configure_param, Tezos.sender, storage) in
+  let fa2_transfers : operation list = tokens_to_operation_list(configure_param.asset, Tezos.sender, Tezos.self_address) in
+  (fa2_transfers, new_storage)
+ 
 
 let resolve_auction(asset_id, storage : nat * storage) : return = begin
     (fail_if_paused storage.pauseable_admin);

@@ -15,7 +15,9 @@ async function main(): Promise<void> {
     await compileEnglishAuctionTezContract(env);
     await compileFtFaucetContract(env);
     await compileFtContract(env);
-    await compileEnglishAuctionTezPermitContract(env)
+    //compile english_auction_tez_permit.mligo manually from contracts directory like: 
+    //docker run --rm -v $PWD:$PWD -w $PWD ligolang/ligo:next compile-contract ligo/src/english_auction/english_auction_tez_permit.mligo english_auction_tez_permit_main --output=bin/english_auction_tez_permit.tz
+    //await compileEnglishAuctionTezPermitContract(env)
     // add other contracts here
 
     process.exit(0);
@@ -116,17 +118,6 @@ async function compileEnglishAuctionTezPermitContract(env: LigoEnv): Promise<voi
       'english_auction_tez_permit.tz'
   );
   $log.info('compiled english auction tez permit contract');
-}
-
-function prepareNftFactoryContract(env: LigoEnv): void {
-  const templatePath = env.srcFilePath('fa2_nft_factory.template.mligo');
-  const template = fs.readFileSync(templatePath).toString();
-  const fs2CodePath = env.outFilePath('fa2_multi_nft_asset.tz');
-  const fs2Code = fs.readFileSync(fs2CodePath).toString();
-
-  const factoryCode = template.replace('${code}', fs2Code);
-  const factoryPath = env.srcFilePath('fa2_nft_factory.mligo');
-  fs.writeFileSync(factoryPath, factoryCode);
 }
 
 main();

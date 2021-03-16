@@ -35,7 +35,7 @@ let address_from_key (key : key) : address =
 let config_storage_with_permit (p, permit_storage : permit_config_param * permit_storage)  : permit_storage = begin
   match p.optional_permit with 
     | None -> 
-      let auction_storage = configure_auction_storage(p.config, permit_storage.auction_storage) in
+      let auction_storage = configure_auction_storage(p.config, Tezos.sender, permit_storage.auction_storage) in
       {permit_storage with auction_storage = auction_storage; counter = permit_storage.counter + 1n}
     | Some permit -> 
         let unsigned : bytes = ([%Michelson ({| { SELF; ADDRESS; CHAIN_ID; PAIR; PAIR; PACK } |} : nat * bytes -> bytes)] (permit_storage.counter, permit.paramHash) : bytes) in
@@ -46,30 +46,7 @@ let config_storage_with_permit (p, permit_storage : permit_config_param * permit
         let storage = permit_storage.auction_storage in
         let signer_address = address_from_key permit.signerKey in
         
-        assert_msg (configure_param.end_time > configure_param.start_time, "end_time must be after start_time");
-        assert_msg (abs(configure_param.end_time - configure_param.start_time) <= storage.max_auction_time, "Auction time must be less than max_auction_time");
-        
-        assert_msg (configure_param.start_time >= Tezos.now, "Start_time must not have already passed");
-        assert_msg (abs(configure_param.start_time - Tezos.now) <= storage.max_config_to_start_time, "start_time must not be greater than the sum of current time and max_config_to_start_time");
-        
-        assert_msg (configure_param.opening_price > 0mutez, "Opening price must be greater than 0mutez");
-        assert_msg (Tezos.amount = configure_param.opening_price, "Amount must be equal to opening_price");
-        assert_msg (configure_param.round_time > 0n, "Round_time must be greater than 0 seconds");
-        let auction_data : auction = {
-          seller = signer_address;
-          current_bid = configure_param.opening_price;
-          start_time = configure_param.start_time;
-          round_time = int(configure_param.round_time);
-          extend_time = int(configure_param.extend_time);
-          asset = configure_param.asset;
-          min_raise_percent = configure_param.min_raise_percent;
-          min_raise = configure_param.min_raise;
-          end_time = configure_param.end_time;
-          highest_bidder = signer_address;
-          last_bid_time = configure_param.start_time; 
-        } in
-        let updated_auctions : (nat, auction) big_map = Big_map.update storage.current_id (Some auction_data) storage.auctions in
-        let auction_storage = {storage with auctions = updated_auctions; current_id = storage.current_id + 1n} in
+        let auction_storage = configure_auction_storage(p.config, signer_address, storage) in 
         {permit_storage with auction_storage = auction_storage; counter = permit_storage.counter + 1n}
 end
 
