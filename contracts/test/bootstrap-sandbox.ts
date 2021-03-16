@@ -1,4 +1,4 @@
-import { TezosToolkit } from '@taquito/taquito';
+import { TezosToolkit, VIEW_LAMBDA } from '@taquito/taquito';
 import { Signer } from '@taquito/taquito/dist/types/signer/interface';
 import { InMemorySigner } from '@taquito/signer';
 import { $log } from '@tsed/logger';
@@ -6,6 +6,7 @@ import { $log } from '@tsed/logger';
 type TestKeys = {
     bob: Signer;
     alice: Signer;
+    lambdaView?: string;
 };
 
 async function flextesaKeys(): Promise<TestKeys> {
@@ -31,6 +32,7 @@ async function testnetKeys(): Promise<TestKeys> {
 export type TestTz = {
     bob: TezosToolkit;
     alice: TezosToolkit;
+    lambdaView?: string;
 };
 
 export type TestTzMarket = {
@@ -52,14 +54,24 @@ function signerToToolkit(signer: Signer, rpc: string): TezosToolkit {
 export async function bootstrap(): Promise<TestTz> {
     const { bob, alice } = await flextesaKeys();
     const rpc = 'http://localhost:20000';
+    const bobToolkit = signerToToolkit(bob, rpc);
+    const aliceToolkit = signerToToolkit(alice, rpc);
+
+    $log.info('originating lambda view contract...');
+    const op = await bobToolkit.contract.originate({
+        code: VIEW_LAMBDA.code,
+        storage: VIEW_LAMBDA.storage
+    });
+    const lambdaContract = await op.contract();
+    $log.info('originated lambda view contract.');
     return {
-        bob: signerToToolkit(bob, rpc),
-        alice: signerToToolkit(alice, rpc)
+        bob: bobToolkit,
+        alice: aliceToolkit,
+        lambdaView: lambdaContract.address
     };
 }
 
 export async function adminBootstrap(): Promise<TezosToolkit> {
-
     // SECRET MAY HAVE TO BE UPDATED
     const secret = 'edsk3g1kc8UzJJhZn6kTecW6vb6m1qnaWXYDFahGHqcmLbepUT3pFe';
     const adminSigner = await InMemorySigner.fromSecretKey(secret);
