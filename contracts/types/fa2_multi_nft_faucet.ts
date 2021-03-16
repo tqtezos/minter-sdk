@@ -3,6 +3,7 @@ type address = string & { __type: 'address' };
 type nat = number & { __type: 'nat' };
 type contract = string & { __type: 'contract' };
 type bytes = string & { __type: 'bytes' };
+type unit = ( true | undefined ) & { __type: 'unit' };
 
 type Storage = {
     assets: {
@@ -12,7 +13,7 @@ type Storage = {
             0: address;
             1: address;
             2: nat;
-        }, void>;
+        }, unit>;
         token_metadata: Map<nat, {
             token_id: nat;
             token_info: Map<string, bytes>;

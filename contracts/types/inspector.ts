@@ -1,10 +1,11 @@
 
 type address = string & { __type: 'address' };
 type nat = number & { __type: 'nat' };
+type unit = ( true | undefined ) & { __type: 'unit' };
 
 type Storage = {
     0: (
-        { empty: void } | 
+        { empty: unit } | 
         { state: {
             request: {
                 owner: address;
