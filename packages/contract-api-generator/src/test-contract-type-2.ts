@@ -19,22 +19,22 @@ type Storage = {
         pending_admin?: address;
     };
     assets: {
-        ledger: Map<{
+        ledger: MichelsonMap<{
             0: address;
             1: nat;
         }, nat>;
-        operators: Map<{
+        operators: MichelsonMap<{
             0: address;
             1: address;
             2: nat;
         }, void>;
-        token_metadata: Map<nat, {
+        token_metadata: MichelsonMap<nat, {
             token_id: nat;
-            token_info: Map<string, bytes>;
+            token_info: MichelsonMap<string, bytes>;
         }>;
-        token_total_supply: Map<nat, nat>;
+        token_total_supply: MichelsonMap<nat, nat>;
     };
-    metadata: Map<string, bytes>;
+    metadata: MichelsonMap<string, bytes>;
 };
 
 type Methods = {

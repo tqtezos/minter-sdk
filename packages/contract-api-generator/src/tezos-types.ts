@@ -1,16 +1,14 @@
 import { MichelsonMap } from '@taquito/taquito';
 import { BigNumber } from 'bignumber.js';
 
-type address = string & { __type: 'address' };
-type timestamp = string & { __type: 'timestamp' };
-
-type nat = BigNumber & { __type: 'nat' };
-type mutez = BigNumber & { __type: 'mutez' };
-type tez = BigNumber & { __type: 'tez' };
-type int = BigNumber & { __type: 'int' };
-
-type contract = string & { __type: 'contract' };
-type bytes = string & { __type: 'bytes' };
+export type address = string & { __type: 'address' };
+export type timestamp = string & { __type: 'timestamp' };
+export type nat = BigNumber & { __type: 'nat' };
+export type mutez = BigNumber & { __type: 'mutez' };
+export type tez = BigNumber & { __type: 'tez' };
+export type int = BigNumber & { __type: 'int' };
+export type contract = string & { __type: 'contract' };
+export type bytes = string & { __type: 'bytes' };
 
 const createStringType = <T extends string>() => {
     return {
@@ -57,7 +55,7 @@ const createStringTypeTas = <T extends string>() => {
 };
 
 const createBigNumberTypeTas = <T extends BigNumber>() => {
-    return (value: number | string): T => new BigNumber(value) as T;
+    return (value: number | BigNumber | string): T => new BigNumber(value) as T;
 };
 
 type asMapParamOf<K, V> = K extends string ? { [key: string]: V } | { key: K, value: V }[]
@@ -76,6 +74,14 @@ function asMap<K, V>(value: asMapParamOf<K, V>): MichelsonMap<K, V> {
     return m;
 }
 
+
+function add<T extends BigNumber>(a: T, b: T): T {
+    return a.plus(b) as T;
+}
+function subtract<T extends BigNumber>(a: T, b: T): T {
+    return a.minus(b) as T;
+}
+
 /** Tezos as casting for strict types */
 export const tas = {
     address: createStringTypeTas<address>(),
@@ -89,4 +95,8 @@ export const tas = {
     tez: createBigNumberTypeTas<tez>(),
 
     map: asMap,
+
+    // Operations
+    add,
+    subtract,
 };

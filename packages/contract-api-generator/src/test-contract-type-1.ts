@@ -1,3 +1,4 @@
+import { MichelsonMap } from '@taquito/taquito';
 import { BigNumber } from 'bignumber.js';
 
 type address = string & { __type: 'address' };
@@ -8,6 +9,8 @@ type mutez = BigNumber & { __type: 'mutez' };
 type tez = BigNumber & { __type: 'tez' };
 type int = BigNumber & { __type: 'int' };
 
+type BigMap<K, V> = Omit<MichelsonMap<K, V>, 'get'> & { get: (key: K) => Promise<V> };
+
 type Storage = {
     pauseable_admin?: {
         admin: address;
@@ -17,7 +20,7 @@ type Storage = {
     current_id: nat;
     max_auction_time: nat;
     max_config_to_start_time: nat;
-    auctions: Map<nat, {
+    auctions: BigMap<nat, {
         seller: address;
         current_bid: mutez;
         start_time: timestamp;
