@@ -17,9 +17,10 @@ import {
     BalanceOfRequest,
     addOperator,
     TokenMetadata,
-    transfer
+    transfer,
+    BalanceOfResponse
 } from '../src/fa2-interface';
-import { originateInspector, queryBalances } from './fa2-balance-inspector';
+import { QueryBalances, queryBalancesWithLambdaView } from './fa2-balance-inspector';
 
 jest.setTimeout(180000); // 3 minutes
 
@@ -29,7 +30,6 @@ describe.each([originateFixedPriceAdminSale])
         let tezos: TestTz;
         let nft: Contract;
         let ft: Contract;
-        let inspector: Contract;
         let marketplace: Contract;
         let marketAddress: address;
         let bobAddress: address;
@@ -41,9 +41,11 @@ describe.each([originateFixedPriceAdminSale])
         let adminAddress: address;
         let adminToolkit: TezosToolkit;
 
+        let queryBalances: QueryBalances;
+
         beforeAll(async () => {
             tezos = await bootstrap();
-            inspector = await originateInspector(tezos.bob);
+            queryBalances = queryBalancesWithLambdaView(tezos.lambdaView);
             adminToolkit = await adminBootstrap();
             adminAddress = await adminToolkit.signer.publicKeyHash();
         });
@@ -62,7 +64,7 @@ describe.each([originateFixedPriceAdminSale])
         });
 
         async function hasNftTokens(requests: BalanceOfRequest[]): Promise<boolean[]> {
-            const responses = await queryBalances(inspector, nft.address, requests);
+            const responses = await queryBalances(nft, requests);
             const results = responses.map(r => {
                 if (r.balance.eq(1)) return true;
                 else if (r.balance.eq(0)) return false;
@@ -72,7 +74,7 @@ describe.each([originateFixedPriceAdminSale])
         }
 
         async function hasFtTokens(requests: BalanceOfRequest[]): Promise<boolean[]> {
-            const responses = await queryBalances(inspector, ft.address, requests);
+            const responses = await queryBalances(ft, requests);
             const results = responses.map(r => {
                 if (r.balance.gt(0)) return true;
                 else if (r.balance.eq(0)) return false;
