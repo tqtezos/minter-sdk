@@ -1,6 +1,11 @@
 (* pick which admin and minter module implementations you want to use here *)
+
+(* #include "null_admin.mligo" *)
 #include "simple_admin.mligo"
-#include "null_minter_admin.mligo"
+(* #include "multi_admin.mligo" *)
+
+(* #include "null_minter_admin.mligo" *)
+#include "multi_minter_admin.mligo"
 
 type ledger = (address, nat) big_map
 
@@ -77,6 +82,6 @@ let main(p, s : entrypoints * storage) : (operation list) * storage =
 
   | MinterAdmin a -> 
     let u = fail_if_not_admin s.admin (None : string option) in
-      let ops, new_admin = minter_admin_main (a, s.minter_admin) in
-      ops, {s with minter_admin = new_admin; }
+    let ops, new_admin = minter_admin_main (a, s.minter_admin) in
+    ops, {s with minter_admin = new_admin; }
 
