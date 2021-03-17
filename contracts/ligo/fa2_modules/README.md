@@ -1,10 +1,17 @@
-# FA@ Implementation Modules
+# FA2 Implementation Modules
 
-Reusable modules to use as part of FA2 implementation.
+Reusable modules to use as part of FA2 or other contracts implementation.
 
-## Admin Modules
+## Reusable Modules
 
-Implementation of the admin module with the following public signature:
+Each reusable module type has a public module signature consisting of types
+and functions and one or more implementations of the same signature. Due to
+current limitations of LIGO, public signature is not enforced by the language,
+but rather is a naming convention to follow by reusable module developers.
+
+### Admin Modules
+
+Generic contract admin module with the following public signature:
 
 -   `type admin_storage` - admin storage
 -   `type admin_entrypoints` - admin administration entry points
@@ -44,9 +51,9 @@ signature:
     | Pause of bool
     ```
 
-## Minter Admin Modules
+### Minter Admin Modules
 
-Implementation of the minter admin module with the following signature:
+Minter admin module with the following signature:
 
 -   `type minter_admin_storage` - minter admin storage
 -   `type minter_admin_entrypoints` - minter administration entry points
@@ -85,3 +92,63 @@ signature:
       | Add_minter of address
       | Remove_minter of address
     ```
+
+## How to Compose Reusable Modules Into a Single Contract
+
+In general, we want our contract code to depend on some module signature and to
+be able to swap different module implementations. The goal is to reuse as much
+as possible of the existing code without modifications and to avoid
+copy/paste/modify anti-pattern that leads to code duplication. The following
+technique is proposed to produce different flavors of the same contract by
+"injecting" different implementations of the same module type.
+
+Let's consider an example where we have a module of some type. The module type is
+a public signature of the module consisting of some LIGO types and functions.
+Module type is not enforced or validated by LIGO, but rather a convention. We have
+multiple implementations of the module and a single implementation of the main
+contract logic. Main contract logic depends on the module signature (i. e. some
+LIGO types and functions provided by the module). Here is how we can organize our
+code:
+
+-   Write main contract implementation that depends on some module signature, but
+    **does not include any module implementation file**.
+
+    ```ocaml
+
+    type param = ...
+    type storage = ...
+
+    let my_main(p, s : param * storage) =
+      ...
+      let y = module_a_function x in
+      ...
+
+    ```
+
+-   Create contract "assembly" file that includes one of the module implementation
+    files and the main contract file:
+
+    ```ocaml
+    #include "moduleA_implementation1.mligo"
+    (* #include "moduleA_implementation2.mligo" *)
+    #include "main_contract.mligo"
+    ```
+
+-   An "assembly" file includes concrete module implementation before the implementation
+    of the main contract and binds module public signature types and functions
+    names to the `implementation1`. Now you can compile your contract by executing
+    the following command: `ligo compile-contract assembly.mligo my_main`
+
+You can also create different "assemblies" including different module implementation
+files without modifying `main_contract.mligo`.
+
+Here is an example that uses **Admin** and **Minter Admin** modules:
+
+-   **Main contract** code [minter_use_example.mligo](examples/minter_use_example.mligo).
+    It uses type `admin_storage`, `admin_entrypoints` and functions `is_admin`,
+    `fail_if_paused`, fail_if_not_admin from `minter_admin` module and types
+    `minter_admin_storage`, `minter_admin_entrypoints` and a function `is_minter`
+    from `minter_admin` module. Different module implementations can be used.
+-   **Assembly** [minter_use_example_simple_admin_with_minters.mligo](examples/minter_use_example_simple_admin_with_minters.mligo).
+    The assembly "injects" `simple_admin` and `multi_minter_admin` module implementations
+    respectively.
