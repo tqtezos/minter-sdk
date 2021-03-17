@@ -15,7 +15,7 @@ import {
     BalanceOfRequest,
     addOperator
 } from '../src/fa2-interface';
-import { originateInspector, queryBalances } from './fa2-balance-inspector';
+import { QueryBalances, queryBalancesWithLambdaView } from './fa2-balance-inspector';
 
 jest.setTimeout(180000); // 3 minutes
 
@@ -23,7 +23,7 @@ describe.each([originateFixedPriceTezAdminSale])
     ('marketplace test', (originateMarketplace) => {
         let tezos: TestTz;
         let nft: Contract;
-        let inspector: Contract;
+        let queryBalances: QueryBalances;
         let marketplace: Contract;
         let marketAddress: address;
         let bobAddress: address;
@@ -36,7 +36,7 @@ describe.each([originateFixedPriceTezAdminSale])
 
         beforeAll(async () => {
             tezos = await bootstrap();
-            inspector = await originateInspector(tezos.bob);
+            queryBalances = queryBalancesWithLambdaView(tezos.lambdaView);
             adminToolkit = await adminBootstrap();
             adminAddress = await adminToolkit.signer.publicKeyHash();
         });
@@ -53,7 +53,7 @@ describe.each([originateFixedPriceTezAdminSale])
         });
 
         async function hasTokens(requests: BalanceOfRequest[]): Promise<boolean[]> {
-            const responses = await queryBalances(inspector, nft.address, requests);
+            const responses = await queryBalances(nft, requests);
             const results = responses.map(r => {
                 if (r.balance.eq(1)) return true;
                 else if (r.balance.eq(0)) return false;
