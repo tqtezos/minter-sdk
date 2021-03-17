@@ -111,8 +111,8 @@ ${tabs(indent)}`;
         if (t.map) {
 
             const strictType = t.map.isBigMap
-                ? { strictType: `BigMap`, raw: `type BigMap<K,V> = Omit<MichelsonMap<K, V>, 'get'> & { get: (key: K) => Promise<V> }` }
-                : { strictType: `MMap`, raw: `type MMap<K,V> = MichelsonMap<K,V>` };
+                ? { strictType: `BigMap`, raw: `type BigMap<K, V> = Omit<MichelsonMap<K, V>, 'get'> & { get: (key: K) => Promise<V> }` }
+                : { strictType: `MMap`, raw: `type MMap<K, V> = MichelsonMap<K,V>` };
             addStrictType(strictType);
 
             return `${strictType.strictType}<${typeToCode(t.map.key, indent)}, ${typeToCode(t.map.value, indent)}>`;
