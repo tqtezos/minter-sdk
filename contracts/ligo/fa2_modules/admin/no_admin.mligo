@@ -1,6 +1,6 @@
 (**
-Definition of the admin module signature and implementation of the "null admin".
-Null admin - everyone is an admin
+Definition of the admin module signature and implementation of the "no admin".
+No admin - everyone is an admin
  *)
 
 #if !NO_ADMIN
