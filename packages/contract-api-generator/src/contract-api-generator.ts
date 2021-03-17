@@ -73,10 +73,10 @@ const toTypescriptCode = (storage: TypedStorage, methods: TypedMethod[]): {
 
     // Not really tabs :)
     const tabs = (indent: number) => Array(indent).fill(`    `).join(``);
-    const toIndentedItems = (indent: number, delimeter: string, items: string[]) => {
+    const toIndentedItems = (indent: number, delimeters: { afterItem?: string, beforeItem?: string }, items: string[]) => {
         return `
-${tabs(indent + 1)}${items.join(`${delimeter}
-${tabs(indent + 1)}`)}
+${tabs(indent + 1)}${items.join(`${delimeters.afterItem ?? ``}
+${tabs(indent + 1)}${delimeters.beforeItem ?? ``}`)}
 ${tabs(indent)}`;
     };
 
@@ -113,17 +113,30 @@ ${tabs(indent)}`;
             return `Map<${typeToCode(t.map.key, indent)}, ${typeToCode(t.map.value, indent)}>`;
         }
         if (t.fields) {
-            return `{${toIndentedItems(indent, ``,
+            return `{${toIndentedItems(indent, {},
                 t.fields.map((a, i) => varToCode(a, i, indent + 1) + `;`),
             )}}`;
         }
         if (t.union) {
-            return `(${toIndentedItems(indent, ` | `,
-                t.union.map((a, i) => `{ ${varToCode(a, i, indent + 1)} }`),
+
+            const getUnionItem = (a: TypedVar, i: number) => {
+                const itemCode = `${varToCode(a, i, indent + 1)}`;
+
+                // Keep on single line if already on single line
+                if (!itemCode.includes(`\n`)) {
+                    return `{ ${itemCode} }`;
+                }
+
+                // Indent if multi-line (and remake with extra indent)
+                return `{${toIndentedItems(indent + 1, {}, [`${varToCode(a, i, indent + 2)}`])}}`;
+            };
+
+            return `(${toIndentedItems(indent, { beforeItem: `| ` },
+                t.union.map(getUnionItem),
             )})`;
         }
         if (t.unit) {
-            const strictType = { baseType: `( true | undefined )`, strictType: `unit` };
+            const strictType = { baseType: `(true | undefined)`, strictType: `unit` };
             if (!usedStrictTypes.some(x => x.strictType === strictType.strictType)) {
                 usedStrictTypes.push(strictType);
             }
@@ -149,7 +162,7 @@ ${tabs(indent)}`;
             return `${args[0].name ?? `param`}: ${typeToCode(args[0].type, indent + 1)}`;
         }
 
-        return `params: {${toIndentedItems(indent, ``,
+        return `params: {${toIndentedItems(indent, {},
             args.filter(x => x.name || !x.type.unit).map((a, i) => varToCode(a, i, indent + 1) + `;`),
         )}}`;
     };
@@ -160,7 +173,7 @@ ${tabs(indent)}`;
             return methodCode;
         });
 
-        const methodsTypeCode = `type Methods = {${toIndentedItems(indent, ``, methodFields)}};`;
+        const methodsTypeCode = `type Methods = {${toIndentedItems(indent, {}, methodFields)}};`;
         return methodsTypeCode;
     };
 
