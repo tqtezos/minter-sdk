@@ -3,8 +3,8 @@ Definition of the admin module signature and implementation of the "null admin".
 Null admin - everyone is an admin
  *)
 
-#if !NULL_ADMIN
-#define NULL_ADMIN
+#if !NO_ADMIN
+#define NO_ADMIN
 
 type admin_storage = unit
 type admin_entrypoints = never

@@ -1,6 +1,6 @@
 (* pick which admin and minter module implementations you want to use here *)
 
-(* #include "../admin/null_admin.mligo" *)
+(* #include "../admin/no_admin.mligo" *)
 #include "../admin/simple_admin.mligo"
 (* #include "../admin/multi_admin.mligo" *)
 
