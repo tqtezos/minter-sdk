@@ -24,7 +24,7 @@ import {
     addOperator,
     removeOperator
 } from '../src/fa2-interface';
-import { originateInspector, queryBalances } from './fa2-balance-inspector';
+import { QueryBalances, queryBalancesWithLambdaView } from './fa2-balance-inspector';
 
 jest.setTimeout(180000); // 3 minutes
 
@@ -35,11 +35,11 @@ describe.each([originateNftFaucet /*, originateNft*/])(
     createNft => {
         let tezos: TestTz;
         let nft: Contract;
-        let inspector: Contract;
+        let queryBalances: QueryBalances;
 
         beforeAll(async () => {
             tezos = await bootstrap();
-            inspector = await originateInspector(tezos.bob);
+            queryBalances = queryBalancesWithLambdaView(tezos.lambdaView);
         });
 
         beforeEach(async () => {
@@ -48,7 +48,7 @@ describe.each([originateNftFaucet /*, originateNft*/])(
         });
 
         async function hasTokens(requests: BalanceOfRequest[]): Promise<boolean[]> {
-            const responses = await queryBalances(inspector, nft.address, requests);
+            const responses = await queryBalances(nft, requests);
             const results = responses.map(r => {
                 if (r.balance.eq(1)) return true;
                 else if (r.balance.eq(0)) return false;
