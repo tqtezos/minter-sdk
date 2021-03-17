@@ -69,7 +69,13 @@ const toTypescriptCode = (storage: TypedStorage, methods: TypedMethod[]): {
     storage: string;
     methods: string;
 } => {
-    const usedStrictTypes = [] as { baseType: string, strictType: string }[];
+    type StrictType = { strictType: string, baseType?: string, raw?: string };
+    const usedStrictTypes = [] as StrictType[];
+    const addStrictType = (strictType: StrictType) => {
+        if (!usedStrictTypes.some(x => x.strictType === strictType.strictType)) {
+            usedStrictTypes.push(strictType);
+        }
+    };
 
     // Not really tabs :)
     const tabs = (indent: number) => Array(indent).fill(`    `).join(``);
@@ -93,13 +99,9 @@ ${tabs(indent)}`;
                 return `${t.typescriptType}`;
             }
 
-            // Inline strict type
-            //return `${t.typescriptType} & { __type: '${`prim` in t.raw ? t.raw.prim : `unknown`}' }`;
-
-            const strictType = { baseType: t.typescriptType, strictType: prim };
-            if (!usedStrictTypes.some(x => x.strictType === strictType.strictType)) {
-                usedStrictTypes.push(strictType);
-            }
+            const baseType = t.typescriptType === `number` ? `BigNumber` : t.typescriptType;
+            const strictType = { baseType, strictType: prim };
+            addStrictType(strictType);
 
             return strictType.strictType;
         }
@@ -107,10 +109,13 @@ ${tabs(indent)}`;
             return `${typeToCode(t.array.item, indent)}[]`;
         }
         if (t.map) {
-            //             return `{
-            // ${tabs(indent + 1)}[key: ${typeToCode(t.map.key, indent)}]: ${typeToCode(t.map.value, indent + 1)};
-            // ${tabs(indent)}}`;
-            return `Map<${typeToCode(t.map.key, indent)}, ${typeToCode(t.map.value, indent)}>`;
+
+            const strictType = t.map.isBigMap
+                ? { strictType: `BigMap`, raw: `type BigMap<K,V> = Omit<MichelsonMap<K, V>, 'get'> & { get: (key: K) => Promise<V> }` }
+                : { strictType: `MMap`, raw: `type MMap<K,V> = MichelsonMap<K,V>` };
+            addStrictType(strictType);
+
+            return `${strictType.strictType}<${typeToCode(t.map.key, indent)}, ${typeToCode(t.map.value, indent)}>`;
         }
         if (t.fields) {
             return `{${toIndentedItems(indent, {},
@@ -137,10 +142,8 @@ ${tabs(indent)}`;
         }
         if (t.unit) {
             const strictType = { baseType: `(true | undefined)`, strictType: `unit` };
-            if (!usedStrictTypes.some(x => x.strictType === strictType.strictType)) {
-                usedStrictTypes.push(strictType);
-            }
-            return `unit`;
+            addStrictType(strictType);
+            return strictType.strictType;
         }
         if (t.never) {
             return `never`;
@@ -185,9 +188,22 @@ ${tabs(indent)}`;
     const methodsCode = methodsToCode(0);
     const storageCode = storageToCode(0);
 
-    const typeMapping = usedStrictTypes.map(x => `type ${x.strictType} = ${x.baseType} & { __type: '${x.strictType}' };`).join(`\n`);
+    const typeMapping = usedStrictTypes
+        .sort((a, b) => a.strictType.localeCompare(b.strictType))
+        .map(x => {
+            if (x.baseType) {
+                return `type ${x.strictType} = ${x.baseType} & { __type: '${x.strictType}' };`;
+            }
+            if (x.raw) {
+                return `${x.raw};`;
+            }
+            return `// type ${x.strictType} = unknown;`;
+        }).join(`\n`);
 
     const finalCode = `
+import { MichelsonMap } from '@taquito/taquito';
+import { BigNumber } from 'bignumber.js';
+
 ${typeMapping}
 
 ${storageCode}
@@ -280,7 +296,7 @@ type TypedType = {
     fields?: TypedVar[];
     union?: TypedVar[];
     array?: { item: TypedType };
-    map?: { key: TypedType, value: TypedType };
+    map?: { key: TypedType, value: TypedType, isBigMap: boolean };
     unknown?: boolean;
 };
 
@@ -463,6 +479,7 @@ const visitType = (node: MType): TypedType => {
             map: {
                 key: mapKey,
                 value: mapValue,
+                isBigMap: node.prim === `big_map`,
             },
         };
     }
