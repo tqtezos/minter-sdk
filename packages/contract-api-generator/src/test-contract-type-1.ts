@@ -1,15 +1,13 @@
+
 import { MichelsonMap } from '@taquito/taquito';
 import { BigNumber } from 'bignumber.js';
 
 type address = string & { __type: 'address' };
-type timestamp = string & { __type: 'timestamp' };
-
-type nat = BigNumber & { __type: 'nat' };
-type mutez = BigNumber & { __type: 'mutez' };
-type tez = BigNumber & { __type: 'tez' };
-type int = BigNumber & { __type: 'int' };
-
 type BigMap<K, V> = Omit<MichelsonMap<K, V>, 'get'> & { get: (key: K) => Promise<V> };
+type int = BigNumber & { __type: 'int' };
+type mutez = BigNumber & { __type: 'mutez' };
+type nat = BigNumber & { __type: 'nat' };
+type timestamp = string & { __type: 'timestamp' };
 
 type Storage = {
     pauseable_admin?: {
@@ -66,4 +64,4 @@ type Methods = {
     resolve: (param: nat) => Promise<void>;
 };
 
-export type TestContractType = { methods: Methods, storage: Storage };
+export type Contract = { methods: Methods, storage: Storage };

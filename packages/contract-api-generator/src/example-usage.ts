@@ -1,6 +1,6 @@
 import { TezosToolkit } from '@taquito/taquito';
-import { TestContractType } from './test-contract-type-1';
-import { TestContractType2 } from './test-contract-type-2';
+import { Contract as TestContractType } from './test-contract-type-1';
+import { Contract as TestContractType2 } from './test-contract-type-2';
 import { nat, tas } from './tezos-types';
 import { TezosToolkitTyped } from './tezos-typing';
 

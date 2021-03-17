@@ -1,16 +1,14 @@
+
 import { MichelsonMap } from '@taquito/taquito';
 import { BigNumber } from 'bignumber.js';
 
 type address = string & { __type: 'address' };
-type timestamp = string & { __type: 'timestamp' };
-
-type nat = BigNumber & { __type: 'nat' };
-type mutez = BigNumber & { __type: 'mutez' };
-type tez = BigNumber & { __type: 'tez' };
-type int = BigNumber & { __type: 'int' };
-
-type contract = string & { __type: 'contract' };
+type BigMap<K, V> = Omit<MichelsonMap<K, V>, 'get'> & { get: (key: K) => Promise<V> };
 type bytes = string & { __type: 'bytes' };
+type contract = string & { __type: 'contract' };
+type MMap<K, V> = MichelsonMap<K, V>;
+type nat = BigNumber & { __type: 'nat' };
+type unit = (true | undefined) & { __type: 'unit' };
 
 type Storage = {
     admin?: {
@@ -19,22 +17,22 @@ type Storage = {
         pending_admin?: address;
     };
     assets: {
-        ledger: MichelsonMap<{
+        ledger: BigMap<{
             0: address;
             1: nat;
         }, nat>;
-        operators: MichelsonMap<{
+        operators: BigMap<{
             0: address;
             1: address;
             2: nat;
-        }, void>;
-        token_metadata: MichelsonMap<nat, {
+        }, unit>;
+        token_metadata: BigMap<nat, {
             token_id: nat;
-            token_info: MichelsonMap<string, bytes>;
+            token_info: MMap<string, bytes>;
         }>;
-        token_total_supply: MichelsonMap<nat, nat>;
+        token_total_supply: BigMap<nat, nat>;
     };
-    metadata: MichelsonMap<string, bytes>;
+    metadata: BigMap<string, bytes>;
 };
 
 type Methods = {
@@ -73,7 +71,7 @@ type Methods = {
     }) => Promise<void>;
     create_token: (params: {
         token_id: nat;
-        token_info: MichelsonMap<string, bytes>;
+        token_info: MMap<string, bytes>;
     }) => Promise<void>;
     mint_tokens: (params: {
         owner: address;
@@ -82,4 +80,4 @@ type Methods = {
     }) => Promise<void>;
 };
 
-export type TestContractType2 = { methods: Methods, storage: Storage };
+export type Contract = { methods: Methods, storage: Storage };

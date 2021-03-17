@@ -1,15 +1,19 @@
 import { MichelsonMap } from '@taquito/taquito';
 import { BigNumber } from 'bignumber.js';
-import * as MTypes from '../../../contracts/src/type-aliases';
 
-export type address = MTypes.address & { __type: 'address' };
-export type timestamp = MTypes.timestamp & { __type: 'timestamp' };
-export type nat = MTypes.nat & { __type: 'nat' };
-export type mutez = MTypes.mutez & { __type: 'mutez' };
-export type tez = MTypes.mutez & { __type: 'tez' };
-export type int = MTypes.nat & { __type: 'int' };
-export type contract = MTypes.address & { __type: 'contract' };
-export type bytes = MTypes.bytes & { __type: 'bytes' };
+export type address = string & { __type: 'address' };
+export type bytes = string & { __type: 'bytes' };
+export type contract = string & { __type: 'contract' };
+export type timestamp = string & { __type: 'timestamp' };
+
+export type int = BigNumber & { __type: 'int' };
+export type nat = BigNumber & { __type: 'nat' };
+
+export type mutez = BigNumber & { __type: 'mutez' };
+export type tez = BigNumber & { __type: 'tez' };
+
+export type MMap<K, V> = Omit<MichelsonMap<K, V>, 'get'> & { get: (key: K) => V };
+export type BigMap<K, V> = Omit<MichelsonMap<K, V>, 'get'> & { get: (key: K) => Promise<V> };
 
 
 const createStringTypeTas = <T extends string>() => {
