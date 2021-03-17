@@ -1,7 +1,11 @@
 
+import { MichelsonMap } from '@taquito/taquito';
+import { BigNumber } from 'bignumber.js';
+
 type address = string & { __type: 'address' };
-type nat = number & { __type: 'nat' };
-type mutez = number & { __type: 'mutez' };
+type BigMap<K,V> = Omit<MichelsonMap<K, V>, 'get'> & { get: (key: K) => Promise<V> };
+type mutez = BigNumber & { __type: 'mutez' };
+type nat = BigNumber & { __type: 'nat' };
 
 type Storage = {
     admin?: {
@@ -9,7 +13,7 @@ type Storage = {
         paused: boolean;
         pending_admin?: address;
     };
-    sales: Map<{
+    sales: BigMap<{
         sale_seller: address;
         sale_token: {
             token_for_sale_address: address;

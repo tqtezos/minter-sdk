@@ -1,6 +1,9 @@
 
+import { MichelsonMap } from '@taquito/taquito';
+import { BigNumber } from 'bignumber.js';
+
 type address = string & { __type: 'address' };
-type nat = number & { __type: 'nat' };
+type nat = BigNumber & { __type: 'nat' };
 type unit = (true | undefined) & { __type: 'unit' };
 
 type Storage = {

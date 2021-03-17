@@ -1,8 +1,13 @@
 
+import { MichelsonMap } from '@taquito/taquito';
+import { BigNumber } from 'bignumber.js';
+
 type address = string & { __type: 'address' };
-type nat = number & { __type: 'nat' };
-type contract = string & { __type: 'contract' };
+type BigMap<K,V> = Omit<MichelsonMap<K, V>, 'get'> & { get: (key: K) => Promise<V> };
 type bytes = string & { __type: 'bytes' };
+type contract = string & { __type: 'contract' };
+type MMap<K,V> = MichelsonMap<K,V>;
+type nat = BigNumber & { __type: 'nat' };
 type unit = (true | undefined) & { __type: 'unit' };
 
 type Storage = {
@@ -12,19 +17,19 @@ type Storage = {
         pending_admin?: address;
     };
     assets: {
-        ledger: Map<nat, address>;
+        ledger: BigMap<nat, address>;
         next_token_id: nat;
-        operators: Map<{
+        operators: BigMap<{
             0: address;
             1: address;
             2: nat;
         }, unit>;
-        token_metadata: Map<nat, {
+        token_metadata: BigMap<nat, {
             token_id: nat;
-            token_info: Map<string, bytes>;
+            token_info: MMap<string, bytes>;
         }>;
     };
-    metadata: Map<string, bytes>;
+    metadata: BigMap<string, bytes>;
 };
 
 type Methods = {
@@ -59,7 +64,7 @@ type Methods = {
     mint: (params: {
         token_metadata: {
             token_id: nat;
-            token_info: Map<string, bytes>;
+            token_info: MMap<string, bytes>;
         };
         owner: address;
     }) => Promise<void>;
