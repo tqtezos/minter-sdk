@@ -4,7 +4,7 @@ import { TezosToolkit } from '@taquito/taquito';
 import { OriginationOperation } from '@taquito/taquito/dist/types/operations/origination-operation';
 import { TransactionOperation } from '@taquito/taquito/dist/types/operations/transaction-operation';
 import { OriginateParams } from '@taquito/taquito/dist/types/operations/types';
-import { address, mutez, nat, tez } from './tezos-types';
+import { address, mutez, nat, tez } from './type-aliases';
 
 type ContractTypeBase = {
     storage: unknown;
