@@ -1,14 +1,5 @@
 
-import { MichelsonMap } from '@taquito/taquito';
-import { BigNumber } from 'bignumber.js';
-
-type address = string & { __type: 'address' };
-type BigMap<K, V> = Omit<MichelsonMap<K, V>, 'get'> & { get: (key: K) => Promise<V> };
-type bytes = string & { __type: 'bytes' };
-type contract = string & { __type: 'contract' };
-type MMap<K, V> = MichelsonMap<K, V>;
-type nat = BigNumber & { __type: 'nat' };
-type unit = (true | undefined) & { __type: 'unit' };
+import { address, BigMap, bytes, contract, MMap, nat, unit } from './type-aliases';
 
 type Storage = {
     admin?: {
