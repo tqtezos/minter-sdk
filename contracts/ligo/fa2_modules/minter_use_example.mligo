@@ -10,6 +10,17 @@ type storage = {
   minter_admin : minter_admin_storage;
 }
 
+type tx = {
+  to_: address;
+  amount: nat;
+}
+
+type entrypoints =
+  | Transfer of tx
+  | Mint of nat
+  | Admin of admin_entrypoints
+  | MinterAdmin of minter_admin_entrypoints
+
 
 [@inline]
 let fail_if_not_minter(storage : storage) : unit =
@@ -26,12 +37,6 @@ let mint (ledger, amt : ledger * nat) : ledger =
   | Some bal -> bal
   in
   Big_map.update Tezos.sender (Some (old_bal + amt)) ledger
- 
-
-type tx = {
-  to_: address;
-  amount: nat;
-}
 
 let transfer (storage, tx : storage * tx) : storage =
   let src_bal = match Big_map.find_opt Tezos.sender storage.ledger with
@@ -50,12 +55,6 @@ let transfer (storage, tx : storage * tx) : storage =
   in
   let l2 = Big_map.update tx.to_ (Some dst_bal) l1 in
   {storage with ledger = l2; }
-
-type entrypoints =
-  | Transfer of tx
-  | Mint of nat
-  | Admin of admin_entrypoints
-  | MinterAdmin of minter_admin_entrypoints
 
 let main(p, s : entrypoints * storage) : (operation list) * storage =
   match p with
