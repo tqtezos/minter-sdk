@@ -21,18 +21,18 @@ Minter SDK aims to include the following
 
 ## Smart Contracts
 
-### [Minter Collection](minter_collection)
+### [Minter Collection](contracts/ligo/src/minter_collection)
 Customizable smart contracts for minting FA2 NFTs as collections.
 
-### [English Auction](english_auction)
+### [English Auction](contracts/ligo/src/english_auction)
 An implementation of an English auction marketplace that allows users to initiate auctions of NFTs in either tez or FA2. There are 
 two versions of this contract: one with administration capabilities and one without. For now, in the positive case, this means that
 a configured administrator is responsible for configuring and managing access to important entrypoints.
 
-### [Fixed Price Sale](fixed_price_sale)
+### [Fixed Price Sale](contracts/ligo/src/fixed_price_sale)
 An implementation of an NFT marketplace that allows users to initiate NFT sales at a fixed price in tez or FA2. These contracts can be configured based on a range of administrative options.
 
-## [Ticket-based NFTs](tickets)  
+## [Ticket-based NFTs](contracts/ligo/src/tickets)  
 
 **EXPERIMENTAL** An implementation of NFTs using tickets and a dutch auction example, along with wallet contracts for the NFTs. 
 *Please note: tickets are a new Tezos feature and care should be taken when using them as they have not been heavily tested in production.*
