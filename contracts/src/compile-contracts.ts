@@ -18,6 +18,8 @@ async function main(): Promise<void> {
     //compile english_auction_tez_permit.mligo manually from contracts directory like: 
     //docker run --rm -v $PWD:$PWD -w $PWD ligolang/ligo:next compile-contract ligo/src/english_auction/english_auction_tez_permit.mligo english_auction_tez_permit_main --output=bin/english_auction_tez_permit.tz
     //await compileEnglishAuctionTezPermitContract(env)
+    await compileTicketNftAuctionContract(env);
+    await compileTicketNftWalletContract(env);
     // add other contracts here
 
     process.exit(0);
@@ -118,6 +120,30 @@ async function compileEnglishAuctionTezPermitContract(env: LigoEnv): Promise<voi
       'english_auction_tez_permit.tz'
   );
   $log.info('compiled english auction tez permit contract');
+}
+
+async function compileTicketNftAuctionContract(env: LigoEnv): Promise<void> {
+  $log.info('compiling ticket nft auction contract');
+
+  await compileContract(
+      env,
+      'tickets/nft_auction.mligo',
+      'ticket_auction_main',
+      'ticket_auction.tz'
+  );
+  $log.info('compiled ticket nft auction contract');
+}
+
+async function compileTicketNftWalletContract(env: LigoEnv): Promise<void> {
+  $log.info('compiling ticket nft wallet contract');
+
+  await compileContract(
+      env,
+      'tickets/nft_wallet.mligo',
+      'ticket_wallet_main',
+      'ticket_wallet.tz'
+  );
+  $log.info('compiled ticket nft wallet contract');
 }
 
 main();
