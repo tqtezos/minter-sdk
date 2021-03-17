@@ -3,7 +3,7 @@ type address = string & { __type: 'address' };
 type nat = number & { __type: 'nat' };
 type contract = string & { __type: 'contract' };
 type bytes = string & { __type: 'bytes' };
-type unit = ( true | undefined ) & { __type: 'unit' };
+type unit = (true | undefined) & { __type: 'unit' };
 
 type Storage = {
     admin?: {

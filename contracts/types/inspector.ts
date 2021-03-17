@@ -1,18 +1,20 @@
 
 type address = string & { __type: 'address' };
 type nat = number & { __type: 'nat' };
-type unit = ( true | undefined ) & { __type: 'unit' };
+type unit = (true | undefined) & { __type: 'unit' };
 
 type Storage = {
     0: (
-        { empty: unit } | 
-        { state: {
-            request: {
-                owner: address;
-                token_id: nat;
-            };
-            balance: nat;
-        }[] }
+        { empty: unit }
+        | {
+            state: {
+                request: {
+                    owner: address;
+                    token_id: nat;
+                };
+                balance: nat;
+            }[]
+        }
     );
 };
 
