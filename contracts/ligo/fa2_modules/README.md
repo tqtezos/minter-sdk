@@ -145,8 +145,8 @@ files without modifying `main_contract.mligo`.
 Here is an example that uses **Admin** and **Minter Admin** modules:
 
 -   **Main contract** code [minter_use_example.mligo](examples/minter_use_example.mligo).
-    It uses type `admin_storage`, `admin_entrypoints` and functions `is_admin`,
-    `fail_if_paused`, fail_if_not_admin from `minter_admin` module and types
+    It uses types `admin_storage`, `admin_entrypoints` and functions `is_admin`,
+    `fail_if_paused`, `fail_if_not_admin` from `admin` module and types
     `minter_admin_storage`, `minter_admin_entrypoints` and a function `is_minter`
     from `minter_admin` module. Different module implementations can be used.
 -   **Assembly** [minter_use_example_simple_admin_with_minters.mligo](examples/minter_use_example_simple_admin_with_minters.mligo).
