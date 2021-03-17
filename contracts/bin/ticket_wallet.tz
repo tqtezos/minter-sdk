@@ -1,0 +1,222 @@
+{ parameter
+    (or (or (or (pair %auction
+                   (contract %destination
+                      (pair (nat %opening_price)
+                            (pair (nat %set_reserve_price)
+                                  (pair (timestamp %set_start_time) (pair (int %set_round_time) (ticket %ticket nat))))))
+                   (pair (nat %opening_price)
+                         (pair (nat %reserve_price)
+                               (pair (timestamp %start_time) (pair (int %round_time) (nat %ticket_id))))))
+                (nat %burn))
+            (or (map %mint string bytes) (ticket %receive nat)))
+        (pair %send (contract %destination (ticket nat)) (nat %ticket_id))) ;
+  storage
+    (pair (address %admin)
+          (pair (big_map %tickets nat (ticket nat))
+                (pair (nat %current_id) (big_map %token_metadata nat (pair nat (map string bytes)))))) ;
+  code { PUSH mutez 0 ;
+         AMOUNT ;
+         COMPARE ;
+         EQ ;
+         IF {} { PUSH string "failed assertion" ; FAILWITH } ;
+         UNPAIR ;
+         SWAP ;
+         UNPAIR ;
+         SWAP ;
+         UNPAIR ;
+         SWAP ;
+         UNPAIR ;
+         DIG 4 ;
+         IF_LEFT
+           { IF_LEFT
+               { IF_LEFT
+                   { DIG 4 ;
+                     DUP ;
+                     DUG 5 ;
+                     SENDER ;
+                     COMPARE ;
+                     EQ ;
+                     IF {} { PUSH string "failed assertion" ; FAILWITH } ;
+                     DIG 3 ;
+                     NONE (ticket nat) ;
+                     DIG 2 ;
+                     DUP ;
+                     DUG 3 ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     GET_AND_UPDATE ;
+                     IF_NONE
+                       { DROP 5 ; PUSH string "no tickets" ; FAILWITH }
+                       { DIG 2 ;
+                         DUP ;
+                         DUG 3 ;
+                         CAR ;
+                         PUSH mutez 0 ;
+                         DIG 2 ;
+                         DIG 4 ;
+                         DUP ;
+                         DUG 5 ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CAR ;
+                         PAIR ;
+                         DIG 4 ;
+                         DUP ;
+                         DUG 5 ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CAR ;
+                         PAIR ;
+                         DIG 4 ;
+                         DUP ;
+                         DUG 5 ;
+                         CDR ;
+                         CDR ;
+                         CAR ;
+                         PAIR ;
+                         DIG 4 ;
+                         CDR ;
+                         CAR ;
+                         PAIR ;
+                         TRANSFER_TOKENS ;
+                         DIG 3 ;
+                         DIG 3 ;
+                         PAIR ;
+                         DIG 2 ;
+                         PAIR ;
+                         DIG 2 ;
+                         PAIR ;
+                         NIL operation ;
+                         DIG 2 ;
+                         CONS ;
+                         PAIR } }
+                   { DIG 4 ;
+                     DUP ;
+                     DUG 5 ;
+                     SENDER ;
+                     COMPARE ;
+                     EQ ;
+                     IF {} { PUSH string "failed assertion" ; FAILWITH } ;
+                     DIG 2 ;
+                     PUSH nat 1 ;
+                     DIG 3 ;
+                     ADD ;
+                     PAIR ;
+                     DIG 2 ;
+                     NONE (ticket nat) ;
+                     DIG 3 ;
+                     UPDATE ;
+                     PAIR ;
+                     SWAP ;
+                     PAIR ;
+                     NIL operation ;
+                     PAIR } }
+               { IF_LEFT
+                   { DIG 4 ;
+                     DUP ;
+                     DUG 5 ;
+                     SENDER ;
+                     COMPARE ;
+                     EQ ;
+                     IF {} { PUSH string "failed assertion" ; FAILWITH } ;
+                     DIG 3 ;
+                     PUSH nat 1 ;
+                     DIG 3 ;
+                     DUP ;
+                     DUG 4 ;
+                     TICKET ;
+                     SOME ;
+                     DIG 3 ;
+                     DUP ;
+                     DUG 4 ;
+                     GET_AND_UPDATE ;
+                     DROP ;
+                     DIG 3 ;
+                     DIG 2 ;
+                     DIG 3 ;
+                     DUP ;
+                     DUG 4 ;
+                     PAIR ;
+                     SOME ;
+                     DIG 3 ;
+                     DUP ;
+                     DUG 4 ;
+                     UPDATE ;
+                     PUSH nat 1 ;
+                     DIG 3 ;
+                     ADD ;
+                     PAIR ;
+                     SWAP ;
+                     PAIR ;
+                     SWAP ;
+                     PAIR ;
+                     NIL operation ;
+                     PAIR }
+                   { READ_TICKET ;
+                     UNPAIR ;
+                     DROP ;
+                     UNPAIR ;
+                     DROP ;
+                     DIG 4 ;
+                     DIG 2 ;
+                     SOME ;
+                     DIG 3 ;
+                     DUP ;
+                     DUG 4 ;
+                     GET_AND_UPDATE ;
+                     DROP ;
+                     PUSH nat 1 ;
+                     DIG 2 ;
+                     COMPARE ;
+                     EQ ;
+                     IF {} { PUSH string "failed assertion" ; FAILWITH } ;
+                     DIG 2 ;
+                     PUSH nat 1 ;
+                     DIG 3 ;
+                     ADD ;
+                     PAIR ;
+                     SWAP ;
+                     PAIR ;
+                     SWAP ;
+                     PAIR ;
+                     NIL operation ;
+                     PAIR } } }
+           { DIG 4 ;
+             DUP ;
+             DUG 5 ;
+             SENDER ;
+             COMPARE ;
+             EQ ;
+             IF {} { PUSH string "failed assertion" ; FAILWITH } ;
+             DIG 3 ;
+             NONE (ticket nat) ;
+             DIG 2 ;
+             DUP ;
+             DUG 3 ;
+             CDR ;
+             GET_AND_UPDATE ;
+             IF_NONE
+               { DROP 5 ; PUSH string "no tickets" ; FAILWITH }
+               { DIG 2 ;
+                 CAR ;
+                 PUSH mutez 0 ;
+                 DIG 2 ;
+                 TRANSFER_TOKENS ;
+                 DIG 3 ;
+                 DIG 3 ;
+                 PAIR ;
+                 DIG 2 ;
+                 PAIR ;
+                 DIG 2 ;
+                 PAIR ;
+                 NIL operation ;
+                 DIG 2 ;
+                 CONS ;
+                 PAIR } } } }
+
