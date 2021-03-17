@@ -63,27 +63,6 @@ export const generateContractApi = (contractScript: string): {
     };
 };
 
-export const getTypeAliasesCode = (): string => {
-    return `
-import { MichelsonMap } from '@taquito/taquito';
-import { BigNumber } from 'bignumber.js';
-
-export type address = string & { __type: 'address' };
-export type bytes = string & { __type: 'bytes' };
-export type contract = string & { __type: 'contract' };
-export type timestamp = string & { __type: 'timestamp' };
-
-export type int = BigNumber & { __type: 'int' };
-export type nat = BigNumber & { __type: 'nat' };
-
-export type mutez = BigNumber & { __type: 'mutez' };
-export type tez = BigNumber & { __type: 'tez' };
-
-export type MMap<K, V> = Omit<MichelsonMap<K, V>, 'get'> & { get: (key: K) => V };
-export type BigMap<K, V> = Omit<MichelsonMap<K, V>, 'get'> & { get: (key: K) => Promise<V> };
-    `;
-};
-
 const toTypescriptCode = (storage: TypedStorage, methods: TypedMethod[]): {
     final: string;
     typeMapping: string;
