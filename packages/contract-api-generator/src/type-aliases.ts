@@ -1,6 +1,8 @@
 import { MichelsonMap } from '@taquito/taquito';
 import { BigNumber } from 'bignumber.js';
 
+export type unit = (true | undefined) & { __type: 'unit' };
+
 export type address = string & { __type: 'address' };
 export type bytes = string & { __type: 'bytes' };
 export type contract = string & { __type: 'contract' };
