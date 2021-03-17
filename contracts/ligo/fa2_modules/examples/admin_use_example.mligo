@@ -3,9 +3,9 @@ This is an example how to incorporate admin module into a contract
  *)
 
 (* pick one of the admin implementations *)
-(* #include "null_admin.mligo" *)
-#include "simple_admin.mligo"
-(* #include "multi_admin.mligo" *)
+(* #include "../admin/null_admin.mligo" *)
+#include "../admin/simple_admin.mligo"
+(* #include "../admin/multi_admin.mligo" *)
 
 
 type storage = {
