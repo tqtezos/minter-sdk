@@ -3,7 +3,7 @@ import { MichelsonMap } from '@taquito/taquito';
 import { BigNumber } from 'bignumber.js';
 
 type address = string & { __type: 'address' };
-type BigMap<K,V> = Omit<MichelsonMap<K, V>, 'get'> & { get: (key: K) => Promise<V> };
+type BigMap<K, V> = Omit<MichelsonMap<K, V>, 'get'> & { get: (key: K) => Promise<V> };
 type nat = BigNumber & { __type: 'nat' };
 
 type Storage = {
