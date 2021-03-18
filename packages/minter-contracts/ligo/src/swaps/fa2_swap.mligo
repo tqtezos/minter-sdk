@@ -57,7 +57,7 @@ let unexpected_err(err : string) : string = err
 
 let forbid_xtz_transfer : unit =
   if Tezos.amount = 0tez
-  then ()
+  then unit
   else failwith "XTZ_TRANSFER"
 
 let fa2_transfer_entrypoint(fa2, on_invalid_fa2 : address * string)
@@ -88,7 +88,7 @@ let get_swap(id, storage : swap_id * swap_storage) : swap_info =
 
 let authorize_seller(swap : swap_info) : unit =
   if swap.seller = Tezos.sender
-  then ()
+  then unit
   else failwith "NOT_SWAP_SELLER"
 
 (* ==== Entrypoints ==== *)

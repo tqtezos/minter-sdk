@@ -2,7 +2,7 @@
 
 TEST_ARGUMENTS ?= ""
 
-EXTRA_STACK_OPTIONS ?= ""
+EXTRA_STACK_OPTIONS ?=
 
 all: test
 

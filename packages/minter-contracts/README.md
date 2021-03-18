@@ -17,8 +17,9 @@ An implementation of an NFT marketplace that allows users to initiate NFT sales 
 ### [FA2-FA2 swaps](ligo/src/swaps)
 
 An implementation of a swaps contract that allows two participants to safely exchange their FA2 tokens.
+There is a whitelisted extension that allows specifying the permitted set of FA2 contracts involved.
 
-### [Ticket-based NFTs](ligo/src/tickets)  
+### [Ticket-based NFTs](ligo/src/tickets)
 
 **EXPERIMENTAL** An implementation of NFTs using tickets and a dutch auction example, along with wallet contracts for the NFTs. _Please note: tickets are a new Tezos feature and care should be taken when using them as they have not been heavily tested in production._
 

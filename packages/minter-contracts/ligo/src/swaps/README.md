@@ -1,20 +1,34 @@
 # Swaps contract
 
-This contract allows a participant to offer FA2 tokens exchange that another participant can accept.
+Swaps contract allows one participant (a seller) to offer an exchange with FA2 tokens, that may be accepted by another participant.
+
+Table of contents:
+* [Build instructions](#build-instructions)
+* [Basic swap contract](#basic-swap-contract)
+  * [Types](#swap-basic-types)
+  * [Entrypoints](#swap-basic-entrypoints)
+  * [Notes to the middleware implementors](#notes-to-the-middleware-implementors)
+* [Whitelisted extension](#whitelisted-extension)
+  * [Contract parts](#contract-parts)
+  * [Types](#whitelist-types)
+  * [Entrypoints](#whitelist-entrypoints)
 
 ## Build instructions
 
-To compile the contract, run `yarn compile-ligo`.
+To compile the contracts, run `yarn compile-ligo`.
 
-## Specification
+## Basic swap contract
+
+Source code: [ligo](fa2_swap.mligo).
 
 This contract may contain a multitude of swaps, each of them follows the life-cycle presented in the diagram:
 
 ![lifecycle](./swap-lifecycle.png)
 
+<a name="swap-basic-types"></a>
 ### Types
 
-The types that are following will be given in cameligo.
+The following types are expressed in cameligo.
 
 #### Basic types
 
@@ -71,6 +85,7 @@ type swap_info =
 Entries in storage include:
 * `%swaps : (swap_id ,swap_info) big_map` with all the swaps.
 
+<a name="swap-basic-entrypoints"></a>
 ### Entrypoints
 
 Notes:
@@ -157,3 +172,59 @@ Be sure to handle not only the errors listed in the entrypoints description, but
 
 1. Forbid empty offered/requested assets to avoid user's mistakes.
 2. Preserve info about resolved swaps in storage - decided not to go with this is favor of using blockchain explorers.
+
+## Whitelisted extension
+
+This contract additionally provides a way to restrict the set of allowed FA2 tokens that can participate in exchanges.
+This set is managed by the administrator entity.
+
+Source code: [ligo](fa2_whitelisted_swap.mligo).
+
+### Contract parts
+
+The plan is to develop one contract consisting of a few components that can be reused for other purposes.
+
+The contract has to consist of the following parts:
+1. Base swap contract;
+2. Simple administrator contract. We picked the existing [`simple_admin` contract](../../fa2_modules/admin/non_pausable_simple_admin.mligo) that is already present in the `minter-sdk` repository.
+3. Whitelisting component (reuses the swaps contract and implements the whitelisting capabilities).
+
+The last point will be described further in this document.
+
+<a name="whitelist-types"></a>
+### Types
+
+The storage of the whitelist component is solely `big_map address ()`.
+
+We do not use mere `list` or `set` because `big_map` is more efficient for the `Start` entrypoint.
+
+<a name="whitelist-entrypoints"></a>
+### Entrypoints
+
+#### Update whitelist
+
+```ocaml
+| Update_allowed of address list
+```
+
+This entrypoint allows setting a new whitelist, overriding the current one.
+
+It accepts `(address, unit) big_map` for the sake of efficiency (whitelist is kept in this form in the storage).
+
+Can be invoked only by the admin, fails with `NOT_ADMIN` otherwise.
+
+### Modification of the base swaps contract
+
+The whitelisting component provides a method for modifying behaviour of `main` of the base swaps contract. This ensures that the whitelisting capability can be composed with other extensions to the swaps contract that may be requested in the future.
+
+#### Start swap entrypoint
+
+In case any of `assets_offered.fa2_address` or `assets_requested.fa2_address` addresses do not appear in the whitelist `big_map`, `SWAP_OFFERED_FA2_NOT_WHITELISTED` or `SWAP_REQUESTED_FA2_NOT_WHITELISTED` error is raised respectively.
+
+#### Cancel swap entrypoint
+
+Not updated.
+
+#### Accept swap entrypoint
+
+Not updated.
