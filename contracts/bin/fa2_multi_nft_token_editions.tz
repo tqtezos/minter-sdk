@@ -337,15 +337,31 @@
                         { DROP ; UNIT } } } ;
              SWAP ;
              APPLY } ;
-         DIG 4 ;
+         LAMBDA
+           (option (pair (pair address bool) (option address)))
+           unit
+           { IF_NONE
+               { UNIT }
+               { CAR ; CDR ; IF { PUSH string "PAUSED" ; FAILWITH } { UNIT } } } ;
+         DIG 5 ;
          UNPAIR ;
          IF_LEFT
            { IF_LEFT
-               { DIG 2 ;
+               { DIG 3 ;
                  DROP ;
-                 DIG 3 ;
+                 DIG 4 ;
                  DROP ;
+                 DIG 4 ;
+                 DROP ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CDR ;
+                 CAR ;
+                 CAR ;
                  DIG 3 ;
+                 SWAP ;
+                 EXEC ;
                  DROP ;
                  PAIR ;
                  LEFT (pair (list operation)
@@ -584,10 +600,12 @@
                  CDR ;
                  SWAP ;
                  IF_LEFT
-                   { DIG 4 ;
+                   { DIG 5 ;
                      DROP ;
                      IF_LEFT
-                       { DIG 4 ;
+                       { DIG 3 ;
+                         DROP ;
+                         DIG 4 ;
                          DROP ;
                          DIG 4 ;
                          DROP ;
@@ -654,16 +672,16 @@
                          PAIR ;
                          SWAP ;
                          PAIR }
-                       { DIG 3 ;
+                       { DIG 4 ;
                          DROP ;
                          SWAP ;
                          DUP ;
                          DUG 2 ;
                          CAR ;
                          CAR ;
-                         IF_NONE
-                           { UNIT }
-                           { CAR ; CDR ; IF { PUSH string "PAUSED" ; FAILWITH } { UNIT } } ;
+                         DIG 4 ;
+                         SWAP ;
+                         EXEC ;
                          DROP ;
                          SWAP ;
                          DUP ;
@@ -854,7 +872,9 @@
                          PAIR ;
                          SWAP ;
                          PAIR } }
-                   { DIG 5 ;
+                   { DIG 3 ;
+                     DROP ;
+                     DIG 5 ;
                      DROP ;
                      DIG 5 ;
                      DROP ;
@@ -897,13 +917,34 @@
                  PAIR ;
                  SWAP ;
                  PAIR } }
-           { DIG 2 ;
+           { DIG 4 ;
              DROP ;
-             DIG 2 ;
+             DIG 4 ;
              DROP ;
-             DIG 2 ;
+             DIG 4 ;
              DROP ;
+             NONE string ;
              DIG 2 ;
+             DUP ;
+             DUG 3 ;
+             CDR ;
+             CAR ;
+             CAR ;
+             DIG 5 ;
+             SWAP ;
+             EXEC ;
+             SWAP ;
+             EXEC ;
+             DROP ;
+             SWAP ;
+             DUP ;
+             DUG 2 ;
+             CDR ;
+             CAR ;
+             CAR ;
+             DIG 3 ;
+             SWAP ;
+             EXEC ;
              DROP ;
              PAIR ;
              LEFT (pair (list operation)

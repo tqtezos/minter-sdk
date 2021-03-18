@@ -1,6 +1,7 @@
 #include "../../fa2/fa2_interface.mligo"
 #include "fa2_multi_nft_manager.mligo"
 #include "fa2_multi_nft_asset.mligo"
+#include "../../fa2_modules/pauseable_admin_option.mligo"
 
 type mint_editions = 
 [@layout:comb]
@@ -110,5 +111,11 @@ let editions_main (param, editions_storage : editions_entrypoints * editions_sto
     | FA2 nft_asset_entrypoints -> 
         let ops, new_nft_asset_storage = nft_asset_main (nft_asset_entrypoints, editions_storage.nft_asset_storage) in
         ops, {editions_storage with nft_asset_storage = new_nft_asset_storage}
-    | Mint_editions mint_param -> mint_editions (mint_param, editions_storage)
-    | Distribute_editions distribute_param -> distribute_editions (distribute_param, editions_storage)
+    | Mint_editions mint_param -> 
+        (*TODO: Move to new admin after Euguene's merge*)
+        let u : unit = fail_if_not_admin editions_storage.nft_asset_storage.admin (None : string option) in
+        let u = fail_if_paused editions_storage.nft_asset_storage.admin in
+        (mint_editions (mint_param, editions_storage))
+    | Distribute_editions distribute_param -> 
+        let u : unit = fail_if_paused editions_storage.nft_asset_storage.admin in
+        (distribute_editions (distribute_param, editions_storage))
