@@ -1,5 +1,5 @@
 import { TransactionOperationParameter } from '@taquito/rpc';
-import { ContractMethod, ContractProvider } from '@taquito/taquito';
+import { ContractProvider } from '@taquito/taquito';
 import { TezosToolkit } from '@taquito/taquito';
 import { OriginationOperation } from '@taquito/taquito/dist/types/operations/origination-operation';
 import { TransactionOperation } from '@taquito/taquito/dist/types/operations/transaction-operation';
