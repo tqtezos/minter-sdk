@@ -2,6 +2,6 @@
   "name": "@minter-sdk/minter-cli",
   "version": "1.0.0",
   "dependencies": {
-    "@minter-sdk/contract-api-generator": "*"
+    "@minter-sdk/contract-type-generator": "*"
   }
 }

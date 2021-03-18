@@ -24,8 +24,8 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": "packages",
     "paths": {
-      "@minter-sdk/contract-api-generator": [
-        "./contract-api-generator/src"
+      "@minter-sdk/contract-type-generator": [
+        "./contract-type-generator/src"
       ],
     },
   },

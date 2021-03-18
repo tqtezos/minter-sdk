@@ -76,7 +76,7 @@ Each folder under packages, has it's own package.json, like any normal npm modul
 
 ```
   "dependencies": {
-    "@minter-sdk/contract-api-generator": "*"
+    "@minter-sdk/contract-type-generator": "*"
   }
 ```
 
@@ -85,8 +85,8 @@ Each folder under packages, has it's own package.json, like any normal npm modul
 ```
     "baseUrl": "packages",
     "paths": {
-      "@minter-sdk/contact-api-generator": [
-        "./contact-api-generator/src"
+      "@minter-sdk/contact-type-generator": [
+        "./contact-type-generator/src"
       ],
     },
 ```
@@ -104,7 +104,7 @@ This project is setup to use yarn workspaces. It will produce multiple npm modul
 
 These packages will be compiled typescript and in their compiled code, each will include any local packages required. So dependent packages do not need to be published, but should be marked as private. Example:
 
-- `@minter-sdk/contract-api-generator` is used by `minter-cli` and `minter-sdk` and the build output of each will include it's required code.
+- `@minter-sdk/contract-type-generator` is used by `minter-cli` and `minter-sdk` and the build output of each will include it's required code.
 
 
 

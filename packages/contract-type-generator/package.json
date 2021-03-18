@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "@minter-sdk/contract-api-generator",
+  "name": "@minter-sdk/contract-type-generator",
   "version": "1.0.0",
   "dependencies": {
     "@taquito/michel-codec": "^8.0.6-beta.0",

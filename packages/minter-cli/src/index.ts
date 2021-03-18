@@ -1,4 +1,4 @@
-import { generateContractTypes_processTzContractFiles } from 'contract-api-generator/src/cli-process';
+import { generateContractTypes_processTzContractFiles } from 'contract-type-generator/src/cli-process';
 
 export const run = async (): Promise<void> => {
     const argv = process.argv;
