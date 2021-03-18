@@ -31,6 +31,7 @@ let fail_if_not_admin (storage : admin_storage) (extra_msg : string option) : un
 (* Returns true if sender is admin *)
 let is_admin (storage : admin_storage) : bool = Tezos.sender = storage.admin
 
+[@inline]
 let fail_if_paused (storage : admin_storage) : unit = unit
 
 (*Only callable by admin*)

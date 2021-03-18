@@ -10,6 +10,7 @@ type minter_admin_storage = unit
 type minter_admin_entrypoints = never
 
 (* True if sender is a minter *)
+[@inline]
 let is_minter (storage : minter_admin_storage) : bool = true
 
 
