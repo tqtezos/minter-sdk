@@ -29,7 +29,8 @@ signature:
 
 -   [no_admin.mligo](admin/no_admin.mligo) - everyone is admin
 -   [simple_admin.mligo](admin/simple_admin.mligo) - a single admin that can
-    pause/unpause the contract and change the admin using two steps confirmation.
+    pause/unpause the contract, guard other operations to be invoked only by the
+    admin and change the admin using two steps confirmation.
     Exposes the following administrative entry points:
 
     ```ocaml
@@ -39,9 +40,21 @@ signature:
     | Pause of bool
     ```
 
+-   [non_pausable_simple_admin.mligo](admin/non_pausable_simple_admin.mligo) -
+    a single admin that can guard other operations to be invoked only by the admin
+    and change the admin using two steps confirmation.
+    Exposes the following administrative entry points:
+
+    ```ocaml
+    type admin_entrypoints =
+    | Set_admin of address
+    | Confirm_admin of unit
+    ```
+
 -   [multi_admin.mligo](admin/multi_admin.mligo) - supports multiple admins for the
-    main contract. Admins can pause/unpause the main contract and add/remove the
-    admins. Exposes the following administrative entry points:
+    main contract. Admins can pause/unpause the main contract, guard other operations
+    to be invoked only by one of the admins and add/remove the admins.
+    Exposes the following administrative entry points:
 
     ```ocaml
     type admin_entrypoints =

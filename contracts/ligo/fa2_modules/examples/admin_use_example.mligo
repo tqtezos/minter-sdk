@@ -5,6 +5,7 @@ This is an example how to incorporate admin module into a contract
 (* pick one of the admin implementations *)
 (* #include "../admin/no_admin.mligo" *)
 #include "../admin/simple_admin.mligo"
+(* #include "../admin/non_pausable_simple_admin.mligo" *)
 (* #include "../admin/multi_admin.mligo" *)
 
 
