@@ -17,7 +17,7 @@ async function main(): Promise<void> {
     await compileFtContract(env);
     await compileTicketNftAuctionContract(env);
     await compileTicketNftWalletContract(env);
-    // add other contracts here
+    await compileNftEditionsContract(env);
 
     process.exit(0);
   } catch (err) {
@@ -129,6 +129,18 @@ async function compileTicketNftWalletContract(env: LigoEnv): Promise<void> {
       'ticket_wallet.tz'
   );
   $log.info('compiled ticket nft wallet contract');
+}
+
+async function compileNftEditionsContract(env: LigoEnv): Promise<void> {
+  $log.info('compiling nft editions contract');
+
+  await compileContract(
+      env,
+      'minter_collection/fa2_multi_nft_token_editions.mligo',
+      'editions_main',
+      'fa2_multi_nft_token_editions.tz'
+  );
+  $log.info('compiled nft editions contract');
 }
 
 main();
