@@ -96,12 +96,12 @@ let rec distribute_editions (distribute_list, storage : distribute_edition list 
           | Some edition_metadata -> edition_metadata 
           | None -> (failwith "INVALID_EDITION_ID" : edition_metadata)) in 
         let new_editions_storage, new_edition_metadata = distribute_edition_to_addresses(distribute_param.receivers, edition_metadata, storage) in
-            let new_editions_metadata = Big_map.update distribute_param.edition_id (Some new_edition_metadata) new_editions_storage.editions_metadata in
-            let new_storage = {new_editions_storage with editions_metadata = new_editions_metadata} in 
-            let remaining_receivers : distribute_edition list = (match (List.tail_opt distribute_list) with 
-              | Some remaining_editions -> remaining_editions
-              | None -> (failwith "INTERNAL_ERROR" : distribute_edition list)) in 
-            (distribute_editions (remaining_receivers, new_storage))
+        let new_editions_metadata = Big_map.update distribute_param.edition_id (Some new_edition_metadata) new_editions_storage.editions_metadata in
+        let new_storage = {new_editions_storage with editions_metadata = new_editions_metadata} in 
+        let remaining_receivers : distribute_edition list = (match (List.tail_opt distribute_list) with 
+          | Some remaining_editions -> remaining_editions
+          | None -> (failwith "INTERNAL_ERROR" : distribute_edition list)) in 
+        (distribute_editions (remaining_receivers, new_storage))
     | None -> ([] : operation list), storage 
 
 let editions_main (param, editions_storage : editions_entrypoints * editions_storage)
