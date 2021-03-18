@@ -1,5 +1,5 @@
 import { TransactionOperationParameter } from '@taquito/rpc';
-import { ContractProvider, TransactionWalletOperation, Wallet } from '@taquito/taquito';
+import { Context, ContractAbstraction, ContractProvider, TransactionWalletOperation, Wallet } from '@taquito/taquito';
 import { TezosToolkit } from '@taquito/taquito';
 import { OriginationOperation } from '@taquito/taquito/dist/types/operations/origination-operation';
 import { TransactionOperation } from '@taquito/taquito/dist/types/operations/transaction-operation';
@@ -10,7 +10,7 @@ type ContractTypeBase = {
     storage: unknown;
     methods: unknown;
 };
-type TypedContractOf<T extends ContractTypeBase> = {
+type TypedContractOf<T extends ContractTypeBase> = Omit<ContractAbstraction<ContractProvider>, 'storage' | 'methods'> & {
     storage: () => Promise<T['storage']>;
     methods: { [M in keyof T['methods']]:
         T['methods'][M] extends (...args: infer A) => Promise<void>
@@ -73,3 +73,16 @@ export type TezosToolkitTyped<T extends ContractTypeBase> = Omit<TezosToolkit, '
     wallet: TypedWalletOf<T>;
 };
 
+
+// Contract abstraction provider
+type TypedContractAbstractionOf<T extends ContractTypeBase> = ContractAbstraction<ContractProvider> & {
+    storage: () => Promise<T['storage']>;
+    methods: { [M in keyof T['methods']]:
+        T['methods'][M] extends (...args: infer A) => Promise<void>
+        ? (...args: A) => TypedContractMethod
+        : never
+    };
+};
+export const createContractAbstractionComposer = <TContract extends ContractTypeBase>() => (abs: ContractAbstraction<ContractProvider>, context: Context): TypedContractAbstractionOf<TContract> => {
+    return abs as unknown as TypedContractAbstractionOf<TContract>;
+};
