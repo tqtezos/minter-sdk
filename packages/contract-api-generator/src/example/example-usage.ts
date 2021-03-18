@@ -1,8 +1,8 @@
 import { TezosToolkit } from '@taquito/taquito';
-import { Contract as TestContractType } from './test-contract-type-1';
-import { Contract as TestContractType2 } from './test-contract-type-2';
-import { nat, tas } from './type-aliases';
-import { TezosToolkitTyped } from './tezos-typing';
+import { Contract as TestContractType } from './example-contract-type-1';
+import { Contract as TestContractType2 } from './example-contract-type-2';
+import { nat, tas } from '../usage/type-aliases';
+import { TezosToolkitTyped } from '../usage/tezos-toolkit-typing';
 
 
 const exampleContractMethods1 = async () => {

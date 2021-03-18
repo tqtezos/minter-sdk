@@ -1,6 +1,6 @@
 import fsRaw from 'fs';
 import path from 'path';
-import { generateContractApiFromMichelsonCode } from '@minter-sdk/contract-api-generator';
+import { generateContractTypesFromMichelsonCode } from '@minter-sdk/contract-api-generator';
 const fs = fsRaw.promises;
 
 export const run = async (): Promise<void> => {
@@ -27,7 +27,7 @@ export const run = async (): Promise<void> => {
 
             try {
                 const michelsonCode = await fs.readFile(inputFilePath, { encoding: `utf8` });
-                const { typescriptCode } = generateContractApiFromMichelsonCode(michelsonCode);
+                const { typescriptCode } = generateContractTypesFromMichelsonCode(michelsonCode);
                 await fs.writeFile(outputFilePath, typescriptCode);
             } catch (err: unknown) {
                 console.error(`❌ Could not process ${fileRelativePath}`, { err });

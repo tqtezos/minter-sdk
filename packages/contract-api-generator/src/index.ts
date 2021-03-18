@@ -1,8 +1,8 @@
-import { generateContractApi } from './contract-api-generator';
+import { generateContractTypes } from './contract-type-generator';
 
-export const generateContractApiFromMichelsonCode = (michelsonCode: string): { typescriptCode: string } => {
+export const generateContractTypesFromMichelsonCode = (michelsonCode: string): { typescriptCode: string } => {
 
-    const result = generateContractApi(michelsonCode);
+    const result = generateContractTypes(michelsonCode);
 
     return { typescriptCode: result.typescriptCode.final };
 };
