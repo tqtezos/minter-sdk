@@ -1,12 +1,11 @@
 import * as M from '@taquito/michel-codec';
-import { GenerateApiError } from './common';
+import { assertExhaustive, GenerateApiError } from './common';
 
-const assertExhaustive = (value: never, message: string) => {
-    console.error(message, { value });
-};
+
 
 export type TypedStorage = {
     storage: {
+        kind: 'object';
         raw: M.MichelsonType;
         fields: TypedVar[];
     };
@@ -24,17 +23,32 @@ export type TypedVar = {
 };
 export type TypedType = {
     raw: M.MichelsonType;
-    unit?: boolean;
-    never?: boolean;
     optional?: boolean;
-    value?: string;
-    typescriptType?: 'string' | 'boolean' | 'number';
-    fields?: TypedVar[];
-    union?: TypedVar[];
-    array?: { item: TypedType };
-    map?: { key: TypedType, value: TypedType, isBigMap: boolean };
-    unknown?: boolean;
-};
+} & (
+        {
+            kind: 'unit';
+        } | {
+            kind: 'never';
+        } | {
+            kind: 'unknown';
+        } | {
+            kind: 'value';
+            value: string;
+            typescriptType: 'string' | 'boolean' | 'number';
+        } | {
+            kind: 'union';
+            union: TypedVar[];
+        } | {
+            kind: 'object';
+            fields: TypedVar[];
+        } | {
+            kind: 'array';
+            array: { item: TypedType };
+        } | {
+            kind: 'map';
+            map: { key: TypedType, value: TypedType, isBigMap: boolean };
+        }
+    );
 
 const toDebugSource = (node: M.MichelsonType) => {
     return JSON.stringify(node);
@@ -46,6 +60,7 @@ export const visitContractStorage = (storage: M.MichelsonContractStorage): Typed
         .flatMap(x => x);
     return {
         storage: {
+            kind: `object`,
             raw: storage as unknown as M.MichelsonType,
             fields: fields,
         },
@@ -138,13 +153,13 @@ const visitType = (node: MType): TypedType => {
     // const debug_source = toDebugSource(node);
 
     if (typeof node === `string`) {
-        return { raw: node, value: node };
+        return { kind: `value`, raw: node, value: node, typescriptType: `string` };
     }
 
     if (!(`prim` in node)) {
         // Unknown
         console.error(`visitType no prim`, { node });
-        return { raw: node, unknown: true };
+        return { kind: `unknown`, raw: node };
     }
 
     // Union
@@ -153,7 +168,7 @@ const visitType = (node: MType): TypedType => {
 
         // Flatten
         const rightSide = union[1];
-        if (rightSide.type.union) {
+        if (rightSide.type.kind === `union`) {
             union.pop();
             union.push(...rightSide.type.union);
         }
@@ -162,6 +177,7 @@ const visitType = (node: MType): TypedType => {
             throw new GenerateApiError(`or: Some fields are null`, { node });
         }
         return {
+            kind: `union`,
             raw: node,
             union,
         };
@@ -174,6 +190,7 @@ const visitType = (node: MType): TypedType => {
             throw new GenerateApiError(`pair: Some fields are null`, { node, args: node.args, fields });
         }
         return {
+            kind: `object`,
             raw: node,
             fields,
         };
@@ -192,6 +209,7 @@ const visitType = (node: MType): TypedType => {
             throw new GenerateApiError(`arrayItem are null`, { node, args: node.args, arrayItem });
         }
         return {
+            kind: `array`,
             raw: node,
             array: { item: arrayItem },
         };
@@ -211,6 +229,7 @@ const visitType = (node: MType): TypedType => {
             throw new GenerateApiError(`map is missing key or value`, { node, args: node.args, mapKey, mapValue });
         }
         return {
+            kind: `map`,
             raw: node,
             map: {
                 key: mapKey,
@@ -231,6 +250,7 @@ const visitType = (node: MType): TypedType => {
     // boolean
     if (node.prim === `bool`) {
         return {
+            kind: `value`,
             raw: node,
             value: node.prim,
             typescriptType: `boolean`,
@@ -243,6 +263,7 @@ const visitType = (node: MType): TypedType => {
         || node.prim === `mutez`
     ) {
         return {
+            kind: `value`,
             raw: node,
             value: node.prim,
             typescriptType: `number`,
@@ -267,6 +288,7 @@ const visitType = (node: MType): TypedType => {
 
     ) {
         return {
+            kind: `value`,
             raw: node,
             value: node.prim,
             typescriptType: `string`,
@@ -277,14 +299,15 @@ const visitType = (node: MType): TypedType => {
     // void
     if (node.prim === `unit`) {
         return {
+            kind: `unit`,
             raw: node,
-            unit: true,
         };
     }
 
     // bytes?
     if (node.prim === `bytes`) {
         return {
+            kind: `value`,
             raw: node,
             value: node.prim,
             typescriptType: `string`,
@@ -296,6 +319,7 @@ const visitType = (node: MType): TypedType => {
         || node.prim === `operation`
     ) {
         return {
+            kind: `value`,
             raw: node,
             value: node.prim,
             typescriptType: `string`,
@@ -306,8 +330,8 @@ const visitType = (node: MType): TypedType => {
     if (node.prim === `never`
     ) {
         return {
+            kind: `never`,
             raw: node,
-            never: true,
         };
     }
 

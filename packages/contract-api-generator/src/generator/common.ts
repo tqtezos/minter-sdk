@@ -4,3 +4,7 @@ export class GenerateApiError implements Error {
         console.error(`❌ GenerateApiError: ${message}`, data);
     }
 }
+
+export const assertExhaustive = (value: never, message: string): void => {
+    console.error(message, { value });
+};

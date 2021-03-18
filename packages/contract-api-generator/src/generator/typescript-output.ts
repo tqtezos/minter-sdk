@@ -1,4 +1,4 @@
-import { GenerateApiError } from './common';
+import { assertExhaustive, GenerateApiError } from './common';
 import { TypedStorage, TypedMethod, TypedType, TypedVar } from './contract-parser';
 
 export const toTypescriptCode = (storage: TypedStorage, methods: TypedMethod[]): {
@@ -25,7 +25,7 @@ ${tabs(indent)}`;
     };
 
     const typeToCode = (t: TypedType, indent: number): string => {
-        if (t.typescriptType) {
+        if (t.kind === `value`) {
             //return `${t.typescriptType}`;
 
             const prim = `prim` in t.raw ? t.raw.prim : `unknown`;
@@ -43,10 +43,10 @@ ${tabs(indent)}`;
 
             return strictType.strictType;
         }
-        if (t.array) {
+        if (t.kind === `array`) {
             return `${typeToCode(t.array.item, indent)}[]`;
         }
-        if (t.map) {
+        if (t.kind === `map`) {
 
             const strictType = t.map.isBigMap
                 ? { strictType: `BigMap`, raw: `type BigMap<K, V> = Omit<MichelsonMap<K, V>, 'get'> & { get: (key: K) => Promise<V> }` }
@@ -55,12 +55,12 @@ ${tabs(indent)}`;
 
             return `${strictType.strictType}<${typeToCode(t.map.key, indent)}, ${typeToCode(t.map.value, indent)}>`;
         }
-        if (t.fields) {
+        if (t.kind === `object`) {
             return `{${toIndentedItems(indent, {},
                 t.fields.map((a, i) => varToCode(a, i, indent + 1) + `;`),
             )}}`;
         }
-        if (t.union) {
+        if (t.kind === `union`) {
 
             const getUnionItem = (a: TypedVar, i: number) => {
                 const itemCode = `${varToCode(a, i, indent + 1)}`;
@@ -78,18 +78,19 @@ ${tabs(indent)}`;
                 t.union.map(getUnionItem),
             )})`;
         }
-        if (t.unit) {
+        if (t.kind === `unit`) {
             const strictType = { baseType: `(true | undefined)`, strictType: `unit` };
             addStrictType(strictType);
             return strictType.strictType;
         }
-        if (t.never) {
+        if (t.kind === `never`) {
             return `never`;
         }
-        if (t.value) {
-            return `${t.value}`;
+        if (t.kind === `unknown`) {
+            return `unknown`;
         }
 
+        assertExhaustive(t, `Unknown type`);
         throw new GenerateApiError(`Unknown type node`, { t });
     };
 
@@ -99,12 +100,12 @@ ${tabs(indent)}`;
 
     const argsToCode = (args: TypedVar[], indent: number): string => {
         if (args.length === 1) {
-            if (args[0].type.unit) { return ``; }
+            if (args[0].type.kind === `unit`) { return ``; }
             return `${args[0].name ?? `param`}: ${typeToCode(args[0].type, indent + 1)}`;
         }
 
         return `params: {${toIndentedItems(indent, {},
-            args.filter(x => x.name || !x.type.unit).map((a, i) => varToCode(a, i, indent + 1) + `;`),
+            args.filter(x => x.name || x.type.kind !== `unit`).map((a, i) => varToCode(a, i, indent + 1) + `;`),
         )}}`;
     };
 

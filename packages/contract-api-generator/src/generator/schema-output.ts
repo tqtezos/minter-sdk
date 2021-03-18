@@ -30,12 +30,12 @@ export const toSchema = (methods: TypedMethod[]): SchemaOutput => {
     const getSchemaType = (t: TypedType): SchemaType => {
         // console.log('getSchemaType', { t });
 
-        return t.value
-            ?? (t.array ? [getSchemaType(t.array.item)] : null)
-            ?? (t.map ? [`map`, getSchemaType(t.map.key), getSchemaType(t.map.value)] : null)
-            ?? (t.fields ? getSchemaObjectType(t.fields) : null)
-            ?? (t.unit ? `unit` : null)
-            ?? (t.never ? `never` : null)
+        return (t.kind === `value` && t.value ? t.value : null)
+            ?? (t.kind === `array` && t.array ? [getSchemaType(t.array.item)] : null)
+            ?? (t.kind === `map` && t.map ? [`map`, getSchemaType(t.map.key), getSchemaType(t.map.value)] : null)
+            ?? (t.kind === `object` && t.fields ? getSchemaObjectType(t.fields) : null)
+            ?? (t.kind === `unit` ? `unit` : null)
+            ?? (t.kind === `never` ? `never` : null)
             ?? `${t.raw as unknown as string}`;
     };
 

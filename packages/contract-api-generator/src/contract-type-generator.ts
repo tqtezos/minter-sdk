@@ -23,7 +23,7 @@ export const generateContractTypes = (contractScript: string): {
     const contractParameter = contract.find(x => x.prim === `parameter`) as undefined | M.MichelsonContractParameter;
 
     const storageResult = contractStorage && visitContractStorage(contractStorage);
-    const storage = storageResult ?? { storage: { raw: { prim: `never` } as M.MichelsonType, fields: [] } };
+    const storage = storageResult ?? { storage: { kind: `object`, raw: { prim: `never` } as M.MichelsonType, fields: [] } };
 
     const parameterResult = contractParameter && visitContractParameter(contractParameter);
     const methods = parameterResult?.methods ?? [];
