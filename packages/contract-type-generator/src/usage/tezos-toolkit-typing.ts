@@ -1,5 +1,5 @@
 import { TransactionOperationParameter } from '@taquito/rpc';
-import { ContractProvider } from '@taquito/taquito';
+import { ContractProvider, TransactionWalletOperation, Wallet } from '@taquito/taquito';
 import { TezosToolkit } from '@taquito/taquito';
 import { OriginationOperation } from '@taquito/taquito/dist/types/operations/origination-operation';
 import { TransactionOperation } from '@taquito/taquito/dist/types/operations/transaction-operation';
@@ -14,14 +14,28 @@ type TypedContractOf<T extends ContractTypeBase> = {
     storage: () => Promise<T['storage']>;
     methods: { [M in keyof T['methods']]:
         T['methods'][M] extends (...args: infer A) => Promise<void>
-        ? (...args: A) => TypedContractMethod// ContractMethod<ContractProvider>
+        ? (...args: A) => TypedContractMethod
         : never
     };
 };
-type TypedContractProviderOf<T extends ContractTypeBase> = Omit<ContractProvider, 'at' | 'originate' | 'storage'> & {
+type TypedWalletContractOf<T extends ContractTypeBase> = {
+    storage: () => Promise<T['storage']>;
+    methods: { [M in keyof T['methods']]:
+        T['methods'][M] extends (...args: infer A) => Promise<void>
+        ? (...args: A) => TypedWalletContractMethod
+        : never
+    };
+};
+type TypedContractProviderOf<T extends ContractTypeBase> = Omit<ContractProvider, 'at' | 'originate'> & {
     at: (address: string) => Promise<TypedContractOf<T>>;
     originate(contract: OriginateParams): Promise<Omit<OriginationOperation, 'contract'> & {
         contract: (confirmations?: number, interval?: number, timeout?: number) => Promise<TypedContractOf<T>>;
+    }>;
+};
+type TypedWalletOf<T extends ContractTypeBase> = Omit<Wallet, 'at' | 'originate'> & {
+    at: (address: string) => Promise<TypedWalletContractOf<T>>;
+    originate(contract: OriginateParams): Promise<Omit<OriginationOperation, 'contract'> & {
+        contract: (confirmations?: number, interval?: number, timeout?: number) => Promise<TypedWalletContractOf<T>>;
     }>;
 };
 
@@ -49,7 +63,13 @@ type TypedContractMethod = {
     toTransferParams({ fee, gasLimit, storageLimit, source, amount, mutez }?: Partial<TypedSentParams>): TypedTransferParams;
 };
 
-export type TezosToolkitTyped<T extends ContractTypeBase> = Omit<TezosToolkit, 'contract'> & {
+type TypedWalletContractMethod = {
+    send(params?: Partial<TypedSentParams>): Promise<TransactionWalletOperation>;
+    toTransferParams({ fee, gasLimit, storageLimit, source, amount, mutez }?: Partial<TypedSentParams>): TypedTransferParams;
+};
+
+export type TezosToolkitTyped<T extends ContractTypeBase> = Omit<TezosToolkit, 'contract' | 'wallet'> & {
     contract: TypedContractProviderOf<T>;
+    wallet: TypedWalletOf<T>;
 };
 

@@ -12,7 +12,41 @@ const exampleContractMethods1 = async () => {
     const Tezos = new TezosToolkit(`https://YOUR_PREFERRED_RPC_URL`) as unknown as TezosToolkitTyped<TestContractType>;
 
     const contract = await Tezos.contract.at(`tz123`);
+
     contract.methods.bid(tas.nat(0));
+    contract.methods.configure({
+        asset: [{
+            fa2_address: tas.address(`tz123`),
+            fa2_batch: [{
+                amount: tas.nat(100),
+                token_id: tas.nat(`100000000000000`),
+            }],
+        }],
+        start_time: tas.timestamp(new Date()),
+        end_time: tas.timestamp(`2020-01-01`),
+        extend_time: tas.nat(10),
+        min_raise: tas.mutez(10),
+        min_raise_percent: tas.nat(10),
+        opening_price: tas.mutez(10),
+        round_time: tas.nat(10),
+    });
+
+};
+
+
+
+const exampleWalletContractMethods1 = async () => {
+
+    // TODO: Support Generic Type in TezosToolkit Directly
+    // const Tezos = new TezosToolkit<TestContractType>(`https://YOUR_PREFERRED_RPC_URL`)
+    const Tezos = new TezosToolkit(`https://YOUR_PREFERRED_RPC_URL`) as unknown as TezosToolkitTyped<TestContractType>;
+
+    const contract = await Tezos.wallet.at(`tz123`);
+    const bidSendResult = await contract.methods.bid(tas.nat(0)).send({ amount: tas.mutez(1000000) });
+    // Receipt only exists on wallet
+    const bidReciptResult = await bidSendResult.receipt();
+    const bidConfirmationResult = await bidSendResult.confirmation(10);
+
     contract.methods.configure({
         asset: [{
             fa2_address: tas.address(`tz123`),
