@@ -1,4 +1,4 @@
-import { generateContractTypes_processTzContractFiles } from 'contract-api-generator/src/cli-process';
+import { generateContractTypes_processTzContractFiles } from './cli-process';
 
 export const run = async (): Promise<void> => {
     const argv = process.argv;
@@ -13,11 +13,11 @@ export const run = async (): Promise<void> => {
     }
 
     console.log(`
-minter-cli
+contract-type-generator
 
 Example usages:
 
-minter-cli --g contract.tk contractTypes.ts
+contract-type-generator --g contract.tk contractTypes.ts
     `);
 };
 

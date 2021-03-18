@@ -1,12 +1,14 @@
 import { assertExhaustive, GenerateApiError } from './common';
 import { TypedStorage, TypedMethod, TypedType, TypedVar } from './contract-parser';
 
-export const toTypescriptCode = (storage: TypedStorage, methods: TypedMethod[]): {
+export type TypescriptCodeOutput = {
     final: string;
     typeMapping: string;
     storage: string;
     methods: string;
-} => {
+};
+
+export const toTypescriptCode = (storage: TypedStorage, methods: TypedMethod[]): TypescriptCodeOutput => {
     type StrictType = { strictType: string, baseType?: string, raw?: string };
     const usedStrictTypes = [] as StrictType[];
     const addStrictType = (strictType: StrictType) => {

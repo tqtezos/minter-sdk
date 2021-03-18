@@ -2,14 +2,11 @@ import * as M from '@taquito/michel-codec';
 import { GenerateApiError } from './generator/common';
 import { visitContractStorage, visitContractParameter } from './generator/contract-parser';
 import { SchemaOutput, toSchema } from './generator/schema-output';
-import { toTypescriptCode } from './generator/typescript-output';
+import { TypescriptCodeOutput, toTypescriptCode } from './generator/typescript-output';
 
-export const generateContractTypes = (contractScript: string): {
+export const generateContractTypesFromMichelsonCode = (contractScript: string): {
     schema: SchemaOutput;
-    typescriptCode: {
-        final: string;
-        methods: string;
-    };
+    typescriptCode: TypescriptCodeOutput;
 } => {
 
     const p = new M.Parser();
