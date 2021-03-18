@@ -2,7 +2,7 @@ import { TezosToolkit } from '@taquito/taquito';
 import { Contract as TestContractType } from './example-contract-type-1';
 import { Contract as TestContractType2 } from './example-contract-type-2';
 import { nat, tas } from '../type-aliases';
-import { createContractAbstractionComposer, TezosToolkitTyped } from '../tezos-toolkit-typing';
+import { createContractAbstractionComposer, TezosToolkitTyped, TypedContractAbstractionOf } from '../tezos-toolkit-typing';
 
 
 const exampleContractMethods1 = async () => {
@@ -37,7 +37,11 @@ const exampleContractMethods1_contractExtractionComposer = async () => {
 
     // Using the existing type system 
     const Tezos = new TezosToolkit(`https://YOUR_PREFERRED_RPC_URL`);
+
     const contract = await Tezos.contract.at(`tz123`, createContractAbstractionComposer<TestContractType>());
+
+    // Or use the type mapper directly
+    const contract_thisAlsoWorks = await Tezos.contract.at<TypedContractAbstractionOf<TestContractType>>(`tz123`);
 
     contract.methods.bid(tas.nat(0));
     contract.methods.configure({

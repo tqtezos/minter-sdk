@@ -75,7 +75,7 @@ export type TezosToolkitTyped<T extends ContractTypeBase> = Omit<TezosToolkit, '
 
 
 // Contract abstraction provider
-type TypedContractAbstractionOf<T extends ContractTypeBase> = ContractAbstraction<ContractProvider> & {
+export type TypedContractAbstractionOf<T extends ContractTypeBase> = ContractAbstraction<ContractProvider> & {
     storage: () => Promise<T['storage']>;
     methods: { [M in keyof T['methods']]:
         T['methods'][M] extends (...args: infer A) => Promise<void>
