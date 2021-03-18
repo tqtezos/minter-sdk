@@ -54,7 +54,7 @@ const toDebugSource = (node: M.MichelsonType) => {
     return JSON.stringify(node);
 };
 
-export const visitContractStorage = (storage: M.MichelsonContractStorage): TypedStorage => {
+export const parseContractStorage = (storage: M.MichelsonContractStorage): TypedStorage => {
     const fields = storage.args
         .map(x => visitVar(x))
         .flatMap(x => x);
@@ -67,7 +67,7 @@ export const visitContractStorage = (storage: M.MichelsonContractStorage): Typed
     };
 };
 
-export const visitContractParameter = (parameter: M.MichelsonContractParameter): TypedParameter => {
+export const parseContractParameter = (parameter: M.MichelsonContractParameter): TypedParameter => {
     return {
         methods: parameter.args
             .map(x => visitContractParameterEndpoint(x as MMethod))
