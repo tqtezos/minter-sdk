@@ -42,10 +42,10 @@ An implementation of a swaps contract that allows two participants to safely exc
 
 ## Work-in-progress
 
-### Edition contracts
+### Edition contracts ([WIP](https://github.com/tqtezos/minter-sdk/pull/46))
 
-### Meta-transaction based minting / sales
+### Meta-transaction based minting / sales ([WIP](https://github.com/tqtezos/minter-sdk/pull/33))
 
-### Fractional Ownership
+### Fractional Ownership ([WIP](https://github.com/tqtezos/smart-contracts/pull/57))
 
-### Royalties and Profit-splitting
+### Royalties and Profit-splitting ([WIP](https://github.com/tqtezos/minter-sdk/pull/40))
