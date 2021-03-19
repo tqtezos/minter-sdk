@@ -19,10 +19,8 @@ const contractCompilers: ContractCompiler[] =
   , compileTicketNftWalletContract
   ];
 
-async function main(): Promise<void> {
+async function main(env = defaultEnv): Promise<void> {
   try {
-    const env = defaultEnv;
-
     await Promise.all(contractCompilers.map(compiler => compiler(env)));
 
     process.exit(0);
