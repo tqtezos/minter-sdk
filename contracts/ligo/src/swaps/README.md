@@ -46,20 +46,6 @@ type fa2_assets =
 
 Note that we expect that provided list of tokens will be grouped by FA2 contracts the tokens belong to. Despite the more complicated interface, this lets us require fewer `get_entrypoint_opt` calls and make use of FA2 batched transfers and thus be much more efficient.
 
-A `swap_status` type represents the current state of the swap.
-
-```ocaml
-type swap_status =
-  [@layout:comb]
-  | Open
-  | Finished of address
-  | Cancelled
-```
-
-To keep more info about the deal on-chain, we make `Finished` state contain the address of the participant that accepted the swap.
-
-Thus cancelled/accepted swaps are still present in the big_map, with the respective status.
-
 A `swap_offer` type contains all the data provided at swap creation.
 
 ```ocaml
@@ -77,7 +63,6 @@ type swap_info =
   [@layout:comb]
   { swap_offer : swap_offer
   ; seller : address
-  ; status : swap_status
   }
 ```
 
@@ -124,7 +109,7 @@ Marks the swap as canceled and returns the tokens to the `seller`. Further opera
 
 Can be called only by the `seller`, otherwise `NOT_SWAP_SELLER` error is raised.
 
-This does not remove the swap info from the big_map, for the sake of more detailed errors. Any further operation with this swap will raise `SWAP_CANCELED` error. If the provided `swap_id` is not registered, `SWAP_NOT_EXIST` error is raised.
+The swap gets removed from big_map, any further operation for this swap will raise `SWAP_NOT_EXIST`.
 
 #### %accept
 
@@ -140,7 +125,7 @@ Marks the swap as finished by the current `sender`. Further operations with this
 
 This can be called by *any* address.
 
-This does not remove the swap info from the big_map, for the sake of more detailed errors. Any further operation with this swap will raise `SWAP_FINISHED` error. If the provided `swap_id` is not registered, `SWAP_NOT_EXIST` error is raised.
+The swap gets removed from big_map, any further operation for this swap will raise `SWAP_NOT_EXIST`.
 
 In case some of `assets_requested.fa2_address` refer to an invalid FA2 contract (not originated or without `transfer` entrypoint), `SWAP_REQUESTED_FA2_INVALID` is raised. This error normally should not happen, as the client is supposed to validate `assets_requested` on swap start.
 
@@ -171,3 +156,4 @@ Be sure to handle not only the errors listed in the entrypoints description, but
 ### Design choices
 
 1. Forbid empty offered/requested assets to avoid user's mistakes.
+2. Preserve info about resolved swaps in storage - decided not to go with this is favor of using blockchain explorers.

@@ -16,12 +16,6 @@ type fa2_assets =
   ; tokens : fa2_token list
   }
 
-type swap_status =
-  [@layout:comb]
-  | Open
-  | Finished of address  // keeps who has accepted the swap
-  | Cancelled
-
 type swap_offer =
   [@layout:comb]
   { assets_offered : fa2_assets list
@@ -32,7 +26,6 @@ type swap_info =
   [@layout:comb]
   { swap_offer : swap_offer
   ; seller : address
-  ; status : swap_status
   }
 
 type swap_entrypoints =
@@ -98,12 +91,6 @@ let authorize_seller(swap : swap_info) : unit =
   then ()
   else failwith "NOT_SWAP_SELLER"
 
-let check_is_open(swap : swap_info) : unit =
-  match swap.status with
-  | Open -> ()
-  | Finished -> failwith "SWAP_FINISHED"
-  | Cancelled -> failwith "SWAP_CANCELLED"
-
 (* ==== Entrypoints ==== *)
 
 let start_swap(swap_offer, storage : swap_offer * swap_storage) : return =
@@ -112,7 +99,6 @@ let start_swap(swap_offer, storage : swap_offer * swap_storage) : return =
   let swap : swap_info =
     { swap_offer = swap_offer
     ; seller = seller
-    ; status = Open
     } in
   let storage = { storage with
       next_swap_id = storage.next_swap_id + 1n
@@ -129,10 +115,8 @@ let start_swap(swap_offer, storage : swap_offer * swap_storage) : return =
 let cancel_swap(swap_id, storage : swap_id * swap_storage) : return =
   let swap = get_swap(swap_id, storage) in
   let u = authorize_seller(swap) in
-  let u = check_is_open(swap) in
 
-  let new_swap = { swap with status = Cancelled } in
-  let storage = { storage with swaps = Big_map.add swap_id new_swap storage.swaps } in
+  let storage = { storage with swaps = Big_map.remove swap_id storage.swaps } in
 
   let ops =
         List.map
@@ -143,10 +127,8 @@ let cancel_swap(swap_id, storage : swap_id * swap_storage) : return =
 
 let accept_swap(swap_id, storage : swap_id * swap_storage) : return =
   let swap = get_swap(swap_id, storage) in
-  let u = check_is_open(swap) in
 
-  let new_swap = { swap with status = Finished Tezos.sender } in
-  let storage = { storage with swaps = Big_map.add swap_id new_swap storage.swaps } in
+  let storage = { storage with swaps = Big_map.remove swap_id storage.swaps } in
 
   let ops1 =
         List.map

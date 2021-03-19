@@ -35,15 +35,6 @@ customGeneric "FA2Assets" ligoCombLayout
 deriving anyclass instance IsoValue FA2Assets
 deriving anyclass instance HasAnnotation FA2Assets
 
-data SwapStatus
-  = Open
-  | Finished Address
-  | Cancelled
-
-customGeneric "SwapStatus" ligoCombLayout
-deriving anyclass instance IsoValue SwapStatus
-deriving anyclass instance HasAnnotation SwapStatus
-
 data SwapOffer = SwapOffer
   { assetsOffered :: [FA2Assets]
   , assetsRequested :: [FA2Assets]
@@ -56,7 +47,6 @@ deriving anyclass instance HasAnnotation SwapOffer
 data SwapInfo = SwapInfo
   { swapOffer :: SwapOffer
   , seller :: Address
-  , status :: SwapStatus
   }
 
 customGeneric "SwapInfo" ligoCombLayout
@@ -107,10 +97,11 @@ errSwapNotExist :: MText
 errSwapNotExist = [mt|SWAP_NOT_EXIST|]
 
 errSwapFinished :: MText
-errSwapFinished = [mt|SWAP_FINISHED|]
+errSwapFinished = [mt|SWAP_NOT_EXIST|]
 
 errSwapCancelled :: MText
-errSwapCancelled = [mt|SWAP_CANCELLED|]
+errSwapCancelled = [mt|SWAP_NOT_EXIST|]
+-- ↑ The contract does not actually distinguish these cases
 
 errNotSwapSeller :: MText
 errNotSwapSeller = [mt|NOT_SWAP_SELLER|]
