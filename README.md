@@ -32,7 +32,7 @@ a configured administrator is responsible for configuring and managing access to
 ### [Fixed Price Sale](contracts/ligo/src/fixed_price_sale)
 An implementation of an NFT marketplace that allows users to initiate NFT sales at a fixed price in tez or FA2. These contracts can be configured based on a range of administrative options.
 
-## [Ticket-based NFTs](contracts/ligo/src/tickets)  
+### [Ticket-based NFTs](contracts/ligo/src/tickets)  
 
 **EXPERIMENTAL** An implementation of NFTs using tickets and a dutch auction example, along with wallet contracts for the NFTs. 
 *Please note: tickets are a new Tezos feature and care should be taken when using them as they have not been heavily tested in production.*
