@@ -45,8 +45,7 @@ export async function compileAndLoadContract(
   const src = env.srcFilePath(srcFile);
   const out = env.outFilePath(dstFile);
   await compileContractImpl(env.cwd, src, main, out);
-  const code = await loadFile(out);
-  return code;
+  return loadFile(out);
 }
 
 export async function loadFile(fileName: string): Promise<string> {
@@ -57,7 +56,7 @@ export async function loadFile(fileName: string): Promise<string> {
   );
 }
 
-export async function compileContract(
+export function compileContract(
   env: LigoEnv,
   srcFile: string,
   main: string,
@@ -65,10 +64,10 @@ export async function compileContract(
 ): Promise<void> {
   const src = env.srcFilePath(srcFile);
   const out = env.outFilePath(dstFile);
-  await compileContractImpl(env.cwd, src, main, out);
+  return compileContractImpl(env.cwd, src, main, out);
 }
 
-async function compileContractImpl(
+function compileContractImpl(
   cwd: string,
   srcFilePath: string,
   main: string,
@@ -76,7 +75,7 @@ async function compileContractImpl(
 ): Promise<void> {
   // const cmd = `ligo compile-contract ${srcFilePath} ${main} --output=${dstFilePath}`;
   const cmd = `docker run --rm -v $PWD:$PWD -w $PWD ligolang/ligo:0.11.0 compile-contract ${srcFilePath} ${main} --output=${dstFilePath}  && rm -f bisect*.coverage`;
-  await runCmd(cwd, cmd);
+  return runCmd(cwd, cmd);
 }
 
 export async function runCmd(cwd: string, cmd: string): Promise<void> {

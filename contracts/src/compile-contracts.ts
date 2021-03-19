@@ -32,7 +32,7 @@ async function main(env = defaultEnv): Promise<void> {
 
 async function compileNftFaucetContract(env: LigoEnv): Promise<void> {
   $log.info('compiling NFT faucet contract');
-  await await compileContract(
+  await compileContract(
     env,
     'minter_collection/fa2_multi_nft_faucet.mligo',
     'nft_faucet_main',
@@ -43,7 +43,7 @@ async function compileNftFaucetContract(env: LigoEnv): Promise<void> {
 
 async function compileNftContract(env: LigoEnv): Promise<void> {
   $log.info('compiling NFT contract');
-  await await compileContract(
+  await compileContract(
     env,
     'minter_collection/fa2_multi_nft_asset.mligo',
     'nft_asset_main',
@@ -55,7 +55,7 @@ async function compileNftContract(env: LigoEnv): Promise<void> {
 
 async function compileFtFaucetContract(env: LigoEnv): Promise<void> {
   $log.info('compiling FT faucet contract');
-  await await compileContract(
+  await compileContract(
     env,
     'minter_collection/fa2_multi_ft_faucet.mligo',
     'ft_faucet_main',
@@ -66,7 +66,7 @@ async function compileFtFaucetContract(env: LigoEnv): Promise<void> {
 
 async function compileFtContract(env: LigoEnv): Promise<void> {
   $log.info('compiling FT contract');
-  await await compileContract(
+  await compileContract(
     env,
     'minter_collection/fa2_multi_ft_asset.mligo',
     'multi_ft_asset_main',
@@ -78,7 +78,7 @@ async function compileFtContract(env: LigoEnv): Promise<void> {
 async function compileFixedPriceSaleMarketPlaceContract(env: LigoEnv): Promise<void> {
     $log.info('compiling fixed price sale marketplace contract');
 
-    await await compileContract(
+    await compileContract(
         env,
         'fixed_price_sale/fixed_price_sale_market.mligo',
         'fixed_price_sale_main',
