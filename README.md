@@ -40,6 +40,10 @@ An implementation of an NFT marketplace that allows users to initiate NFT sales 
 
 Implementations of various token types.
 
+### [FA2-FA2 swaps](contracts/ligo/src/swaps)
+
+An implementation of a swaps contract that allows two participants to safely exchange their FA2 tokens.
+
 ## [Ticket NFTs](tickets)
 
 **EXPERIMENTAL** An implementation of NFTs using tickets and a dutch auction example, along with wallet contracts for the NFTs. _Please note: tickets are a new Tezos feature and care should be taken when using them as they have not been heavily tested in production._
@@ -50,8 +54,6 @@ An implementation of an NFT marketplace that allows users to initiate NFT sales 
 ### Edition contracts
 
 ### Meta-transaction based minting / sales
-
-### FA2-FA2 swaps
 
 ### Fractional Ownership
 

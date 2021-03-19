@@ -1,0 +1,109 @@
+# SPDX-FileCopyrightText: 2021 TQ Tezos
+# SPDX-License-Identifier: MIT
+
+# This file defines sensible defaults but does not actually apply
+# any of them, so it can be safely included.
+
+_definitions:
+  _top-level:
+    - &meta
+        author:              Serokell, TQ Tezos
+        maintainer:          Serokell <hi@serokell.io>
+        copyright:           2021 TQ Tezos
+
+    - &default-extensions
+        - AllowAmbiguousTypes
+        - ApplicativeDo
+        - BangPatterns
+        - BlockArguments
+        - ConstraintKinds
+        - DataKinds
+        - DefaultSignatures
+        - DeriveAnyClass
+        - DeriveDataTypeable
+        - DeriveFoldable
+        - DeriveFunctor
+        - DeriveGeneric
+        - DeriveTraversable
+        - DerivingStrategies
+        - DerivingVia
+        - DuplicateRecordFields
+        - EmptyCase
+        - FlexibleContexts
+        - FlexibleInstances
+        - GADTs
+        - GeneralizedNewtypeDeriving
+        - LambdaCase
+        - MultiParamTypeClasses
+        - MultiWayIf
+        - NamedFieldPuns
+        - NegativeLiterals
+        - NumericUnderscores
+        - NumDecimals
+        - OverloadedLabels
+        - OverloadedStrings
+        - PatternSynonyms
+        - PolyKinds
+        - QuasiQuotes
+        - RankNTypes
+        - RecordWildCards
+        - RecursiveDo
+        - ScopedTypeVariables
+        - StandaloneDeriving
+        - StrictData
+        - TemplateHaskell
+        - TupleSections
+        - TypeApplications
+        - TypeFamilies
+        - TypeOperators
+        - UndecidableInstances
+        - UndecidableSuperClasses
+        - ViewPatterns
+
+    - &dependencies
+        - name: base-noprelude
+          version: ">= 4.7 && < 5"
+
+    - &ghc-options
+        - -Weverything
+        - -Wno-missing-exported-signatures
+        - -Wno-missing-import-lists
+        - -Wno-missed-specialisations
+        - -Wno-all-missed-specialisations
+        - -Wno-unsafe
+        - -Wno-safe
+        - -Wno-missing-local-signatures
+        - -Wno-monomorphism-restriction
+        - -Wno-implicit-prelude
+        - -Wno-prepositive-qualified-module
+        - -Wno-missing-safe-haskell-mode
+        - -Wno-unused-packages
+
+  _utils:
+    # Additional options, they will be merged with the ones above when both
+    # are imported.
+
+    - &lib-common
+        source-dirs: src
+
+    - &exec-common
+        main:        Main.hs
+        source-dirs: app
+
+    - &test-common
+        main:        Main.hs
+        source-dirs: test
+        build-tools: tasty-discover:tasty-discover
+
+        ghc-options:
+          - -threaded
+          - -eventlog
+          - -rtsopts
+            # Weird quoting is required for cabal to correctly pass this as _one_ option,
+            # otherwise it splits by spaces.
+            # :facepalm:
+          - '"-with-rtsopts=-N -A64m -AL256m"'
+
+    - &bench-common
+        main:        Main.hs
+        source-dirs: bench
