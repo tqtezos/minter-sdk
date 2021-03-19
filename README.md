@@ -47,7 +47,8 @@ An implementation of an NFT marketplace that allows users to initiate NFT sales 
 
 ## Work-in-progress
 
-### Edition contracts
+### [Edition FA2](minter_collection/editions)
+The _Editions_ variant of FA2 allows for the minting and distribution of many editions of an NFT that share the same metadata, but with unique identifiers (`token_id`s). This results in a reduction in redundant copies of the same metadata, and thus cheaper contract interaction. The design of this contract also allows for the minting of many editions in constant time (in the number of editions minted) and concurrent distribution of editions across multiple creators. 
 
 ### Meta-transaction based minting / sales
 

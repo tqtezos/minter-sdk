@@ -136,7 +136,7 @@ async function compileNftEditionsContract(env: LigoEnv): Promise<void> {
 
   await compileContract(
       env,
-      'minter_collection/fa2_multi_nft_token_editions.mligo',
+      'minter_collection/editions/fa2_multi_nft_token_editions.mligo',
       'editions_main',
       'fa2_multi_nft_token_editions.tz'
   );
