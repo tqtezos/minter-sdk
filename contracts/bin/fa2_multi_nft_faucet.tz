@@ -383,12 +383,11 @@
                     DUG 2 ;
                     CDR ;
                     CAR ;
-                    CDR ;
+                    CAR ;
                     SWAP ;
                     DUP ;
                     DUG 2 ;
-                    COMPARE ;
-                    LT ;
+                    MEM ;
                     IF { DROP 3 ; PUSH string "FA2_INVALID_TOKEN_ID" ; FAILWITH }
                        { SWAP ;
                          DUP ;

@@ -27,7 +27,7 @@ let update_meta_and_create_txs (param, storage
   List.fold
     (fun (acc, t : minted1 * mint_token_param) ->
       let new_token_id = t.token_metadata.token_id in
-      if new_token_id < acc.storage.next_token_id
+      if (Big_map.mem new_token_id acc.storage.ledger)
       then (failwith "FA2_INVALID_TOKEN_ID" : minted1)
       else
         let new_token_metadata =

@@ -23,7 +23,7 @@ type editions_entrypoints =
  | Distribute_editions of distribute_edition list
 
 type edition_metadata =
-  [@layout:comb]
+[@layout:comb]
   {   
       creator : address;
       token_metadata : token_metadata;
@@ -34,10 +34,11 @@ type edition_metadata =
 
 type editions_metadata = (nat, edition_metadata) big_map
 
-type editions_storage = {
-    nft_asset_storage : nft_asset_storage;
-    editions_metadata : editions_metadata;
+type editions_storage = 
+{   
     current_edition_id : nat; 
+    editions_metadata : editions_metadata;
+    nft_asset_storage : nft_asset_storage;
 }
 
 let rec mint_editions ( editions_list , storage : mint_editions list * editions_storage)
@@ -53,6 +54,7 @@ let rec mint_editions ( editions_list , storage : mint_editions list * editions_
     let new_editions_metadata = Big_map.add storage.current_edition_id edition_metadata storage.editions_metadata in
     let new_asset_storage = {storage.nft_asset_storage.assets with next_token_id = storage.nft_asset_storage.assets.next_token_id + param.number_of_editions} in 
     {storage with 
+        current_edition_id = storage.current_edition_id + 1n;
         editions_metadata = new_editions_metadata; 
         nft_asset_storage = {storage.nft_asset_storage with assets = new_asset_storage}
     } in

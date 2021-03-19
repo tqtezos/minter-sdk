@@ -196,3 +196,27 @@ export async function originateEnglishAuctionTezAdmin(
     const storage = `(Pair (Some (Pair (Pair "${tzAddress}" False) None)) (Pair 0 (Pair 86400 (Pair 86400 {}))))`;
     return originateContract(tz, code, storage, 'english_auction_tez_admin');
 }
+
+export async function originateEditionsNftContract(
+    tz: TezosToolkit,
+): Promise<Contract> {
+    const code = await compileAndLoadContract(
+        defaultEnv,
+        'minter_collection/editions/fa2_multi_nft_token_editions.mligo',
+        'editions_main',
+        'fa2_multi_nft_token_editions.tz',
+    );
+    const tzAddress = await tz.signer.publicKeyHash();
+    const meta_uri = char2Bytes('tezos-storage:content');
+    const meta = {
+        name: 'example_name',
+        description: 'sample_token',
+        interfaces: ['TZIP-012','TZIP-016']
+    };
+
+    const meta_content = char2Bytes(JSON.stringify(meta,null,2));
+
+    const storage = `(Pair (Pair 0 {}) (Pair (Pair None
+    (Pair (Pair {} 0) (Pair {} {}))) { Elt "" 0x${meta_uri} ; Elt "contents" 0x${meta_content} }))`;
+    return originateContract(tz, code, storage, 'editions');
+}

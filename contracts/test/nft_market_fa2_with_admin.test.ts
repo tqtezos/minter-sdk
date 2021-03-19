@@ -20,7 +20,7 @@ import {
     transfer,
     BalanceOfResponse
 } from '../src/fa2-interface';
-import { queryBalances, QueryBalances } from './fa2-balance-inspector';
+import { queryBalancesWithLambdaView, QueryBalances } from './fa2-balance-inspector';
 
 jest.setTimeout(180000); // 3 minutes
 
