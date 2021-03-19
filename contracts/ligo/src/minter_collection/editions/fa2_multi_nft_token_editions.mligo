@@ -1,7 +1,6 @@
 #include "../../../fa2/fa2_interface.mligo"
-#include "../fa2_multi_nft_manager.mligo"
-#include "../fa2_multi_nft_asset.mligo"
-#include "../../../fa2_modules/pauseable_admin_option.mligo"
+#include "../nft/fa2_multi_nft_manager.mligo"
+#include "../nft/fa2_multi_nft_asset_multi_admin.mligo"
 
 type mint_editions = 
 [@layout:comb]

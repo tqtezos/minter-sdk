@@ -1,7 +1,9 @@
 { parameter
     (or (or (list %distribute_editions (pair (nat %edition_id) (list %receivers address)))
             (or %fA2
-               (or (or %admin (or (unit %confirm_admin) (bool %pause)) (address %set_admin))
+               (or (or %admin
+                      (or (unit %confirm_admin) (bool %pause))
+                      (or (address %remove_admin) (address %set_admin)))
                    (or %assets
                       (or (pair %balance_of
                              (list %requests (pair (address %owner) (nat %token_id)))
@@ -28,8 +30,9 @@
                                (pair (nat %initial_token_id)
                                      (pair (nat %number_of_editions) (int %number_of_editions_to_distribute)))))))
           (pair %nft_asset_storage
-             (pair (option %admin
-                      (pair (pair (address %admin) (bool %paused)) (option %pending_admin address)))
+             (pair (pair %admin
+                      (pair (set %admins address) (bool %paused))
+                      (big_map %pending_admins address unit))
                    (pair %assets
                       (pair (big_map %ledger nat address) (nat %next_token_id))
                       (pair (big_map %operators (pair address (pair address nat)) unit)
@@ -313,44 +316,13 @@
              EXEC } ;
          SWAP ;
          APPLY ;
-         LAMBDA
-           (option (pair (pair address bool) (option address)))
-           (lambda (option string) unit)
-           { LAMBDA
-               (pair (option (pair (pair address bool) (option address))) (option string))
-               unit
-               { DUP ;
-                 CDR ;
-                 SWAP ;
-                 CAR ;
-                 IF_NONE
-                   { DROP ; UNIT }
-                   { CAR ;
-                     CAR ;
-                     SENDER ;
-                     COMPARE ;
-                     NEQ ;
-                     IF { IF_NONE
-                            { PUSH string "NOT_AN_ADMIN" ; FAILWITH }
-                            { PUSH string " " ; CONCAT ; PUSH string "NOT_AN_ADMIN" ; CONCAT ; FAILWITH } }
-                        { DROP ; UNIT } } } ;
-             SWAP ;
-             APPLY } ;
-         LAMBDA
-           (option (pair (pair address bool) (option address)))
-           unit
-           { IF_NONE
-               { UNIT }
-               { CAR ; CDR ; IF { PUSH string "PAUSED" ; FAILWITH } { UNIT } } } ;
-         DIG 5 ;
+         DIG 3 ;
          UNPAIR ;
          IF_LEFT
            { IF_LEFT
                { DIG 3 ;
                  DROP ;
-                 DIG 4 ;
-                 DROP ;
-                 DIG 4 ;
+                 DIG 3 ;
                  DROP ;
                  SWAP ;
                  DUP ;
@@ -358,15 +330,14 @@
                  CDR ;
                  CAR ;
                  CAR ;
-                 DIG 3 ;
-                 SWAP ;
-                 EXEC ;
-                 DROP ;
+                 CAR ;
+                 CDR ;
+                 IF { PUSH string "PAUSED" ; FAILWITH } {} ;
                  PAIR ;
                  LEFT (pair (list operation)
                             (pair (pair nat
                                         (big_map nat (pair address (pair (pair nat (map string bytes)) (pair nat (pair nat int))))))
-                                  (pair (pair (option (pair (pair address bool) (option address)))
+                                  (pair (pair (pair (pair (set address) bool) (big_map address unit))
                                               (pair (pair (big_map nat address) nat)
                                                     (pair (big_map (pair address (pair address nat)) unit)
                                                           (big_map nat (pair nat (map string bytes))))))
@@ -383,7 +354,7 @@
                            (pair (list (pair nat (list address)))
                                  (pair (pair nat
                                              (big_map nat (pair address (pair (pair nat (map string bytes)) (pair nat (pair nat int))))))
-                                       (pair (pair (option (pair (pair address bool) (option address)))
+                                       (pair (pair (pair (pair (set address) bool) (big_map address unit))
                                                    (pair (pair (big_map nat address) nat)
                                                          (pair (big_map (pair address (pair address nat)) unit)
                                                                (big_map nat (pair nat (map string bytes))))))
@@ -409,7 +380,7 @@
                          PAIR ;
                          LEFT (pair (pair (pair nat
                                                 (big_map nat (pair address (pair (pair nat (map string bytes)) (pair nat (pair nat int))))))
-                                          (pair (pair (option (pair (pair address bool) (option address)))
+                                          (pair (pair (pair (pair (set address) bool) (big_map address unit))
                                                       (pair (pair (big_map nat address) nat)
                                                             (pair (big_map (pair address (pair address nat)) unit)
                                                                   (big_map nat (pair nat (map string bytes))))))
@@ -440,7 +411,7 @@
                                                     (pair address (pair (pair nat (map string bytes)) (pair nat (pair nat int)))))
                                               (pair (pair nat
                                                           (big_map nat (pair address (pair (pair nat (map string bytes)) (pair nat (pair nat int))))))
-                                                    (pair (pair (option (pair (pair address bool) (option address)))
+                                                    (pair (pair (pair (pair (set address) bool) (big_map address unit))
                                                                 (pair (pair (big_map nat address) nat)
                                                                       (pair (big_map (pair address (pair address nat)) unit)
                                                                             (big_map nat (pair nat (map string bytes))))))
@@ -551,7 +522,7 @@
                                      PAIR ;
                                      LEFT (pair (pair (pair nat
                                                             (big_map nat (pair address (pair (pair nat (map string bytes)) (pair nat (pair nat int))))))
-                                                      (pair (pair (option (pair (pair address bool) (option address)))
+                                                      (pair (pair (pair (pair (set address) bool) (big_map address unit))
                                                                   (pair (pair (big_map nat address) nat)
                                                                         (pair (big_map (pair address (pair address nat)) unit)
                                                                               (big_map nat (pair nat (map string bytes))))))
@@ -585,7 +556,7 @@
                          LEFT (pair (list operation)
                                     (pair (pair nat
                                                 (big_map nat (pair address (pair (pair nat (map string bytes)) (pair nat (pair nat int))))))
-                                          (pair (pair (option (pair (pair address bool) (option address)))
+                                          (pair (pair (pair (pair (set address) bool) (big_map address unit))
                                                       (pair (pair (big_map nat address) nat)
                                                             (pair (big_map (pair address (pair address nat)) unit)
                                                                   (big_map nat (pair nat (map string bytes))))))
@@ -598,14 +569,12 @@
                  CDR ;
                  SWAP ;
                  IF_LEFT
-                   { DIG 5 ;
+                   { DIG 3 ;
                      DROP ;
                      IF_LEFT
                        { DIG 3 ;
                          DROP ;
-                         DIG 4 ;
-                         DROP ;
-                         DIG 4 ;
+                         DIG 3 ;
                          DROP ;
                          SWAP ;
                          DUP ;
@@ -616,47 +585,96 @@
                          IF_LEFT
                            { IF_LEFT
                                { DROP ;
-                                 DIG 3 ;
-                                 DROP ;
-                                 IF_NONE
-                                   { PUSH string "NO_ADMIN_CAPABILITIES_CONFIGURED" ; FAILWITH }
-                                   { DUP ;
-                                     CDR ;
-                                     IF_NONE
-                                       { DROP ; PUSH string "NO_PENDING_ADMIN" ; FAILWITH }
-                                       { SENDER ;
-                                         COMPARE ;
-                                         EQ ;
-                                         IF { NONE address ; SWAP ; CAR ; CDR ; SENDER ; PAIR ; PAIR ; SOME }
-                                            { DROP ; PUSH string "NOT_A_PENDING_ADMIN" ; FAILWITH } } } ;
+                                 DUP ;
+                                 CDR ;
+                                 SENDER ;
+                                 MEM ;
+                                 IF { DUP ;
+                                      CDR ;
+                                      SWAP ;
+                                      DUP ;
+                                      DUG 2 ;
+                                      CAR ;
+                                      CDR ;
+                                      DIG 2 ;
+                                      DUP ;
+                                      DUG 3 ;
+                                      CAR ;
+                                      CAR ;
+                                      PUSH bool True ;
+                                      SENDER ;
+                                      UPDATE ;
+                                      PAIR ;
+                                      PAIR ;
+                                      SWAP ;
+                                      CDR ;
+                                      NONE unit ;
+                                      SENDER ;
+                                      UPDATE ;
+                                      SWAP ;
+                                      CAR ;
+                                      PAIR }
+                                    { DROP ; PUSH string "NOT_A_PENDING_ADMIN" ; FAILWITH } ;
                                  NIL operation ;
                                  PAIR }
                                { SWAP ;
                                  DUP ;
                                  DUG 2 ;
-                                 DIG 5 ;
+                                 CDR ;
                                  SWAP ;
-                                 EXEC ;
-                                 DROP ;
-                                 SWAP ;
-                                 IF_NONE
-                                   { DROP ; PUSH string "NO_ADMIN_CAPABILITIES_CONFIGURED" ; FAILWITH }
-                                   { DUP ; CDR ; DUG 2 ; CAR ; CAR ; PAIR ; PAIR ; SOME } ;
+                                 DIG 2 ;
+                                 CAR ;
+                                 CAR ;
+                                 PAIR ;
+                                 PAIR ;
                                  NIL operation ;
                                  PAIR } }
-                           { SWAP ;
-                             DUP ;
-                             DUG 2 ;
-                             DIG 5 ;
-                             SWAP ;
-                             EXEC ;
-                             DROP ;
-                             SWAP ;
-                             IF_NONE
-                               { DROP ; PUSH string "NO_ADMIN_CAPABILITIES_CONFIGURED" ; FAILWITH }
-                               { SWAP ; SOME ; SWAP ; CAR ; PAIR ; SOME } ;
-                             NIL operation ;
-                             PAIR } ;
+                           { IF_LEFT
+                               { PUSH nat 1 ;
+                                 DIG 2 ;
+                                 DUP ;
+                                 DUG 3 ;
+                                 CAR ;
+                                 CAR ;
+                                 SIZE ;
+                                 COMPARE ;
+                                 EQ ;
+                                 IF { DROP 2 ; PUSH string "LAST_ADMIN" ; FAILWITH }
+                                    { SWAP ;
+                                      DUP ;
+                                      DUG 2 ;
+                                      CDR ;
+                                      DIG 2 ;
+                                      DUP ;
+                                      DUG 3 ;
+                                      CAR ;
+                                      CDR ;
+                                      DIG 3 ;
+                                      CAR ;
+                                      CAR ;
+                                      DIG 3 ;
+                                      PUSH bool False ;
+                                      SWAP ;
+                                      UPDATE ;
+                                      PAIR ;
+                                      PAIR } ;
+                                 NIL operation ;
+                                 PAIR }
+                               { SWAP ;
+                                 DUP ;
+                                 DUG 2 ;
+                                 CDR ;
+                                 UNIT ;
+                                 DIG 2 ;
+                                 SWAP ;
+                                 SOME ;
+                                 SWAP ;
+                                 UPDATE ;
+                                 SWAP ;
+                                 CAR ;
+                                 PAIR ;
+                                 NIL operation ;
+                                 PAIR } } ;
                          UNPAIR ;
                          DIG 2 ;
                          DUP ;
@@ -670,17 +688,14 @@
                          PAIR ;
                          SWAP ;
                          PAIR }
-                       { DIG 4 ;
-                         DROP ;
-                         SWAP ;
+                       { SWAP ;
                          DUP ;
                          DUG 2 ;
                          CAR ;
                          CAR ;
-                         DIG 4 ;
-                         SWAP ;
-                         EXEC ;
-                         DROP ;
+                         CAR ;
+                         CDR ;
+                         IF { PUSH string "PAUSED" ; FAILWITH } {} ;
                          SWAP ;
                          DUP ;
                          DUG 2 ;
@@ -870,20 +885,9 @@
                          PAIR ;
                          SWAP ;
                          PAIR } }
-                   { DIG 3 ;
+                   { DIG 4 ;
                      DROP ;
-                     DIG 5 ;
-                     DROP ;
-                     DIG 5 ;
-                     DROP ;
-                     SWAP ;
-                     DUP ;
-                     DUG 2 ;
-                     CAR ;
-                     CAR ;
                      DIG 4 ;
-                     SWAP ;
-                     EXEC ;
                      DROP ;
                      SWAP ;
                      DUP ;
@@ -915,24 +919,11 @@
                  PAIR ;
                  SWAP ;
                  PAIR } }
-           { DIG 4 ;
+           { DIG 2 ;
              DROP ;
-             DIG 4 ;
-             DROP ;
-             DIG 4 ;
-             DROP ;
-             NONE string ;
              DIG 2 ;
-             DUP ;
-             DUG 3 ;
-             CDR ;
-             CAR ;
-             CAR ;
-             DIG 5 ;
-             SWAP ;
-             EXEC ;
-             SWAP ;
-             EXEC ;
+             DROP ;
+             DIG 2 ;
              DROP ;
              SWAP ;
              DUP ;
@@ -940,15 +931,29 @@
              CDR ;
              CAR ;
              CAR ;
-             DIG 3 ;
+             CAR ;
+             CAR ;
+             SENDER ;
+             MEM ;
+             IF {}
+                { NONE string ;
+                  IF_NONE
+                    { PUSH string "NOT_AN_ADMIN" ; FAILWITH }
+                    { PUSH string " " ; CONCAT ; PUSH string "NOT_AN_ADMIN" ; CONCAT ; FAILWITH } } ;
              SWAP ;
-             EXEC ;
-             DROP ;
+             DUP ;
+             DUG 2 ;
+             CDR ;
+             CAR ;
+             CAR ;
+             CAR ;
+             CDR ;
+             IF { PUSH string "PAUSED" ; FAILWITH } {} ;
              PAIR ;
              LEFT (pair (list operation)
                         (pair (pair nat
                                     (big_map nat (pair address (pair (pair nat (map string bytes)) (pair nat (pair nat int))))))
-                              (pair (pair (option (pair (pair address bool) (option address)))
+                              (pair (pair (pair (pair (set address) bool) (big_map address unit))
                                           (pair (pair (big_map nat address) nat)
                                                 (pair (big_map (pair address (pair address nat)) unit)
                                                       (big_map nat (pair nat (map string bytes))))))
@@ -967,7 +972,7 @@
                        (pair (list (pair (pair nat (map string bytes)) nat))
                              (pair (pair nat
                                          (big_map nat (pair address (pair (pair nat (map string bytes)) (pair nat (pair nat int))))))
-                                   (pair (pair (option (pair (pair address bool) (option address)))
+                                   (pair (pair (pair (pair (set address) bool) (big_map address unit))
                                                (pair (pair (big_map nat address) nat)
                                                      (pair (big_map (pair address (pair address nat)) unit)
                                                            (big_map nat (pair nat (map string bytes))))))
@@ -1083,7 +1088,7 @@
                          LEFT (pair (list operation)
                                     (pair (pair nat
                                                 (big_map nat (pair address (pair (pair nat (map string bytes)) (pair nat (pair nat int))))))
-                                          (pair (pair (option (pair (pair address bool) (option address)))
+                                          (pair (pair (pair (pair (set address) bool) (big_map address unit))
                                                       (pair (pair (big_map nat address) nat)
                                                             (pair (big_map (pair address (pair address nat)) unit)
                                                                   (big_map nat (pair nat (map string bytes))))))

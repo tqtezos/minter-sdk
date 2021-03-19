@@ -40,13 +40,17 @@ describe('test NFT auction', () => {
   let nft2 : MintEditionParam;
   let tokenId : nat;
   let empty_metadata_map : MichelsonMap<string, bytes>;
+  let bobAddress : address;
+  let aliceAddress : address;
 
   beforeAll(async () => {
     tezos = await bootstrap();
     tokenId = new BigNumber(0);
     empty_metadata_map = new MichelsonMap();
+    bobAddress = await tezos.bob.signer.publicKeyHash();
+    aliceAddress = await tezos.alice.signer.publicKeyHash();
     $log.info('originating editions contract')
-    nftEditions = await originateEditionsNftContract(tezos.bob);
+    nftEditions = await originateEditionsNftContract(tezos.bob, bobAddress);
     $log.info('editions contract originated')
   });
   
@@ -74,8 +78,6 @@ describe('test NFT auction', () => {
   });
   
   test('distribute editions', async() => {
-    const aliceAddress = await tezos.alice.signer.publicKeyHash();
-    const bobAddress = await tezos.bob.signer.publicKeyHash();
     const distributeEdition0 : distribute_edition = {
       edition_id : new BigNumber(0),
       receivers : [aliceAddress, bobAddress]

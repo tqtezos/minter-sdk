@@ -45,7 +45,7 @@ export async function originateNft(
 ): Promise<Contract> {
     const code = await compileAndLoadContract(
         defaultEnv,
-        'minter_collection/fa2_multi_nft_asset.mligo',
+        'minter_collection/nft/fa2_multi_nft_asset_simple_admin.mligo',
         'nft_asset_main',
         'fa2_multi_nft_asset.tz'
     );
@@ -70,7 +70,7 @@ export async function originateNftFaucet(
 ): Promise<Contract> {
     const code = await compileAndLoadContract(
         defaultEnv,
-        'minter_collection/fa2_multi_nft_faucet.mligo',
+        'minter_collection/nft/fa2_multi_nft_faucet.mligo',
         'nft_faucet_main',
         'fa2_multi_nft_faucet.tz'
     );
@@ -95,7 +95,7 @@ export async function originateFtFaucet(
 ): Promise<Contract> {
     const code = await compileAndLoadContract(
         defaultEnv,
-        'minter_collection/fa2_multi_ft_faucet.mligo',
+        'minter_collection/ft/fa2_multi_ft_faucet.mligo',
         'ft_faucet_main',
         'fa2_multi_ft_faucet.tz'
     );
@@ -199,6 +199,7 @@ export async function originateEnglishAuctionTezAdmin(
 
 export async function originateEditionsNftContract(
     tz: TezosToolkit,
+    adminAddress: address
 ): Promise<Contract> {
     const code = await compileAndLoadContract(
         defaultEnv,
@@ -216,7 +217,7 @@ export async function originateEditionsNftContract(
 
     const meta_content = char2Bytes(JSON.stringify(meta,null,2));
 
-    const storage = `(Pair (Pair 0 {}) (Pair (Pair None
+    const storage = `(Pair (Pair 0 {}) (Pair (Pair (Pair (Pair {"${adminAddress}"} False) {})
     (Pair (Pair {} 0) (Pair {} {}))) { Elt "" 0x${meta_uri} ; Elt "contents" 0x${meta_content} }))`;
     return originateContract(tz, code, storage, 'editions');
 }

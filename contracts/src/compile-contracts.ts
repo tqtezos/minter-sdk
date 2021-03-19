@@ -30,7 +30,7 @@ async function compileNftFaucetContract(env: LigoEnv): Promise<void> {
   $log.info('compiling NFT faucet contract');
   await await compileContract(
     env,
-    'minter_collection/fa2_multi_nft_faucet.mligo',
+    'minter_collection/nft/fa2_multi_nft_faucet.mligo',
     'nft_faucet_main',
     'fa2_multi_nft_faucet.tz'
   );
@@ -41,7 +41,7 @@ async function compileNftContract(env: LigoEnv): Promise<void> {
   $log.info('compiling NFT contract');
   await await compileContract(
     env,
-    'minter_collection/fa2_multi_nft_asset.mligo',
+    'minter_collection/nft/fa2_multi_nft_asset_simple_admin.mligo',
     'nft_asset_main',
     'fa2_multi_nft_asset.tz'
   );
@@ -53,7 +53,7 @@ async function compileFtFaucetContract(env: LigoEnv): Promise<void> {
   $log.info('compiling FT faucet contract');
   await await compileContract(
     env,
-    'minter_collection/fa2_multi_ft_faucet.mligo',
+    'minter_collection/ft/fa2_multi_ft_faucet.mligo',
     'ft_faucet_main',
     'fa2_multi_ft_faucet.tz'
   );
@@ -64,7 +64,7 @@ async function compileFtContract(env: LigoEnv): Promise<void> {
   $log.info('compiling FT contract');
   await await compileContract(
     env,
-    'minter_collection/fa2_multi_ft_asset.mligo',
+    'minter_collection/ft/fa2_multi_ft_asset.mligo',
     'multi_ft_asset_main',
     'fa2_multi_ft_asset.tz'
   );
