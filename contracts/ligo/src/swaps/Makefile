@@ -1,6 +1,8 @@
 .PHONY: swap-storage clean
 
-# Ligo executable
+# Ligo executable.
+# To build with docker, pass
+# LIGO="docker run --rm -v \"$PWD\":\"$PWD\" -w \"\$(shell pwd)\" ligolang/ligo:0.11.0"
 LIGO ?= ligo
 
 # Compile code

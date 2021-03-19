@@ -2,15 +2,21 @@
 
 TEST_ARGUMENTS ?= ""
 
+EXTRA_STACK_OPTIONS ?= ""
+
 all: test
 
 # Compile contracts necessary for tests.
 compile-contracts:
 	$(MAKE) -C ../ligo/src/swaps
 
+# Build Haskell dependencies.
+build-haskell-deps:
+	stack build --only-dependencies
+
 # Build and run tests (only in emulation).
 test: compile-contracts
-	stack test minter-sdk --fast \
+	stack test minter-sdk --fast $(EXTRA_STACK_OPTIONS) \
 		--test-arguments "--color always $(TEST_ARGUMENTS)"
 
 # Run tests against a real node.
