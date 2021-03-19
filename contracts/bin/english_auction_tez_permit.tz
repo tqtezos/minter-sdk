@@ -1441,7 +1441,7 @@
                          PAIR ;
                          PAIR ;
                          PACK ;
-                         PUSH string "INVALID_PERMIT" ;
+                         PUSH string "MISSIGNED" ;
                          SWAP ;
                          DUP 3 ;
                          CDR ;
