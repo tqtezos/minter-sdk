@@ -13,8 +13,7 @@
                                             (pair (list %asset
                                                      (pair (address %fa2_address) (list %fa2_batch (pair (nat %token_id) (nat %amount)))))
                                                   (pair (timestamp %start_time) (timestamp %end_time))))))))
-                 (option %optional_permit
-                    (pair (key %signerKey) (pair (signature %signature) (bytes %paramHash))))))) ;
+                 (option %optional_permit (pair (key %signerKey) (signature %signature)))))) ;
   storage
     (pair (pair %auction_storage
              (option %pauseable_admin
@@ -1374,7 +1373,7 @@
                                             (pair mutez
                                                   (pair nat
                                                         (pair nat (pair (list (pair address (list (pair nat nat)))) (pair timestamp timestamp)))))))
-                                (option (pair key (pair signature bytes)))) } ;
+                                (option (pair key signature))) } ;
                  IF_NONE
                    { DROP ;
                      SWAP ;
@@ -1385,7 +1384,7 @@
                                                            (pair mutez
                                                                  (pair nat
                                                                        (pair nat (pair (list (pair address (list (pair nat nat)))) (pair timestamp timestamp)))))))
-                                               (option (pair key (pair signature bytes)))))
+                                               (option (pair key signature))))
                                    (pair (pair (option (pair (pair address bool) (option address)))
                                                (pair nat
                                                      (pair nat
@@ -1427,9 +1426,12 @@
                          ADD ;
                          SWAP ;
                          PAIR }
-                       { DUP ;
-                         CDR ;
-                         CDR ;
+                       { SWAP ;
+                         DUP ;
+                         DUG 2 ;
+                         CAR ;
+                         PACK ;
+                         BLAKE2B ;
                          DUP 4 ;
                          CDR ;
                          PAIR ;
@@ -1443,27 +1445,9 @@
                          SWAP ;
                          DUP 3 ;
                          CDR ;
-                         CAR ;
                          DUP 4 ;
                          CAR ;
                          CHECK_SIGNATURE ;
-                         PAIR ;
-                         DUP 11 ;
-                         SWAP ;
-                         EXEC ;
-                         DROP ;
-                         PUSH string "Config params and param hash do not match" ;
-                         SWAP ;
-                         DUP ;
-                         DUG 2 ;
-                         CDR ;
-                         CDR ;
-                         DUP 4 ;
-                         CAR ;
-                         PACK ;
-                         BLAKE2B ;
-                         COMPARE ;
-                         EQ ;
                          PAIR ;
                          DUP 11 ;
                          SWAP ;
@@ -1545,7 +1529,7 @@
                                                       (pair mutez
                                                             (pair nat
                                                                   (pair nat (pair (list (pair address (list (pair nat nat)))) (pair timestamp timestamp)))))))
-                                          (option (pair key (pair signature bytes))))) } ;
+                                          (option (pair key signature)))) } ;
                      IF_NONE
                        { DROP 2 ; PUSH string "INTERNAL_ERROR" ; FAILWITH }
                        { SWAP ;

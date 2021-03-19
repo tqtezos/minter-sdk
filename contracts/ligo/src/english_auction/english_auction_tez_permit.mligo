@@ -5,7 +5,6 @@ type permit =
   {
     signerKey: key;
     signature: signature;
-    paramHash: bytes;
   }
 
 type permit_storage = 
@@ -37,10 +36,10 @@ let config_storage_with_permit (p, permit_storage : permit_config_param * permit
     | None -> 
       let auction_storage = configure_auction_storage(p.config, Tezos.sender, permit_storage.auction_storage) in
       {permit_storage with auction_storage = auction_storage; counter = permit_storage.counter + 1n}
-    | Some permit -> 
-        let unsigned : bytes = ([%Michelson ({| { SELF; ADDRESS; CHAIN_ID; PAIR; PAIR; PACK } |} : nat * bytes -> bytes)] (permit_storage.counter, permit.paramHash) : bytes) in
-        assert_msg (Crypto.check permit.signerKey permit.signature unsigned, "INVALID_PERMIT"); 
-        assert_msg (Crypto.blake2b (Bytes.pack p.config) = permit.paramHash, "Config params and param hash do not match");
+    | Some permit ->
+        let param_hash = Crypto.blake2b (Bytes.pack p.config) in
+        let unsigned : bytes = ([%Michelson ({| { SELF; ADDRESS; CHAIN_ID; PAIR; PAIR; PACK } |} : nat * bytes -> bytes)] (permit_storage.counter, param_hash) : bytes) in
+        assert_msg (Crypto.check permit.signerKey permit.signature unsigned, "MISSIGNED"); 
         
         let configure_param = p.config in
         let storage = permit_storage.auction_storage in
