@@ -40,12 +40,12 @@ An implementation of a swaps contract that allows two participants to safely exc
 
 **EXPERIMENTAL** An implementation of NFTs using tickets and a dutch auction example, along with wallet contracts for the NFTs. _Please note: tickets are a new Tezos feature and care should be taken when using them as they have not been heavily tested in production._
 
-## Work-in-progress
+### Work-in-progress contracts
 
-### Edition contracts ([WIP](https://github.com/tqtezos/minter-sdk/pull/46))
+#### Edition contracts ([WIP](https://github.com/tqtezos/minter-sdk/pull/46))
 
-### Meta-transaction based minting / sales ([WIP](https://github.com/tqtezos/minter-sdk/pull/33))
+#### Meta-transaction based minting / sales ([WIP](https://github.com/tqtezos/minter-sdk/pull/33))
 
-### Fractional Ownership ([WIP](https://github.com/tqtezos/smart-contracts/pull/57))
+#### Fractional Ownership ([WIP](https://github.com/tqtezos/smart-contracts/pull/57))
 
-### Royalties and Profit-splitting ([WIP](https://github.com/tqtezos/minter-sdk/pull/40))
+#### Royalties and Profit-splitting ([WIP](https://github.com/tqtezos/minter-sdk/pull/40))
