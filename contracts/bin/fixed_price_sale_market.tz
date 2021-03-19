@@ -34,10 +34,7 @@
            { LAMBDA
                (pair (option (pair (pair address bool) (option address))) (option string))
                unit
-               { DUP ;
-                 CDR ;
-                 SWAP ;
-                 CAR ;
+               { UNPAIR ;
                  IF_NONE
                    { DROP ; UNIT }
                    { CAR ;
@@ -197,20 +194,14 @@
                  IF_NONE { PUSH string "NO_SALE" ; FAILWITH } {} ;
                  SELF_ADDRESS ;
                  SENDER ;
-                 DIG 2 ;
-                 DUP ;
-                 DUG 3 ;
+                 DUP 3 ;
                  PAIR ;
-                 DIG 3 ;
-                 DUP ;
-                 DUG 4 ;
+                 DUP 4 ;
                  CDR ;
                  CDR ;
                  CDR ;
                  CDR ;
-                 DIG 4 ;
-                 DUP ;
-                 DUG 5 ;
+                 DUP 5 ;
                  CDR ;
                  CDR ;
                  CDR ;
@@ -218,28 +209,20 @@
                  PAIR ;
                  PAIR ;
                  PAIR ;
-                 DIG 4 ;
-                 DUP ;
-                 DUG 5 ;
+                 DUP 5 ;
                  SWAP ;
                  EXEC ;
-                 DIG 2 ;
-                 DUP ;
-                 DUG 3 ;
+                 DUP 3 ;
                  CAR ;
                  SELF_ADDRESS ;
                  DIG 3 ;
                  PAIR ;
-                 DIG 3 ;
-                 DUP ;
-                 DUG 4 ;
+                 DUP 4 ;
                  CDR ;
                  CDR ;
                  CDR ;
                  CDR ;
-                 DIG 4 ;
-                 DUP ;
-                 DUG 5 ;
+                 DUP 5 ;
                  CDR ;
                  CDR ;
                  CDR ;
@@ -253,15 +236,11 @@
                  SENDER ;
                  SELF_ADDRESS ;
                  PAIR ;
-                 DIG 3 ;
-                 DUP ;
-                 DUG 4 ;
+                 DUP 4 ;
                  CDR ;
                  CDR ;
                  CAR ;
-                 DIG 4 ;
-                 DUP ;
-                 DUG 5 ;
+                 DUP 5 ;
                  CDR ;
                  CAR ;
                  PAIR ;
@@ -269,9 +248,7 @@
                  DIG 5 ;
                  SWAP ;
                  EXEC ;
-                 DIG 4 ;
-                 DUP ;
-                 DUG 5 ;
+                 DUP 5 ;
                  CDR ;
                  DIG 4 ;
                  NONE nat ;
@@ -299,9 +276,7 @@
                  IF { DIG 4 ; DROP ; PUSH unit Unit }
                     { PUSH string "OR A SELLER" ;
                       SOME ;
-                      DIG 2 ;
-                      DUP ;
-                      DUG 3 ;
+                      DUP 3 ;
                       CAR ;
                       DIG 6 ;
                       SWAP ;
@@ -344,9 +319,7 @@
                           CDR ;
                           CDR ;
                           CAR ;
-                          DIG 2 ;
-                          DUP ;
-                          DUG 3 ;
+                          DUP 3 ;
                           CDR ;
                           CAR ;
                           PAIR ;
@@ -354,9 +327,7 @@
                           DIG 3 ;
                           SWAP ;
                           EXEC ;
-                          DIG 2 ;
-                          DUP ;
-                          DUG 3 ;
+                          DUP 3 ;
                           CDR ;
                           DIG 2 ;
                           NONE nat ;
@@ -389,9 +360,7 @@
                  CDR ;
                  CDR ;
                  CAR ;
-                 DIG 2 ;
-                 DUP ;
-                 DUG 3 ;
+                 DUP 3 ;
                  CDR ;
                  CAR ;
                  PAIR ;
@@ -405,9 +374,7 @@
                  CDR ;
                  SENDER ;
                  PAIR ;
-                 DIG 3 ;
-                 DUP ;
-                 DUG 4 ;
+                 DUP 4 ;
                  CDR ;
                  DIG 3 ;
                  CAR ;
