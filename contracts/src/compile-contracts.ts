@@ -4,20 +4,26 @@ import * as fs from 'fs';
 import { defaultEnv, LigoEnv, compileContract} from './ligo';
 import { $log } from '@tsed/logger';
 
+type ContractCompiler = (env: LigoEnv) => Promise<void>;
+
+// add other contracts here
+const contractCompilers: ContractCompiler[] = 
+  [ compileNftFaucetContract
+  , compileNftContract
+  , compileFixedPriceSaleMarketPlaceContract
+  , compileFixedPriceSaleTezMarketPlaceContract
+  , compileEnglishAuctionTezContract
+  , compileFtFaucetContract
+  , compileFtContract
+  , compileTicketNftAuctionContract
+  , compileTicketNftWalletContract
+  ];
+
 async function main(): Promise<void> {
   try {
     const env = defaultEnv;
 
-    await compileNftFaucetContract(env);
-    await compileNftContract(env);
-    await compileFixedPriceSaleMarketPlaceContract(env);
-    await compileFixedPriceSaleTezMarketPlaceContract(env);
-    await compileEnglishAuctionTezContract(env);
-    await compileFtFaucetContract(env);
-    await compileFtContract(env);
-    await compileTicketNftAuctionContract(env);
-    await compileTicketNftWalletContract(env);
-    // add other contracts here
+    await Promise.all(contractCompilers.map(compiler => compiler(env)));
 
     process.exit(0);
   } catch (err) {
