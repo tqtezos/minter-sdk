@@ -37,14 +37,12 @@ An implementation of an NFT marketplace that allows users to initiate NFT sales 
 **EXPERIMENTAL** An implementation of NFTs using tickets and a dutch auction example, along with wallet contracts for the NFTs. 
 *Please note: tickets are a new Tezos feature and care should be taken when using them as they have not been heavily tested in production.*
 
-## Work-in-progress
+### Work-in-progress
 
-### Edition contracts
+#### Edition contracts ([WIP](https://github.com/tqtezos/minter-sdk/pull/46))
 
-### Meta-transaction based minting / sales
+#### Meta-transaction based minting / sales ([WIP](https://github.com/tqtezos/minter-sdk/pull/33))
 
-### FA2-FA2 swaps
+#### Fractional Ownership ([WIP](https://github.com/tqtezos/smart-contracts/pull/57))
 
-### Fractional Ownership
-
-### Royalties and Profit-splitting
+#### Royalties and Profit-splitting ([WIP](https://github.com/tqtezos/minter-sdk/pull/40))
