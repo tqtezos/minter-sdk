@@ -29,7 +29,7 @@ type edition_metadata =
       token_metadata : token_metadata;
       initial_token_id : nat;
       number_of_editions : nat;
-      number_of_editions_to_distribute : nat;
+      number_of_editions_to_distribute : int;
   }
 
 type editions_metadata = (nat, edition_metadata) big_map
@@ -49,7 +49,7 @@ let rec mint_editions ( editions_list , storage : mint_editions list * editions_
       token_metadata = param.token_metadata;
       initial_token_id = storage.nft_asset_storage.assets.next_token_id;
       number_of_editions = param.number_of_editions;
-      number_of_editions_to_distribute = param.number_of_editions 
+      number_of_editions_to_distribute = int(param.number_of_editions) 
     } in
     let new_editions_metadata = Big_map.add storage.current_edition_id edition_metadata storage.editions_metadata in
     let new_asset_storage = {storage.nft_asset_storage.assets with next_token_id = storage.nft_asset_storage.assets.next_token_id + param.number_of_editions} in 
@@ -67,10 +67,8 @@ let rec mint_editions ( editions_list , storage : mint_editions list * editions_
 
 let distribute_edition_to_address (edition_metadata, to_, storage : edition_metadata * address * editions_storage) 
   : editions_storage * edition_metadata = 
-  let token_id = if (edition_metadata.number_of_editions_to_distribute <= 0n) then 
-       (failwith "NO_EDITIONS_TO_DISTRIBUTE" : nat) else 
-       (edition_metadata.initial_token_id + abs (edition_metadata.number_of_editions - edition_metadata.number_of_editions_to_distribute)) in 
-  let new_edition_metadata = {edition_metadata with number_of_editions_to_distribute = abs(edition_metadata.number_of_editions_to_distribute - 1)} in
+  let token_id = edition_metadata.initial_token_id + abs (edition_metadata.number_of_editions - edition_metadata.number_of_editions_to_distribute) in 
+  let new_edition_metadata = {edition_metadata with number_of_editions_to_distribute = edition_metadata.number_of_editions_to_distribute - 1} in
   let mint_token_param : mint_token_param = {
       token_metadata = {
           token_id = token_id;
@@ -89,7 +87,10 @@ let rec distribute_edition_to_addresses ( receivers, edition_metadata, storage :
         (match (List.tail_opt receivers) with 
             | Some remaining_receivers -> distribute_edition_to_addresses (remaining_receivers, new_edition_metadata, new_storage)
             | None -> (failwith "INTERNAL_ERROR" : editions_storage * edition_metadata))   
-    | None -> storage, edition_metadata 
+    | None -> 
+        if (edition_metadata.number_of_editions_to_distribute < 0) then 
+             (failwith "NO_EDITIONS_TO_DISTRIBUTE" : editions_storage * edition_metadata) else 
+             storage, edition_metadata 
 
 let rec distribute_editions (distribute_list, storage : distribute_edition list * editions_storage)
   : operation list * editions_storage =

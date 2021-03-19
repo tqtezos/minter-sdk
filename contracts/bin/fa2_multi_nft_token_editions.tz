@@ -26,7 +26,7 @@
                    (pair (address %creator)
                          (pair (pair %token_metadata (nat %token_id) (map %token_info string bytes))
                                (pair (nat %initial_token_id)
-                                     (pair (nat %number_of_editions) (nat %number_of_editions_to_distribute)))))))
+                                     (pair (nat %number_of_editions) (int %number_of_editions_to_distribute)))))))
           (pair %nft_asset_storage
              (pair (option %admin
                       (pair (pair (address %admin) (bool %paused)) (option %pending_admin address)))
@@ -365,7 +365,7 @@
                  PAIR ;
                  LEFT (pair (list operation)
                             (pair (pair nat
-                                        (big_map nat (pair address (pair (pair nat (map string bytes)) (pair nat (pair nat nat))))))
+                                        (big_map nat (pair address (pair (pair nat (map string bytes)) (pair nat (pair nat int))))))
                                   (pair (pair (option (pair (pair address bool) (option address)))
                                               (pair (pair (big_map nat address) nat)
                                                     (pair (big_map (pair address (pair address nat)) unit)
@@ -382,7 +382,7 @@
                          RIGHT
                            (pair (list (pair nat (list address)))
                                  (pair (pair nat
-                                             (big_map nat (pair address (pair (pair nat (map string bytes)) (pair nat (pair nat nat))))))
+                                             (big_map nat (pair address (pair (pair nat (map string bytes)) (pair nat (pair nat int))))))
                                        (pair (pair (option (pair (pair address bool) (option address)))
                                                    (pair (pair (big_map nat address) nat)
                                                          (pair (big_map (pair address (pair address nat)) unit)
@@ -408,13 +408,13 @@
                          PAIR ;
                          PAIR ;
                          LEFT (pair (pair (pair nat
-                                                (big_map nat (pair address (pair (pair nat (map string bytes)) (pair nat (pair nat nat))))))
+                                                (big_map nat (pair address (pair (pair nat (map string bytes)) (pair nat (pair nat int))))))
                                           (pair (pair (option (pair (pair address bool) (option address)))
                                                       (pair (pair (big_map nat address) nat)
                                                             (pair (big_map (pair address (pair address nat)) unit)
                                                                   (big_map nat (pair nat (map string bytes))))))
                                                 (big_map string bytes)))
-                                    (pair address (pair (pair nat (map string bytes)) (pair nat (pair nat nat))))) ;
+                                    (pair address (pair (pair nat (map string bytes)) (pair nat (pair nat int))))) ;
                          LOOP_LEFT
                            { UNPAIR ;
                              UNPAIR ;
@@ -422,22 +422,7 @@
                              IF_CONS { SWAP ; DROP ; SOME } { NONE address } ;
                              IF_NONE
                                { DROP ;
-                                 SWAP ;
-                                 PAIR ;
-                                 RIGHT
-                                   (pair (pair (list address)
-                                               (pair address (pair (pair nat (map string bytes)) (pair nat (pair nat nat)))))
-                                         (pair (pair nat
-                                                     (big_map nat (pair address (pair (pair nat (map string bytes)) (pair nat (pair nat nat))))))
-                                               (pair (pair (option (pair (pair address bool) (option address)))
-                                                           (pair (pair (big_map nat address) nat)
-                                                                 (pair (big_map (pair address (pair address nat)) unit)
-                                                                       (big_map nat (pair nat (map string bytes))))))
-                                                     (big_map string bytes)))) }
-                               { DIG 3 ;
-                                 SWAP ;
-                                 DIG 3 ;
-                                 PUSH nat 0 ;
+                                 PUSH int 0 ;
                                  SWAP ;
                                  DUP ;
                                  DUG 2 ;
@@ -446,29 +431,44 @@
                                  CDR ;
                                  CDR ;
                                  COMPARE ;
-                                 LE ;
-                                 IF { PUSH string "NO_EDITIONS_TO_DISTRIBUTE" ; FAILWITH }
-                                    { DUP ;
-                                      CDR ;
-                                      CDR ;
-                                      CDR ;
-                                      CDR ;
-                                      SWAP ;
-                                      DUP ;
-                                      DUG 2 ;
-                                      CDR ;
-                                      CDR ;
-                                      CDR ;
-                                      CAR ;
-                                      SUB ;
-                                      ABS ;
-                                      SWAP ;
-                                      DUP ;
-                                      DUG 2 ;
-                                      CDR ;
-                                      CDR ;
-                                      CAR ;
-                                      ADD } ;
+                                 LT ;
+                                 IF { DROP 2 ; PUSH string "NO_EDITIONS_TO_DISTRIBUTE" ; FAILWITH }
+                                    { SWAP ;
+                                      PAIR ;
+                                      RIGHT
+                                        (pair (pair (list address)
+                                                    (pair address (pair (pair nat (map string bytes)) (pair nat (pair nat int)))))
+                                              (pair (pair nat
+                                                          (big_map nat (pair address (pair (pair nat (map string bytes)) (pair nat (pair nat int))))))
+                                                    (pair (pair (option (pair (pair address bool) (option address)))
+                                                                (pair (pair (big_map nat address) nat)
+                                                                      (pair (big_map (pair address (pair address nat)) unit)
+                                                                            (big_map nat (pair nat (map string bytes))))))
+                                                          (big_map string bytes)))) } }
+                               { DIG 3 ;
+                                 SWAP ;
+                                 DIG 3 ;
+                                 DUP ;
+                                 CDR ;
+                                 CDR ;
+                                 CDR ;
+                                 CDR ;
+                                 SWAP ;
+                                 DUP ;
+                                 DUG 2 ;
+                                 CDR ;
+                                 CDR ;
+                                 CDR ;
+                                 CAR ;
+                                 SUB ;
+                                 ABS ;
+                                 SWAP ;
+                                 DUP ;
+                                 DUG 2 ;
+                                 CDR ;
+                                 CDR ;
+                                 CAR ;
+                                 ADD ;
                                  PUSH int 1 ;
                                  DIG 2 ;
                                  DUP ;
@@ -478,7 +478,6 @@
                                  CDR ;
                                  CDR ;
                                  SUB ;
-                                 ABS ;
                                  DIG 2 ;
                                  DUP ;
                                  DUG 3 ;
@@ -551,13 +550,13 @@
                                      PAIR ;
                                      PAIR ;
                                      LEFT (pair (pair (pair nat
-                                                            (big_map nat (pair address (pair (pair nat (map string bytes)) (pair nat (pair nat nat))))))
+                                                            (big_map nat (pair address (pair (pair nat (map string bytes)) (pair nat (pair nat int))))))
                                                       (pair (pair (option (pair (pair address bool) (option address)))
                                                                   (pair (pair (big_map nat address) nat)
                                                                         (pair (big_map (pair address (pair address nat)) unit)
                                                                               (big_map nat (pair nat (map string bytes))))))
                                                             (big_map string bytes)))
-                                                (pair address (pair (pair nat (map string bytes)) (pair nat (pair nat nat))))) } } } ;
+                                                (pair address (pair (pair nat (map string bytes)) (pair nat (pair nat int))))) } } } ;
                          UNPAIR ;
                          DIG 3 ;
                          IF_CONS { DROP ; SOME } { NONE (list (pair nat (list address))) } ;
@@ -585,7 +584,7 @@
                          PAIR ;
                          LEFT (pair (list operation)
                                     (pair (pair nat
-                                                (big_map nat (pair address (pair (pair nat (map string bytes)) (pair nat (pair nat nat))))))
+                                                (big_map nat (pair address (pair (pair nat (map string bytes)) (pair nat (pair nat int))))))
                                           (pair (pair (option (pair (pair address bool) (option address)))
                                                       (pair (pair (big_map nat address) nat)
                                                             (pair (big_map (pair address (pair address nat)) unit)
@@ -948,7 +947,7 @@
              PAIR ;
              LEFT (pair (list operation)
                         (pair (pair nat
-                                    (big_map nat (pair address (pair (pair nat (map string bytes)) (pair nat (pair nat nat))))))
+                                    (big_map nat (pair address (pair (pair nat (map string bytes)) (pair nat (pair nat int))))))
                               (pair (pair (option (pair (pair address bool) (option address)))
                                           (pair (pair (big_map nat address) nat)
                                                 (pair (big_map (pair address (pair address nat)) unit)
@@ -967,7 +966,7 @@
                      RIGHT
                        (pair (list (pair (pair nat (map string bytes)) nat))
                              (pair (pair nat
-                                         (big_map nat (pair address (pair (pair nat (map string bytes)) (pair nat (pair nat nat))))))
+                                         (big_map nat (pair address (pair (pair nat (map string bytes)) (pair nat (pair nat int))))))
                                    (pair (pair (option (pair (pair address bool) (option address)))
                                                (pair (pair (big_map nat address) nat)
                                                      (pair (big_map (pair address (pair address nat)) unit)
@@ -977,6 +976,7 @@
                      SWAP ;
                      DUP ;
                      CDR ;
+                     INT ;
                      SWAP ;
                      DUP ;
                      DUG 2 ;
@@ -1082,7 +1082,7 @@
                        { PAIR ;
                          LEFT (pair (list operation)
                                     (pair (pair nat
-                                                (big_map nat (pair address (pair (pair nat (map string bytes)) (pair nat (pair nat nat))))))
+                                                (big_map nat (pair address (pair (pair nat (map string bytes)) (pair nat (pair nat int))))))
                                           (pair (pair (option (pair (pair address bool) (option address)))
                                                       (pair (pair (big_map nat address) nat)
                                                             (pair (big_map (pair address (pair address nat)) unit)
