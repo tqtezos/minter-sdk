@@ -32,7 +32,8 @@ let address_from_key (key : key) : address =
   a
 
 let check_permit (p, counter, param_hash : permit * nat * bytes) : unit = begin 
-    let unsigned : bytes = ([%Michelson ({| { SELF; ADDRESS; CHAIN_ID; PAIR; PAIR; PACK } |} : nat * bytes -> bytes)] (counter, param_hash) : bytes) in
+    (* let unsigned : bytes = ([%Michelson ({| { SELF; ADDRESS; CHAIN_ID; PAIR; PAIR; PACK } |} : nat * bytes -> bytes)] (counter, param_hash) : bytes) in *)
+    let unsigned : bytes = Bytes.pack ((Tezos.chain_id, Tezos.self_address), (counter, param_hash)) in
     assert_msg (Crypto.check p.signerKey p.signature unsigned, "MISSIGNED")
   end 
  

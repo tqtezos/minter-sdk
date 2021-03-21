@@ -1101,8 +1101,7 @@
                          DUP 3 ;
                          DUG 2 ;
                          PAIR ;
-                         SELF ;
-                         ADDRESS ;
+                         SELF_ADDRESS ;
                          CHAIN_ID ;
                          PAIR ;
                          PAIR ;
