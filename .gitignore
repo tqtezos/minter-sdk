@@ -13,4 +13,4 @@ contracts/bin/tezos-client
 # Ligo
 *.pp.mligo
 *.pp.ligo
-contracts/bisect*.coverage
+**/bisect*.coverage

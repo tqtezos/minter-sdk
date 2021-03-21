@@ -12,8 +12,6 @@ use this software at your own risk.
 
 Minter SDK offers a set of tools and libraries to bring creation, management, and sales of NFTs to any application.
 
-Minter SDK aims to include the following
-
 -   A collection of NFT and marketplace smart contracts with configurable admin permissions
 -   Typescript bindings to enable easy integration into popular web frameworks
 -   An NPM module that allows users to interact with tokens programmatically
@@ -22,37 +20,32 @@ Minter SDK aims to include the following
 
 ## Smart Contracts
 
-### [Minter Collection](minter_collection)
+### [Minter Collection](contracts/ligo/src/minter_collection)
 
 Customizable smart contracts for minting FA2 NFTs as collections.
 
-### [English Auction](english_auction)
+### [English Auction](contracts/ligo/src/english_auction)
 
-An implementation of an English auction marketplace that allows users to initiate auctions of NFTs in either tez or FA2. There are
-two versions of this contract: one with administration capabilities and one without. For now, in the positive case, this means that
-a configured administrator is responsible for configuring and managing access to important entrypoints.
+An implementation of an English auction marketplace that allows users to initiate auctions of NFTs in either tez or FA2 tokens.
 
-### [Fixed Price Sale](fixed_price_sale)
+### [Fixed Price Sale](contracts/ligo/src/fixed_price_sale)
 
-An implementation of an NFT marketplace that allows users to initiate NFT sales at a fixed price. There are multiple flavors of this contract that vary along two variables: admin capabilities, and NFT sale type (fungible tokens/tez).
+An implementation of an NFT marketplace that allows users to initiate NFT sales at a fixed price in tez or FA2. These contracts can be configured based on a range of administrative options.
 
-### [Minter Collection](minter_collection)
+### [FA2-FA2 swaps](contracts/ligo/src/swaps)
 
-Implementations of various token types.
+An implementation of a swaps contract that allows two participants to safely exchange their FA2 tokens.
 
-## [Ticket NFTs](tickets)
+### [Ticket-based NFTs](contracts/ligo/src/tickets)  
 
 **EXPERIMENTAL** An implementation of NFTs using tickets and a dutch auction example, along with wallet contracts for the NFTs. _Please note: tickets are a new Tezos feature and care should be taken when using them as they have not been heavily tested in production._
-An implementation of an NFT marketplace that allows users to initiate NFT sales at a fixed price in either FA2 or tez. There are multiple flavors of this contract that vary along two variables: admin capabilities, and NFT sale type (fungible tokens/tez).
 
-## Work-in-progress
+### Work-in-progress contracts
 
-### Edition contracts
+#### Edition contracts ([WIP](https://github.com/tqtezos/minter-sdk/pull/46))
 
-### Meta-transaction based minting / sales
+#### Meta-transaction based minting / sales ([WIP](https://github.com/tqtezos/minter-sdk/pull/33))
 
-### FA2-FA2 swaps
+#### Fractional Ownership ([WIP](https://github.com/tqtezos/smart-contracts/pull/57))
 
-### Fractional Ownership
-
-### Royalties and Profit-splitting
+#### Royalties and Profit-splitting ([WIP](https://github.com/tqtezos/minter-sdk/pull/40))
