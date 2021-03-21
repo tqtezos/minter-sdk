@@ -31,22 +31,20 @@ let address_from_key (key : key) : address =
   let a = Tezos.address (Tezos.implicit_account (Crypto.hash_key key)) in
   a
 
+let check_permit (p, counter, param_hash : permit * nat * bytes) : unit = begin 
+    let unsigned : bytes = ([%Michelson ({| { SELF; ADDRESS; CHAIN_ID; PAIR; PAIR; PACK } |} : nat * bytes -> bytes)] (counter, param_hash) : bytes) in
+    assert_msg (Crypto.check p.signerKey p.signature unsigned, "MISSIGNED")
+  end 
+ 
 let config_storage_with_permit (p, permit_storage : permit_config_param * permit_storage)  : permit_storage = begin
-  match p.optional_permit with 
-    | None -> 
-      let auction_storage = configure_auction_storage(p.config, Tezos.sender, permit_storage.auction_storage) in
-      {permit_storage with auction_storage = auction_storage; counter = permit_storage.counter + 1n}
+  let seller = match p.optional_permit with 
+    | None -> Tezos.sender
     | Some permit ->
-        let param_hash = Crypto.blake2b (Bytes.pack p.config) in
-        let unsigned : bytes = ([%Michelson ({| { SELF; ADDRESS; CHAIN_ID; PAIR; PAIR; PACK } |} : nat * bytes -> bytes)] (permit_storage.counter, param_hash) : bytes) in
-        assert_msg (Crypto.check permit.signerKey permit.signature unsigned, "MISSIGNED"); 
-        
-        let configure_param = p.config in
-        let storage = permit_storage.auction_storage in
-        let signer_address = address_from_key permit.signerKey in
-        
-        let auction_storage = configure_auction_storage(p.config, signer_address, storage) in 
-        {permit_storage with auction_storage = auction_storage; counter = permit_storage.counter + 1n}
+        let param_hash = Crypto.blake2b (Bytes.pack p.config) in 
+        let u : unit = check_permit (permit, permit_storage.counter, param_hash) in
+        address_from_key permit.signerKey in
+  let auction_storage = configure_auction_storage(p.config, seller, permit_storage.auction_storage) in
+  {permit_storage with auction_storage = auction_storage; counter = permit_storage.counter + 1n}
 end
 
 let rec config_with_permits_helper (params, permit_storage, op_list : (permit_config_param list * permit_storage * operation list)) : permit_return =
