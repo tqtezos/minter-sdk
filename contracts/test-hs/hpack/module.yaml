@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2021 TQ Tezos
+# SPDX-License-Identifier: MIT
+
+# Include this file in your module's `package.yaml` to set sensible defaults
+# and get access to useful utilities.
+
+<<: !include "definitions.yaml"
+
+<<: *meta
+default-extensions: *default-extensions
+dependencies: *dependencies
+ghc-options: *ghc-options

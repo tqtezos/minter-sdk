@@ -1,0 +1,42 @@
+# SPDX-FileCopyrightText: 2021 TQ Tezos
+# SPDX-License-Identifier: MIT
+
+<<: !include "./hpack/module.yaml"
+
+name:                minter-sdk
+version:             0.1.0.0
+category:            Blockchain
+synopsis:            Haskell bindings and tests for the contracts in minter-sdk.
+extra-source-files:
+- README.md
+
+library:
+  <<: *lib-common
+
+  dependencies:
+    - cleveland
+    - filepath
+    - file-embed
+    - lorentz
+    - morley
+    - morley-prelude
+    - morley-ledgers
+
+tests:
+  minter-sdk-tests:
+    <<: *test-common
+
+    dependencies:
+      - containers
+      - cleveland
+      - fmt
+      - lens
+      - lorentz
+      - named
+      - morley
+      - morley-ledgers
+      - morley-prelude
+      - minter-sdk
+      - sized
+      - tasty
+      - type-natural

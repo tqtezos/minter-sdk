@@ -1,0 +1,61 @@
+# SPDX-FileCopyrightText: 2021 Tocqueville Group
+#
+# SPDX-License-Identifier: LicenseRef-MIT-TQ
+
+# When 'resolver' or 'extra-deps' are updated, you might have to update
+# pinned stackage and hackage indexes used by CI, to make sure they
+# contain the latest snapshots and packages. To update them, you need
+# to have `nix` and `niv` installed and run the commands
+# `niv update hackage.nix` and `niv update stackage.nix`
+resolver: lts-17.3
+
+# The package list has to be updated in `ci.nix` as well because
+# `haskell.nix` doesn't provide the list of local packages
+packages:
+- .
+
+# You might have to update hackage index used by CI when you update
+# packages in this list, see the comment at the top of the file
+extra-deps:
+- git:
+    https://gitlab.com/morley-framework/morley.git
+  commit:
+    121bf833899d3bcdce63daa3c917f575cf3476ea  # master
+  subdirs:
+    - code/morley
+    - code/lorentz
+    - code/cleveland
+    - code/morley-client
+
+- git:
+    https://gitlab.com/morley-framework/indigo.git
+  commit:
+    a7c93b410683ec6d86dfcda157f6d7ab9eeda778  # master
+  subdirs:
+    - .
+
+- git: https://gitlab.com/morley-framework/morley-ledgers.git
+  commit: c6a5b84cf15ed494f0a711ba4f1b646bbc6ef3d7  # master
+  subdirs:
+    - code/morley-ledgers
+
+- git: https://github.com/serokell/base-noprelude.git
+  commit: 87df0899801dcdffd08ef7c3efd3c63e67e623c2
+- git: https://github.com/serokell/elliptic-curve.git
+  commit: b8a3d0cf8f7bacfed77dc3b697f5d08bd33396a8
+- git: https://github.com/serokell/pairing.git
+  commit: cf86cf1f6b03f478a439703b050c520a9d455353
+- git: https://github.com/serokell/galois-field.git
+  commit: 576ba98ec947370835a1f308895037c7aa7f8b71
+- git: https://github.com/int-index/caps.git
+  commit: c5d61837eb358989b581ed82b1e79158c4823b1b
+
+- hex-text-0.1.0.2@sha256:154df2b81c1dd38b055fa6a90cb6964f60c5cf4a0ba633ea929d8a79af89519a,1301
+- morley-prelude-0.3.0@sha256:9e9473ac14cfa206adf0a3700764c0251de05042f1fe45daf9cb8556079ae663,2085
+- named-0.3.0.1@sha256:2975d50c9c5d88095026ffc1303d2d9be52e5f588a8f8bcb7003a04b79f10a06,2312
+- show-type-0.1.1@sha256:24f681a3481b3f9630e619d816054804ba1bd6cc05b5978ddd2cece8499ff2fa,1154
+- base16-bytestring-1.0.1.0@sha256:33b9d57afa334d06485033e930c6b13fc760baf88fd8f715ae2f9a4b46e19a54
+- summoner-2.0.1.1
+- generic-data-0.8.3.0
+- neat-interpolation-0.3.2.6
+- megaparsec-8.0.0
