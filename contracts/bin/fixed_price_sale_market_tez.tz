@@ -30,10 +30,7 @@
            { LAMBDA
                (pair (option (pair (pair address bool) (option address))) (option string))
                unit
-               { DUP ;
-                 CDR ;
-                 SWAP ;
-                 CAR ;
+               { UNPAIR ;
                  IF_NONE
                    { DROP ; UNIT }
                    { CAR ;
@@ -192,14 +189,10 @@
                  SENDER ;
                  SELF_ADDRESS ;
                  PAIR ;
-                 DIG 2 ;
-                 DUP ;
-                 DUG 3 ;
+                 DUP 3 ;
                  CDR ;
                  CDR ;
-                 DIG 3 ;
-                 DUP ;
-                 DUG 4 ;
+                 DUP 4 ;
                  CDR ;
                  CAR ;
                  PAIR ;
@@ -207,9 +200,7 @@
                  DIG 4 ;
                  SWAP ;
                  EXEC ;
-                 DIG 3 ;
-                 DUP ;
-                 DUG 4 ;
+                 DUP 4 ;
                  CDR ;
                  DIG 3 ;
                  NONE mutez ;
@@ -233,9 +224,7 @@
                  IF { DIG 5 ; DROP ; PUSH unit Unit }
                     { PUSH string "OR A SELLER" ;
                       SOME ;
-                      DIG 2 ;
-                      DUP ;
-                      DUG 3 ;
+                      DUP 3 ;
                       CAR ;
                       DIG 7 ;
                       SWAP ;
@@ -283,9 +272,7 @@
                           DUG 2 ;
                           CDR ;
                           CDR ;
-                          DIG 2 ;
-                          DUP ;
-                          DUG 3 ;
+                          DUP 3 ;
                           CDR ;
                           CAR ;
                           PAIR ;
@@ -293,9 +280,7 @@
                           DIG 3 ;
                           SWAP ;
                           EXEC ;
-                          DIG 2 ;
-                          DUP ;
-                          DUG 3 ;
+                          DUP 3 ;
                           CDR ;
                           DIG 2 ;
                           NONE mutez ;
@@ -342,9 +327,7 @@
                  SWAP ;
                  SENDER ;
                  PAIR ;
-                 DIG 3 ;
-                 DUP ;
-                 DUG 4 ;
+                 DUP 4 ;
                  CDR ;
                  DIG 3 ;
                  DIG 2 ;

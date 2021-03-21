@@ -74,7 +74,7 @@ function compileContractImpl(
   dstFilePath: string
 ): Promise<void> {
   // const cmd = `ligo compile-contract ${srcFilePath} ${main} --output=${dstFilePath}`;
-  const cmd = `docker run --rm -v $PWD:$PWD -w $PWD ligolang/ligo:0.11.0 compile-contract ${srcFilePath} ${main} --output=${dstFilePath}  && rm -f bisect*.coverage`;
+  const cmd = `docker run --rm -v $PWD:$PWD -w $PWD ligolang/ligo:0.12.0 compile-contract ${srcFilePath} ${main} --output=${dstFilePath}`;
   return runCmd(cwd, cmd);
 }
 
