@@ -56,3 +56,12 @@ jobs:
           LIGO="$LIGO_EXE" \
           EXTRA_STACK_OPTIONS="--system-ghc --ghc-options=-Werror" \
           TEST_ARGUMENTS="--nettest-no-run-network"
+
+  links-check:
+    name: Verify links in markdown documentation
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: serokell/xrefcheck-action@v1
+      with:
+        xrefcheck-version: 0.1.3
