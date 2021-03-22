@@ -114,7 +114,6 @@ let editions_main (param, editions_storage : editions_entrypoints * editions_sto
         let ops, new_nft_asset_storage = nft_asset_main (nft_asset_entrypoints, editions_storage.nft_asset_storage) in
         ops, {editions_storage with nft_asset_storage = new_nft_asset_storage}
     | Mint_editions mint_param -> 
-        (*TODO: Move to new admin after Euguene's merge*)
         let u : unit = fail_if_not_admin editions_storage.nft_asset_storage.admin (None : string option) in
         let u = fail_if_paused editions_storage.nft_asset_storage.admin in
         (mint_editions (mint_param, editions_storage))

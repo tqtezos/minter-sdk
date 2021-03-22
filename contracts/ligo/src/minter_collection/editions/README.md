@@ -11,35 +11,35 @@ This propsal allows editions creators to easily mint an "unlimited" (limited onl
 
 ## Storage
 
-- FA2 + TZIP-16 storage
+- FA2 w/ multi-admin + TZIP-16 storage
 
 - Editions-specific storage
   + `current_token_id : nat`
   + `current_edition_id : nat`
-  + `editions_metadata`
+  + `editions_metadata : editions_metadata`
 
 ```ocaml
 editions_metadata :=
   big_map
     (nat : edition_id)
-    (token_metadata
-    , address : creator
+    ( edition_info : ((string, bytes) map)
+    , creator : address 
     , initial_token_id : nat
-    , nat : number_of_editions
-    , nat : number_of_editions_to_distribute)
+    , number_of_editions : nat
+    , number_of_editions_to_distribute : nat)
 ```
 ## Entrypoints
 
 - `mint_editions : list mint_edition`
-  + Only admin can call this entrypoint if admin is configured
-  + `mint_edition := (token_metadata, nat : number_of_editions)`
+  + Only sender in set of `admins` can mint an edition. 
+  + `mint_edition := (edition_info, number_of_editions : ((string, bytes) map) * nat )`
   + For each entry in the list, an entry is created in `editions_metadata`for key `current_edition_id`
     with:
     * `number_of_editions = number_of_editions_to_distribute`
     * `initial_token_id = current_token_id`
     * `current_token_id += number_of_editions`
     * `creator = SENDER`
-    * `current_edition_id ` incremented by 1
+    * `current_edition_id ` incremented by `1`
 
 - `distribute_editions : list (edition_id, to_ : nat * address)`
   + For each pair in the list
