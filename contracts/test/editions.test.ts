@@ -54,7 +54,7 @@ describe('test NFT auction', () => {
     $log.info('editions contract originated')
   });
   
-  test('mint 1000 editions of nft1 and 50 of nft2', async() => {
+  test('mint 1000 editions of nft1 and 2 of nft2', async() => {
     nft1 = {
       edition_info: empty_metadata_map,
       number_of_editions : new BigNumber(1000)
@@ -62,7 +62,7 @@ describe('test NFT auction', () => {
 
     nft2 = {
       edition_info: empty_metadata_map,
-      number_of_editions : new BigNumber(50)
+      number_of_editions : new BigNumber(2)
     };
     const opMint = await nftEditions.methods.mint_editions([nft1, nft2]).send();
     const hash = await opMint.confirmation();
@@ -96,5 +96,13 @@ describe('test NFT auction', () => {
     expect(bobHasEdition0).toBe(true);
     expect(aliceHasEdition1).toBe(true);
     expect(bobHasEdition1).toBe(true);
+  });
+  test('distributing too many editions should fail', async() => {
+    const distributeEdition1 : distribute_edition = {
+      edition_id : new BigNumber(1),
+      receivers : [aliceAddress]
+    }
+    const opDistribute = nftEditions.methods.distribute_editions([distributeEdition1]).send();
+    return expect(opDistribute).rejects.toHaveProperty('errors');
   });
 });
