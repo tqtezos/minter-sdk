@@ -24,24 +24,11 @@ import {
     addOperator,
     removeOperator
 } from '../src/fa2-interface';
-import { QueryBalances, queryBalancesWithLambdaView } from './fa2-balance-inspector';
+import { QueryBalances, queryBalancesWithLambdaView, hasTokens } from './fa2-balance-inspector';
 
 jest.setTimeout(180000); // 3 minutes
 
 const nat1 = new BigNumber(1);
-
-export async function hasTokens(requests: BalanceOfRequest[],
-                                queryBalances : QueryBalances,
-                                nft : Contract ): Promise<boolean[]> {
-    const responses = await queryBalances(nft, requests);
-    const results = responses.map(r => {
-        if (r.balance.eq(1)) return true;
-        else if (r.balance.eq(0)) return false;
-        else throw new Error(`Invalid NFT balance ${r.balance}`);
-    });
-    return results;
-}
-
 
 describe.each([originateNftFaucet /*, originateNft*/])(
     'test NFT',

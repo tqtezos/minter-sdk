@@ -16,11 +16,7 @@ import {
     originateEditionsNftContract,
     MintNftParam
 } from '../src/nft-contracts';
-import {
-    TokenMetadata
-} from '../src/fa2-interface';
-import {hasTokens} from './nft-contracts.test'
-import { QueryBalances, queryBalancesWithLambdaView } from './fa2-balance-inspector';
+import { QueryBalances, queryBalancesWithLambdaView, hasTokens} from './fa2-balance-inspector';
 
 jest.setTimeout(180000); // 3 minutes
 
@@ -63,8 +59,6 @@ describe('test NFT auction', () => {
       edition_info: empty_metadata_map,
       number_of_editions : new BigNumber(1000)
     };
-    
-    tokenId = new BigNumber(1001);
 
     nft2 = {
       edition_info: empty_metadata_map,
@@ -87,16 +81,20 @@ describe('test NFT auction', () => {
     const opDistribute = await nftEditions.methods.distribute_editions([distributeEdition0, distributeEdition1]).send();
     const hash = await opDistribute.confirmation();
     $log.info(`Minted tokens. Consumed gas: ${opDistribute.consumedGas}`) 
-    /*
+
     const [aliceHasEdition0, bobHasEdition0] = await hasTokens([
       { owner: aliceAddress, token_id: new BigNumber(0) },
       {owner: bobAddress, token_id: new BigNumber(1)}
-  ], queryBalances, nftEditions);
+      ], queryBalances, nftEditions);
 
-  const [aliceHasEdition1, bobHasEdition1] = await hasTokens([
-    { owner: aliceAddress, token_id: new BigNumber(0) },
-    {owner: bobAddress, token_id: new BigNumber(1)}
-], queryBalances, nftEditions);
-   */
+    const [aliceHasEdition1, bobHasEdition1] = await hasTokens([
+      { owner: aliceAddress, token_id: new BigNumber(1000) },
+      {owner: bobAddress, token_id: new BigNumber(1001)}
+      ], queryBalances, nftEditions);
+  
+    expect(aliceHasEdition0).toBe(true);
+    expect(bobHasEdition0).toBe(true);
+    expect(aliceHasEdition1).toBe(true);
+    expect(bobHasEdition1).toBe(true);
   });
 });
