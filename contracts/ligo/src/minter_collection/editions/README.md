@@ -41,7 +41,7 @@ editions_metadata :=
     * `creator = SENDER`
     * `current_edition_id ` incremented by `1`
 
-- `distribute_editions : list (edition_id, to_ : nat * address)`
+- `distribute_editions : list (edition_id, receivers : nat * (address list))`
   + For each pair in the list
     * A single `initial_token_id + (number_of_editions - number_of_editions_to_distribute)` token is minted to the `to_` `address`
     * `number_of_editions_to_distribute` is decremented (fail if `== 0`)
