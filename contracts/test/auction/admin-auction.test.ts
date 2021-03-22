@@ -2,6 +2,7 @@ import { $log } from '@tsed/logger';
 import { BigNumber } from 'bignumber.js';
 import { bootstrap, TestTz } from '../bootstrap-sandbox';
 import { Contract, nat, bytes, address } from '../../src/type-aliases';
+import moment from 'moment'
 import {
   originateEnglishAuctionTezAdmin,
   MintNftParam,
@@ -16,7 +17,7 @@ import {
   OperationResultTransaction
 } from '@taquito/rpc';
 import {addOperator} from '../../src/fa2-interface'
-import {Fa2_tokens, Tokens } from '../../src/auction-interface'
+import {Fa2_token, Tokens } from '../../src/auction-interface'
 
 jest.setTimeout(180000); // 3 minutes
 
@@ -32,8 +33,8 @@ describe('test NFT auction', () => {
   let endTime : Date;
   let empty_metadata_map: MichelsonMap<string, bytes>;
   let tokenId : BigNumber;
-  let token : MintNftParam;
-  let fa2_tokens : Fa2_tokens;
+  let mintToken : MintNftParam;
+  let fa2_token : Fa2_token;
   let auction_tokens : Tokens;
 
   beforeAll(async () => {
@@ -55,14 +56,14 @@ describe('test NFT auction', () => {
 
     tokenId = new BigNumber(0);
 
-    token = {
+    mintToken = {
       token_metadata: {
         token_id: tokenId,
         token_info: empty_metadata_map
       },
       owner: bobAddress
     };
-    const opMint = await nftContract.methods.mint([token]).send();
+    const opMint = await nftContract.methods.mint([mintToken]).send();
     const hash = await opMint.confirmation();
     $log.info(`Minted tokens. Consumed gas: ${opMint.consumedGas}`);
 
@@ -70,33 +71,39 @@ describe('test NFT auction', () => {
     await addOperator(nftContract.address, tezos.bob, nftAuction.address, tokenId);
     $log.info('Auction contract added as operator');
     
-    fa2_tokens = {
-        token_id : tokenId,
-        amount : new BigNumber(1)
-    }
+   fa2_token = {
+      token_id : tokenId,
+      amount : new BigNumber(1)
+  }
 
     auction_tokens = {
-        fa2_address : nftContract.address,
-        fa2_batch : [fa2_tokens]
-    }
-    
-    startTime = new Date();
-    startTime.setSeconds(startTime.getSeconds() + 7);
-    endTime = new Date(startTime.valueOf());
-    endTime.setHours(endTime.getHours() + 1);
-    $log.info(`Bob attempts to configure auction`);
-    //opening price = 10 tz, percent raise =10, min_raise = 10tz, round_time = 1 hr, extend_time = 5 mins, end_time = start_time + 1hr, 
-    const opAuction = await nftAuctionBob.methods.configure(new BigNumber(10000000), new BigNumber(10), new BigNumber(10000000), new BigNumber(3600), new BigNumber(300), [auction_tokens], startTime, endTime).send({amount : 10});
-    await opAuction.confirmation();
-    $log.info(`Auction configured. Consumed gas: ${opAuction.consumedGas}`);
+      fa2_address : nftContract.address,
+      fa2_batch : [fa2_token]
+  }
   });
   test('configuration not from admin should fail', async() => {
-    startTime = new Date();
-    startTime.setSeconds(startTime.getSeconds() + 7);
-    tokenId = tokenId.plus(1);
+    startTime = moment.utc().add(7, 'seconds').toDate();
+    endTime = moment(startTime).add(1, 'hours').toDate();
     $log.info(`Alice attempts to configure auction, we expect it to fail`);
-    //opening price = 10 tz, percent raise =10, min_raise = 10tz, round_time = 1 hr, extend_time = 5 mins, end_time = start_time + 1hr, 
-    const opAuctionPromise = nftAuctionAlice.methods.configure(new BigNumber(10000000), new BigNumber(10), new BigNumber(10000000), new BigNumber(3600), new BigNumber(300), [auction_tokens], startTime, endTime).send({amount : 10});
+    const opAuctionPromise = nftAuctionAlice.methods.configure(
+            //opening price = 10 tz
+            new BigNumber(10000000),
+            //percent raise =10
+            new BigNumber(10), 
+            //min_raise = 10tz
+            new BigNumber(10000000), 
+            //round_time = 1 hr
+            new BigNumber(3600),
+            //extend_time = 5 mins
+            new BigNumber(300), 
+            //assset
+            [auction_tokens], 
+            //start_time = now + 7seconds
+            startTime, 
+            //end_time = start_time + 1hr,   
+            endTime
+            ).send({amount : 10} 
+          );
     return expect(opAuctionPromise).rejects.toHaveProperty('message', "NOT_AN_ADMIN");
   });  
   
