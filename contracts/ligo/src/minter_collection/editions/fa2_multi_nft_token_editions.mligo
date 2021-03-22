@@ -5,7 +5,7 @@
 type mint_editions = 
 [@layout:comb]
 {
-    token_metadata : token_metadata;
+    edition_info : ((string, bytes) map);
     number_of_editions : nat;
 }
 
@@ -25,7 +25,7 @@ type edition_metadata =
 [@layout:comb]
   {   
       creator : address;
-      token_metadata : token_metadata;
+      edition_info: ((string, bytes) map);
       initial_token_id : nat;
       number_of_editions : nat;
       number_of_editions_to_distribute : int;
@@ -45,7 +45,7 @@ let rec mint_editions ( editions_list , storage : mint_editions list * editions_
   let mint_single_edition_set : (mint_editions * editions_storage) -> editions_storage = fun (param, storage : mint_editions * editions_storage) ->  
     let edition_metadata : edition_metadata = {
       creator = Tezos.sender;
-      token_metadata = param.token_metadata;
+      edition_info = param.edition_info;
       initial_token_id = storage.nft_asset_storage.assets.next_token_id;
       number_of_editions = param.number_of_editions;
       number_of_editions_to_distribute = int(param.number_of_editions) 

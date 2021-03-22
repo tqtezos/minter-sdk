@@ -19,12 +19,14 @@ import {
 import {
     TokenMetadata
 } from '../src/fa2-interface';
-//import { QueryBalances, queryBalancesWithLambdaView } from './fa2-balance-inspector';
+import {hasTokens} from './nft-contracts.test'
+import { QueryBalances, queryBalancesWithLambdaView } from './fa2-balance-inspector';
 
 jest.setTimeout(180000); // 3 minutes
 
+
 export interface MintEditionParam {
-  token_metadata : TokenMetadata;
+  edition_info : MichelsonMap<string, string>;
   number_of_editions : nat;
 }
 
@@ -42,6 +44,7 @@ describe('test NFT auction', () => {
   let empty_metadata_map : MichelsonMap<string, bytes>;
   let bobAddress : address;
   let aliceAddress : address;
+  let queryBalances: QueryBalances;
 
   beforeAll(async () => {
     tezos = await bootstrap();
@@ -49,6 +52,7 @@ describe('test NFT auction', () => {
     empty_metadata_map = new MichelsonMap();
     bobAddress = await tezos.bob.signer.publicKeyHash();
     aliceAddress = await tezos.alice.signer.publicKeyHash();
+    queryBalances = queryBalancesWithLambdaView(tezos.lambdaView);
     $log.info('originating editions contract')
     nftEditions = await originateEditionsNftContract(tezos.bob, bobAddress);
     $log.info('editions contract originated')
@@ -56,20 +60,14 @@ describe('test NFT auction', () => {
   
   test('mint 1000 editions of nft1 and 50 of nft2', async() => {
     nft1 = {
-      token_metadata : {
-        token_id: tokenId,
-        token_info: empty_metadata_map
-      },
+      edition_info: empty_metadata_map,
       number_of_editions : new BigNumber(1000)
     };
     
     tokenId = new BigNumber(1001);
 
     nft2 = {
-      token_metadata : {
-        token_id: tokenId,
-        token_info: empty_metadata_map
-      },
+      edition_info: empty_metadata_map,
       number_of_editions : new BigNumber(50)
     };
     const opMint = await nftEditions.methods.mint_editions([nft1, nft2]).send();
@@ -89,5 +87,16 @@ describe('test NFT auction', () => {
     const opDistribute = await nftEditions.methods.distribute_editions([distributeEdition0, distributeEdition1]).send();
     const hash = await opDistribute.confirmation();
     $log.info(`Minted tokens. Consumed gas: ${opDistribute.consumedGas}`) 
+    /*
+    const [aliceHasEdition0, bobHasEdition0] = await hasTokens([
+      { owner: aliceAddress, token_id: new BigNumber(0) },
+      {owner: bobAddress, token_id: new BigNumber(1)}
+  ], queryBalances, nftEditions);
+
+  const [aliceHasEdition1, bobHasEdition1] = await hasTokens([
+    { owner: aliceAddress, token_id: new BigNumber(0) },
+    {owner: bobAddress, token_id: new BigNumber(1)}
+], queryBalances, nftEditions);
+   */
   });
 });

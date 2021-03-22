@@ -30,6 +30,19 @@ jest.setTimeout(180000); // 3 minutes
 
 const nat1 = new BigNumber(1);
 
+export async function hasTokens(requests: BalanceOfRequest[],
+                                queryBalances : QueryBalances,
+                                nft : Contract ): Promise<boolean[]> {
+    const responses = await queryBalances(nft, requests);
+    const results = responses.map(r => {
+        if (r.balance.eq(1)) return true;
+        else if (r.balance.eq(0)) return false;
+        else throw new Error(`Invalid NFT balance ${r.balance}`);
+    });
+    return results;
+}
+
+
 describe.each([originateNftFaucet /*, originateNft*/])(
     'test NFT',
     createNft => {
@@ -47,24 +60,11 @@ describe.each([originateNftFaucet /*, originateNft*/])(
             nft = await createNft(tezos.bob, admin);
         });
 
-        async function hasTokens(requests: BalanceOfRequest[]): Promise<boolean[]> {
-            const responses = await queryBalances(nft, requests);
-            const results = responses.map(r => {
-                if (r.balance.eq(1)) return true;
-                else if (r.balance.eq(0)) return false;
-                else throw new Error(`Invalid NFT balance ${r.balance}`);
-            });
-            return results;
-        }
-
         async function mintTokens(
             tz: TezosToolkit,
             tokens: MintNftParam[]
         ): Promise<void> {
             $log.info('minting...');
-            // console.log(tokens)
-            // let methods = nft.parameterSchema.ExtractSignatures();
-            // console.log(JSON.stringify(methods, null, 2));
             const op = await nft.methods.mint(tokens).send();
             const hash = await op.confirmation();
             $log.info(`minted tokens. consumed gas: ${op.consumedGas}`);
@@ -94,7 +94,7 @@ describe.each([originateNftFaucet /*, originateNft*/])(
 
             const [bobHasToken] = await hasTokens([
                 { owner: bobAddress, token_id: new BigNumber(0) }
-            ]);
+            ], queryBalances, nft);
             expect(bobHasToken).toBe(true);
 
             const storage: any = await nft.storage();
@@ -156,7 +156,7 @@ describe.each([originateNftFaucet /*, originateNft*/])(
             const [aliceHasATokenBefore, bobHasATokenBefore] = await hasTokens([
                 { owner: aliceAddress, token_id: tokenId },
                 { owner: bobAddress, token_id: tokenId }
-            ]);
+            ], queryBalances, nft);
             expect(aliceHasATokenBefore).toBe(false);
             expect(bobHasATokenBefore).toBe(true);
 
@@ -170,7 +170,7 @@ describe.each([originateNftFaucet /*, originateNft*/])(
             const [aliceHasATokenAfter, bobHasATokenAfter] = await hasTokens([
                 { owner: aliceAddress, token_id: tokenId },
                 { owner: bobAddress, token_id: tokenId }
-            ]);
+            ], queryBalances, nft);
             expect(aliceHasATokenAfter).toBe(true);
             expect(bobHasATokenAfter).toBe(false);
         });
@@ -269,7 +269,7 @@ describe.each([originateNftFaucet /*, originateNft*/])(
                 { owner: aliceAddress, token_id: tokenId2 },
                 { owner: bobAddress, token_id: tokenId1 },
                 { owner: bobAddress, token_id: tokenId2 }
-            ]);
+            ], queryBalances, nft);
             expect(aliceHasToken1Before).toBe(false);
             expect(aliceHasToken2Before).toBe(true);
             expect(bobHasToken1Before).toBe(true);
@@ -302,7 +302,7 @@ describe.each([originateNftFaucet /*, originateNft*/])(
                 { owner: aliceAddress, token_id: tokenId2 },
                 { owner: bobAddress, token_id: tokenId1 },
                 { owner: bobAddress, token_id: tokenId2 }
-            ]);
+            ], queryBalances, nft);
             expect(aliceHasToken1After).toBe(true);
             expect(aliceHasToken2After).toBe(false);
             expect(bobHasToken1After).toBe(false);
