@@ -21,6 +21,14 @@ const fileNameToTitleCase = (fileName: string) =>
 const titleCaseToAlias = (titleCaseFileName: string) => `${titleCaseFileName}Type`;
 const fileNameToAlias = (fileName: string) => titleCaseToAlias(fileNameToTitleCase(fileName));
 
+const emptyDirectory = (dir: string) => new Promise((resolve,reject) => fs.readdir(dir, (err, files) =>
+  err ? reject(err) : resolve(Promise.all(files.map(file =>
+    new Promise<void>((resolve, reject) => fs.unlink(path.join(dir, file), (err) =>
+      err ? reject(err) : resolve(),
+    )),
+  ))),
+));
+
 const writeFileP = (path: number | fs.PathLike, data: any) =>
   new Promise<void>((resolve, reject) =>
     fs.writeFile(path, data, (err) => err ? reject(err) : resolve()));
@@ -70,6 +78,7 @@ const generateTypeAliases = (compiledFiles: string[]) =>
 
 (async () => {
   try {
+    await emptyDirectory(outPath);
     const compiledFiles = (await compile()).filter(Boolean) as string[];
     await Promise.all([
       writeFileP('index.ts', generateIndex(compiledFiles)),
