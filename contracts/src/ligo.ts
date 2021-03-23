@@ -74,16 +74,26 @@ function compileContractImpl(
   dstFilePath: string
 ): Promise<void> {
   // const cmd = `ligo compile-contract ${srcFilePath} ${main} --output=${dstFilePath}`;
-  const cmd = `docker run --rm -v $PWD:$PWD -w $PWD ligolang/ligo:0.11.0 compile-contract ${srcFilePath} ${main} --output=${dstFilePath}  && rm -f bisect*.coverage`;
+  const cmd = `docker run --rm -v $PWD:$PWD -w $PWD ligolang/ligo:0.12.0 compile-contract ${srcFilePath} ${main} --output=${dstFilePath}`;
   return runCmd(cwd, cmd);
 }
 
 export async function runCmd(cwd: string, cmd: string): Promise<void> {
   // const shell = "/bin/zsh";
   return new Promise<void>((resolve, reject) =>
-    child.exec(cmd, { cwd }, (err, stdout, errout) =>
-      err ? reject(err) : resolve()
-    )
+    child.exec(cmd, { cwd }, (err, stdout, errout) => {
+      if (stdout) {
+        $log.info(stdout);
+      }
+      if (errout) {
+        $log.error(errout);
+      }
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
+      }
+    })
   );
 }
 

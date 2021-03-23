@@ -1,13 +1,13 @@
 import { address, nat, timestamp, mutez } from './type-aliases';
 
-export interface Fa2_tokens {
+export interface Fa2_token {
     token_id : nat;
     amount : nat;
 }
 
 export interface Tokens {
     fa2_address : address;
-    fa2_batch : [Fa2_tokens];
+    fa2_batch : [Fa2_token];
 }
 
 export interface ConfigureAuctionParam {

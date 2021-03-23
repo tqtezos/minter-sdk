@@ -17,6 +17,7 @@ const contractCompilers: ContractCompiler[] =
   , compileFtContract
   , compileTicketNftAuctionContract
   , compileTicketNftWalletContract
+  , compileEnglishAuctionTezPermitContract
   ];
 
 async function main(env = defaultEnv): Promise<void> {
@@ -109,6 +110,30 @@ async function compileEnglishAuctionTezContract(env: LigoEnv): Promise<void> {
       'english_auction_tez.tz'
   );
   $log.info('compiled english auction tez contract');
+}
+
+async function compileEnglishAuctionFA2Contract(env: LigoEnv): Promise<void> {
+  $log.info('compiling english auction tez contract');
+
+  await compileContract(
+      env,
+      'english_auction/english_auction_fa2.mligo',
+      'english_auction_fa2_main',
+      'english_auction_fa2.tz'
+  );
+  $log.info('compiled english auction fa2 contract');
+}
+
+async function compileEnglishAuctionTezPermitContract(env: LigoEnv): Promise<void> {
+  $log.info('compiling english auction tez permit contract');
+
+  await compileContract(
+      env,
+      'english_auction/english_auction_tez_permit.mligo',
+      'english_auction_tez_permit_main',
+      'english_auction_tez_permit.tz'
+  );
+  $log.info('compiled english auction tez permit contract');
 }
 
 async function compileTicketNftAuctionContract(env: LigoEnv): Promise<void> {
