@@ -139,7 +139,7 @@ let valid_bid_amount (auction : auction) : bool =
   ((Tezos.amount >= auction.current_bid) && first_bid(auction))
 
 let configure_auction_storage(configure_param, seller, storage : configure_param * address * storage ) : storage = begin
-    (fail_if_not_admin storage.pauseable_admin (None : string option));
+    (fail_if_not_admin storage.pauseable_admin);
     (fail_if_paused storage.pauseable_admin);
 
     assert_msg (configure_param.end_time > configure_param.start_time, "end_time must be after start_time");

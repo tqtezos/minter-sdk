@@ -11,7 +11,10 @@ type admin_entrypoints = never
 
 (* Fails if sender is not admin*)
 [@inline]
-let fail_if_not_admin (storage : admin_storage) (extra_msg : string option) : unit = unit
+let fail_if_not_admin (storage : admin_storage) : unit = unit
+
+[@inline]
+let fail_if_not_admin_ext (storage, extra_msg : admin_storage * string) : unit = unit
 
 (* Returns true if sender is admin *)
 [@inline]

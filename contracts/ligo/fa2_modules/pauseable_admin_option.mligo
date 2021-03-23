@@ -40,13 +40,20 @@ let confirm_new_admin (storage : pauseable_admin_storage) : pauseable_admin_stor
     | None -> (failwith "NO_ADMIN_CAPABILITIES_CONFIGURED" : pauseable_admin_storage)
 
 (*Only fails if admin is enabled and sender is not admin*)
-let fail_if_not_admin (storage : pauseable_admin_storage) (extra_msg : string option) : unit =
+let fail_if_not_admin (storage : pauseable_admin_storage) : unit =
   match storage with
     | Some a ->
         if Tezos.sender <> a.admin
-        then match extra_msg with
-             | None -> failwith "NOT_AN_ADMIN"
-             | Some msg -> failwith ("NOT_AN_ADMIN" ^  " "  ^ msg)
+        then failwith "NOT_AN_ADMIN"
+        else unit
+    | None -> unit
+
+(*Only fails if admin is enabled and sender is not admin*)
+let fail_if_not_admin_ext (storage, extra_msg : pauseable_admin_storage * string) : unit =
+  match storage with
+    | Some a ->
+        if Tezos.sender <> a.admin
+        then failwith ("NOT_AN_ADMIN" ^  " "  ^ extra_msg)
         else unit
     | None -> unit
 

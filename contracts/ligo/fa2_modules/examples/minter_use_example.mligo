@@ -67,12 +67,12 @@ let main(p, s : entrypoints * storage) : (operation list) * storage =
     ([] : operation list), {s with ledger = new_ledger; }
 
   | Admin a ->
-    let u = fail_if_not_admin s.admin (None : string option) in
+    let u = fail_if_not_admin s.admin in
     let ops, new_admin = admin_main (a, s.admin) in
     ops, {s with admin = new_admin; }
 
   | MinterAdmin a -> 
-    let u = fail_if_not_admin s.admin (None : string option) in
+    let u = fail_if_not_admin_ext (s.admin, "ONLY_ADMIN_CAN_CHANGE_MINTER") in
     let ops, new_admin = minter_admin_main (a, s.minter_admin) in
     ops, {s with minter_admin = new_admin; }
 
