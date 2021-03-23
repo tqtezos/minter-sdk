@@ -16,9 +16,9 @@ Generic contract admin module with the following public signature:
 -   `type admin_storage` - admin storage
 -   `type admin_entrypoints` - admin administration entry points
 -   `fail_if_not_admin (storage : admin_storage) (extra_msg : string option) : unit` -
-    an admin guard. Fails if `Tezos.sender is not an admin.
+    an admin guard. Fails if `Tezos.sender` is not an admin.
 -   `fail_if_not_admin_ext (storage : admin_storage, extra_msg : string) : unit` -
-    an admin guard. Fails if `Tezos.sender is not an admin. Failure error contains
+    an admin guard. Fails if `Tezos.sender` is not an admin. Failure error contains
     an extra message.
 -   `is_admin (storage : admin_storage) : bool` - an admin guard.
     Returns `true` if `Tezos.sender` is an admin.
