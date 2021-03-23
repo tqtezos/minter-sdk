@@ -37,7 +37,7 @@ initWhitelistedSwapStorage admin = WhitelistedSwapStorage
 data WhitelistedSwapEntrypoints
   = Swap SwapEntrypoints
   | Admin AdminEntrypoints
-  | Update_allowed [Address]
+  | Update_allowed (BigMap Address ())
 
 customGeneric "WhitelistedSwapEntrypoints" ligoLayout
 deriving anyclass instance IsoValue WhitelistedSwapEntrypoints

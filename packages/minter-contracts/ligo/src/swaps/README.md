@@ -204,7 +204,7 @@ We do not use mere `list` or `set` because `big_map` is more efficient for the `
 #### Update whitelist
 
 ```ocaml
-| Update_allowed of address list
+| Update_allowed of (address, unit) big_map
 ```
 
 This entrypoint allows setting a new whitelist, overriding the current one.

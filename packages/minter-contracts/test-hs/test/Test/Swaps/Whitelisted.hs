@@ -31,14 +31,14 @@ test_WhitelistUpdateAuthorization =
       (swap, swapAdmin) <- originateWhitelistedSwapWithAdmin
 
       withSender (AddressResolved swapAdmin) $
-        call swap (Call @"Update_allowed") []
+        call swap (Call @"Update_allowed") mempty
 
   , nettestScenarioCaps "Cannot be updated by non-admins" $ do
       (swap, _swapAdmin) <- originateWhitelistedSwapWithAdmin
       user <- newAddress "user"
 
       withSender (AddressResolved user) $
-        call swap (Call @"Update_allowed") []
+        call swap (Call @"Update_allowed") mempty
         & expectError errNotAdmin
   ]
 
@@ -74,7 +74,7 @@ test_WhitelistChecks =
       fa2_2 <- originateFA2 "fa2-2" setup swap
 
       withSender (AddressResolved swapAdmin) $
-        call swap (Call @"Update_allowed") [toAddress fa2_2]
+        call swap (Call @"Update_allowed") $ mkWhitelistParam [toAddress fa2_2]
 
       withSender (AddressResolved alice) $ do
         call swap (Call @"Start") SwapOffer
@@ -97,9 +97,9 @@ test_WhitelistChecks =
       fa2_another <- originateFA2 "fa2" setup swap
 
       withSender (AddressResolved swapAdmin) $
-        call swap (Call @"Update_allowed") [toAddress fa2]
+        call swap (Call @"Update_allowed") $ mkWhitelistParam [toAddress fa2]
       withSender (AddressResolved swapAdmin) $
-        call swap (Call @"Update_allowed") [toAddress fa2_another]
+        call swap (Call @"Update_allowed") $ mkWhitelistParam [toAddress fa2_another]
 
       withSender (AddressResolved alice) $ do
         call swap (Call @"Start") SwapOffer

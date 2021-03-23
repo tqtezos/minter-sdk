@@ -8,6 +8,7 @@ module Test.Swaps.Util
   , originateWhitelistedSwap
   , originateWhitelistedSwapWithAdmin
   , mkFA2Assets
+  , mkWhitelistParam
   ) where
 
 import qualified Data.Foldable as F
@@ -135,3 +136,7 @@ originateWhitelistedSwapWithAdmin = do
 mkFA2Assets :: TAddress fa2Param -> [(FA2.TokenId, Natural)] -> FA2Assets
 mkFA2Assets addr tokens =
   FA2Assets (toAddress addr) (uncurry FA2Token <$> tokens)
+
+-- | Construct whitelist for passing to whitelist overriding entrypoint.
+mkWhitelistParam :: [Address] -> BigMap Address ()
+mkWhitelistParam = mconcat . map (\a -> one (a, ()))

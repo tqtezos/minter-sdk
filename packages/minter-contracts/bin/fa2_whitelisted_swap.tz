@@ -7,7 +7,7 @@
                      (pair (address %fa2_address) (list %tokens (pair (nat %token_id) (nat %amount)))))
                   (list %assets_requested
                      (pair (address %fa2_address) (list %tokens (pair (nat %token_id) (nat %amount))))))))
-        (list %update_allowed address)) ;
+        (big_map %update_allowed address unit)) ;
   storage
     (pair (pair (pair %admin (address %admin) (option %pending_admin address))
                 (pair %swap
@@ -326,9 +326,6 @@
              SWAP ;
              EXEC ;
              DROP ;
-             EMPTY_BIG_MAP address unit ;
-             SWAP ;
-             ITER { SWAP ; UNIT ; DIG 2 ; SWAP ; SOME ; SWAP ; UPDATE } ;
              SWAP ;
              CAR ;
              PAIR ;

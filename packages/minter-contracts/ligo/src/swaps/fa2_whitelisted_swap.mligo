@@ -8,12 +8,6 @@
 
 type whitelist = (address, unit) big_map
 
-let addr_list_to_big_map(new_allowed: address list) : whitelist =
-  List.fold
-    (fun (m, a : (address, unit) big_map * address) -> Big_map.add a unit m)
-    new_allowed
-    (Big_map.empty : (address, unit) big_map)
-
 let swap_check_whitelist(whitelist, swap_param : whitelist * swap_entrypoints) : unit =
   match swap_param with
     Start swap_offer -> begin
@@ -43,7 +37,7 @@ type storage =
 type entrypoints =
   | Swap of swap_entrypoints
   | Admin of admin_entrypoints
-  | Update_allowed of address list
+  | Update_allowed of (address, unit) big_map
 
 let whitelisted_swaps_main(param, storage : entrypoints * storage)
     : ((operation list) * storage) =
@@ -61,6 +55,5 @@ let whitelisted_swaps_main(param, storage : entrypoints * storage)
       ops, { storage with admin = admin_storage }
   | Update_allowed new_allowed -> begin
       fail_if_not_admin storage.admin;
-      let whitelist = addr_list_to_big_map(new_allowed) in
-      (([] : operation list), { storage with whitelist = whitelist })
+      (([] : operation list), { storage with whitelist = new_allowed })
       end
