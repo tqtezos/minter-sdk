@@ -81,9 +81,19 @@ function compileContractImpl(
 export async function runCmd(cwd: string, cmd: string): Promise<void> {
   // const shell = "/bin/zsh";
   return new Promise<void>((resolve, reject) =>
-    child.exec(cmd, { cwd }, (err, stdout, errout) =>
-      err ? reject(err) : resolve()
-    )
+    child.exec(cmd, { cwd }, (err, stdout, errout) => {
+      if (stdout) {
+        $log.info(stdout);
+      }
+      if (errout) {
+        $log.error(errout);
+      }
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
+      }
+    })
   );
 }
 
