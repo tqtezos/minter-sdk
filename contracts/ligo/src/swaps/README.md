@@ -142,6 +142,7 @@ In case this is not done, the performance (and fees) may be far from optimal.
 
 #### Validating `assets_requested`
 
+
 Upon executing `%start` entrypoint, the client has to check `assets_requested`:
   * That the referred FA2 token addresses exist in the chain;
   * That contract with those addresses contain `%transfer` entrypoint;
