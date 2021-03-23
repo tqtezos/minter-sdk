@@ -7,8 +7,17 @@ name:                minter-sdk
 version:             0.1.0.0
 category:            Blockchain
 synopsis:            Haskell bindings and tests for the contracts in minter-sdk.
-extra-source-files:
+extra-doc-files:
 - README.md
+
+# This makes build complain on files lying outside of package,
+# but the proper way to fix it - make this Haskell package cover the entire repo
+# (like we do with Taquito).
+#
+# Didn't do this yet since Cleveland tests are used only for a small set of contracts.
+extra-source-files:
+  - ../bin/fa2_swap.tz
+  - ../bin/fa2_whitelisted_swap.tz
 
 library:
   <<: *lib-common
