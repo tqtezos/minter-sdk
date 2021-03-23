@@ -17,7 +17,6 @@ const contracts = fsRaw.readdirSync(binPath);
 const parser = new Parser();
 const outFolder = 'bin-ts';
 const outPath = path.resolve(path.join(__dirname, '..', outFolder));
-const aliasFile = 'type-aliases';
 
 const fileNameToTitleCase = (fileName: string) =>
   fileName
@@ -42,7 +41,7 @@ const compile = () =>
       const alias = fileNameToAlias(fileName);
       return await fs.writeFile(
         path.join(outPath, `${fileName}.ts`),
-        `import { ${alias} } from './${aliasFile}';\n` +
+        `export type ${alias} = { _type: "${alias}"; code: object; };\n` +
         `export default { _type: '${alias}', code: JSON.parse(\`${JSON.stringify(parsed)}\`) } as ${alias};\n`,
       ).then(() => fileName);
     } catch (e) {
@@ -52,33 +51,23 @@ const compile = () =>
 
 const generateIndex = (compiledFiles: string[]) => {
   const imports = compiledFiles
-    .map(fileName => `import ${fileNameToTitleCase(fileName)} from './${outFolder}/${fileName}';`)
+    .map(fileName =>
+      `import ${fileNameToTitleCase(fileName)}, { ${fileNameToAlias(fileName)} } from './${outFolder}/${fileName}';`,
+    )
     .join('\n');
 
   const exports = compiledFiles
-    .map(fileName => `  ${fileNameToTitleCase(fileName)},`)
+    .map(fileName => `  ${fileNameToTitleCase(fileName)},\n  ${fileNameToAlias(fileName)},`)
     .join('\n');
 
-  return `${imports}\n\nexport * from './${outFolder}/${aliasFile}';\n\nexport {\n${exports}\n};\n`;
+  return `${imports}\n\nexport {\n${exports}\n};\n`;
 };
-
-const generateTypeAliases = (compiledFiles: string[]) =>
-  compiledFiles
-    .map(fileName => {
-      const alias = fileNameToAlias(fileName);
-      return `export type ${alias} = { _type: "${alias}"; code: object };`;
-    })
-    .join('\n')
-    + '\n';
 
 (async () => {
   try {
     await emptyDirectory(outPath);
     const compiledFiles = (await compile()).filter(Boolean) as string[];
-    await Promise.all([
-      fs.writeFile('index.ts', generateIndex(compiledFiles)),
-      fs.writeFile(path.join(outPath, `${aliasFile}.ts`), generateTypeAliases(compiledFiles)),
-    ]);
+    fsRaw.writeFileSync('index.ts', generateIndex(compiledFiles));
   } catch (e) {
     $log.error(e);
   }
