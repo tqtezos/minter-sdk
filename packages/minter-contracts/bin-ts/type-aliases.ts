@@ -1,4 +1,3 @@
-export type EnglishAuctionFa2CodeType = { _type: "EnglishAuctionFa2CodeType"; code: object };
 export type EnglishAuctionTezCodeType = { _type: "EnglishAuctionTezCodeType"; code: object };
 export type Fa2MultiFtAssetCodeType = { _type: "Fa2MultiFtAssetCodeType"; code: object };
 export type Fa2MultiFtFaucetCodeType = { _type: "Fa2MultiFtFaucetCodeType"; code: object };

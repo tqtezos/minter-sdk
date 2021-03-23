@@ -1,4 +1,3 @@
-import EnglishAuctionFa2Code from './bin-ts/english_auction_fa2.tz';
 import EnglishAuctionTezCode from './bin-ts/english_auction_tez.tz';
 import Fa2MultiFtAssetCode from './bin-ts/fa2_multi_ft_asset.tz';
 import Fa2MultiFtFaucetCode from './bin-ts/fa2_multi_ft_faucet.tz';
@@ -11,7 +10,6 @@ import InspectorCode from './bin-ts/inspector.tz';
 export * from './bin-ts/type-aliases';
 
 export {
-  EnglishAuctionFa2Code,
   EnglishAuctionTezCode,
   Fa2MultiFtAssetCode,
   Fa2MultiFtFaucetCode,
