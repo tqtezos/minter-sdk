@@ -26,24 +26,15 @@
              mutez)) ;
   code { LAMBDA
            (option (pair (pair address bool) (option address)))
-           (lambda (option string) unit)
-           { LAMBDA
-               (pair (option (pair (pair address bool) (option address))) (option string))
-               unit
-               { UNPAIR ;
-                 IF_NONE
-                   { DROP ; UNIT }
-                   { CAR ;
-                     CAR ;
-                     SENDER ;
-                     COMPARE ;
-                     NEQ ;
-                     IF { IF_NONE
-                            { PUSH string "NOT_AN_ADMIN" ; FAILWITH }
-                            { PUSH string " " ; CONCAT ; PUSH string "NOT_AN_ADMIN" ; CONCAT ; FAILWITH } }
-                        { DROP ; UNIT } } } ;
-             SWAP ;
-             APPLY } ;
+           unit
+           { IF_NONE
+               { UNIT }
+               { CAR ;
+                 CAR ;
+                 SENDER ;
+                 COMPARE ;
+                 NEQ ;
+                 IF { PUSH string "NOT_AN_ADMIN" ; FAILWITH } { UNIT } } } ;
          LAMBDA
            (option (pair (pair address bool) (option address)))
            unit
@@ -215,22 +206,27 @@
                  DIG 2 ;
                  CONS ;
                  PAIR } }
-           { IF_LEFT
+           { DIG 5 ;
+             DROP ;
+             IF_LEFT
                { DUP ;
                  CAR ;
                  SENDER ;
                  COMPARE ;
                  EQ ;
-                 IF { DIG 5 ; DROP ; PUSH unit Unit }
+                 IF { PUSH unit Unit }
                     { PUSH string "OR A SELLER" ;
-                      SOME ;
                       DUP 3 ;
                       CAR ;
-                      DIG 7 ;
-                      SWAP ;
-                      EXEC ;
-                      SWAP ;
-                      EXEC } ;
+                      IF_NONE
+                        { DROP ; UNIT }
+                        { CAR ;
+                          CAR ;
+                          SENDER ;
+                          COMPARE ;
+                          NEQ ;
+                          IF { PUSH string " " ; CONCAT ; PUSH string "NOT_AN_ADMIN" ; CONCAT ; FAILWITH }
+                             { DROP ; UNIT } } } ;
                  DROP ;
                  SWAP ;
                  DUP ;
@@ -294,9 +290,7 @@
                           CONS ;
                           PAIR }
                         { DROP 3 ; PUSH string "NOT_OWNER" ; FAILWITH } } }
-               { DIG 5 ;
-                 DROP ;
-                 SWAP ;
+               { SWAP ;
                  DUP ;
                  DUG 2 ;
                  CAR ;
