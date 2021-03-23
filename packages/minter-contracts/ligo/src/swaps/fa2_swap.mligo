@@ -112,9 +112,9 @@ let start_swap(swap_offer, storage : swap_offer * swap_storage) : return =
 
   ops, storage
 
-let cancel_swap(swap_id, storage : swap_id * swap_storage) : return =
+let cancel_swap(swap_id, storage : swap_id * swap_storage) : return = begin
   let swap = get_swap(swap_id, storage) in
-  let u = authorize_seller(swap) in
+  authorize_seller(swap);
 
   let storage = { storage with swaps = Big_map.remove swap_id storage.swaps } in
 
@@ -123,7 +123,8 @@ let cancel_swap(swap_id, storage : swap_id * swap_storage) : return =
         (transfer_asset(Tezos.self_address, swap.seller, unexpected_err "SWAP_OFFERED_FA2_INVALID"))
         swap.swap_offer.assets_offered in
 
-  ops, storage
+  (ops, storage)
+  end
 
 let accept_swap(swap_id, storage : swap_id * swap_storage) : return =
   let swap = get_swap(swap_id, storage) in
@@ -143,9 +144,10 @@ let accept_swap(swap_id, storage : swap_id * swap_storage) : return =
 
   allOps, storage
 
-let swaps_main (param, storage : swap_entrypoints * swap_storage) : return =
-  let u = forbid_xtz_transfer in
+let swaps_main (param, storage : swap_entrypoints * swap_storage) : return = begin
+  forbid_xtz_transfer;
   match param with
     | Start swap_offer -> start_swap(swap_offer, storage)
     | Cancel swap_id -> cancel_swap(swap_id, storage)
     | Accept swap_id -> accept_swap(swap_id, storage)
+  end

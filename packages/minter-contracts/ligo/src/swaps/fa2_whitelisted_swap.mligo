@@ -20,7 +20,7 @@ let swap_check_whitelist(whitelist, swap_param : whitelist * swap_entrypoints) :
       [@inline]
       let check_asset(on_err : string)(assets : fa2_assets) : unit =
         match Big_map.find_opt assets.fa2_address whitelist with
-        | Some u -> ()
+        | Some u -> u
         | None -> failwith on_err
         in
       List.iter (check_asset "SWAP_OFFERED_FA2_NOT_WHITELISTED")
@@ -51,14 +51,16 @@ let whitelisted_swaps_main(param, storage : entrypoints * storage)
   let whitelist = storage.whitelist in
 
   match param with
-    Swap swap_param ->
-      let u = swap_check_whitelist(whitelist, swap_param) in
+    Swap swap_param -> begin
+      swap_check_whitelist(whitelist, swap_param);
       let (ops, swap_storage) = swaps_main(swap_param, swap_storage) in
-      ops, { storage with swap = swap_storage }
+      (ops, { storage with swap = swap_storage })
+      end
   | Admin admin_param ->
       let (ops, admin_storage) = admin_main(admin_param, storage.admin) in
       ops, { storage with admin = admin_storage }
-  | Update_allowed new_allowed ->
-      let u = fail_if_not_admin(storage.admin) in
+  | Update_allowed new_allowed -> begin
+      fail_if_not_admin storage.admin;
       let whitelist = addr_list_to_big_map(new_allowed) in
-      ([] : operation list), { storage with whitelist = whitelist }
+      (([] : operation list), { storage with whitelist = whitelist })
+      end
