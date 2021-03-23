@@ -137,7 +137,7 @@ let valid_bid_amount (auction, token_amount : auction * nat) : bool =
   ((token_amount >= auction.current_bid) && first_bid(auction))
 
 let configure_auction(configure_param, storage : configure_param * storage) : return = begin
-    (fail_if_not_admin storage.pauseable_admin (None : string option));
+    (fail_if_not_admin storage.pauseable_admin);
     (fail_if_paused storage.pauseable_admin);
     assert_msg (configure_param.end_time > configure_param.start_time, "end_time must be after start_time");
     assert_msg (abs(configure_param.end_time - configure_param.start_time) <= storage.max_auction_time, "Auction time must be less than max_auction_time");

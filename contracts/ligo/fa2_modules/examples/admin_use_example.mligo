@@ -27,6 +27,6 @@ let main(p, s : entrypoints * storage) =
 
   | Admin a ->
     let u = fail_if_not_admin s.admin in
-    (* let u = fail_if_not_admin2 (s.admin, "BOO") in *)
+    (* let u = fail_if_not_admin_ext (s.admin, "BOO") in *)
     let ops, new_admin = admin_main (a, s.admin) in
     ops, {s with admin = new_admin; }
