@@ -99,7 +99,7 @@ describe.each([originateFixedPriceTezAdminSale])
       const storage:any = await nft.storage();
       const assets:any = await storage.assets;
       const operators:any = await assets.operators;
-      $log.info(`operators ${JSON.stringify(operators,null,2)}`);
+      $log.info(`operators ${JSON.stringify(operators, null, 2)}`);
       // const assets = await storage.assets;
 
       // const ret = await assets.operators;

@@ -39,5 +39,6 @@ module.exports = {
     }],
     "indent": [2, 2],
     "no-tabs": "warn",
+    "comma-spacing": "warn",
   },
 };

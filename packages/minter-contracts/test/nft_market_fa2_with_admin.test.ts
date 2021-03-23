@@ -110,8 +110,7 @@ describe.each([originateFixedPriceAdminSale])(
       token_metadata: TokenMetadata,
     ): Promise<void> {
       $log.info('minting...');
-      const op =
-                await ft.methods.create_token(token_metadata.token_id,token_metadata.token_info).send();
+      const op = await ft.methods.create_token(token_metadata.token_id, token_metadata.token_info).send();
       await op.confirmation();
       $log.info(`Created fungible token. Consumed gas: ${op.consumedGas}`);
     }
@@ -192,7 +191,7 @@ describe.each([originateFixedPriceAdminSale])(
       try {
         $log.info(`Attempting to create sale while contract is paused`);
         await marketplace.methods
-          .sell(new BigNumber(20) , nft.address, nftTokenId ,ft.address , ftTokenId)
+          .sell(new BigNumber(20), nft.address, nftTokenId, ft.address, ftTokenId)
           .send({ amount: 0 });
       } catch (error) {
         $log.info(

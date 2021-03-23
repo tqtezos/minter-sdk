@@ -53,10 +53,10 @@ export async function originateNft(
   const meta = {
     name: 'example_name',
     description: 'sample_token',
-    interfaces: ['TZIP-012','TZIP-016'],
+    interfaces: ['TZIP-012', 'TZIP-016'],
   };
 
-  const meta_content = char2Bytes(JSON.stringify(meta,null,2));
+  const meta_content = char2Bytes(JSON.stringify(meta, null, 2));
 
   const storage = `(Pair (Pair (Pair (Pair "tz1YPSCGWXwBdTncK2aCctSZAXWvGsGwVJqU" True) None)
             (Pair (Pair {} 0) (Pair {} {})))
@@ -80,10 +80,10 @@ export async function originateNftFaucet(
   const meta = {
     name: 'example_name',
     description: 'sample_token',
-    interfaces: ['TZIP-012','TZIP-016'],
+    interfaces: ['TZIP-012', 'TZIP-016'],
   };
 
-  const meta_content = char2Bytes(JSON.stringify(meta,null,2));
+  const meta_content = char2Bytes(JSON.stringify(meta, null, 2));
 
   const storage = `(Pair (Pair (Pair {} 0) (Pair {} {}))
       { Elt "" 0x${meta_uri} ; Elt "contents" 0x${meta_content} })`;
@@ -106,15 +106,15 @@ export async function originateFtFaucet(
   const meta = {
     name: 'example_name',
     description: 'sample_token',
-    interfaces: ['TZIP-012','TZIP-106'],
+    interfaces: ['TZIP-012', 'TZIP-106'],
   };
 
-  const meta_content = char2Bytes(JSON.stringify(meta,null,2));
+  const meta_content = char2Bytes(JSON.stringify(meta, null, 2));
 
   const storage = `(Pair (Pair (Pair {} {}) (Pair {} {}))
         { Elt "" 0x${meta_uri} ; Elt "contents" 0x${meta_content} })`;
 
-  return originateContract(tz,code,storage,'ftFaucet');
+  return originateContract(tz, code, storage, 'ftFaucet');
 }
 
 export async function originateFixedPriceSale(

@@ -98,8 +98,7 @@ describe.each([originateFixedPriceSale])
     token_metadata: TokenMetadata,
   ): Promise<void> {
     $log.info('minting...');
-    const op =
-                await ft.methods.create_token(token_metadata.token_id,token_metadata.token_info).send();
+    const op = await ft.methods.create_token(token_metadata.token_id, token_metadata.token_info).send();
     await op.confirmation();
     $log.info(`Created fungible token. Consumed gas: ${op.consumedGas}`);
   }
