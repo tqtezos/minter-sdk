@@ -23,11 +23,15 @@ let confirm_new_admin (storage : admin_storage) : admin_storage =
     else (failwith "NOT_A_PENDING_ADMIN" : admin_storage)
   
 (* Fails if sender is not admin *)
-let fail_if_not_admin (storage : admin_storage) (extra_msg : string option) : unit =
+let fail_if_not_admin_ext (storage, extra_msg : admin_storage * string) : unit =
   if Tezos.sender <> storage.admin
-  then match extra_msg with
-  | None -> failwith "NOT_AN_ADMIN"
-  | Some msg -> failwith ("NOT_AN_ADMIN" ^  " "  ^ msg)
+  then failwith ("NOT_AN_ADMIN" ^  " "  ^ extra_msg)
+  else unit
+
+(* Fails if sender is not admin *)
+let fail_if_not_admin (storage : admin_storage) : unit =
+  if Tezos.sender <> storage.admin
+  then failwith "NOT_AN_ADMIN"
   else unit
 
 (* Returns true if sender is admin *)

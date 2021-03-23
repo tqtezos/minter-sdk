@@ -20,15 +20,18 @@ let confirm_new_admin (storage : admin_storage) : admin_storage =
     pending_admins = Big_map.remove Tezos.sender storage.pending_admins;
   }
   else (failwith "NOT_A_PENDING_ADMIN" : admin_storage)
-  
+
 (* Fails if sender is not admin *)
-[@inline]
-let fail_if_not_admin (storage : admin_storage) (extra_msg : string option) : unit =
-  if Set.mem Tezos.sender storage.admins
-  then unit
-  else match extra_msg with
-  | None -> failwith "NOT_AN_ADMIN"
-  | Some msg -> failwith ("NOT_AN_ADMIN" ^  " "  ^ msg)
+let fail_if_not_admin_ext (storage, extra_msg : admin_storage * string) : unit =
+  if not Set.mem Tezos.sender storage.admins
+  then failwith ("NOT_AN_ADMIN" ^  " "  ^ extra_msg)
+  else unit
+
+(* Fails if sender is not admin *)
+let fail_if_not_admin (storage : admin_storage) : unit =
+  if not Set.mem Tezos.sender storage.admins
+  then failwith "NOT_AN_ADMIN"
+  else unit
 
 (* Returns true if sender is admin *)
 [@inline]
