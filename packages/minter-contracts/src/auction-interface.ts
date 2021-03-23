@@ -13,7 +13,7 @@ export interface Tokens {
 export interface ConfigureAuctionParam {
     opening_price : mutez;
     min_raise : mutez;
-    round_time : nat; 
+    round_time : nat;
     asset : [Tokens];
     auction_time : nat;
     start_time : timestamp;

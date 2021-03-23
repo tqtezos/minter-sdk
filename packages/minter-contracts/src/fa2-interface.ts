@@ -30,63 +30,63 @@ export interface TokenMetadata {
 }
 
 export async function transfer(
-    fa2: address,
-    operator: TezosToolkit,
-    txs: Fa2Transfer[]
+  fa2: address,
+  operator: TezosToolkit,
+  txs: Fa2Transfer[],
 ): Promise<void> {
-    $log.info('transferring');
-    const nftWithOperator = await operator.contract.at(fa2);
+  $log.info('transferring');
+  const nftWithOperator = await operator.contract.at(fa2);
 
-    const op = await nftWithOperator.methods.transfer(txs).send();
+  const op = await nftWithOperator.methods.transfer(txs).send();
 
-    const hash = await op.confirmation(3);
-    $log.info(`consumed gas: ${op.consumedGas}`);
+  await op.confirmation(3);
+  $log.info(`consumed gas: ${op.consumedGas}`);
 }
 
 export async function addOperator(
-    fa2: address,
-    owner: TezosToolkit,
-    operator: address,
-    token_id: nat
+  fa2: address,
+  owner: TezosToolkit,
+  operator: address,
+  token_id: nat,
 ): Promise<void> {
-    $log.info('adding operator');
-    const fa2WithOwner = await owner.contract.at(fa2);
-    const ownerAddress = await owner.signer.publicKeyHash();
-    const op = await fa2WithOwner.methods
-        .update_operators([
-            {
-                add_operator: {
-                    owner: ownerAddress,
-                    operator,
-                    token_id
-                }
-            }
-        ])
-        .send();
-    await op.confirmation(3);
-    $log.info(`consumed gas: ${op.consumedGas}`);
+  $log.info('adding operator');
+  const fa2WithOwner = await owner.contract.at(fa2);
+  const ownerAddress = await owner.signer.publicKeyHash();
+  const op = await fa2WithOwner.methods
+    .update_operators([
+      {
+        add_operator: {
+          owner: ownerAddress,
+          operator,
+          token_id,
+        },
+      },
+    ])
+    .send();
+  await op.confirmation(3);
+  $log.info(`consumed gas: ${op.consumedGas}`);
 }
 
 export async function removeOperator(
-    fa2: address,
-    owner: TezosToolkit,
-    operator: address,
-    token_id: nat
+  fa2: address,
+  owner: TezosToolkit,
+  operator: address,
+  token_id: nat,
 ): Promise<void> {
-    $log.info('removing operator');
-    const fa2WithOwner = await owner.contract.at(fa2);
-    const ownerAddress = await owner.signer.publicKeyHash();
-    const op = await fa2WithOwner.methods
-        .update_operators([
-            {
-                remove_operator: {
-                    owner: ownerAddress,
-                    operator,
-                    token_id
-                }
-            }
-        ])
-        .send();
-    await op.confirmation(3);
-    $log.info(`consumed gas: ${op.consumedGas}`);
+  $log.info('removing operator');
+  const fa2WithOwner = await owner.contract.at(fa2);
+  const ownerAddress = await owner.signer.publicKeyHash();
+  const op = await fa2WithOwner.methods
+    .update_operators([
+      {
+        remove_operator: {
+          owner: ownerAddress,
+          operator,
+          token_id,
+        },
+      },
+    ])
+    .send();
+  await op.confirmation(3);
+  $log.info(`consumed gas: ${op.consumedGas}`);
 }

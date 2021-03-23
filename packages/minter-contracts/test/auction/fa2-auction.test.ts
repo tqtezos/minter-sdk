@@ -1,26 +1,19 @@
 import { $log } from '@tsed/logger';
 import { BigNumber } from 'bignumber.js';
-import moment from 'moment'
+import moment from 'moment';
 import { bootstrap, TestTz } from '../bootstrap-sandbox';
-import { Contract, nat, bytes, address } from '../../src/type-aliases';
+import { Contract, bytes, address } from '../../src/type-aliases';
 import {
   MintNftParam,
   originateFtFaucet,
   originateNftFaucet,
   originateEnglishAuctionFA2,
-  MintFtParam
+  MintFtParam,
 } from '../../src/nft-contracts';
-import { TezosToolkit, MichelsonMap } from '@taquito/taquito';
+import { MichelsonMap } from '@taquito/taquito';
 
-import { TransactionOperation } from '@taquito/taquito/dist/types/operations/transaction-operation';
-import {
-  OpKind,
-  OperationContentsAndResultTransaction,
-  OperationResultTransaction
-} from '@taquito/rpc';
-import {addOperator, TokenMetadata} from '../../src/fa2-interface'
-import {Fa2_token, Tokens } from '../../src/auction-interface'
-import { Token } from '@taquito/michelson-encoder/dist/types/tokens/token';
+import { addOperator } from '../../src/fa2-interface';
+import { Fa2_token, Tokens } from '../../src/auction-interface';
 
 jest.setTimeout(180000); // 3 minutes
 
@@ -41,7 +34,6 @@ describe('test NFT auction', () => {
   let nft : MintNftParam;
   let bid_tokens_bob : MintFtParam;
   let bid_tokens_alice : MintFtParam;
-  let create_ft_param : TokenMetadata;
 
   beforeAll(async () => {
     tezos = await bootstrap();
@@ -53,23 +45,19 @@ describe('test NFT auction', () => {
     nft = {
       token_metadata: {
         token_id: tokenIdNft,
-        token_info: empty_metadata_map
+        token_info: empty_metadata_map,
       },
-      owner: bobAddress
+      owner: bobAddress,
     };
     bid_tokens_bob = {
-        token_id: tokenIdBidToken,
-        owner: bobAddress,
-        amount : new BigNumber(300)
+      token_id: tokenIdBidToken,
+      owner: bobAddress,
+      amount : new BigNumber(300),
     };
     bid_tokens_alice = {
-        token_id: tokenIdBidToken,
-        owner: aliceAddress,
-        amount : new BigNumber(300)
-    };
-    create_ft_param = {
-        token_id : tokenIdBidToken,
-        token_info : empty_metadata_map
+      token_id: tokenIdBidToken,
+      owner: aliceAddress,
+      amount : new BigNumber(300),
     };
   });
 
@@ -79,18 +67,18 @@ describe('test NFT auction', () => {
 
     $log.info('originating ft faucet...');
     ftContract = await originateFtFaucet(tezos.bob, bobAddress);
-    
-    $log.info('minting nft')
+
+    $log.info('minting nft');
     const opMintNft = await nftContract.methods.mint([nft]).send();
     await opMintNft.confirmation();
     $log.info(`Minted nft. Consumed gas: ${opMintNft.consumedGas}`);
 
-    $log.info('creating fa2 for bids')
+    $log.info('creating fa2 for bids');
     const opCreateFA2 = await ftContract.methods.create_token(tokenIdBidToken, empty_metadata_map).send();
     await opCreateFA2.confirmation();
     $log.info(`Created FA2 Consumed gas: ${opCreateFA2.consumedGas}`);
 
-    $log.info('minting fa2 for bids')
+    $log.info('minting fa2 for bids');
     const opMintFA2 = await ftContract.methods.mint_tokens([bid_tokens_alice, bid_tokens_bob]).send();
     await opMintFA2.confirmation();
     $log.info(`Minted FA2. Consumed gas: ${opMintFA2.consumedGas}`);
@@ -112,36 +100,36 @@ describe('test NFT auction', () => {
     $log.info('adding auction contract as operator for bid token for bob');
     await addOperator(ftContract.address, tezos.bob, nftAuction.address, tokenIdBidToken);
     $log.info('Auction contract added as operator for bid token for bob');
-    
+
     const fa2_token : Fa2_token = {
-        token_id : tokenIdNft,
-        amount : new BigNumber(1)
-    }
+      token_id : tokenIdNft,
+      amount : new BigNumber(1),
+    };
 
     const tokens : Tokens = {
-        fa2_address : nftContract.address,
-        fa2_batch : [fa2_token]
-    }
-    
-    startTime = moment.utc().add(7, 'seconds').toDate()
-    endTime = moment(startTime).add(1, 'hours').toDate()
+      fa2_address : nftContract.address,
+      fa2_batch : [fa2_token],
+    };
+
+    startTime = moment.utc().add(7, 'seconds').toDate();
+    endTime = moment(startTime).add(1, 'hours').toDate();
     $log.info(`Configuring auction`);
     const opAuction = await nftAuctionBob.methods.configure(
-      //opening price = 1 
-      new BigNumber(10), 
+      //opening price = 1
+      new BigNumber(10),
       //percent raise =10
-      new BigNumber(10), 
+      new BigNumber(10),
       //min_raise = 10
       new BigNumber(10),
       //round_time = 1 hr
       new BigNumber(3600),
       //extend_time = 5 mins
-      new BigNumber(300), 
+      new BigNumber(300),
       //asset
-      [tokens], 
+      [tokens],
       //start_time = now + 7seconds
-      startTime, 
-      //end_time = start_time + 1hr,  
+      startTime,
+      //end_time = start_time + 1hr,
       endTime).send();
     await opAuction.confirmation();
     $log.info(`Auction configured. Consumed gas: ${opAuction.consumedGas}`);
@@ -157,8 +145,8 @@ describe('test NFT auction', () => {
     const opBid = await nftAuctionAlice.methods.bid(0, 10).send();
     await opBid.confirmation();
     $log.info(`Bid placed`);
-    
-    $log.info(`Alice bids 11 tokens`)
+
+    $log.info(`Alice bids 11 tokens`);
     const opBid2 = await nftAuctionAlice.methods.bid(0, 11).send();
     await opBid2.confirmation();
     $log.info(`Bid placed`);
@@ -168,8 +156,8 @@ describe('test NFT auction', () => {
     const opBid = await nftAuctionAlice.methods.bid(0, 200).send();
     await opBid.confirmation();
     $log.info(`Bid placed. Amount sent: ${opBid.amount} mutez`);
-    
-    $log.info(`Alice bids 210 , a 10 token increase but less than a 10% raise of previous bid `)
+
+    $log.info(`Alice bids 210 , a 10 token increase but less than a 10% raise of previous bid `);
     const opBid2 = await nftAuctionAlice.methods.bid(0, 210).send();
     await opBid2.confirmation();
     $log.info(`Bid placed. Amount sent: ${opBid2.amount} mutez`);

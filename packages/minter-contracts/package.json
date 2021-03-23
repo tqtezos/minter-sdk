@@ -7,7 +7,7 @@
         "dist/*"
     ],
     "scripts": {
-        "test": "yarn start-sandbox && yarn compile-contracts && yarn test-contracts ; yarn kill-sandbox",
+        "test": "yarn lint && yarn start-sandbox && yarn compile-contracts && yarn test-contracts ; yarn kill-sandbox",
         "lint": "yarn eslint . --ext .js,.ts",
         "test-contract": "yarn start-sandbox && jest",
         "test-contracts": "jest --runInBand",

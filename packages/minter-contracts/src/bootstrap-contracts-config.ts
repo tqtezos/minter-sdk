@@ -18,7 +18,7 @@ function genClientConfig(mainConfig: Configstore) {
 
   const clientConfigKeys = ['rpc', 'network', 'bcd', 'ipfs', 'contracts'];
 
-  for (let key of clientConfigKeys) {
+  for (const key of clientConfigKeys) {
     clientConfig.set(key, mainConfig.get(key));
   }
 }
@@ -29,7 +29,7 @@ function genServerConfig(mainConfig: Configstore) {
 
   const clientConfigKeys = ['pinata'];
 
-  for (let key of clientConfigKeys) {
+  for (const key of clientConfigKeys) {
     clientConfig.set(key, mainConfig.get(key));
   }
 }
@@ -66,7 +66,7 @@ async function createToolkit(config: Configstore): Promise<TezosToolkit> {
   toolkit.setProvider({
     signer,
     rpc,
-    config: { confirmationPollingIntervalSecond: 5 }
+    config: { confirmationPollingIntervalSecond: 5 },
   });
   return toolkit;
 }
@@ -78,7 +78,7 @@ async function awaitForNetwork(tz: TezosToolkit): Promise<void> {
     async () => {
       await tz.rpc.getBlockHeader({ block: '2' });
     },
-    { retries: 8 }
+    { retries: 8 },
   );
 
   $log.info('connected');
@@ -87,7 +87,7 @@ async function awaitForNetwork(tz: TezosToolkit): Promise<void> {
 async function shouldOriginate(
   config: Configstore,
   tz: TezosToolkit,
-  configKey: string
+  configKey: string,
 ): Promise<boolean> {
   const existingAddress = config.get(configKey);
   if (!existingAddress) return true;
@@ -100,7 +100,7 @@ async function shouldOriginate(
 
 export async function originateNftFaucet(
   tz: TezosToolkit,
-  code: string
+  code: string,
 ): Promise<Contract> {
   const name = 'nft_faucet_main';
   const metadata = new MichelsonMap<string, string>();
@@ -108,7 +108,7 @@ export async function originateNftFaucet(
     name: 'Minter',
     description: 'An OpenMinter base collection contract.',
     interfaces: ['TZIP-012', 'TZIP-016', 'TZIP-020'],
-    tokenCategory: 'collectibles'
+    tokenCategory: 'collectibles',
   };
   metadata.set('', toHexString('tezos-storage:contents'));
   metadata.set('contents', toHexString(JSON.stringify(contents)));
@@ -120,10 +120,10 @@ export async function originateNftFaucet(
           ledger: new MichelsonMap(),
           next_token_id: 0,
           operators: new MichelsonMap(),
-          token_metadata: new MichelsonMap()
+          token_metadata: new MichelsonMap(),
         },
-        metadata: metadata
-      }
+        metadata: metadata,
+      },
     });
 
     const contract = await originationOp.contract();
@@ -139,7 +139,7 @@ export async function originateNftFaucet(
 
 async function bootstrapNftFaucet(
   config: Configstore,
-  tz: TezosToolkit
+  tz: TezosToolkit,
 ): Promise<void> {
   const configKey = 'contracts.nftFaucet';
   const contractFilename = 'fa2_multi_nft_faucet.tz';
