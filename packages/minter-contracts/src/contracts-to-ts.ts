@@ -1,11 +1,19 @@
 import path from 'path';
-import fs from 'fs';
+import fsRaw from 'fs';
 import { Parser } from '@taquito/michel-codec';
 import { $log } from '@tsed/logger';
+import { promisify } from 'util';
+
+const fs = {
+  readdir: promisify(fsRaw.readdir),
+  readFile: promisify(fsRaw.readFile),
+  writeFile: promisify(fsRaw.writeFile),
+  unlink: promisify(fsRaw.unlink),
+};
 
 const binFolder = 'bin';
 const binPath = path.resolve(path.join(__dirname, '..', binFolder));
-const contracts = fs.readdirSync(binPath);
+const contracts = fsRaw.readdirSync(binPath);
 const parser = new Parser();
 const outFolder = 'bin-ts';
 const outPath = path.resolve(path.join(__dirname, '..', outFolder));
@@ -21,35 +29,22 @@ const fileNameToTitleCase = (fileName: string) =>
 const titleCaseToAlias = (titleCaseFileName: string) => `${titleCaseFileName}Type`;
 const fileNameToAlias = (fileName: string) => titleCaseToAlias(fileNameToTitleCase(fileName));
 
-const emptyDirectory = (dir: string) => new Promise((resolve,reject) => fs.readdir(dir, (err, files) =>
-  err ? reject(err) : resolve(Promise.all(files.map(file =>
-    new Promise<void>((resolve, reject) => fs.unlink(path.join(dir, file), (err) =>
-      err ? reject(err) : resolve(),
-    )),
-  ))),
-));
-
-const writeFileP = (path: number | fs.PathLike, data: any) =>
-  new Promise<void>((resolve, reject) =>
-    fs.writeFile(path, data, (err) => err ? reject(err) : resolve()));
+const emptyDirectory = (dir: string) => fs.readdir(dir).then(files => Promise.all(files.map(file =>
+  fs.unlink(path.join(dir, file)),
+)));
 
 const compile = () =>
   Promise.all(contracts.map(async fileName => {
     try {
       $log.info(`compiling ${fileName} to TypeScript AST`);
-      const contents = await new Promise<string>((resolve, reject) =>
-        fs.readFile(path.join(binPath, fileName), 'utf8', (err, contents) =>
-          err ? reject(err) : resolve(contents),
-        ),
-      );
+      const contents = await fs.readFile(path.join(binPath, fileName), 'utf8');
       const parsed = parser.parseScript(contents);
       const alias = fileNameToAlias(fileName);
-      return await writeFileP(
+      return await fs.writeFile(
         path.join(outPath, `${fileName}.ts`),
         `import { ${alias} } from './${aliasFile}';\n` +
         `export default { _type: '${alias}', code: JSON.parse(\`${JSON.stringify(parsed)}\`) } as ${alias};\n`,
-      )
-        .then(() => fileName);
+      ).then(() => fileName);
     } catch (e) {
       $log.warn(`Error parsing ${fileName}: ${e}`);
     }
@@ -81,8 +76,8 @@ const generateTypeAliases = (compiledFiles: string[]) =>
     await emptyDirectory(outPath);
     const compiledFiles = (await compile()).filter(Boolean) as string[];
     await Promise.all([
-      writeFileP('index.ts', generateIndex(compiledFiles)),
-      writeFileP(path.join(outPath, `${aliasFile}.ts`), generateTypeAliases(compiledFiles)),
+      fs.writeFile('index.ts', generateIndex(compiledFiles)),
+      fs.writeFile(path.join(outPath, `${aliasFile}.ts`), generateTypeAliases(compiledFiles)),
     ]);
   } catch (e) {
     $log.error(e);
