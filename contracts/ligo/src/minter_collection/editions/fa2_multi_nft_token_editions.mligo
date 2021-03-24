@@ -64,27 +64,24 @@ let rec mint_editions ( editions_list , storage : mint_editions list * editions_
           | None -> (failwith "INTERNAL_ERROR" : operation list * editions_storage))
     | None -> ([] : operation list), storage)
 
-let distribute_edition_to_address (edition_metadata, to_, storage : edition_metadata * address * editions_storage) 
+let distribute_edition_to_address (edition_metadata, to_, token_id, storage : edition_metadata * address * nat * editions_storage) 
   : editions_storage * edition_metadata = 
-  let token_id = edition_metadata.initial_token_id + abs (edition_metadata.number_of_editions - edition_metadata.number_of_editions_to_distribute) in 
   let new_edition_metadata = {edition_metadata with number_of_editions_to_distribute = edition_metadata.number_of_editions_to_distribute - 1} in
-  let mint_token_param : mint_token_param = {
-      token_metadata = {
-          token_id = token_id;
-          token_info = (Map.empty : (string, bytes) map); 
-      };
+  let mint_edition_param : mint_edition_param = {
+      token_id = token_id; 
       owner = to_;
   } in
-  let mint_tokens_param : mint_tokens_param = [mint_token_param] in 
-  let _ , nft_token_storage = mint_tokens (mint_tokens_param, storage.nft_asset_storage.assets) in
+  let _ , nft_token_storage = mint_edition (mint_edition_param, storage.nft_asset_storage.assets) in
   {storage with nft_asset_storage = {storage.nft_asset_storage with assets = nft_token_storage}}, new_edition_metadata
 
-let rec distribute_edition_to_addresses ( receivers, edition_metadata, storage : (address list) * edition_metadata * editions_storage)
+let rec distribute_edition_to_addresses ( receivers, edition_metadata, token_id, storage : (address list) * edition_metadata * nat * editions_storage)
   : editions_storage * edition_metadata = 
   match (List.head_opt receivers) with 
-    | Some to_ -> let new_storage, new_edition_metadata = distribute_edition_to_address (edition_metadata, to_, storage) in 
+    | Some to_ -> 
+        let new_storage, new_edition_metadata = distribute_edition_to_address (edition_metadata, to_, token_id, storage) in 
         (match (List.tail_opt receivers) with 
-            | Some remaining_receivers -> distribute_edition_to_addresses (remaining_receivers, new_edition_metadata, new_storage)
+            | Some remaining_receivers -> 
+                  distribute_edition_to_addresses (remaining_receivers, new_edition_metadata, token_id + 1n, new_storage)
             | None -> (failwith "INTERNAL_ERROR" : editions_storage * edition_metadata))   
     | None -> 
         if (edition_metadata.number_of_editions_to_distribute < 0) then 
@@ -98,7 +95,8 @@ let rec distribute_editions (distribute_list, storage : distribute_edition list 
         let edition_metadata : edition_metadata = (match (Big_map.find_opt distribute_param.edition_id storage.editions_metadata) with 
           | Some edition_metadata -> edition_metadata 
           | None -> (failwith "INVALID_EDITION_ID" : edition_metadata)) in 
-        let new_editions_storage, new_edition_metadata = distribute_edition_to_addresses(distribute_param.receivers, edition_metadata, storage) in
+        let token_id = edition_metadata.initial_token_id + abs (edition_metadata.number_of_editions - edition_metadata.number_of_editions_to_distribute) in 
+        let new_editions_storage, new_edition_metadata = distribute_edition_to_addresses(distribute_param.receivers, edition_metadata, token_id, storage) in
         let new_editions_metadata = Big_map.update distribute_param.edition_id (Some new_edition_metadata) new_editions_storage.editions_metadata in
         let new_storage = {new_editions_storage with editions_metadata = new_editions_metadata} in 
         let remaining_receivers : distribute_edition list = (match (List.tail_opt distribute_list) with 
