@@ -29,5 +29,21 @@
     "eslint-plugin-jest": "^24.3.2",
     "typescript": "^4.2.3"
   },
-  "author": "TQ Tezos Maintainers <info@tqtezos.com>"
+  "author": "TQ Tezos Maintainers <info@tqtezos.com>",
+  "bugs": {
+    "url": "https://github.com/tqtezos/minter-sdk/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tqtezos/minter-sdk.git"
+  },
+  "homepage": "https://github.com/tqtezos/minter-sdk#readme",
+  "keywords": [
+    "tezos",
+    "nft",
+    "minter",
+    "sdk",
+    "blockchain",
+    "smart contracts"
+  ]
 }
