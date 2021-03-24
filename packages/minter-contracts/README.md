@@ -2,23 +2,23 @@
 
 The `@tqtezos/minter-contracts` package provides a collection of NFT and marketplace smart contracts with configurable admin permissions.
 
-### [Minter Collection](contracts/ligo/src/minter_collection)
+### [Minter Collection](ligo/src/minter_collection)
 
 Customizable smart contracts for minting FA2 NFTs as collections.
 
-### [English Auction](contracts/ligo/src/english_auction)
+### [English Auction](ligo/src/english_auction)
 
 An implementation of an English auction marketplace that allows users to initiate auctions of NFTs in either tez or FA2 tokens.
 
-### [Fixed Price Sale](contracts/ligo/src/fixed_price_sale)
+### [Fixed Price Sale](ligo/src/fixed_price_sale)
 
 An implementation of an NFT marketplace that allows users to initiate NFT sales at a fixed price in tez or FA2. These contracts can be configured based on a range of administrative options.
 
-### [FA2-FA2 swaps](contracts/ligo/src/swaps)
+### [FA2-FA2 swaps](ligo/src/swaps)
 
 An implementation of a swaps contract that allows two participants to safely exchange their FA2 tokens.
 
-### [Ticket-based NFTs](contracts/ligo/src/tickets)  
+### [Ticket-based NFTs](ligo/src/tickets)  
 
 **EXPERIMENTAL** An implementation of NFTs using tickets and a dutch auction example, along with wallet contracts for the NFTs. _Please note: tickets are a new Tezos feature and care should be taken when using them as they have not been heavily tested in production._
 
