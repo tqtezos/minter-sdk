@@ -61,5 +61,14 @@
         "moment": "^2.29.1",
         "source-map-support": "0.5.19",
         "ts-node": "9.0.0"
-    }
+    },
+    "bugs": {
+        "url": "https://github.com/tqtezos/minter-sdk/issues"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/tqtezos/minter-sdk.git"
+    },
+    "homepage": "https://github.com/tqtezos/minter-sdk#readme",
+    "keywords": ["tezos", "nft", "minter", "blockchain", "smart contracts"]
 }
