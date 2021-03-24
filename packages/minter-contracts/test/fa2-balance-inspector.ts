@@ -15,14 +15,14 @@ export type QueryBalances = (
 ) => Promise<BalanceOfResponse[]>;
 
 export async function hasTokens(requests: BalanceOfRequest[],
-    queryBalances : QueryBalances,
-    nft : Contract 
+  queryBalances : QueryBalances,
+  nft : Contract,
 ): Promise<boolean[]> {
-    const responses = await queryBalances(nft, requests);
-    const results = responses.map(r => {
+  const responses = await queryBalances(nft, requests);
+  const results = responses.map(r => {
     if (r.balance.eq(1)) return true;
     else if (r.balance.eq(0)) return false;
     else throw new Error(`Invalid NFT balance ${r.balance}`);
-    });
-    return results;
+  });
+  return results;
 }
