@@ -3,5 +3,9 @@
   "workspaces": [
     "packages/*"
   ],
-  "author": "TQ Tezos Maintainers <info@tqtezos.com>"
+  "author": "TQ Tezos Maintainers <info@tqtezos.com>",
+  "devDependencies": {
+    "lerna": "^4.0.0"
+  },
+  "name": "minter-sdk"
 }

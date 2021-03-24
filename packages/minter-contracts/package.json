@@ -2,7 +2,7 @@
     "name": "@tqtezos/minter-contracts",
     "version": "1.0.0",
     "description": "smart contracts tests using flextesa sandbox and taquito",
-    "main": "dist/index.js",
+    "main": "dist",
     "files": [
         "dist/*"
     ],
@@ -19,7 +19,8 @@
         "bootstrap": "ts-node src/bootstrap-contracts-config.ts",
         "bootstrap-sandbox": "env TZ_NETWORK=sandbox ts-node src/bootstrap-contracts-config.ts",
         "bootstrap-testnet": "env TZ_NETWORK=testnet ts-node src/bootstrap-contracts-config.ts",
-        "bootstrap-mainnet": "env TZ_NETWORK=mainnet ts-node src/bootstrap-contracts-config.ts"
+        "bootstrap-mainnet": "env TZ_NETWORK=mainnet ts-node src/bootstrap-contracts-config.ts",
+        "prepare": "yarn compile-contracts && yarn build"
     },
     "bin": {
         "compile-contracts": "ts-node src/compile-contracts.ts",
