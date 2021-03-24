@@ -23,8 +23,8 @@ jobs:
 
     - name: Swaps contract
       run: |
-        make -C contracts/ligo/src/swaps clean
-        make -C contracts/ligo/src/swaps LIGO="$LIGO_EXE"
+        make -C packages/minter-contracts/ligo/src/swaps clean
+        make -C packages/minter-contracts/ligo/src/swaps LIGO="$LIGO_EXE"
 
   # Test LIGO contracts (whose that are covered with cleveland)
   test-cleveland:
@@ -48,11 +48,11 @@ jobs:
         stack-version: 2.3
 
     - name: Build dependencies
-      run: make -C contracts/test-hs build-haskell-deps
+      run: make -C packages/minter-contracts/test-hs build-haskell-deps
 
     - name: Tests in emulation
       run: |
-        make -C contracts/test-hs \
+        make -C packages/minter-contracts/test-hs \
           LIGO="$LIGO_EXE" \
           EXTRA_STACK_OPTIONS="--system-ghc --ghc-options=-Werror" \
           TEST_ARGUMENTS="--nettest-no-run-network"
@@ -65,3 +65,13 @@ jobs:
     - uses: serokell/xrefcheck-action@v1
       with:
         xrefcheck-version: 0.1.3
+  
+  eslint:
+    name: ESLint
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install modules
+      run: yarn
+    - name: Run ESLint
+      run: yarn lerna run lint
