@@ -4,23 +4,23 @@
 
 ## Notice
 
-This software is in beta. At the moment, the smart contracts
-that OpenMinter uses have **not** been formally audited. Please
-use this software at your own risk.
+This software is in beta. Testing of the Minter SDK smart contracts
+remains in progress and third-party audit results will be released 
+in the coming weeks.
 
 ## Minter SDK
 
-Minter SDK offers a set of tools and libraries to bring creation, management, and sales of NFTs to any application.
+Minter SDK offers a set of packages to bring creation, management, and sales of NFTs to any application.
 
 -   A collection of NFT and marketplace smart contracts with configurable admin permissions
 -   Typescript bindings to enable easy integration into popular web frameworks
--   An NPM module that allows users to interact with tokens programmatically
 -   A CLI for minting and configuring NFT / marketplace contracts
 -   [DIDkit](https://www.spruceid.com/didkit) integration for verified creator credentials
 
-## Smart Contracts
+--- 
+## Project Organization
+`minter-sdk` is organized as a mono repository from which several npm packages are built and published. Packages are in the [`packages/`](packages) directory, each one with its own `README` file.
 
-### [Minter Collection](contracts/ligo/src/minter_collection)
 
 Customizable smart contracts for minting FA2 NFTs as collections.
 
@@ -49,3 +49,8 @@ The _Editions_ variant of FA2 allows for the minting and distribution of many ed
 #### Fractional Ownership ([WIP](https://github.com/tqtezos/smart-contracts/pull/57))
 
 #### Royalties and Profit-splitting ([WIP](https://github.com/tqtezos/minter-sdk/pull/40))
+| Package                                                    | Utility                                  |
+| ---------------------------------------------------------  | ---------------------------------------- |
+| [`@tqtezos/minter-contracts`](packages/minter-contracts)   | NFT smart contract code                  |
+| [`@tqtezos/minter-sdk`](packages/minter-sdk) (Coming Soon) | NFT smart contract TypeScript bindings   |
+| `@tqtezos/minter-cli` (Coming Soon)                        | NFT smart contract CLI                   |

@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, develop]
+
+env:
+  LIGO_VERSION: 0.12.0
+  LIGO_EXE: >-
+    docker run --rm -v "$$GITHUB_WORKSPACE":"$$GITHUB_WORKSPACE" -w "$$PWD" ligolang/ligo:$$LIGO_VERSION
+
+jobs:
+
+  # Build LIGO contracts
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      if: github.event.action == 'opened' || github.event.action == 'synchronize' || github.event.ref == 'refs/heads/main' || github.event.ref == 'refs/heads/develop'
+
+    - name: Swaps contract
+      run: |
+        make -C packages/minter-contracts/ligo/src/swaps clean
+        make -C packages/minter-contracts/ligo/src/swaps LIGO="$LIGO_EXE"
+
+  # Test LIGO contracts (whose that are covered with cleveland)
+  test-cleveland:
+    name: Cleveland tests
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      if: github.event.action == 'opened' || github.event.action == 'synchronize' || github.event.ref == 'refs/heads/main' || github.event.ref == 'refs/heads/develop'
+
+    - uses: actions/cache@v1
+      name: Cache ~/.stack
+      with:
+        path: ~/.stack
+        key: stack
+
+    - uses: actions/setup-haskell@v1.1.4
+      name: Setup Haskell Stack
+      with:
+        ghc-version: 9.0.1  # higher than necessary, but is cached in the runner
+        stack-version: 2.3
+
+    - name: Build dependencies
+      run: make -C packages/minter-contracts/test-hs build-haskell-deps
+
+    - name: Tests in emulation
+      run: |
+        make -C packages/minter-contracts/test-hs \
+          LIGO="$LIGO_EXE" \
+          EXTRA_STACK_OPTIONS="--system-ghc --ghc-options=-Werror" \
+          TEST_ARGUMENTS="--nettest-no-run-network"
+
+  links-check:
+    name: Verify links in markdown documentation
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: serokell/xrefcheck-action@v1
+      with:
+        xrefcheck-version: 0.1.3
+  
+  eslint:
+    name: ESLint
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install modules
+      run: yarn
+    - name: Run ESLint
+      run: yarn lerna run lint
