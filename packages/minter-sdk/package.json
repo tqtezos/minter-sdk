@@ -38,5 +38,12 @@
     "url": "git+https://github.com/tqtezos/minter-sdk.git"
   },
   "homepage": "https://github.com/tqtezos/minter-sdk#readme",
-  "keywords": ["tezos", "nft", "minter", "sdk", "blockchain", "smart contracts"]
+  "keywords": [
+    "tezos",
+    "nft",
+    "minter",
+    "sdk",
+    "blockchain",
+    "smart contracts"
+  ]
 }
