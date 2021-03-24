@@ -6,6 +6,9 @@
   "files": [
     "dist/*"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "lint": "yarn eslint . --ext .js,.ts",

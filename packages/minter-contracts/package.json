@@ -6,6 +6,9 @@
     "files": [
         "dist/*"
     ],
+    "publishConfig": {
+        "access": "public"
+    },
     "scripts": {
         "test": "yarn lint && yarn start-sandbox && yarn compile-contracts && yarn test-contracts ; yarn kill-sandbox",
         "lint": "yarn eslint . --ext .js,.ts",
