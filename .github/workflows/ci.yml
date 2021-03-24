@@ -74,5 +74,4 @@ jobs:
     - name: Install modules
       run: yarn
     - name: Run ESLint
-      working-directory: ./packages/minter-contracts
-      run: yarn lint
+      run: yarn lerna run lint
