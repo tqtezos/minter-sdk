@@ -4,17 +4,16 @@
 
 ## Notice
 
-This software is in beta. At the moment, the smart contracts
-that OpenMinter uses have **not** been formally audited. Please
-use this software at your own risk.
+This software is in beta. Testing of the Minter SDK smart contracts
+remains in progress and third-party audit results will be released 
+in the coming weeks.
 
 ## Minter SDK
 
-Minter SDK offers a set of packages to help facilitate creation, management, and sales of NFTs to any application.
+Minter SDK offers a set of packages to bring creation, management, and sales of NFTs to any application.
 
 -   A collection of NFT and marketplace smart contracts with configurable admin permissions
 -   Typescript bindings to enable easy integration into popular web frameworks
--   An NPM module that allows users to interact with tokens programmatically
 -   A CLI for minting and configuring NFT / marketplace contracts
 -   [DIDkit](https://www.spruceid.com/didkit) integration for verified creator credentials
 
