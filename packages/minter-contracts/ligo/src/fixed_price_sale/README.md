@@ -50,12 +50,10 @@ The second field of this record `sales`is simply a "record" of currently active
 sales that the fixed price sale contract is hosting. To be clear, when we use
 the phrase "currently active sale", we mean to say that a seller has initiated
 some sale and there has of yet been no action taken that would prevent someone
-from buying the sale's offered product. This is a part of the implementation
-that could have been different. We shall discuss the rationale behind this
-decision in the section Design Choices. Nonetheless, the value of each entry in
-the big_map is the number of FA2 tokens that the seller specifies as the NFT's
-value. The "key" of this `big_map` is another record uniquely specifying an
-active sale (excluding its sale price). It is definition is:
+from buying the sale's offered product. The value of each entry in the big_map
+is the number of FA2 tokens that the seller specifies as the NFT's value. The
+"key" of this `big_map` is another record uniquely specifying an active sale
+(excluding its sale price). It is definition is:
 
 ``` ocaml
 type sale_tokens_param =
