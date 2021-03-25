@@ -2,7 +2,7 @@
 #include "../nft/fa2_multi_nft_manager.mligo"
 #include "../nft/fa2_multi_nft_asset_multi_admin.mligo"
 
-type mint_editions = 
+type mint_edition_run = 
 [@layout:comb]
 {
     edition_info : ((string, bytes) map);
@@ -18,7 +18,7 @@ type distribute_edition =
 
 type editions_entrypoints = 
  | FA2 of nft_asset_entrypoints
- | Mint_editions of mint_editions list
+ | Mint_editions of mint_edition_run list
  | Distribute_editions of distribute_edition list
 
 type edition_metadata =
@@ -40,9 +40,18 @@ type editions_storage =
     nft_asset_storage : nft_asset_storage;
 }
 
-let rec mint_editions ( editions_list , storage : mint_editions list * editions_storage)
+let address_list_pop (addresses : address list) : (address * address list) option =
+  ([%Michelson ({| { IF_CONS {PAIR; SOME;} {NONE (pair address (list address))} } |} : address list -> (address * address list) option)] addresses : (address * address list) option)
+
+let distribute_list_pop (distribute_list: distribute_edition list) : (distribute_edition * distribute_edition list) option =
+  ([%Michelson ({| { IF_CONS {PAIR; SOME;} {NONE (pair (pair nat (list address)) (list (pair nat (list address))))} } |} : distribute_edition list -> (distribute_edition * distribute_edition list) option)] distribute_list : (distribute_edition * distribute_edition list) option)
+
+let mint_list_pop (editions_list : mint_edition_run list) : (mint_edition_run * mint_edition_run list) option =
+  ([%Michelson ({| { IF_CONS {PAIR; SOME;} {NONE (pair (pair (map string bytes) nat) (list (pair (map string bytes) nat)))} } |} : mint_edition_run list -> (mint_edition_run * mint_edition_run list) option)] editions_list : (mint_edition_run * mint_edition_run  list) option)
+
+let rec mint_editions ( editions_list , storage : mint_edition_run list * editions_storage)
   : operation list * editions_storage =
-  let mint_single_edition_set : (mint_editions * editions_storage) -> editions_storage = fun (param, storage : mint_editions * editions_storage) ->  
+  let mint_single_edition_run : (mint_edition_run * editions_storage) -> editions_storage = fun (param, storage : mint_edition_run * editions_storage) ->  
     let edition_metadata : edition_metadata = {
       creator = Tezos.sender;
       edition_info = param.edition_info;
@@ -57,11 +66,11 @@ let rec mint_editions ( editions_list , storage : mint_editions list * editions_
         editions_metadata = new_editions_metadata; 
         nft_asset_storage = {storage.nft_asset_storage with assets = new_asset_storage}
     } in
-  (match List.head_opt editions_list with 
-    | Some editions -> let new_storage = mint_single_edition_set(editions, storage) in 
-        (match List.tail_opt editions_list with
-          | Some remaining_editions -> mint_editions (remaining_editions, new_storage)
-          | None -> (failwith "INTERNAL_ERROR" : operation list * editions_storage))
+  (match (mint_list_pop editions_list) with 
+    | Some popped_pair -> 
+        let (edition_run, remaining_editions) = popped_pair in
+        let new_storage = mint_single_edition_run(edition_run, storage) in 
+        mint_editions (remaining_editions, new_storage)
     | None -> ([] : operation list), storage)
 
 let distribute_edition_to_address (edition_metadata, to_, token_id, storage : edition_metadata * address * nat * editions_storage) 
@@ -76,13 +85,11 @@ let distribute_edition_to_address (edition_metadata, to_, token_id, storage : ed
 
 let rec distribute_edition_to_addresses ( receivers, edition_metadata, token_id, storage : (address list) * edition_metadata * nat * editions_storage)
   : editions_storage * edition_metadata = 
-  match (List.head_opt receivers) with 
-    | Some to_ -> 
-        let new_storage, new_edition_metadata = distribute_edition_to_address (edition_metadata, to_, token_id, storage) in 
-        (match (List.tail_opt receivers) with 
-            | Some remaining_receivers -> 
-                  distribute_edition_to_addresses (remaining_receivers, new_edition_metadata, token_id + 1n, new_storage)
-            | None -> (failwith "INTERNAL_ERROR" : editions_storage * edition_metadata))   
+  match (address_list_pop (receivers)) with 
+    | Some popped_pair -> 
+       let (to_, remaining_receivers) = popped_pair in 
+       let new_storage, new_edition_metadata = distribute_edition_to_address (edition_metadata, to_, token_id, storage) in 
+       distribute_edition_to_addresses (remaining_receivers, new_edition_metadata, token_id + 1n, new_storage)
     | None -> 
         if (edition_metadata.number_of_editions_to_distribute < 0) then 
              (failwith "NO_EDITIONS_TO_DISTRIBUTE" : editions_storage * edition_metadata) else 
@@ -90,8 +97,9 @@ let rec distribute_edition_to_addresses ( receivers, edition_metadata, token_id,
 
 let rec distribute_editions (distribute_list, storage : distribute_edition list * editions_storage)
   : operation list * editions_storage =
-  match (List.head_opt distribute_list) with 
-    | Some distribute_param ->
+  match (distribute_list_pop distribute_list) with 
+    | Some popped_pair ->
+        let (distribute_param, remaining_distributions) = popped_pair in
         let edition_metadata : edition_metadata = (match (Big_map.find_opt distribute_param.edition_id storage.editions_metadata) with 
           | Some edition_metadata -> edition_metadata 
           | None -> (failwith "INVALID_EDITION_ID" : edition_metadata)) in 
@@ -99,10 +107,7 @@ let rec distribute_editions (distribute_list, storage : distribute_edition list 
         let new_editions_storage, new_edition_metadata = distribute_edition_to_addresses(distribute_param.receivers, edition_metadata, token_id, storage) in
         let new_editions_metadata = Big_map.update distribute_param.edition_id (Some new_edition_metadata) new_editions_storage.editions_metadata in
         let new_storage = {new_editions_storage with editions_metadata = new_editions_metadata} in 
-        let remaining_receivers : distribute_edition list = (match (List.tail_opt distribute_list) with 
-          | Some remaining_editions -> remaining_editions
-          | None -> (failwith "INTERNAL_ERROR" : distribute_edition list)) in 
-        (distribute_editions (remaining_receivers, new_storage))
+        (distribute_editions (remaining_distributions, new_storage))
     | None -> ([] : operation list), storage 
 
 let editions_main (param, editions_storage : editions_entrypoints * editions_storage)
