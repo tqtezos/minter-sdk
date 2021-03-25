@@ -176,7 +176,6 @@ export async function originateEnglishAuctionTez(
     'english_auction_tez_main',
     'english_auction_tez.tz',
   );
-  const tzAddress = await tz.signer.publicKeyHash();
   const storage = `(Pair None (Pair 0 (Pair 86400 (Pair 86400 {}))))`;
   return originateContract(tz, code, storage, 'english_auction_tez');
 }
@@ -205,7 +204,6 @@ export async function originateEditionsNftContract(
     'editions_main',
     'fa2_multi_nft_token_editions.tz',
   );
-  const tzAddress = await tz.signer.publicKeyHash();
   const meta_uri = char2Bytes('tezos-storage:content');
   const meta = {
     name: 'example_name',
@@ -231,7 +229,6 @@ export async function originateEnglishAuctionFA2(
     'english_auction_fa2_main',
     'english_auction_fa2.tz',
   );
-  const tzAddress = await tz.signer.publicKeyHash();
   const storage = `(Pair None (Pair 0 (Pair 86400 (Pair 86400 (Pair (Pair "${fa2_address}" ${token_id}){})))))`;
   return originateContract(tz, code, storage, 'english_auction_fa2');
 }

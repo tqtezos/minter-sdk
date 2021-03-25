@@ -66,7 +66,7 @@ describe('test NFT auction', () => {
     };
     const opMint = await nftEditions.methods.mint_editions([nft1, nft2]).send();
     const hash = await opMint.confirmation();
-    $log.info(`Minted tokens. Consumed gas: ${opMint.consumedGas}`);
+    $log.info(`Minted editions. Consumed gas: ${opMint.consumedGas}`);
   });
 
   test('distribute editions', async() => {
@@ -80,7 +80,7 @@ describe('test NFT auction', () => {
     };
     const opDistribute = await nftEditions.methods.distribute_editions([distributeEdition0, distributeEdition1]).send();
     const hash = await opDistribute.confirmation();
-    $log.info(`Minted tokens. Consumed gas: ${opDistribute.consumedGas}`);
+    $log.info(`Distributed editions. Consumed gas: ${opDistribute.consumedGas}`);
 
     const [aliceHasEdition0, bobHasEdition0] = await hasTokens([
       { owner: aliceAddress, token_id: new BigNumber(0) },
