@@ -202,7 +202,7 @@ type init_sale_param =
 }
 ```
 
-This record contains the sale price of tho NFT in positive integer units
+This record contains the sale price of the NFT in positive integer units
 corresponding to the FA2 token used to price the NFT along with
 `sale_tokens_param` field described earlier in this document (the section
 [Storage](#storage-section)). We have something similar for
