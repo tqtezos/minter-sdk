@@ -44,7 +44,7 @@ describe.each([originateNftFaucet])(
 
     beforeEach(async () => {
       const admin = await tezos.bob.signer.publicKeyHash();
-      nft = await createNft(tezos.bob, admin);
+      nft = await createNft(tezos.bob);
     });
 
     async function mintTokens(

@@ -58,15 +58,14 @@ export async function originateNft(
 
   const meta_content = char2Bytes(JSON.stringify(meta, null, 2));
 
-  const storage = `(Pair (Pair (Pair (Pair "tz1YPSCGWXwBdTncK2aCctSZAXWvGsGwVJqU" True) None)
+  const storage = `(Pair (Pair (Pair (Pair ${admin} True) None)
             (Pair (Pair {} 0) (Pair {} {})))
       { Elt "" 0x${meta_uri} ; Elt "contents" 0x${meta_content} })`;
   return originateContract(tz, code, storage, 'nft');
 }
 
 export async function originateNftFaucet(
-  tz: TezosToolkit,
-  admin: address,
+  tz: TezosToolkit
 ): Promise<Contract> {
   const code = await compileAndLoadContract(
     defaultEnv,
@@ -90,8 +89,7 @@ export async function originateNftFaucet(
 }
 
 export async function originateFtFaucet(
-  tz: TezosToolkit,
-  admin: address,
+  tz: TezosToolkit
 ): Promise<Contract> {
   const code = await compileAndLoadContract(
     defaultEnv,
@@ -240,6 +238,7 @@ export async function originateEnglishAuctionFA2(
 
 export async function originateEnglishAuctionTezPermit(
   tz: TezosToolkit,
+  adminAddress : address
 ): Promise<Contract> {
   const code = await compileAndLoadContract(
     defaultEnv,
@@ -247,7 +246,6 @@ export async function originateEnglishAuctionTezPermit(
     'english_auction_tez_permit_main',
     'english_auction_tez_admin.tz',
   );
-  const tzAddress = await tz.signer.publicKeyHash();
-  const storage = `(Pair (Pair (Pair "${tzAddress}" False) None) (Pair 0 (Pair 86400 (Pair 86400 (Pair {} 0)))))`;
+  const storage = `(Pair (Pair (Pair "${adminAddress}" False) None) (Pair 0 (Pair 86400 (Pair 86400 (Pair {} 0)))))`;
   return originateContract(tz, code, storage, 'english_auction_tez_permit');
 }
