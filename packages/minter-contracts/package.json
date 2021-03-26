@@ -19,11 +19,12 @@
     "build:watch": "tsc -w -p .",
     "build": "tsc -p tsconfig.build.json",
     "compile-contracts": "ts-node src/compile-contracts.ts; ts-node src/contracts-to-ts.ts",
+    "generate-types": "contract-type-generator --g ./bin ./types",
     "bootstrap": "ts-node src/bootstrap-contracts-config.ts",
     "bootstrap-sandbox": "env TZ_NETWORK=sandbox ts-node src/bootstrap-contracts-config.ts",
     "bootstrap-testnet": "env TZ_NETWORK=testnet ts-node src/bootstrap-contracts-config.ts",
     "bootstrap-mainnet": "env TZ_NETWORK=mainnet ts-node src/bootstrap-contracts-config.ts",
-    "prepare": "yarn compile-contracts && yarn build"
+    "prepare": "yarn compile-contracts && yarn generate-types && yarn build"
   },
   "bin": {
     "compile-contracts": "ts-node src/compile-contracts.ts",
@@ -35,6 +36,7 @@
   "author": "TQ Tezos Maintainers <info@tqtezos.com>",
   "license": "MIT",
   "devDependencies": {
+    "@taquito/contract-type-generator": "8.0.6-beta.0-0bf620b3--722",
     "@taquito/michel-codec": "^8.0.6-beta.0",
     "@types/configstore": "4.0.0",
     "@types/jest": "26.0.10",
