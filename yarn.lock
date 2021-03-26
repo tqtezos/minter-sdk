@@ -1390,13 +1390,13 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
-"@taquito/contract-type-generator@8.0.6-beta.0-0bf620b3--722":
-  version "8.0.6-beta.0-0bf620b3--722"
-  resolved "https://npm.preview.tezostaquito.io/@taquito%2fcontract-type-generator/-/contract-type-generator-8.0.6-beta.0-0bf620b3--722.tgz#51f3bf5fc5b2689d0dd2a65d024afd1d5430bfde"
-  integrity sha512-D+ehg+Hb+aXNQQ8m2b+ySXLE7rJlcxv4Ms2pQGWCtjJjsd9ibHI3ROIeXLMn7yZRa2KlCgiTDEki4gDswty1YA==
+"@taquito/contract-type-generator@8.0.6-beta.0-affe7fc1--722":
+  version "8.0.6-beta.0-affe7fc1--722"
+  resolved "https://npm.preview.tezostaquito.io/@taquito%2fcontract-type-generator/-/contract-type-generator-8.0.6-beta.0-affe7fc1--722.tgz#96e457bd4ca44e2a040cfc3e7117d6429bea3224"
+  integrity sha512-MBEVeVXAJV1kzKQnRmJZdQdRE4ERiI1BfmfHa+h/WDgPjhCZFNwSLEDR/CGBRUF2U54ICg0BmNXBk1j47cvmog==
   dependencies:
-    "@taquito/michel-codec" "^8.0.6-beta.0-0bf620b3--722"
-    "@taquito/taquito" "^8.0.6-beta.0-0bf620b3--722"
+    "@taquito/michel-codec" "^8.0.6-beta.0-affe7fc1--722"
+    "@taquito/taquito" "^8.0.6-beta.0-affe7fc1--722"
     bignumber.js "^9.0.1"
 
 "@taquito/http-utils@^8.0.3-beta.0":
@@ -1430,7 +1430,7 @@
   resolved "https://registry.yarnpkg.com/@taquito/michel-codec/-/michel-codec-8.0.4-beta-RC.0.tgz#551e8fbb1b74025ae4ec8aeb45b83b3e59274f3b"
   integrity sha512-HNU4QuOhvnN3w7njvpvfyn4np2XD7KBvnWXkSq3YWwB6+U/JC33JhakLrlkPoXNNDY1pkCUMLtMtuAGG7siIjg==
 
-"@taquito/michel-codec@^8.0.6-beta-RC.0", "@taquito/michel-codec@^8.0.6-beta.0-0bf620b3--722":
+"@taquito/michel-codec@^8.0.6-beta-RC.0", "@taquito/michel-codec@^8.0.6-beta.0-affe7fc1--722":
   version "8.0.6-beta-RC.0"
   resolved "https://npm.preview.tezostaquito.io/@taquito%2fmichel-codec/-/michel-codec-8.0.6-beta-RC.0.tgz#c46ce3496631d2959cf47ba89df56fccaf13ee57"
   integrity sha512-qZ7U/HfyhpjlEcQu9ivEcGXUUWgqVpzBH9CzvWvQIN8ap27wzFbIEEX8An7CNoskRRxfEytU3P3f+MTNdPgH0w==
@@ -1539,7 +1539,7 @@
     rx-sandbox "^1.0.3"
     rxjs "^6.6.3"
 
-"@taquito/taquito@^8.0.6-beta.0-0bf620b3--722":
+"@taquito/taquito@^8.0.6-beta.0-affe7fc1--722":
   version "8.0.6-beta-RC.0"
   resolved "https://npm.preview.tezostaquito.io/@taquito%2ftaquito/-/taquito-8.0.6-beta-RC.0.tgz#2bbdfa7ce4a850fba8b7bbd28548d9496fc0af00"
   integrity sha512-4fHGqSegjq6WzGQpXmWtRNk89UngaM/YXqbrzJAeyUsY1AGqLot/sFPEjpCbkz1vZD3WVijGXpFys9vnYSjIGQ==
