@@ -34,4 +34,4 @@ type Methods = {
     }) => Promise<void>;
 };
 
-export type Contract = { methods: Methods, storage: Storage, code: { __type: 'InspectorCodeType' } };
+export type InspectorContractType = { methods: Methods, storage: Storage, code: { __type: 'InspectorCode' } };

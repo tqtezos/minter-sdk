@@ -43,4 +43,4 @@ type Methods = {
     }) => Promise<void>;
 };
 
-export type Contract = { methods: Methods, storage: Storage, code: { __type: 'FixedPriceSaleMarketTezCodeType' } };
+export type FixedPriceSaleMarketTezContractType = { methods: Methods, storage: Storage, code: { __type: 'FixedPriceSaleMarketTezCode' } };

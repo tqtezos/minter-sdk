@@ -63,4 +63,4 @@ type Methods = {
     }) => Promise<void>;
 };
 
-export type Contract = { methods: Methods, storage: Storage, code: { __type: 'Fa2MultiFtFaucetCodeType' } };
+export type Fa2MultiFtFaucetContractType = { methods: Methods, storage: Storage, code: { __type: 'Fa2MultiFtFaucetCode' } };

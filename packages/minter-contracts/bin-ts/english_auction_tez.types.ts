@@ -56,4 +56,4 @@ type Methods = {
     }) => Promise<void>;
 };
 
-export type Contract = { methods: Methods, storage: Storage, code: { __type: 'EnglishAuctionTezCodeType' } };
+export type EnglishAuctionTezContractType = { methods: Methods, storage: Storage, code: { __type: 'EnglishAuctionTezCode' } };
