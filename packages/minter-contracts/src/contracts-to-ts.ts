@@ -90,8 +90,8 @@ const compile = () =>
       const alias = fileNameToAlias(fileName);
       await fs.writeFile(
         path.join(outPath, `${fileName}.ts`),
-        `export type ${alias} = { _type: '${alias}'; code: object; };\n` +
-        `export default { _type: '${alias}', code: JSON.parse(\`${JSON.stringify(json)}\`) } as ${alias};\n`,
+        `export type ${alias} = { __type: '${alias}'; code: object; };\n` +
+        `export default { __type: '${alias}', code: JSON.parse(\`${JSON.stringify(json)}\`) } as ${alias};\n`,
       );
       $log.info(`successfully compiled ${fileName} to JSON.`);
       return fileName;
