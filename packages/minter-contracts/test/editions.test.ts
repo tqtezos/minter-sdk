@@ -17,8 +17,8 @@ import {
   MintNftParam,
 } from '../src/nft-contracts';
 import {
-  transfer
-} from '../src/fa2-interface'
+  transfer,
+} from '../src/fa2-interface';
 import { QueryBalances, queryBalancesWithLambdaView, hasTokens } from './fa2-balance-inspector';
 
 jest.setTimeout(180000); // 3 minutes
@@ -115,7 +115,7 @@ describe('test NFT auction', () => {
     await transfer(nftEditions.address, tezos.alice, [
       {
         from_: aliceAddress,
-        txs: [{ to_: bobAddress, token_id: tokenId, amount: nat1}],
+        txs: [{ to_: bobAddress, token_id: tokenId, amount: nat1 }],
       },
     ]);
 
@@ -125,5 +125,5 @@ describe('test NFT auction', () => {
     ], queryBalances, nftEditions);
     expect(aliceHasATokenAfter).toBe(false);
     expect(bobHasATokenAfter).toBe(true);
-  })
+  });
 });

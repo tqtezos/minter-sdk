@@ -65,7 +65,7 @@ export async function originateNft(
 }
 
 export async function originateNftFaucet(
-  tz: TezosToolkit
+  tz: TezosToolkit,
 ): Promise<Contract> {
   const code = await compileAndLoadContract(
     defaultEnv,
@@ -89,7 +89,7 @@ export async function originateNftFaucet(
 }
 
 export async function originateFtFaucet(
-  tz: TezosToolkit
+  tz: TezosToolkit,
 ): Promise<Contract> {
   const code = await compileAndLoadContract(
     defaultEnv,
@@ -235,7 +235,7 @@ export async function originateEnglishAuctionFA2(
 
 export async function originateEnglishAuctionTezPermit(
   tz: TezosToolkit,
-  adminAddress : address
+  adminAddress : address,
 ): Promise<Contract> {
   const code = await compileAndLoadContract(
     defaultEnv,
