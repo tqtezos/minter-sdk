@@ -16,6 +16,9 @@ import {
   originateEditionsNftContract,
   MintNftParam,
 } from '../src/nft-contracts';
+import {
+  transfer
+} from '../src/fa2-interface'
 import { QueryBalances, queryBalancesWithLambdaView, hasTokens } from './fa2-balance-inspector';
 
 jest.setTimeout(180000); // 3 minutes
@@ -105,4 +108,22 @@ describe('test NFT auction', () => {
     const opDistribute = nftEditions.methods.distribute_editions([distributeEdition1]).send();
     return expect(opDistribute).rejects.toHaveProperty('errors');
   });
+
+  test ('transfer edition', async() => {
+    const tokenId = new BigNumber(0);
+    const nat1 = new BigNumber(1);
+    await transfer(nftEditions.address, tezos.alice, [
+      {
+        from_: aliceAddress,
+        txs: [{ to_: bobAddress, token_id: tokenId, amount: nat1}],
+      },
+    ]);
+
+    const [aliceHasATokenAfter, bobHasATokenAfter] = await hasTokens([
+      { owner: aliceAddress, token_id: tokenId },
+      { owner: bobAddress, token_id: tokenId },
+    ], queryBalances, nftEditions);
+    expect(aliceHasATokenAfter).toBe(false);
+    expect(bobHasATokenAfter).toBe(true);
+  })
 });
