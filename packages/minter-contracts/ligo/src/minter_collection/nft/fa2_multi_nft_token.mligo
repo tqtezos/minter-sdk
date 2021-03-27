@@ -2,11 +2,11 @@
 
 #define FA2_MULTI_NFT_TOKEN
 
-#include "../../fa2/fa2_interface.mligo"
-#include "../../fa2/fa2_errors.mligo"
+#include "../../../fa2/fa2_interface.mligo"
+#include "../../../fa2/fa2_errors.mligo"
 
-#include "../../fa2/lib/fa2_operator_lib.mligo"
-#include "../../fa2/lib/fa2_owner_hooks_lib.mligo"
+#include "../../../fa2/lib/fa2_operator_lib.mligo"
+#include "../../../fa2/lib/fa2_owner_hooks_lib.mligo"
 
 type nft_meta = (token_id, token_metadata) big_map
 
