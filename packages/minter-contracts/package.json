@@ -10,7 +10,7 @@
     "access": "public"
   },
   "scripts": {
-    "test": "yarn lint && yarn start-sandbox && yarn compile-contracts && yarn test-contracts ; yarn kill-sandbox",
+    "test": "yarn lint && yarn start-sandbox && yarn compile-ligo && yarn test-contracts ; yarn kill-sandbox",
     "lint": "yarn eslint . --ext .js,.ts",
     "test-contract": "yarn start-sandbox && jest",
     "test-contracts": "jest --runInBand",
@@ -23,12 +23,12 @@
     "bootstrap-sandbox": "env TZ_NETWORK=sandbox ts-node src/bootstrap-contracts-config.ts",
     "bootstrap-testnet": "env TZ_NETWORK=testnet ts-node src/bootstrap-contracts-config.ts",
     "bootstrap-mainnet": "env TZ_NETWORK=mainnet ts-node src/bootstrap-contracts-config.ts",
-    "compile-ligo": "ts-node src/compile-contracts.ts",
+    "compile-ligo": "ts-node src/compile-ligo.ts",
     "michelson-to-ts": "ts-node src/michelson-to-ts.ts",
-    "prepare": "yarn compile-contracts && yarn build"
+    "prepare": "yarn compile-ligo && yarn build"
   },
   "bin": {
-    "compile-contracts": "ts-node src/compile-contracts.ts",
+    "compile-ligo": "ts-node src/compile-ligo.ts",
     "bootstrap": "ts-node src/bootstrap-contracts-config.ts",
     "bootstrap-sandbox": "env TZ_NETWORK=sandbox ts-node src/bootstrap-contracts-config.ts",
     "bootstrap-testnet": "env TZ_NETWORK=testnet ts-node src/bootstrap-contracts-config.ts",

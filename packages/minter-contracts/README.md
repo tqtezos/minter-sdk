@@ -2,6 +2,29 @@
 
 The `@tqtezos/minter-contracts` package provides a collection of NFT and marketplace smart contracts with configurable admin permissions.
 
+- [Minter Contracts](#minter-contracts)
+  - [Provided Contracts](#provided-contracts)
+    - [Minter Collection](#minter-collection)
+    - [English Auction](#english-auction)
+    - [Fixed Price Sale](#fixed-price-sale)
+    - [FA2-FA2 swaps](#fa2-fa2-swaps)
+    - [Ticket-based NFTs](#ticket-based-nfts)
+    - [Editions FA2](#editions-fa2)
+    - [Work-in-progress contracts](#work-in-progress-contracts)
+      - [Meta-transaction based minting / sales (WIP)](#meta-transaction-based-minting--sales-wip)
+      - [Fractional Ownership (WIP)](#fractional-ownership-wip)
+      - [Royalties and Profit-splitting (WIP)](#royalties-and-profit-splitting-wip)
+- [Local Development](#local-development)
+  - [Prerequisites](#prerequisites)
+  - [Package Scripts](#package-scripts)
+    - [`yarn compile-ligo [filter]`](#yarn-compile-ligo-filter)
+    - [`yarn bootstrap`](#yarn-bootstrap)
+    - [`yarn bootstrap-sandbox`](#yarn-bootstrap-sandbox)
+    - [`yarn bootstrap-testnet`](#yarn-bootstrap-testnet)
+
+
+## Provided Contracts
+
 ### [Minter Collection](ligo/src/minter_collection)
 
 Customizable smart contracts for minting FA2 NFTs as collections.
@@ -34,19 +57,45 @@ The _Editions_ variant of FA2 allows for the minting and distribution of many ed
 
 #### Royalties and Profit-splitting ([WIP](https://github.com/tqtezos/minter-sdk/pull/40))
 
----
+
+# Local Development
+
+## Prerequisites
+
+You'll need these.
+
+- [`docker`](https://www.docker.com/products/docker-desktop)
+
+- [`tezos-client`](https://assets.tqtezos.com/docs/setup/1-tezos-client/)
 
 ## Package Scripts
 
 Package scripts are managed and invoked by `yarn`.
 
-1. `yarn compile-contracts` — compile all LIGO contracts with the currently installed LIGO compiler.
 
-2. `yarn bootstrap` — bootstrap the network specified in `ENV_NAME` environment name.
-   Check if the contract addresses in the config file are actually deployed on
-   the network. If necessary, re-deploy compiled contracts and update the config
-   file.
+### `yarn compile-ligo [filter]`
 
-3. `yarn bootstrap-sandbox` — bootstrap flextesa sandbox network.
+Compile LIGO contracts to Michelson. 
 
-4. `yarn bootstrap-testnet` — bootstrap flextesa test network.
+Accepts an optional filter which compiles _only_ those contracts matching the given filter string. 
+
+E.g., 
+```bash
+yarn compile-ligo fa2_swap
+```
+
+If no filter is given, all contracts will be compiled.
+
+> This script delegates LIGO compilation to `docker` — ensure the docker daemon is running for it to execute correctly. 
+
+### `yarn bootstrap` 
+Bootstrap the network specified in `ENV_NAME` environment name.
+Check if the contract addresses in the config file are actually deployed on
+the network. If necessary, re-deploy compiled contracts and update the config
+file.
+
+### `yarn bootstrap-sandbox` 
+Bootstrap flextesa sandbox network.
+
+### `yarn bootstrap-testnet`
+Bootstrap flextesa test network.
