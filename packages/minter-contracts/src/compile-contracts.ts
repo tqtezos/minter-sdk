@@ -6,19 +6,20 @@ import { $log } from '@tsed/logger';
 type ContractCompiler = (env: LigoEnv) => Promise<void>;
 
 // add other contracts here
-const contractCompilers: ContractCompiler[] =
-  [compileNftFaucetContract
-    , compileNftContract
-    , compileFixedPriceSaleMarketPlaceContract
-    , compileFixedPriceSaleTezMarketPlaceContract
-    , compileEnglishAuctionTezContract
-    , compileFtFaucetContract
-    , compileFtContract
-    , compileTicketNftAuctionContract
-    , compileTicketNftWalletContract
-    , compileEnglishAuctionTezPermitContract
-    , compileNftEditionsContract,
-  ];
+const contractCompilers: ContractCompiler[] = [
+  compileNftFaucetContract,
+  compileNftContract,
+  compileFixedPriceSaleMarketPlaceContract,
+  compileFixedPriceSaleTezMarketPlaceContract,
+  compileEnglishAuctionTezContract,
+  compileFtFaucetContract,
+  compileFtContract,
+  compileTicketNftAuctionContract,
+  compileTicketNftWalletContract,
+  compileEnglishAuctionTezPermitContract,
+  compileNftEditionsContract,
+  compileFa2SwapContract,
+];
 
 async function main(env = defaultEnv): Promise<void> {
   try {
@@ -29,6 +30,17 @@ async function main(env = defaultEnv): Promise<void> {
     $log.error(err);
     process.exit(1);
   }
+}
+
+async function compileFa2SwapContract(env: LigoEnv): Promise<void> {
+  $log.info('compiling fa2 swap contract');
+  await compileContract(
+    env,
+    'swaps/fa2_swap.mligo',
+    'swaps_main',
+    'fa2_swap.tz',
+  );
+  $log.info('compiled fa2 swap contract');
 }
 
 async function compileNftFaucetContract(env: LigoEnv): Promise<void> {

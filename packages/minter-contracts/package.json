@@ -18,11 +18,13 @@
     "kill-sandbox": "../../flextesa/kill-sandbox.sh",
     "build:watch": "tsc -w -p .",
     "build": "tsc -p tsconfig.build.json",
-    "compile-contracts": "ts-node src/compile-contracts.ts; ts-node src/contracts-to-ts.ts",
+    "compile-contracts": "yarn compile-ligo",
     "bootstrap": "ts-node src/bootstrap-contracts-config.ts",
     "bootstrap-sandbox": "env TZ_NETWORK=sandbox ts-node src/bootstrap-contracts-config.ts",
     "bootstrap-testnet": "env TZ_NETWORK=testnet ts-node src/bootstrap-contracts-config.ts",
     "bootstrap-mainnet": "env TZ_NETWORK=mainnet ts-node src/bootstrap-contracts-config.ts",
+    "compile-ligo": "ts-node src/compile-contracts.ts",
+    "michelson-to-ts": "ts-node src/michelson-to-ts.ts",
     "prepare": "yarn compile-contracts && yarn build"
   },
   "bin": {
@@ -45,7 +47,8 @@
     "jest": "26.1.0",
     "prettier": "^2.2.1",
     "ts-jest": "26.1.3",
-    "typescript": "3.9.7"
+    "typescript": "3.9.7",
+    "yargs": "^16.2.0"
   },
   "dependencies": {
     "@taquito/rpc": "8.0.3-beta.0",
