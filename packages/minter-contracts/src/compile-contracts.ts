@@ -19,6 +19,7 @@ const contractCompilers: ContractCompiler[] = [
   compileEnglishAuctionTezPermitContract,
   compileNftEditionsContract,
   compileFa2SwapContract,
+  compileFa2WhitelistedSwapContract,
   compileEnglishAuctionFA2Contract,
 ];
 
@@ -42,6 +43,18 @@ async function compileFa2SwapContract(env: LigoEnv): Promise<void> {
     'fa2_swap.tz',
   );
   $log.info('compiled fa2 swap contract');
+}
+
+async function compileFa2WhitelistedSwapContract(env: LigoEnv): Promise<void> {
+  $log.info('compiling whitelisted swap contract');
+
+  await compileContract(
+    env,
+    'swaps/fa2_whitelisted_swap.mligo',
+    'whitelisted_swaps_main',
+    'fa2_whitelisted_swap.tz',
+  );
+  $log.info('compiled whitelisted swap contract');
 }
 
 async function compileNftFaucetContract(env: LigoEnv): Promise<void> {
