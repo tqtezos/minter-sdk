@@ -1,4 +1,7 @@
-jsout
-node_modules
 *.cabal
 .stack-work
+index.ts
+bin/**
+!bin/**/.gitkeep
+bin-ts/**
+!bin-ts/**/.gitkeep
