@@ -1,5 +1,3 @@
-import { $log } from '@tsed/logger';
-
 import { compileAndLoadContract, originateContract, defaultEnv } from './ligo';
 import { Contract, address, nat } from './type-aliases';
 import { TezosToolkit } from '@taquito/taquito';
@@ -33,6 +31,7 @@ export interface SaleParamTez {
     sale_token: SaleTokenParamTez;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface AdminStorage {
     admin: string;
     pending_admin?: string;
