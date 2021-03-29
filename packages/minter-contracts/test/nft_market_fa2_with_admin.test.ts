@@ -4,7 +4,6 @@ import { TezosToolkit, MichelsonMap } from '@taquito/taquito';
 
 import { adminBootstrap, bootstrap, TestTz } from './bootstrap-sandbox';
 import { Contract, address, bytes } from '../src/type-aliases';
-import { Signer } from '@taquito/taquito/dist/types/signer/interface';
 
 import {
   originateNftFaucet,
@@ -17,8 +16,6 @@ import {
   BalanceOfRequest,
   addOperator,
   TokenMetadata,
-  transfer,
-  BalanceOfResponse,
 } from '../src/fa2-interface';
 import { queryBalancesWithLambdaView, QueryBalances } from './fa2-balance-inspector';
 
@@ -37,7 +34,6 @@ describe.each([originateFixedPriceAdminSale])
   let ftTokenId: BigNumber;
   let nftTokenId: BigNumber;
   let tokenMetadata: MichelsonMap<string, bytes>;
-  let salePrice: BigNumber;
   let adminAddress: address;
   let adminToolkit: TezosToolkit;
 
@@ -60,7 +56,6 @@ describe.each([originateFixedPriceAdminSale])
     nftTokenId = new BigNumber(0);
     ftTokenId = new BigNumber(5);
     tokenMetadata = new MichelsonMap();
-    salePrice = new BigNumber(1000000);
   });
 
   async function hasNftTokens(requests: BalanceOfRequest[]): Promise<boolean[]> {
@@ -89,7 +84,7 @@ describe.each([originateFixedPriceAdminSale])
   ): Promise<void> {
     $log.info('minting...');
     const op = await nft.methods.mint(tokens).send();
-    const hash = await op.confirmation();
+    await op.confirmation();
     $log.info(`Minted non-fungible tokens. Consumed gas: ${op.consumedGas}`);
   }
 
@@ -99,7 +94,7 @@ describe.each([originateFixedPriceAdminSale])
   ): Promise<void> {
     $log.info('minting...');
     const op = await ft.methods.mint_tokens(tokens).send();
-    const hash = await op.confirmation();
+    await op.confirmation();
     $log.info(`Minted fungible tokens. Consumed gas: ${op.consumedGas}`);
   }
 
@@ -110,7 +105,7 @@ describe.each([originateFixedPriceAdminSale])
     $log.info('minting...');
     const op =
                 await ft.methods.create_token(token_metadata.token_id, token_metadata.token_info).send();
-    const hash = await op.confirmation();
+    await op.confirmation();
     $log.info(`Created fungible token. Consumed gas: ${op.consumedGas}`);
   }
 
@@ -171,7 +166,8 @@ describe.each([originateFixedPriceAdminSale])
 
     try {
       $log.info(`Attempting to create sale while contract is paused`);
-      const sellOp = await marketplace.methods.sell(new BigNumber(20), nft.address, nftTokenId, ft.address, ftTokenId).send({ amount: 0 });
+      await marketplace.methods
+        .sell(new BigNumber(20), nft.address, nftTokenId, ft.address, ftTokenId).send({ amount: 0 });
     }
     catch (error) {$log.info(`Confirmation: Cannot create sale while contract is paused`);}
 
@@ -182,7 +178,8 @@ describe.each([originateFixedPriceAdminSale])
     $log.info(`Operation injected at hash=${unpauseOpHash}`);
 
     $log.info(`Creating sale`);
-    const sellOp = await marketplace.methods.sell(new BigNumber(20), nft.address, nftTokenId, ft.address, ftTokenId).send({ source: bobAddress, amount: 0 });
+    const sellOp = await marketplace.methods
+      .sell(new BigNumber(20), nft.address, nftTokenId, ft.address, ftTokenId).send({ source: bobAddress, amount: 0 });
     $log.info(`Waiting for ${sellOp.hash} to be confirmed...`);
     const sellOpHash = await sellOp.confirmation().then(() => sellOp.hash);
     $log.info(`Operation injected at hash=${sellOpHash}`);
@@ -190,7 +187,8 @@ describe.each([originateFixedPriceAdminSale])
     const aliceSaleContract = await tezos.alice.contract.at(marketplace.address);
 
     $log.info(`Alice buys non-fungible token with her fungible tokens`);
-    const buyOp = await aliceSaleContract.methods.buy(bobAddress, nft.address, nftTokenId, ft.address, ftTokenId).send({ source:aliceAddress, amount: 0 });
+    const buyOp = await aliceSaleContract.methods
+      .buy(bobAddress, nft.address, nftTokenId, ft.address, ftTokenId).send({ source:aliceAddress, amount: 0 });
     $log.info(`Waiting for ${buyOp.hash} to be confirmed...`);
     const buyOpHash = await buyOp.confirmation().then(() => buyOp.hash);
     $log.info(`Operation injected at hash=${buyOpHash}`);
@@ -228,20 +226,23 @@ describe.each([originateFixedPriceAdminSale])
     await addOperator(ft.address, tezos.alice, marketAddress, ftTokenId);
 
     $log.info(`Creating sale`);
-    const sellOp = await marketplace.methods.sell(new BigNumber(20), nft.address, nftTokenId, ft.address, ftTokenId).send({ source: bobAddress, amount: 0 });
+    const sellOp = await marketplace.methods
+      .sell(new BigNumber(20), nft.address, nftTokenId, ft.address, ftTokenId).send({ source: bobAddress, amount: 0 });
     $log.info(`Waiting for ${sellOp.hash} to be confirmed...`);
     const sellOpHash = await sellOp.confirmation().then(() => sellOp.hash);
     $log.info(`Operation injected at hash=${sellOpHash}`);
 
     try {
       $log.info('alice cancels sale (not admin nor seller)');
-      const removeSaleOp = await marketplace.methods.cancel(aliceAddress, nft.address, nftTokenId, ft.address, ftTokenId).send({ source:aliceAddress, amount: 0 });
+      await marketplace.methods
+        .cancel(aliceAddress, nft.address, nftTokenId, ft.address, ftTokenId).send({ source:aliceAddress, amount: 0 });
     } catch (error) {
       $log.info(`Alice cannot cancel sale, since she is not admin`);
     }
 
     $log.info('bob cancels sale');
-    const removeSaleOp = await marketplace.methods.cancel(bobAddress, nft.address, nftTokenId, ft.address, ftTokenId).send({ source:bobAddress, amount: 0 });
+    const removeSaleOp = await marketplace.methods
+      .cancel(bobAddress, nft.address, nftTokenId, ft.address, ftTokenId).send({ source:bobAddress, amount: 0 });
     $log.info(`Waiting for ${removeSaleOp.hash} to be confirmed...`);
     const removeSaleOpHash = await removeSaleOp.confirmation().then(() => removeSaleOp.hash);
     $log.info(`Operation injected at hash=${removeSaleOpHash}`);
@@ -250,7 +251,8 @@ describe.each([originateFixedPriceAdminSale])
 
     try {
       $log.info(`Alice buys non-fungible token with her fungible tokens`);
-      const buyOp = await aliceSaleContract.methods.buy(bobAddress, nft.address, nftTokenId, ft.address, ftTokenId).send({ source:aliceAddress, amount: 0 });
+      await aliceSaleContract.methods
+        .buy(bobAddress, nft.address, nftTokenId, ft.address, ftTokenId).send({ source:aliceAddress, amount: 0 });
     } catch (error) {
       $log.info(`alice cannot buy`);
     }

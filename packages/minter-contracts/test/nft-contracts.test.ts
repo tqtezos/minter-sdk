@@ -1,7 +1,6 @@
 import { $log } from '@tsed/logger';
 import { BigNumber } from 'bignumber.js';
 import {
-  BigMapAbstraction,
   TezosToolkit,
   MichelsonMap,
 } from '@taquito/taquito';
@@ -10,16 +9,14 @@ import {
 import { char2Bytes } from '@taquito/tzip16';
 
 import { bootstrap, TestTz } from './bootstrap-sandbox';
-import { Contract, nat } from '../src/type-aliases';
+import { Contract } from '../src/type-aliases';
 // import { assertMichelsonType, BytesLiteral } from '@taquito/michel-codec';
 
 import {
   originateNftFaucet,
-  originateNft,
   MintNftParam,
 } from '../src/nft-contracts';
 import {
-  BalanceOfRequest,
   transfer,
   addOperator,
   removeOperator,
@@ -43,7 +40,7 @@ describe.each([originateNftFaucet])(
     });
 
     beforeEach(async () => {
-      const admin = await tezos.bob.signer.publicKeyHash();
+      await tezos.bob.signer.publicKeyHash();
       nft = await createNft(tezos.bob);
     });
 
@@ -53,7 +50,7 @@ describe.each([originateNftFaucet])(
     ): Promise<void> {
       $log.info('minting...');
       const op = await nft.methods.mint(tokens).send();
-      const hash = await op.confirmation();
+      await op.confirmation();
       $log.info(`minted tokens. consumed gas: ${op.consumedGas}`);
     }
 
