@@ -19,6 +19,7 @@ const contractCompilers: ContractCompiler[] = [
   compileEnglishAuctionTezPermitContract,
   compileNftEditionsContract,
   compileFa2SwapContract,
+  compileEnglishAuctionFA2Contract,
 ];
 
 async function main(env = defaultEnv): Promise<void> {
