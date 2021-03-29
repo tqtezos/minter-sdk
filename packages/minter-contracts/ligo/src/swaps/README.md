@@ -4,7 +4,7 @@ This contract allows a participant to offer FA2 tokens exchange that another par
 
 ## Build instructions
 
-To compile the contract, just run `make`.
+To compile the contract, run `yarn compile-ligo`.
 
 ## Specification
 
