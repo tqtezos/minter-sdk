@@ -9,7 +9,6 @@ import Fa2MultiNftTokenEditionsCode, { Fa2MultiNftTokenEditionsCodeType } from '
 import Fa2SwapCode, { Fa2SwapCodeType } from './bin-ts/fa2_swap.tz';
 import FixedPriceSaleMarketCode, { FixedPriceSaleMarketCodeType } from './bin-ts/fixed_price_sale_market.tz';
 import FixedPriceSaleMarketTezCode, { FixedPriceSaleMarketTezCodeType } from './bin-ts/fixed_price_sale_market_tez.tz';
-import InspectorCode, { InspectorCodeType } from './bin-ts/inspector.tz';
 import TicketAuctionCode, { TicketAuctionCodeType } from './bin-ts/ticket_auction.tz';
 import TicketWalletCode, { TicketWalletCodeType } from './bin-ts/ticket_wallet.tz';
 
@@ -36,8 +35,6 @@ export {
   FixedPriceSaleMarketCodeType,
   FixedPriceSaleMarketTezCode,
   FixedPriceSaleMarketTezCodeType,
-  InspectorCode,
-  InspectorCodeType,
   TicketAuctionCode,
   TicketAuctionCodeType,
   TicketWalletCode,
