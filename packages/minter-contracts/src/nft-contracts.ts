@@ -1,3 +1,5 @@
+import { $log } from '@tsed/logger';
+
 import { compileAndLoadContract, originateContract, defaultEnv } from './ligo';
 import { Contract, address, nat } from './type-aliases';
 import { TezosToolkit } from '@taquito/taquito';
@@ -31,7 +33,6 @@ export interface SaleParamTez {
     sale_token: SaleTokenParamTez;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface AdminStorage {
     admin: string;
     pending_admin?: string;
@@ -40,12 +41,11 @@ interface AdminStorage {
 
 export async function originateNft(
   tz: TezosToolkit,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   admin: address,
 ): Promise<Contract> {
   const code = await compileAndLoadContract(
     defaultEnv,
-    'minter_collection/fa2_multi_nft_asset.mligo',
+    'minter_collection/nft/fa2_multi_nft_asset_simple_admin.mligo',
     'nft_asset_main',
     'fa2_multi_nft_asset.tz',
   );
@@ -58,7 +58,7 @@ export async function originateNft(
 
   const meta_content = char2Bytes(JSON.stringify(meta, null, 2));
 
-  const storage = `(Pair (Pair (Pair (Pair "tz1YPSCGWXwBdTncK2aCctSZAXWvGsGwVJqU" True) None)
+  const storage = `(Pair (Pair (Pair (Pair ${admin} True) None)
             (Pair (Pair {} 0) (Pair {} {})))
       { Elt "" 0x${meta_uri} ; Elt "contents" 0x${meta_content} })`;
   return originateContract(tz, code, storage, 'nft');
@@ -66,12 +66,10 @@ export async function originateNft(
 
 export async function originateNftFaucet(
   tz: TezosToolkit,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  admin: address,
 ): Promise<Contract> {
   const code = await compileAndLoadContract(
     defaultEnv,
-    'minter_collection/fa2_multi_nft_faucet.mligo',
+    'minter_collection/nft/fa2_multi_nft_faucet.mligo',
     'nft_faucet_main',
     'fa2_multi_nft_faucet.tz',
   );
@@ -92,12 +90,10 @@ export async function originateNftFaucet(
 
 export async function originateFtFaucet(
   tz: TezosToolkit,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  admin: address,
 ): Promise<Contract> {
   const code = await compileAndLoadContract(
     defaultEnv,
-    'minter_collection/fa2_multi_ft_faucet.mligo',
+    'minter_collection/ft/fa2_multi_ft_faucet.mligo',
     'ft_faucet_main',
     'fa2_multi_ft_faucet.tz',
   );
@@ -180,7 +176,6 @@ export async function originateEnglishAuctionTez(
     'english_auction_tez_main',
     'english_auction_tez.tz',
   );
-  await tz.signer.publicKeyHash();
   const storage = `(Pair None (Pair 0 (Pair 86400 (Pair 86400 {}))))`;
   return originateContract(tz, code, storage, 'english_auction_tez');
 }
@@ -199,6 +194,30 @@ export async function originateEnglishAuctionTezAdmin(
   return originateContract(tz, code, storage, 'english_auction_tez_admin');
 }
 
+export async function originateEditionsNftContract(
+  tz: TezosToolkit,
+  adminAddress: address,
+): Promise<Contract> {
+  const code = await compileAndLoadContract(
+    defaultEnv,
+    'minter_collection/editions/fa2_multi_nft_token_editions.mligo',
+    'editions_main',
+    'fa2_multi_nft_token_editions.tz',
+  );
+  const meta_uri = char2Bytes('tezos-storage:content');
+  const meta = {
+    name: 'example_name',
+    description: 'sample_token',
+    interfaces: ['TZIP-012', 'TZIP-016'],
+  };
+
+  const meta_content = char2Bytes(JSON.stringify(meta, null, 2));
+
+  const storage = `(Pair (Pair 0 {}) (Pair (Pair (Pair (Pair {"${adminAddress}"} False) {})
+    (Pair (Pair {} 0) (Pair {} {}))) { Elt "" 0x${meta_uri} ; Elt "contents" 0x${meta_content} }))`;
+  return originateContract(tz, code, storage, 'editions');
+}
+
 export async function originateEnglishAuctionFA2(
   tz: TezosToolkit,
   fa2_address : address,
@@ -210,13 +229,13 @@ export async function originateEnglishAuctionFA2(
     'english_auction_fa2_main',
     'english_auction_fa2.tz',
   );
-  await tz.signer.publicKeyHash();
   const storage = `(Pair None (Pair 0 (Pair 86400 (Pair 86400 (Pair (Pair "${fa2_address}" ${token_id}){})))))`;
   return originateContract(tz, code, storage, 'english_auction_fa2');
 }
 
 export async function originateEnglishAuctionTezPermit(
   tz: TezosToolkit,
+  adminAddress : address,
 ): Promise<Contract> {
   const code = await compileAndLoadContract(
     defaultEnv,
@@ -224,7 +243,6 @@ export async function originateEnglishAuctionTezPermit(
     'english_auction_tez_permit_main',
     'english_auction_tez_admin.tz',
   );
-  const tzAddress = await tz.signer.publicKeyHash();
-  const storage = `(Pair (Pair (Pair "${tzAddress}" False) None) (Pair 0 (Pair 86400 (Pair 86400 (Pair {} 0)))))`;
+  const storage = `(Pair (Pair (Pair "${adminAddress}" False) None) (Pair 0 (Pair 86400 (Pair 86400 (Pair {} 0)))))`;
   return originateContract(tz, code, storage, 'english_auction_tez_permit');
 }

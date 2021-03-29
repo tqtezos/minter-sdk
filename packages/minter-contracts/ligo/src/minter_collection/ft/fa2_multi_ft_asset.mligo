@@ -11,7 +11,7 @@
 *)
 
 #include "fa2_multi_ft_token_manager.mligo"
-#include "../../fa2_modules/pauseable_admin_option.mligo"
+#include "../../../fa2_modules/pauseable_admin_option.mligo"
 
 type multi_ft_asset_storage = {
   admin : pauseable_admin_storage;

@@ -6,18 +6,19 @@ import { $log } from '@tsed/logger';
 type ContractCompiler = (env: LigoEnv) => Promise<void>;
 
 // add other contracts here
-const contractCompilers: ContractCompiler[] = [
-  compileNftFaucetContract,
-  compileNftContract,
-  compileFixedPriceSaleMarketPlaceContract,
-  compileFixedPriceSaleTezMarketPlaceContract,
-  compileEnglishAuctionTezContract,
-  compileFtFaucetContract,
-  compileFtContract,
-  compileTicketNftAuctionContract,
-  compileTicketNftWalletContract,
-  compileEnglishAuctionTezPermitContract,
-];
+const contractCompilers: ContractCompiler[] =
+  [compileNftFaucetContract
+    , compileNftContract
+    , compileFixedPriceSaleMarketPlaceContract
+    , compileFixedPriceSaleTezMarketPlaceContract
+    , compileEnglishAuctionTezContract
+    , compileFtFaucetContract
+    , compileFtContract
+    , compileTicketNftAuctionContract
+    , compileTicketNftWalletContract
+    , compileEnglishAuctionTezPermitContract
+    , compileNftEditionsContract,
+  ];
 
 async function main(env = defaultEnv): Promise<void> {
   try {
@@ -34,7 +35,7 @@ async function compileNftFaucetContract(env: LigoEnv): Promise<void> {
   $log.info('compiling NFT faucet contract');
   await compileContract(
     env,
-    'minter_collection/fa2_multi_nft_faucet.mligo',
+    'minter_collection/nft/fa2_multi_nft_faucet.mligo',
     'nft_faucet_main',
     'fa2_multi_nft_faucet.tz',
   );
@@ -45,7 +46,7 @@ async function compileNftContract(env: LigoEnv): Promise<void> {
   $log.info('compiling NFT contract');
   await compileContract(
     env,
-    'minter_collection/fa2_multi_nft_asset.mligo',
+    'minter_collection/nft/fa2_multi_nft_asset_simple_admin.mligo',
     'nft_asset_main',
     'fa2_multi_nft_asset.tz',
   );
@@ -57,7 +58,7 @@ async function compileFtFaucetContract(env: LigoEnv): Promise<void> {
   $log.info('compiling FT faucet contract');
   await compileContract(
     env,
-    'minter_collection/fa2_multi_ft_faucet.mligo',
+    'minter_collection/ft/fa2_multi_ft_faucet.mligo',
     'ft_faucet_main',
     'fa2_multi_ft_faucet.tz',
   );
@@ -68,7 +69,7 @@ async function compileFtContract(env: LigoEnv): Promise<void> {
   $log.info('compiling FT contract');
   await compileContract(
     env,
-    'minter_collection/fa2_multi_ft_asset.mligo',
+    'minter_collection/ft/fa2_multi_ft_asset.mligo',
     'multi_ft_asset_main',
     'fa2_multi_ft_asset.tz',
   );
@@ -158,6 +159,18 @@ async function compileTicketNftWalletContract(env: LigoEnv): Promise<void> {
     'ticket_wallet.tz',
   );
   $log.info('compiled ticket nft wallet contract');
+}
+
+async function compileNftEditionsContract(env: LigoEnv): Promise<void> {
+  $log.info('compiling nft editions contract');
+
+  await compileContract(
+    env,
+    'minter_collection/editions/fa2_multi_nft_token_editions.mligo',
+    'editions_main',
+    'fa2_multi_nft_token_editions.tz',
+  );
+  $log.info('compiled nft editions contract');
 }
 
 main();
