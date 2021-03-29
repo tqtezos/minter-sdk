@@ -15,7 +15,7 @@ import { MichelsonMap } from '@taquito/taquito';
 import { addOperator } from '../../src/fa2-interface';
 import { Fa2_token, Tokens } from '../../src/auction-interface';
 
-jest.setTimeout(180000); // 3 minutes
+jest.setTimeout(240000); // 3 minutes
 
 describe('test NFT auction', () => {
   let tezos: TestTz;
@@ -130,45 +130,46 @@ describe('test NFT auction', () => {
       //start_time = now + 7seconds
       startTime,
       //end_time = start_time + 1hr,
-      endTime).send();
+      endTime
+    ).send({ amount : 0 });
     await opAuction.confirmation();
     $log.info(`Auction configured. Consumed gas: ${opAuction.consumedGas}`);
   });
   test('bid of less than asking price should fail', async() => {
     $log.info(`Alice bids 9 tokens expecting it to fail`);
-    const failedOpeningBid = nftAuctionAlice.methods.bid(0, 9).send();
+    const failedOpeningBid = nftAuctionAlice.methods.bid(0, 9).send({ amount : 0 });
     //TODO: test contents of error message
     return expect(failedOpeningBid).rejects.toHaveProperty('errors');
   });
   test('place bid meeting opening price and then raise it by valid amount by min_raise_percent', async () => {
     $log.info(`Alice bids 10 token`);
-    const opBid = await nftAuctionAlice.methods.bid(0, 10).send();
+    const opBid = await nftAuctionAlice.methods.bid(0, 10).send({ amount : 0 });
     await opBid.confirmation();
     $log.info(`Bid placed`);
 
     $log.info(`Alice bids 11 tokens`);
-    const opBid2 = await nftAuctionAlice.methods.bid(0, 11).send();
+    const opBid2 = await nftAuctionAlice.methods.bid(0, 11).send({ amount : 0 });
     await opBid2.confirmation();
     $log.info(`Bid placed`);
   });
   test('place bid meeting opening price and then raise it by valid amount by min_raise', async () => {
-    $log.info(`Alice bids 200tz`);
-    const opBid = await nftAuctionAlice.methods.bid(0, 200).send();
+    $log.info(`Alice bids 200 tokens`);
+    const opBid = await nftAuctionAlice.methods.bid(0, 200).send({ amount : 0 });
     await opBid.confirmation();
-    $log.info(`Bid placed. Amount sent: ${opBid.amount} mutez`);
+    $log.info(`Bid placed`);
 
-    $log.info(`Alice bids 210 , a 10 token increase but less than a 10% raise of previous bid `);
-    const opBid2 = await nftAuctionAlice.methods.bid(0, 210).send();
+    $log.info(`Alice bids 210 tokens, a 10 token increase but less than a 10% raise of previous bid `);
+    const opBid2 = await nftAuctionAlice.methods.bid(0, 210).send({ amount : 0 });
     await opBid2.confirmation();
-    $log.info(`Bid placed. Amount sent: ${opBid2.amount} mutez`);
+    $log.info(`Bid placed.`);
   });
   test('bid too small should fail', async () => {
     $log.info(`Alice bids 20  tokens`);
-    const opBid = await nftAuctionAlice.methods.bid(0, 20).send();
+    const opBid = await nftAuctionAlice.methods.bid(0, 20).send({ amount : 0 });
     await opBid.confirmation();
-    $log.info(`Bid placed. Amount sent: ${opBid.amount}`);
-    $log.info(`Alice bids 21tz and we expect it to fail`);
-    const smallBidPromise = nftAuctionAlice.methods.bid(0, 21).send();
+    $log.info(`Bid placed`);
+    $log.info(`Alice bids 21 tokens and we expect it to fail`);
+    const smallBidPromise = nftAuctionAlice.methods.bid(0, 21).send({ amount : 0 });
     return expect(smallBidPromise).rejects.toHaveProperty('errors' );
   });
 

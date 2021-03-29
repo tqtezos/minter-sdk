@@ -181,13 +181,38 @@
              COMPARE ;
              GE ;
              OR } ;
+         LAMBDA
+           (pair address
+                 (pair mutez
+                       (pair timestamp
+                             (pair timestamp
+                                   (pair int
+                                         (pair int
+                                               (pair (list (pair address (list (pair nat nat))))
+                                                     (pair nat (pair mutez (pair timestamp address))))))))))
+           bool
+           { DUP ;
+             CAR ;
+             SWAP ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             COMPARE ;
+             EQ } ;
          LAMBDA key address { HASH_KEY ; IMPLICIT_ACCOUNT ; ADDRESS } ;
-         DIG 9 ;
+         DIG 10 ;
          UNPAIR ;
          IF_LEFT
            { DIG 2 ;
              DROP ;
-             DIG 6 ;
+             DIG 7 ;
              DROP ;
              SWAP ;
              DUP ;
@@ -195,10 +220,12 @@
              CAR ;
              SWAP ;
              IF_LEFT
-               { DIG 6 ;
+               { DIG 7 ;
                  DROP ;
                  IF_LEFT
                    { DIG 3 ;
+                     DROP ;
+                     DIG 3 ;
                      DROP ;
                      DIG 3 ;
                      DROP ;
@@ -272,7 +299,7 @@
                      PAIR ;
                      SWAP ;
                      PAIR }
-                   { DIG 8 ;
+                   { DIG 9 ;
                      DROP ;
                      SWAP ;
                      DUP ;
@@ -281,7 +308,7 @@
                      DUP ;
                      DUG 2 ;
                      PAIR ;
-                     DIG 6 ;
+                     DIG 7 ;
                      SWAP ;
                      EXEC ;
                      PUSH string "Bidder must be an implicit account" ;
@@ -290,13 +317,13 @@
                      COMPARE ;
                      EQ ;
                      PAIR ;
-                     DUP 8 ;
+                     DUP 9 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
                      DUP 3 ;
                      CAR ;
-                     DIG 8 ;
+                     DIG 9 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
@@ -304,7 +331,7 @@
                      SWAP ;
                      DUP ;
                      DUG 2 ;
-                     DIG 6 ;
+                     DIG 7 ;
                      SWAP ;
                      EXEC ;
                      NOT ;
@@ -317,7 +344,7 @@
                      GE ;
                      AND ;
                      PAIR ;
-                     DUP 7 ;
+                     DUP 8 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
@@ -330,27 +357,14 @@
                      COMPARE ;
                      NEQ ;
                      PAIR ;
-                     DIG 6 ;
+                     DIG 7 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
                      DUP ;
-                     CAR ;
+                     DUP 6 ;
                      SWAP ;
-                     DUP ;
-                     DUG 2 ;
-                     CDR ;
-                     CDR ;
-                     CDR ;
-                     CDR ;
-                     CDR ;
-                     CDR ;
-                     CDR ;
-                     CDR ;
-                     CDR ;
-                     CDR ;
-                     COMPARE ;
-                     EQ ;
+                     EXEC ;
                      SWAP ;
                      DUP ;
                      DUG 2 ;
@@ -454,16 +468,26 @@
                      CDR ;
                      CDR ;
                      CDR ;
-                     DIG 5 ;
+                     DIG 6 ;
                      SWAP ;
                      EXEC ;
                      SWAP ;
                      DUP ;
                      DUG 2 ;
-                     CDR ;
-                     CAR ;
-                     UNIT ;
-                     TRANSFER_TOKENS ;
+                     DIG 6 ;
+                     SWAP ;
+                     EXEC ;
+                     IF { DROP ; NIL operation }
+                        { SWAP ;
+                          DUP ;
+                          DUG 2 ;
+                          CDR ;
+                          CAR ;
+                          UNIT ;
+                          TRANSFER_TOKENS ;
+                          NIL operation ;
+                          SWAP ;
+                          CONS } ;
                      SWAP ;
                      DUP ;
                      DUG 2 ;
@@ -746,18 +770,16 @@
                      DIG 2 ;
                      CAR ;
                      PAIR ;
-                     NIL operation ;
-                     DIG 2 ;
-                     CONS ;
+                     SWAP ;
                      PAIR } }
-               { DIG 9 ;
+               { DIG 10 ;
                  DROP ;
                  IF_LEFT
                    { SWAP ;
                      DUP ;
                      DUG 2 ;
                      CAR ;
-                     DIG 9 ;
+                     DIG 10 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
@@ -768,7 +790,7 @@
                      DUP ;
                      DUG 2 ;
                      PAIR ;
-                     DIG 6 ;
+                     DIG 7 ;
                      SWAP ;
                      EXEC ;
                      PUSH string "Only seller can cancel auction" ;
@@ -780,7 +802,7 @@
                      COMPARE ;
                      EQ ;
                      PAIR ;
-                     DUP 9 ;
+                     DUP 10 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
@@ -788,12 +810,12 @@
                      SWAP ;
                      DUP ;
                      DUG 2 ;
-                     DIG 6 ;
+                     DIG 7 ;
                      SWAP ;
                      EXEC ;
                      NOT ;
                      PAIR ;
-                     DUP 8 ;
+                     DUP 9 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
@@ -803,7 +825,7 @@
                      COMPARE ;
                      EQ ;
                      PAIR ;
-                     DIG 7 ;
+                     DIG 8 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
@@ -820,7 +842,7 @@
                      CAR ;
                      PAIR ;
                      PAIR ;
-                     DIG 6 ;
+                     DIG 7 ;
                      SWAP ;
                      EXEC ;
                      SWAP ;
@@ -836,20 +858,21 @@
                      CDR ;
                      CDR ;
                      CDR ;
-                     DIG 6 ;
+                     DIG 7 ;
                      SWAP ;
                      EXEC ;
+                     DUP 3 ;
+                     DIG 7 ;
+                     SWAP ;
+                     EXEC ;
+                     IF { DROP ; SWAP ; DROP }
+                        { DIG 2 ; CDR ; CAR ; UNIT ; TRANSFER_TOKENS ; CONS } ;
+                     DUP 3 ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
                      DIG 2 ;
-                     CDR ;
-                     CAR ;
-                     UNIT ;
-                     TRANSFER_TOKENS ;
-                     DUP 4 ;
-                     CDR ;
-                     CDR ;
-                     CDR ;
-                     CDR ;
-                     DIG 3 ;
                      NONE (pair address
                                 (pair mutez
                                       (pair timestamp
@@ -860,32 +883,31 @@
                                                                     (pair nat (pair mutez (pair timestamp address)))))))))) ;
                      SWAP ;
                      UPDATE ;
-                     DUP 4 ;
+                     DUP 3 ;
                      CDR ;
                      CDR ;
                      CDR ;
                      CAR ;
                      PAIR ;
-                     DUP 4 ;
+                     DUP 3 ;
                      CDR ;
                      CDR ;
                      CAR ;
                      PAIR ;
-                     DUP 4 ;
+                     DUP 3 ;
                      CDR ;
                      CAR ;
                      PAIR ;
-                     DIG 3 ;
+                     DIG 2 ;
                      CAR ;
                      PAIR ;
-                     DUG 2 ;
-                     CONS ;
+                     SWAP ;
                      PAIR }
                    { SWAP ;
                      DUP ;
                      DUG 2 ;
                      CAR ;
-                     DIG 9 ;
+                     DIG 10 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
@@ -896,18 +918,18 @@
                      DUP ;
                      DUG 2 ;
                      PAIR ;
-                     DIG 6 ;
+                     DIG 7 ;
                      SWAP ;
                      EXEC ;
                      PUSH string "Auction must have ended" ;
                      SWAP ;
                      DUP ;
                      DUG 2 ;
-                     DIG 6 ;
+                     DIG 7 ;
                      SWAP ;
                      EXEC ;
                      PAIR ;
-                     DUP 8 ;
+                     DUP 9 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
@@ -917,7 +939,7 @@
                      COMPARE ;
                      EQ ;
                      PAIR ;
-                     DIG 7 ;
+                     DIG 8 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
@@ -943,27 +965,28 @@
                      CAR ;
                      PAIR ;
                      PAIR ;
-                     DIG 6 ;
+                     DIG 7 ;
                      SWAP ;
                      EXEC ;
                      SWAP ;
                      DUP ;
                      DUG 2 ;
                      CAR ;
-                     DIG 6 ;
+                     DIG 7 ;
                      SWAP ;
                      EXEC ;
+                     DUP 3 ;
+                     DIG 7 ;
+                     SWAP ;
+                     EXEC ;
+                     IF { DROP ; SWAP ; DROP }
+                        { DIG 2 ; CDR ; CAR ; UNIT ; TRANSFER_TOKENS ; CONS } ;
+                     DUP 3 ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
                      DIG 2 ;
-                     CDR ;
-                     CAR ;
-                     UNIT ;
-                     TRANSFER_TOKENS ;
-                     DUP 4 ;
-                     CDR ;
-                     CDR ;
-                     CDR ;
-                     CDR ;
-                     DIG 3 ;
                      NONE (pair address
                                 (pair mutez
                                       (pair timestamp
@@ -974,26 +997,25 @@
                                                                     (pair nat (pair mutez (pair timestamp address)))))))))) ;
                      SWAP ;
                      UPDATE ;
-                     DUP 4 ;
+                     DUP 3 ;
                      CDR ;
                      CDR ;
                      CDR ;
                      CAR ;
                      PAIR ;
-                     DUP 4 ;
+                     DUP 3 ;
                      CDR ;
                      CDR ;
                      CAR ;
                      PAIR ;
-                     DUP 4 ;
+                     DUP 3 ;
                      CDR ;
                      CAR ;
                      PAIR ;
-                     DIG 3 ;
+                     DIG 2 ;
                      CAR ;
                      PAIR ;
-                     DUG 2 ;
-                     CONS ;
+                     SWAP ;
                      PAIR } } ;
              UNPAIR ;
              DIG 2 ;
@@ -1003,6 +1025,8 @@
              SWAP ;
              PAIR }
            { DIG 3 ;
+             DROP ;
+             DIG 3 ;
              DROP ;
              DIG 3 ;
              DROP ;
@@ -1235,11 +1259,8 @@
                      SWAP ;
                      EXEC ;
                      DROP ;
-                     PUSH string "Amount must be equal to opening_price" ;
-                     SWAP ;
-                     DUP ;
-                     DUG 2 ;
-                     CAR ;
+                     PUSH string "Amount sent must be 0mutez" ;
+                     PUSH mutez 0 ;
                      AMOUNT ;
                      COMPARE ;
                      EQ ;

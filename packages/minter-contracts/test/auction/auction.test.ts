@@ -33,7 +33,6 @@ describe('test NFT auction', () => {
     empty_metadata_map = new MichelsonMap();
     tokenId = new BigNumber(0);
     bobAddress = await tezos.bob.signer.publicKeyHash();
-    await tezos.alice.signer.publicKeyHash();
     mintToken = {
       token_metadata: {
         token_id: tokenId,
@@ -91,7 +90,7 @@ describe('test NFT auction', () => {
       startTime,
       //end_time = start_time + 1hr,
       endTime,
-    ).send({ amount : 10 });
+    ).send({ amount : 0 });
     await opAuction.confirmation();
     $log.info(`Auction configured. Consumed gas: ${opAuction.consumedGas}`);
   });

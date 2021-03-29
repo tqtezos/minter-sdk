@@ -149,7 +149,7 @@ let configure_auction_storage(configure_param, seller, storage : configure_param
     assert_msg (abs(configure_param.start_time - Tezos.now) <= storage.max_config_to_start_time, "start_time must not be greater than the sum of current time and max_config_to_start_time");
     
     assert_msg (configure_param.opening_price > 0mutez, "Opening price must be greater than 0mutez");
-    assert_msg (Tezos.amount = configure_param.opening_price, "Amount must be equal to opening_price");
+    assert_msg (Tezos.amount = 0mutez, "Amount sent must be 0mutez");
     assert_msg (configure_param.round_time > 0n, "Round_time must be greater than 0 seconds");
 
     let auction_data : auction = {
@@ -183,9 +183,12 @@ let resolve_auction(asset_id, storage : nat * storage) : return = begin
 
     let fa2_transfers : operation list = transfer_tokens(auction.asset, Tezos.self_address, auction.highest_bidder) in
     let seller_contract : unit contract = resolve_contract(auction.seller) in
-    let send_fee = Tezos.transaction unit auction.current_bid seller_contract in
+    let op_list = if first_bid(auction) then 
+      fa2_transfers else 
+      let return_bid : operation = Tezos.transaction unit auction.current_bid seller_contract in
+      (return_bid :: fa2_transfers) in
     let updated_auctions = Big_map.remove asset_id storage.auctions in
-    (send_fee :: fa2_transfers, {storage with auctions = updated_auctions})
+    (op_list, {storage with auctions = updated_auctions})
   end
 
 let cancel_auction(asset_id, storage : nat * storage) : return = begin
@@ -197,9 +200,12 @@ let cancel_auction(asset_id, storage : nat * storage) : return = begin
 
     let fa2_transfers : operation list = transfer_tokens(auction.asset, Tezos.self_address, auction.seller) in
     let highest_bidder_contract : unit contract = resolve_contract(auction.highest_bidder) in
-    let return_bid = Tezos.transaction unit auction.current_bid highest_bidder_contract in
+    let op_list : operation list = if first_bid(auction) then 
+      fa2_transfers else  
+      let return_bid : operation = Tezos.transaction unit auction.current_bid highest_bidder_contract in 
+      (return_bid :: fa2_transfers) in
     let updated_auctions = Big_map.remove asset_id storage.auctions in
-    (return_bid :: fa2_transfers, {storage with auctions = updated_auctions})
+    (op_list, {storage with auctions = updated_auctions})
   end
 
 let place_bid(asset_id, storage : nat * storage) : return = begin
@@ -213,12 +219,15 @@ let place_bid(asset_id, storage : nat * storage) : return = begin
       else ());
 
     let highest_bidder_contract : unit contract = resolve_contract(auction.highest_bidder) in
-    let return_bid = Tezos.transaction unit auction.current_bid highest_bidder_contract in
+    let op_list : operation list = if first_bid(auction) 
+      then ([] : operation list)
+      else let return_bid : operation = Tezos.transaction unit auction.current_bid highest_bidder_contract in
+       [return_bid] in
     let new_end_time = if auction.end_time - Tezos.now <= auction.extend_time then
       Tezos.now + auction.extend_time else auction.end_time in
     let updated_auction_data = {auction with current_bid = Tezos.amount; highest_bidder = Tezos.sender; last_bid_time = Tezos.now; end_time = new_end_time;} in
     let updated_auctions = Big_map.update asset_id (Some updated_auction_data) storage.auctions in
-    ([return_bid] , {storage with auctions = updated_auctions})
+    (op_list , {storage with auctions = updated_auctions})
   end
 
 let admin(admin_param, storage : pauseable_admin * storage) : return =
