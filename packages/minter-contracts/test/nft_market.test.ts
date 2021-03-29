@@ -37,7 +37,7 @@ describe.each([originateFixedPriceTezSale])
   });
 
   beforeEach(async () => {
-    const admin = await tezos.bob.signer.publicKeyHash();
+    await tezos.bob.signer.publicKeyHash();
     nft = await originateNftFaucet(tezos.bob);
     marketplace = await originateMarketplace(tezos.bob);
     marketAddress = marketplace.address;
