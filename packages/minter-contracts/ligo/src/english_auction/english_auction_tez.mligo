@@ -219,10 +219,10 @@ let place_bid(asset_id, storage : nat * storage) : return = begin
       else ());
 
     let highest_bidder_contract : unit contract = resolve_contract(auction.highest_bidder) in
-    let op_list : operation list = if first_bid(auction) 
-      then ([] : operation list)
-      else let return_bid : operation = Tezos.transaction unit auction.current_bid highest_bidder_contract in
-       [return_bid] in
+    let op_list : operation list = if first_bid(auction) then 
+      ([] : operation list) else 
+      let return_bid : operation = Tezos.transaction unit auction.current_bid highest_bidder_contract in
+      [return_bid] in
     let new_end_time = if auction.end_time - Tezos.now <= auction.extend_time then
       Tezos.now + auction.extend_time else auction.end_time in
     let updated_auction_data = {auction with current_bid = Tezos.amount; highest_bidder = Tezos.sender; last_bid_time = Tezos.now; end_time = new_end_time;} in

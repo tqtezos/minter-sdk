@@ -130,7 +130,7 @@ describe('test NFT auction', () => {
       //start_time = now + 7seconds
       startTime,
       //end_time = start_time + 1hr,
-      endTime
+      endTime,
     ).send({ amount : 0 });
     await opAuction.confirmation();
     $log.info(`Auction configured. Consumed gas: ${opAuction.consumedGas}`);
