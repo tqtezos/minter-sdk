@@ -47,9 +47,7 @@
     "prettier": "^2.2.1",
     "ts-jest": "26.1.3",
     "typescript": "3.9.7",
-    "yargs": "^16.2.0"
-  },
-  "dependencies": {
+    "yargs": "^16.2.0",
     "@taquito/rpc": "8.0.3-beta.0",
     "@taquito/signer": "8.0.3-beta.0",
     "@taquito/taquito": "8.0.3-beta.0",
@@ -63,6 +61,7 @@
     "source-map-support": "0.5.19",
     "ts-node": "9.0.0"
   },
+  "dependencies": {},
   "bugs": {
     "url": "https://github.com/tqtezos/minter-sdk/issues"
   },
