@@ -69,7 +69,7 @@ Either `current_bid`  needs to be raised by `min_raise_percent * current_bid` OR
 
 ### %configure
 
-If admin is set and `SENDER` is admin, or if no admin is set, `auctions[current_id]` is set with parameter values, `current_bid` is set to `opening_price` and `storage.current_id` is incremented. Additionally, Seller must send an AMOUNT equal to `opening_price` -- this will be returned on first bid or when auction is cancelled or resolved.
+If admin is set and `SENDER` is an admin, or if no admin is set, `auctions[current_id]` is set with parameter values, `current_bid` is set to `opening_price` and `storage.current_id` is incremented. The `AMOUNT` sent to the entrypoint must be 0mutez additionally.  
 
 The contract optimistically transfers assets from `SENDER` to itself. That means `SENDER` needed to already have approved the transfer to the auction contract of the assets that they are auctioning. The auction configuration fails if any of these transfers fail. 
 
@@ -128,6 +128,14 @@ This entrypoint checks the auction has ended and sends asset to `highest_bidder`
 1. Whitelisting: Only allow certain addresses to configure auctions.
 2. Bidding in FA2
 3. Contract fee.
-4. Changing logic such that auctioneer is not required to place a deposit for their opening price.
-5. Bidding with permits. 
-6. Full front running protection. 
+4. Bidding with permits. 
+5. Full front running protection. 
+
+# English Auction w/ FA2 bids
+
+In this version of the NFT English Auction contract, bids are made in some FA2 token specified at contract origination as `bid_currency`. Bidders must add the auction contract as an operator for their bid token and then specify the amount they would like to bid in mutez as an argument to the `bid` entrypoint. The entrypoint will fail if the auction cannot transfer the indicated amount of `bid_currency` to itself from the bidder. 
+
+# English Auction with permit configuration
+
+This is an implementation of the auction contract in which the standard `Configure` entrypoint is replaced by one that accepts a batch of optional permits that can be used to configure auctions for accounts different than `SENDER.` This could serve useful for applications looking to allow users without tez to auction off their assets. See [One-step Permit](https://gitlab.com/tzip/tzip/-/merge_requests/151) for 
+reference. 

@@ -3,7 +3,7 @@
            (or (or %admin (or (unit %confirm_admin) (bool %pause)) (address %set_admin))
                (nat %bid))
            (or (nat %cancel) (nat %resolve)))
-        (list %permit_config
+        (list %permit_configure
            (pair (pair %config
                     (mutez %opening_price)
                     (pair (nat %min_raise_percent)
