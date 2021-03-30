@@ -11,8 +11,8 @@ You need [Stack](http://haskellstack.org/) to build this package.
 
 To run tests:
 
-* Either just run `make test`;
-* Or compile the contract manually (putting to the `bin` folder) and run `stack test`.
+* Compile contracts with: `yarn compile-ligo`.
+* Run `make test`.
 
 This will launch simplified tests without a real tezos node being involved.
 This can be configured, see the `Makefile` for some hints.
