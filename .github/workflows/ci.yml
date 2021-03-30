@@ -36,8 +36,8 @@ jobs:
         path: packages/minter-contracts/bin.tar.gz
         retention-days: 1
   
-  michelson-to-json:
-    name: Michelson to Json
+  michelson-to-ts:
+    name: Michelson to Typescript
     runs-on: ubuntu-latest
     needs: compile-ligo
     steps:
@@ -80,20 +80,11 @@ jobs:
       working-directory: packages/minter-contracts
       run: |
         docker run --rm --name flextesa --detach -p 20000:20000 tqtezos/flextesa:20210316 edobox start
-        yarn michelson-to-json --client-path ./tezos-client --endpoint http://localhost:20000
+        yarn michelson-to-ts --client-path ./tezos-client --endpoint http://localhost:20000
 
     - name: Compile package
       working-directory: packages/minter-contracts
       run: yarn lerna run build
-
-  generate-types:
-    name: Generate Types
-    runs-on: ubuntu-latest
-    needs: michelson-to-json
-    steps:
-      - name: Generate Types
-        working-directory: packages/minter-contracts
-        run: yarn generate-types
 
   # Test LIGO contracts (whose that are covered with cleveland)
   test-cleveland:
