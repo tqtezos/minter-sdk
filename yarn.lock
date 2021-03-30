@@ -1390,13 +1390,13 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
-"@taquito/contract-type-generator@8.0.6-beta.0-affe7fc1--722":
-  version "8.0.6-beta.0-affe7fc1--722"
-  resolved "https://npm.preview.tezostaquito.io/@taquito%2fcontract-type-generator/-/contract-type-generator-8.0.6-beta.0-affe7fc1--722.tgz#96e457bd4ca44e2a040cfc3e7117d6429bea3224"
-  integrity sha512-MBEVeVXAJV1kzKQnRmJZdQdRE4ERiI1BfmfHa+h/WDgPjhCZFNwSLEDR/CGBRUF2U54ICg0BmNXBk1j47cvmog==
+"@taquito/contract-type-generator@8.1.0-d25fca6b--722":
+  version "8.1.0-d25fca6b--722"
+  resolved "https://npm.preview.tezostaquito.io/@taquito%2fcontract-type-generator/-/contract-type-generator-8.1.0-d25fca6b--722.tgz#f6e7b85b65e5a5e6822adfb91d016a24316eed42"
+  integrity sha512-o6OEThLhyJNwYeckTLhZs4vO80S5MBeJ1XmkPeVPsZt2mpu+L+RBUCUu4OGffXsrkrCIFkbAPMStChIscj/atQ==
   dependencies:
-    "@taquito/michel-codec" "^8.0.6-beta.0-affe7fc1--722"
-    "@taquito/taquito" "^8.0.6-beta.0-affe7fc1--722"
+    "@taquito/michel-codec" "^8.1.0-d25fca6b--722"
+    "@taquito/taquito" "^8.1.0-d25fca6b--722"
     bignumber.js "^9.0.1"
 
 "@taquito/http-utils@^8.0.3-beta.0":
@@ -1413,10 +1413,10 @@
   dependencies:
     xhr2-cookies "^1.1.0"
 
-"@taquito/http-utils@^8.0.6-beta-RC.0":
-  version "8.0.6-beta-RC.0"
-  resolved "https://npm.preview.tezostaquito.io/@taquito%2fhttp-utils/-/http-utils-8.0.6-beta-RC.0.tgz#3540cc4faace891ebc6d0be0005ed22478997cf8"
-  integrity sha512-CxTCv4Pby2cFemrixb/xDdengFPCinQeVAg2c2mkUxjGSSW16VimBMOyA0V+ZDiJtQ9EX4sfLGUPPnKfrzJEbg==
+"@taquito/http-utils@^8.1.0":
+  version "8.1.0"
+  resolved "https://npm.preview.tezostaquito.io/@taquito%2fhttp-utils/-/http-utils-8.1.0.tgz#75e198397e76cebd843d154b3114f6cfb411e1a7"
+  integrity sha512-Bkj5awWn+ftmjBb+8VBjVXRJSMP2rayOnZUbJjkvitbMize8/gzGY86xrLw4j462FIuVlrqos9VHbLw5vVzMvw==
   dependencies:
     xhr2-cookies "^1.1.0"
 
@@ -1429,6 +1429,11 @@
   version "8.0.4-beta-RC.0"
   resolved "https://registry.yarnpkg.com/@taquito/michel-codec/-/michel-codec-8.0.4-beta-RC.0.tgz#551e8fbb1b74025ae4ec8aeb45b83b3e59274f3b"
   integrity sha512-HNU4QuOhvnN3w7njvpvfyn4np2XD7KBvnWXkSq3YWwB6+U/JC33JhakLrlkPoXNNDY1pkCUMLtMtuAGG7siIjg==
+
+"@taquito/michel-codec@^8.1.0", "@taquito/michel-codec@^8.1.0-d25fca6b--722":
+  version "8.1.0"
+  resolved "https://npm.preview.tezostaquito.io/@taquito%2fmichel-codec/-/michel-codec-8.1.0.tgz#2893271d1499b7a7f4abcb2e38bc7a059a60ea19"
+  integrity sha512-FUye4GQxpkqsuK2Dyjs3yHa1AJdveXuUlM0DtbdBOodcf/b4bpNTD2fsuPzBm0u95Vd4KcPoAKb0GrOVro8V1w==
 
 "@taquito/michelson-encoder@^8.0.3-beta.0":
   version "8.0.3-beta.0"
@@ -1450,13 +1455,13 @@
     bignumber.js "^9.0.1"
     fast-json-stable-stringify "^2.1.0"
 
-"@taquito/michelson-encoder@^8.0.6-beta-RC.0":
-  version "8.0.6-beta-RC.0"
-  resolved "https://npm.preview.tezostaquito.io/@taquito%2fmichelson-encoder/-/michelson-encoder-8.0.6-beta-RC.0.tgz#668fcacdeedf4cb8035adb7a964c6cd8b0bc5da6"
-  integrity sha512-2/Ts3ZPtJIsgZXV4vP0P1o7hLjn0lHwwMjdjXDdijyNP+asOsCFLuoxbPzyfCJk3MBJFIvaqL/xrLEZPiBp30A==
+"@taquito/michelson-encoder@^8.1.0":
+  version "8.1.0"
+  resolved "https://npm.preview.tezostaquito.io/@taquito%2fmichelson-encoder/-/michelson-encoder-8.1.0.tgz#3948c0bff160c8748330f8b7fe89144b5435d8b9"
+  integrity sha512-vaZjtDwOmVcFPJXHW3u6Y1O96voJJp3b95eluhxULk+wCN+NS1Yb4TPS0UhDHzBqS9WYQEXI2d62z4QFKDmulw==
   dependencies:
-    "@taquito/rpc" "^8.0.6-beta-RC.0"
-    "@taquito/utils" "^8.0.6-beta-RC.0"
+    "@taquito/rpc" "^8.1.0"
+    "@taquito/utils" "^8.1.0"
     bignumber.js "^9.0.1"
     fast-json-stable-stringify "^2.1.0"
 
@@ -1478,12 +1483,12 @@
     bignumber.js "^9.0.1"
     lodash "^4.17.20"
 
-"@taquito/rpc@^8.0.6-beta-RC.0":
-  version "8.0.6-beta-RC.0"
-  resolved "https://npm.preview.tezostaquito.io/@taquito%2frpc/-/rpc-8.0.6-beta-RC.0.tgz#3d23b820072d9b8bd20e26ca144ed83c350fc274"
-  integrity sha512-PI4cTSwFdLFBwSenzrTb7nCY+PnsJDysl1DhCexaTHTN1Smg4eRJq6Dxy+r/leVN0tx/OrOOyrRj6RU9NMNpig==
+"@taquito/rpc@^8.1.0":
+  version "8.1.0"
+  resolved "https://npm.preview.tezostaquito.io/@taquito%2frpc/-/rpc-8.1.0.tgz#9f04021a30ec6241d37143a11b29c87e98883a94"
+  integrity sha512-CTQ0fBMDS+ozra/jfGA1istENXpkgGpD1miPQqBEikPzafHR09sU94dAncO3oEAWMjdAnQFHqO1dBkalX4/ZQw==
   dependencies:
-    "@taquito/http-utils" "^8.0.6-beta-RC.0"
+    "@taquito/http-utils" "^8.1.0"
     bignumber.js "^9.0.1"
     lodash "^4.17.20"
 
@@ -1529,16 +1534,16 @@
     rx-sandbox "^1.0.3"
     rxjs "^6.6.3"
 
-"@taquito/taquito@^8.0.6-beta.0-affe7fc1--722":
-  version "8.0.6-beta-RC.0"
-  resolved "https://npm.preview.tezostaquito.io/@taquito%2ftaquito/-/taquito-8.0.6-beta-RC.0.tgz#2bbdfa7ce4a850fba8b7bbd28548d9496fc0af00"
-  integrity sha512-4fHGqSegjq6WzGQpXmWtRNk89UngaM/YXqbrzJAeyUsY1AGqLot/sFPEjpCbkz1vZD3WVijGXpFys9vnYSjIGQ==
+"@taquito/taquito@^8.1.0-d25fca6b--722":
+  version "8.1.0"
+  resolved "https://npm.preview.tezostaquito.io/@taquito%2ftaquito/-/taquito-8.1.0.tgz#f398e2675440f053bf3e78c55b1f70e5a103e1ea"
+  integrity sha512-a5YSS4eeN9Rh/EzH0yH3pEK/QxjXyAHptpBn6bYrg1R4BPGgoEAZWY7XjQmf4C4qxNoyIhmCs35svsnTy2xDKA==
   dependencies:
-    "@taquito/http-utils" "^8.0.6-beta-RC.0"
-    "@taquito/michel-codec" "^8.0.6-beta-RC.0"
-    "@taquito/michelson-encoder" "^8.0.6-beta-RC.0"
-    "@taquito/rpc" "^8.0.6-beta-RC.0"
-    "@taquito/utils" "^8.0.6-beta-RC.0"
+    "@taquito/http-utils" "^8.1.0"
+    "@taquito/michel-codec" "^8.1.0"
+    "@taquito/michelson-encoder" "^8.1.0"
+    "@taquito/rpc" "^8.1.0"
+    "@taquito/utils" "^8.1.0"
     bignumber.js "^9.0.1"
     rx-sandbox "^1.0.3"
     rxjs "^6.6.3"
@@ -1574,10 +1579,10 @@
     bs58check "^2.1.2"
     buffer "^5.6.0"
 
-"@taquito/utils@^8.0.6-beta-RC.0":
-  version "8.0.6-beta-RC.0"
-  resolved "https://npm.preview.tezostaquito.io/@taquito%2futils/-/utils-8.0.6-beta-RC.0.tgz#5d24b6b1b9f823b0b9e478d6a04495acc2c34ebe"
-  integrity sha512-sC7RIQRmGxuxbJOgLVNoo0G6Zh5dTZorHV6vRUOkxs4KWrVmqdpoGMY+1EX6iiVc7fwKptfvyB/b8f3pDJ134w==
+"@taquito/utils@^8.1.0":
+  version "8.1.0"
+  resolved "https://npm.preview.tezostaquito.io/@taquito%2futils/-/utils-8.1.0.tgz#658f07171a611ee8b5b976959ae04c5acff0760c"
+  integrity sha512-1Md7K0r/Y2JTAOHIv9Z3lVuWHBRV+c3ZUCAePIYuPtljEAOuhLgcxMa7ZtoRXfSPutoIOum9yRSSJrKhFhcOhw==
   dependencies:
     blakejs "^1.1.0"
     bs58check "^2.1.2"

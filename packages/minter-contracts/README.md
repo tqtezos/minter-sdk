@@ -107,14 +107,21 @@ yarn compile-ligo help
 
 > This script delegates LIGO compilation to `docker` — ensure the docker daemon is running for it to execute correctly.
 
-### `yarn michelson-to-ts`
+### `yarn michelson-to-json`
 
 Converts compiled Michelson contracts to exportable TypeScript modules. Requires [`tezos-client`](https://assets.tqtezos.com/docs/setup/1-tezos-client/) binary to be available.
 
 E.g.,
 ```bash
-yarn michelson-to-ts -c tezos-client
+yarn michelson-to-json -c tezos-client
 ```
+
+### Generate Contract Types
+
+```bash
+yarn generate-types
+```
+
 
 **Options**
 
