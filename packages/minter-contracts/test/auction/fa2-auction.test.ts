@@ -3,6 +3,7 @@ import { BigNumber } from 'bignumber.js';
 import moment from 'moment';
 import { bootstrap, TestTz } from '../bootstrap-sandbox';
 import { Contract, bytes, address } from '../../src/type-aliases';
+import { InternalOperationResult } from '@taquito/rpc';
 import {
   MintNftParam,
   originateFtFaucet,
@@ -172,5 +173,29 @@ describe('test NFT auction', () => {
     const smallBidPromise = nftAuctionAlice.methods.bid(0, 21).send({ amount : 0 });
     return expect(smallBidPromise).rejects.toHaveProperty('errors' );
   });
+  test('auction without bids that is cancelled should only return asset', async () => {
+    $log.info("Cancelling auction");
+    const opCancel = await nftAuctionBob.methods.cancel(0).send({ amount : 0, mutez : true });
+    await opCancel.confirmation();
+    $log.info("Auction cancelled");
+    const numInternalOps =
+      (opCancel.operationResults[0].metadata.internal_operation_results as InternalOperationResult[]).length;
+    if (numInternalOps != 1) throw new Error(`Operation incorrectly resulted in ${numInternalOps} internal ops`);
+    else $log.info("Only asset returned as expected");
+  });
+  test('auction with bid that is cancelled should return asset and bid', async () => {
+    $log.info(`Alice bids 200 tokens`);
+    const opBid = await nftAuctionAlice.methods.bid(0, 200).send({ amount : 0 });
+    await opBid.confirmation();
+    $log.info(`Bid placed`);
 
+    $log.info("Cancelling auction");
+    const opCancel = await nftAuctionBob.methods.cancel(0).send({ amount : 0, mutez : true });
+    await opCancel.confirmation();
+    $log.info("Auction cancelled");
+    const numInternalOps =
+      (opCancel.operationResults[0].metadata.internal_operation_results as InternalOperationResult[]).length;
+    if (numInternalOps != 2) throw new Error(`Operation incorrectly resulted in ${numInternalOps} internal ops`);
+    else $log.info("Asset and bid returned as expected");
+  });
 });

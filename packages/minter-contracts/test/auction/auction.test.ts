@@ -3,6 +3,7 @@ import { BigNumber } from 'bignumber.js';
 import moment from 'moment';
 import { bootstrap, TestTz } from '../bootstrap-sandbox';
 import { Contract, bytes, address } from '../../src/type-aliases';
+import { InternalOperationResult } from '@taquito/rpc';
 import {
   originateEnglishAuctionTez,
   MintNftParam,
@@ -94,7 +95,6 @@ describe('test NFT auction', () => {
     await opAuction.confirmation();
     $log.info(`Auction configured. Consumed gas: ${opAuction.consumedGas}`);
   });
-
   test('bid of less than asking price should fail', async() => {
     $log.info(`Alice bids 9tz expecting it to fail`);
     const failedOpeningBid = nftAuctionAlice.methods.bid(0).send({ amount : 9 });
@@ -112,7 +112,6 @@ describe('test NFT auction', () => {
     await opBid2.confirmation();
     $log.info(`Bid placed. Amount sent: ${opBid2.amount} mutez`);
   });
-
   test('place bid meeting opening price and then raise it by valid amount by min_raise', async () => {
     $log.info(`Alice bids 200tz`);
     const opBid = await nftAuctionAlice.methods.bid(0).send({ amount : 200 });
@@ -124,7 +123,6 @@ describe('test NFT auction', () => {
     await opBid2.confirmation();
     $log.info(`Bid placed. Amount sent: ${opBid2.amount} mutez`);
   });
-
   test('bid too small should fail', async () => {
     $log.info(`Alice bids 20tz`);
     const opBid = await nftAuctionAlice.methods.bid(0).send({ amount : 20 });
@@ -133,5 +131,32 @@ describe('test NFT auction', () => {
     $log.info(`Alice bids 21tz and we expect it to fail`);
     const smallBidPromise = nftAuctionAlice.methods.bid(0).send({ amount : 21 });
     return expect(smallBidPromise).rejects.toHaveProperty('errors' );
+  });
+  test('auction without bids that is cancelled should not result in transfer of any tez', async () => {
+    const zeroMutez = 0;
+    $log.info("Cancelling auction");
+    const opCancel = await nftAuctionBob.methods.cancel(0).send({ amount : 0, mutez : true });
+    await opCancel.confirmation();
+    $log.info("Auction cancelled");
+    const amountReturned =
+      (opCancel.operationResults[0].metadata.internal_operation_results as InternalOperationResult[])
+        [0].amount;
+    if (amountReturned !== zeroMutez.toString()) throw new Error(`Operation resulted in a transfer of ${amountReturned}`);
+    else $log.info("No amount in tez is sent as we expect");
+  });
+  test('auction with bids that is cancelled should return last bid', async () => {
+    $log.info(`Alice bids 200tz`);
+    const bidMutez = 200000000;
+    const opBid = await nftAuctionAlice.methods.bid(0).send({ amount : bidMutez, mutez : true });
+    await opBid.confirmation();
+    $log.info(`Bid placed. Amount sent: ${opBid.amount} mutez`);
+    $log.info("Cancelling auction");
+    const opCancel = await nftAuctionBob.methods.cancel(0).send({ amount : 0 });
+    await opCancel.confirmation();
+    $log.info("Auction cancelled");
+    const internalOps = opCancel.operationResults[0].metadata.internal_operation_results as InternalOperationResult[];
+    const amountReturned = internalOps[0].amount;
+    if (amountReturned !== bidMutez.toString()) throw new Error(`Operation resulted in a transfer of ${amountReturned}`);
+    else $log.info(`${amountReturned}tz returned to seller as expected`);
   });
 });
