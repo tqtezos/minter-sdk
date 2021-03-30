@@ -69,7 +69,7 @@ const compile = (contracts: string[]) =>
     const alias = fileNameToAlias(fileName);
     await fs.promises.writeFile(
       path.join(outPath, `${fileName}.ts`),
-      `export type ${alias} = { __type: '${alias}'; code: object; };\n` +
+      `export type ${alias} = { __type: '${alias}'; code: object[]; };\n` +
       `export default { __type: '${alias}', code: JSON.parse(\`${JSON.stringify(json)}\`) } as ${alias};\n`,
     );
     $log.info(`successfully compiled ${fileName} to JSON.`);
