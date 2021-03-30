@@ -63,10 +63,10 @@ describe('test NFT auction', () => {
 
   beforeEach(async() =>{
     $log.info('originating nft faucet...');
-    nftContract = await originateNftFaucet(tezos.bob, bobAddress);
+    nftContract = await originateNftFaucet(tezos.bob);
 
     $log.info('originating ft faucet...');
-    ftContract = await originateFtFaucet(tezos.bob, bobAddress);
+    ftContract = await originateFtFaucet(tezos.bob);
 
     $log.info('minting nft');
     const opMintNft = await nftContract.methods.mint([nft]).send();

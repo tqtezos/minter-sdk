@@ -15,14 +15,22 @@
            (pair (pair %token_metadata (nat %token_id) (map %token_info string bytes))
                  (address %owner)))) ;
   storage
-    (pair (pair (option %admin
-                   (pair (pair (address %admin) (bool %paused)) (option %pending_admin address)))
+    (pair (pair (pair %admin (pair (address %admin) (bool %paused)) (option %pending_admin address))
                 (pair %assets
                    (pair (big_map %ledger nat address) (nat %next_token_id))
                    (pair (big_map %operators (pair address (pair address nat)) unit)
                          (big_map %token_metadata nat (pair (nat %token_id) (map %token_info string bytes))))))
           (big_map %metadata string bytes)) ;
-  code { PUSH string "FA2_TOKEN_UNDEFINED" ;
+  code { LAMBDA
+           (pair (pair address bool) (option address))
+           unit
+           { CAR ;
+             CAR ;
+             SENDER ;
+             COMPARE ;
+             NEQ ;
+             IF { PUSH string "NOT_AN_ADMIN" ; FAILWITH } { UNIT } } ;
+         PUSH string "FA2_TOKEN_UNDEFINED" ;
          PUSH string "FA2_INSUFFICIENT_BALANCE" ;
          SWAP ;
          DUP ;
@@ -150,24 +158,13 @@
              PAIR } ;
          SWAP ;
          APPLY ;
-         LAMBDA
-           (option (pair (pair address bool) (option address)))
-           unit
-           { IF_NONE
-               { UNIT }
-               { CAR ;
-                 CAR ;
-                 SENDER ;
-                 COMPARE ;
-                 NEQ ;
-                 IF { PUSH string "NOT_AN_ADMIN" ; FAILWITH } { UNIT } } } ;
          DIG 3 ;
          UNPAIR ;
          IF_LEFT
            { IF_LEFT
-               { DIG 3 ;
+               { DIG 2 ;
                  DROP ;
-                 DIG 3 ;
+                 DIG 2 ;
                  DROP ;
                  SWAP ;
                  DUP ;
@@ -180,17 +177,15 @@
                        { DROP ;
                          DIG 2 ;
                          DROP ;
+                         DUP ;
+                         CDR ;
                          IF_NONE
-                           { PUSH string "NO_ADMIN_CAPABILITIES_CONFIGURED" ; FAILWITH }
-                           { DUP ;
-                             CDR ;
-                             IF_NONE
-                               { DROP ; PUSH string "NO_PENDING_ADMIN" ; FAILWITH }
-                               { SENDER ;
-                                 COMPARE ;
-                                 EQ ;
-                                 IF { NONE address ; SWAP ; CAR ; CDR ; SENDER ; PAIR ; PAIR ; SOME }
-                                    { DROP ; PUSH string "NOT_A_PENDING_ADMIN" ; FAILWITH } } } ;
+                           { DROP ; PUSH string "NO_PENDING_ADMIN" ; FAILWITH }
+                           { SENDER ;
+                             COMPARE ;
+                             EQ ;
+                             IF { NONE address ; SWAP ; CAR ; CDR ; SENDER ; PAIR ; PAIR }
+                                { DROP ; PUSH string "NOT_A_PENDING_ADMIN" ; FAILWITH } } ;
                          NIL operation ;
                          PAIR }
                        { SWAP ;
@@ -201,9 +196,15 @@
                          EXEC ;
                          DROP ;
                          SWAP ;
-                         IF_NONE
-                           { DROP ; PUSH string "NO_ADMIN_CAPABILITIES_CONFIGURED" ; FAILWITH }
-                           { DUP ; CDR ; DUG 2 ; CAR ; CAR ; PAIR ; PAIR ; SOME } ;
+                         DUP ;
+                         DUG 2 ;
+                         CDR ;
+                         SWAP ;
+                         DIG 2 ;
+                         CAR ;
+                         CAR ;
+                         PAIR ;
+                         PAIR ;
                          NIL operation ;
                          PAIR } }
                    { SWAP ;
@@ -213,10 +214,10 @@
                      SWAP ;
                      EXEC ;
                      DROP ;
+                     SOME ;
                      SWAP ;
-                     IF_NONE
-                       { DROP ; PUSH string "NO_ADMIN_CAPABILITIES_CONFIGURED" ; FAILWITH }
-                       { SWAP ; SOME ; SWAP ; CAR ; PAIR ; SOME } ;
+                     CAR ;
+                     PAIR ;
                      NIL operation ;
                      PAIR } ;
                  UNPAIR ;
@@ -230,17 +231,16 @@
                  PAIR ;
                  SWAP ;
                  PAIR }
-               { DIG 2 ;
+               { DIG 4 ;
                  DROP ;
                  SWAP ;
                  DUP ;
                  DUG 2 ;
                  CAR ;
                  CAR ;
-                 IF_NONE
-                   { UNIT }
-                   { CAR ; CDR ; IF { PUSH string "PAUSED" ; FAILWITH } { UNIT } } ;
-                 DROP ;
+                 CAR ;
+                 CDR ;
+                 IF { PUSH string "PAUSED" ; FAILWITH } {} ;
                  SWAP ;
                  DUP ;
                  DUG 2 ;
@@ -412,14 +412,14 @@
                  PAIR ;
                  SWAP ;
                  PAIR } }
-           { DIG 4 ;
+           { DIG 3 ;
              DROP ;
              SWAP ;
              DUP ;
              DUG 2 ;
              CAR ;
              CAR ;
-             DIG 3 ;
+             DIG 4 ;
              SWAP ;
              EXEC ;
              DROP ;
@@ -440,12 +440,11 @@
                     DUG 2 ;
                     CDR ;
                     CAR ;
-                    CDR ;
+                    CAR ;
                     SWAP ;
                     DUP ;
                     DUG 2 ;
-                    COMPARE ;
-                    LT ;
+                    MEM ;
                     IF { DROP 3 ; PUSH string "FA2_INVALID_TOKEN_ID" ; FAILWITH }
                        { SWAP ;
                          DUP ;

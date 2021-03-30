@@ -19,7 +19,7 @@ let confirm_new_admin (storage : admin_storage) : admin_storage =
       admin = Tezos.sender;
     }
     else (failwith "NOT_A_PENDING_ADMIN" : admin_storage)
-  
+
 (* Fails if sender is not admin *)
 let fail_if_not_admin_ext (storage, extra_msg : admin_storage * string) : unit =
   if Tezos.sender <> storage.admin
