@@ -1430,16 +1430,6 @@
   resolved "https://registry.yarnpkg.com/@taquito/michel-codec/-/michel-codec-8.0.4-beta-RC.0.tgz#551e8fbb1b74025ae4ec8aeb45b83b3e59274f3b"
   integrity sha512-HNU4QuOhvnN3w7njvpvfyn4np2XD7KBvnWXkSq3YWwB6+U/JC33JhakLrlkPoXNNDY1pkCUMLtMtuAGG7siIjg==
 
-"@taquito/michel-codec@^8.0.6-beta-RC.0", "@taquito/michel-codec@^8.0.6-beta.0-affe7fc1--722":
-  version "8.0.6-beta-RC.0"
-  resolved "https://npm.preview.tezostaquito.io/@taquito%2fmichel-codec/-/michel-codec-8.0.6-beta-RC.0.tgz#c46ce3496631d2959cf47ba89df56fccaf13ee57"
-  integrity sha512-qZ7U/HfyhpjlEcQu9ivEcGXUUWgqVpzBH9CzvWvQIN8ap27wzFbIEEX8An7CNoskRRxfEytU3P3f+MTNdPgH0w==
-
-"@taquito/michel-codec@^8.0.6-beta.0":
-  version "8.0.6-beta.0"
-  resolved "https://registry.yarnpkg.com/@taquito/michel-codec/-/michel-codec-8.0.6-beta.0.tgz#974a84b71e146df50f958a35e57212ce6791880f"
-  integrity sha512-mXEqTM1zrdB6dIjnykj3C/dgFldvWJDPfPNqw1xk56nC8i1UOMs6+Snii97KsJAfm0vfa+01VxOpIxCDMWcErQ==
-
 "@taquito/michelson-encoder@^8.0.3-beta.0":
   version "8.0.3-beta.0"
   resolved "https://registry.yarnpkg.com/@taquito/michelson-encoder/-/michelson-encoder-8.0.3-beta.0.tgz#e8919e2b0f0f14edfa03205551c2f30ec4b950c1"

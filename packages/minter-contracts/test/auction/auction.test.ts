@@ -50,7 +50,7 @@ describe('test NFT auction', () => {
     nftAuctionAlice = await tezos.alice.contract.at(nftAuction.address);
 
     $log.info('originating nft faucets...');
-    nftContract = await originateNftFaucet(tezos.bob, bobAddress);
+    nftContract = await originateNftFaucet(tezos.bob);
 
     $log.info('minting token');
 

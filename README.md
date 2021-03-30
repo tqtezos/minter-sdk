@@ -17,7 +17,7 @@ Minter SDK offers a set of packages to bring creation, management, and sales of 
 -   A CLI for minting and configuring NFT / marketplace contracts
 -   [DIDkit](https://www.spruceid.com/didkit) integration for verified creator credentials
 
---- 
+---
 ## Project Organization
 `minter-sdk` is organized as a mono repository from which several npm packages are built and published. Packages are in the [`packages/`](packages) directory, each one with its own `README` file.
 

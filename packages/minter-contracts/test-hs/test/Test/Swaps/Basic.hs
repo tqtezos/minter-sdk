@@ -1,5 +1,5 @@
 -- | Tests on the swaps contract.
-module Test.Swaps.Test
+module Test.Swaps.Basic
   ( test_Swap
   ) where
 
