@@ -37,7 +37,7 @@ jobs:
         retention-days: 1
   
   michelson-to-ts:
-    name: Michelson to Typescript
+    name: Michelson to TS
     runs-on: ubuntu-latest
     needs: compile-ligo
     steps:
