@@ -1,6 +1,6 @@
 {
   "name": "@tqtezos/minter-sdk",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "main": "dist",
   "description": "Utility library for interacting with minter-contracts",
   "files": [
@@ -16,7 +16,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@tqtezos/minter-contracts": "^1.0.1"
+    "@tqtezos/minter-contracts": "^1.0.2"
   },
   "devDependencies": {
     "@types/jest": "^26.0.21",
