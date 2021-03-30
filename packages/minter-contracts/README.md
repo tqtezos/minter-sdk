@@ -18,7 +18,7 @@ The `@tqtezos/minter-contracts` package provides a collection of NFT and marketp
   - [Prerequisites](#prerequisites)
   - [Package Scripts](#package-scripts)
     - [`yarn compile-ligo [filter]`](#yarn-compile-ligo-filter)
-    - [`yarn michelson-to-ts`](#yarn-michelson-to-ts)
+    - [`yarn michelson-to-json`](#yarn-michelson-to-json)
     - [`yarn bootstrap`](#yarn-bootstrap)
     - [`yarn bootstrap-sandbox`](#yarn-bootstrap-sandbox)
     - [`yarn bootstrap-testnet`](#yarn-bootstrap-testnet)
@@ -118,6 +118,8 @@ yarn michelson-to-json -c tezos-client
 
 ### Generate Contract Types
 
+This will generate the contract types and code files in `bin-ts`
+
 ```bash
 yarn generate-types
 ```
@@ -135,7 +137,7 @@ yarn generate-types
 
 One may also pass the `help` command to see a list of options in their terminal.
 ```bash
-yarn michelson-to-ts help
+yarn michelson-to-json help
 ```
 
 > This script will _not_ compile LIGO contracts beforehand. Be sure to execute [`yarn compile-ligo`](#yarn-compile-ligo-filter) first if you need updated contract code.
