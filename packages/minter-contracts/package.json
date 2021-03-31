@@ -36,7 +36,7 @@
   "author": "TQ Tezos Maintainers <info@tqtezos.com>",
   "license": "MIT",
   "devDependencies": {
-    "@taquito/contract-type-generator": "8.1.0-488300b7--722",
+    "@taquito/contract-type-generator": "8.1.0-20db307d--722",
     "@taquito/rpc": "8.0.3-beta.0",
     "@taquito/signer": "8.0.3-beta.0",
     "@taquito/taquito": "8.0.3-beta.0",

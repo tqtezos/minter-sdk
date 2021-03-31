@@ -1390,13 +1390,13 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
-"@taquito/contract-type-generator@8.1.0-488300b7--722":
-  version "8.1.0-488300b7--722"
-  resolved "https://npm.preview.tezostaquito.io/@taquito%2fcontract-type-generator/-/contract-type-generator-8.1.0-488300b7--722.tgz#e18baf7c94abab931cd89018eaeb4b2013f22f6e"
-  integrity sha512-moFm8pZj2ekQNEQWy2dalrp5ftCZgkjrQRJhTQCh/8fCeJMu2kaUVNXmluNrS7r+HE1srJXWdnQGUWI8T4G6TQ==
+"@taquito/contract-type-generator@8.1.0-20db307d--722":
+  version "8.1.0-20db307d--722"
+  resolved "https://npm.preview.tezostaquito.io/@taquito%2fcontract-type-generator/-/contract-type-generator-8.1.0-20db307d--722.tgz#099d5d819816c2f18e9c5d2e9fc05438f4c92807"
+  integrity sha512-2DWSVU83KyvboE68AUBHTBmFZMEOJw7klKeXbb0WYd33w76TpDrIOVhkquAkh/pqA0CZVKHwvP7Lt9aqhUNdGA==
   dependencies:
-    "@taquito/michel-codec" "^8.1.0-488300b7--722"
-    "@taquito/taquito" "^8.1.0-488300b7--722"
+    "@taquito/michel-codec" "^8.1.0-20db307d--722"
+    "@taquito/taquito" "^8.1.0-20db307d--722"
     bignumber.js "^9.0.1"
 
 "@taquito/http-utils@^8.0.3-beta.0":
@@ -1430,7 +1430,7 @@
   resolved "https://registry.yarnpkg.com/@taquito/michel-codec/-/michel-codec-8.0.4-beta-RC.0.tgz#551e8fbb1b74025ae4ec8aeb45b83b3e59274f3b"
   integrity sha512-HNU4QuOhvnN3w7njvpvfyn4np2XD7KBvnWXkSq3YWwB6+U/JC33JhakLrlkPoXNNDY1pkCUMLtMtuAGG7siIjg==
 
-"@taquito/michel-codec@^8.1.0", "@taquito/michel-codec@^8.1.0-488300b7--722":
+"@taquito/michel-codec@^8.1.0", "@taquito/michel-codec@^8.1.0-20db307d--722":
   version "8.1.0"
   resolved "https://npm.preview.tezostaquito.io/@taquito%2fmichel-codec/-/michel-codec-8.1.0.tgz#2893271d1499b7a7f4abcb2e38bc7a059a60ea19"
   integrity sha512-FUye4GQxpkqsuK2Dyjs3yHa1AJdveXuUlM0DtbdBOodcf/b4bpNTD2fsuPzBm0u95Vd4KcPoAKb0GrOVro8V1w==
@@ -1534,7 +1534,7 @@
     rx-sandbox "^1.0.3"
     rxjs "^6.6.3"
 
-"@taquito/taquito@^8.1.0-488300b7--722":
+"@taquito/taquito@^8.1.0-20db307d--722":
   version "8.1.0"
   resolved "https://npm.preview.tezostaquito.io/@taquito%2ftaquito/-/taquito-8.1.0.tgz#f398e2675440f053bf3e78c55b1f70e5a103e1ea"
   integrity sha512-a5YSS4eeN9Rh/EzH0yH3pEK/QxjXyAHptpBn6bYrg1R4BPGgoEAZWY7XjQmf4C4qxNoyIhmCs35svsnTy2xDKA==
