@@ -18,7 +18,7 @@ The `@tqtezos/minter-contracts` package provides a collection of NFT and marketp
   - [Prerequisites](#prerequisites)
   - [Package Scripts](#package-scripts)
     - [`yarn compile-ligo [filter]`](#yarn-compile-ligo-filter)
-    - [`yarn michelson-to-ts`](#yarn-michelson-to-ts)
+    - [`yarn generate-types`](#yarn-generate-types)
     - [`yarn bootstrap`](#yarn-bootstrap)
     - [`yarn bootstrap-sandbox`](#yarn-bootstrap-sandbox)
     - [`yarn bootstrap-testnet`](#yarn-bootstrap-testnet)
@@ -107,16 +107,8 @@ yarn compile-ligo help
 
 > This script delegates LIGO compilation to `docker` — ensure the docker daemon is running for it to execute correctly.
 
-### `yarn michelson-to-ts`
 
-Converts compiled Michelson contracts to exportable TypeScript modules. Requires [`tezos-client`](https://assets.tqtezos.com/docs/setup/1-tezos-client/) binary to be available.
-
-E.g.,
-```bash
-yarn michelson-to-ts -c tezos-client
-```
-
-### Generate Contract Types (this is run as part of michelson-to-ts)
+### `yarn generate-types`
 
 This will generate the contract types and code files in `bin-ts`
 
@@ -124,23 +116,8 @@ This will generate the contract types and code files in `bin-ts`
 yarn generate-types
 ```
 
-
-**Options**
-
-| Option | Alias               | Description                                                                                          | Required |
-| ------ | ------------------- | -----------------------------------------------------------------------                              | -------- | 
-| `-c`   |`--client-path`      | Path to `tezos-client` binary. If installed in `$PATH`, simply passing `tezos-client` will suffice.  | ☑️        |
-| `-m`   |`--michelson-path`   | Path to compiled Michelson folder                                                                    | 🔘       |
-| `-o`   |`--out-path`         | TypeScript output path                                                                               | 🔘       |
-| `-E`   |`--endpoint`         | HTTP(S) endpoint of the node RPC interface; e.g. 'http://localhost:8732'                             | 🔘       |
-
-
-One may also pass the `help` command to see a list of options in their terminal.
-```bash
-yarn michelson-to-ts help
-```
-
 > This script will _not_ compile LIGO contracts beforehand. Be sure to execute [`yarn compile-ligo`](#yarn-compile-ligo-filter) first if you need updated contract code.
+
 
 ### `yarn bootstrap` 
 Bootstrap the network specified in `ENV_NAME` environment name.
