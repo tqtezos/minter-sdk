@@ -15,8 +15,9 @@ import { MichelsonMap } from '@taquito/taquito';
 
 import { addOperator } from '../../src/fa2-interface';
 import { Fa2_token, Tokens } from '../../src/auction-interface';
+import { queryBalancesWithLambdaView, getBalances, QueryBalances } from '../../test/fa2-balance-inspector'
 
-jest.setTimeout(240000); // 3 minutes
+jest.setTimeout(240000); // 4 minutes
 
 describe('test NFT auction', () => {
   let tezos: TestTz;
@@ -35,6 +36,7 @@ describe('test NFT auction', () => {
   let nft : MintNftParam;
   let bid_tokens_bob : MintFtParam;
   let bid_tokens_alice : MintFtParam;
+  let queryBalances : QueryBalances;
 
   beforeAll(async () => {
     tezos = await bootstrap();
@@ -60,6 +62,7 @@ describe('test NFT auction', () => {
       owner: aliceAddress,
       amount : new BigNumber(300),
     };
+    queryBalances = queryBalancesWithLambdaView(tezos.lambdaView);
   });
 
   beforeEach(async() =>{
@@ -136,6 +139,7 @@ describe('test NFT auction', () => {
     await opAuction.confirmation();
     $log.info(`Auction configured. Consumed gas: ${opAuction.consumedGas}`);
   });
+  /*
   test('bid of less than asking price should fail', async() => {
     $log.info(`Alice bids 9 tokens expecting it to fail`);
     const failedOpeningBid = nftAuctionAlice.methods.bid(0, 9).send({ amount : 0 });
@@ -173,19 +177,34 @@ describe('test NFT auction', () => {
     const smallBidPromise = nftAuctionAlice.methods.bid(0, 21).send({ amount : 0 });
     return expect(smallBidPromise).rejects.toHaveProperty('errors' );
   });
+  */
   test('auction without bids that is cancelled should only return asset', async () => {
+    const [aliceBalanceBefore, bobBalanceBefore] = await getBalances([
+      { owner: aliceAddress, token_id: tokenIdBidToken },
+      { owner: bobAddress, token_id: tokenIdBidToken }
+    ], queryBalances, ftContract);
+    $log.info(`Alices's balance is ${aliceBalanceBefore.toNumber()} and Bob's is ${bobBalanceBefore.toNumber()} `);
     $log.info("Cancelling auction");
     const opCancel = await nftAuctionBob.methods.cancel(0).send({ amount : 0, mutez : true });
     await opCancel.confirmation();
     $log.info("Auction cancelled");
-    const numInternalOps =
-      (opCancel.operationResults[0].metadata.internal_operation_results as InternalOperationResult[]).length;
-    if (numInternalOps != 1) throw new Error(`Operation incorrectly resulted in ${numInternalOps} internal ops`);
-    else $log.info("Only asset returned as expected");
+    const [aliceBalanceAfter, bobBalanceAfter] = await getBalances([
+      { owner: aliceAddress, token_id: tokenIdBidToken },
+      { owner: bobAddress, token_id: tokenIdBidToken }
+    ], queryBalances, ftContract);
+    $log.info(`Bob's balance is ${bobBalanceAfter.toNumber()} and Alice's is ${aliceBalanceAfter.toNumber()}`)
+    if (aliceBalanceBefore.eq(aliceBalanceAfter) && bobBalanceBefore.eq(bobBalanceAfter)) $log.info("Only asset returned as expected")
+    else throw new Error(`FA2 returned incorrectly`);
   });
   test('auction with bid that is cancelled should return asset and bid', async () => {
+    const [aliceBalanceBefore, bobBalanceBefore] = await getBalances([
+      { owner: aliceAddress, token_id: tokenIdBidToken },
+      { owner: bobAddress, token_id: tokenIdBidToken }
+    ], queryBalances, ftContract);
+    $log.info(`Bob's balance is ${bobBalanceBefore.toNumber()} and Alice's is ${aliceBalanceBefore.toNumber()}`);
     $log.info(`Alice bids 200 tokens`);
-    const opBid = await nftAuctionAlice.methods.bid(0, 200).send({ amount : 0 });
+    const alicesBid = new BigNumber(200);
+    const opBid = await nftAuctionAlice.methods.bid(0, alicesBid.toNumber()).send({ amount : 0 });
     await opBid.confirmation();
     $log.info(`Bid placed`);
 
@@ -193,9 +212,12 @@ describe('test NFT auction', () => {
     const opCancel = await nftAuctionBob.methods.cancel(0).send({ amount : 0, mutez : true });
     await opCancel.confirmation();
     $log.info("Auction cancelled");
-    const numInternalOps =
-      (opCancel.operationResults[0].metadata.internal_operation_results as InternalOperationResult[]).length;
-    if (numInternalOps != 2) throw new Error(`Operation incorrectly resulted in ${numInternalOps} internal ops`);
-    else $log.info("Asset and bid returned as expected");
+    const [aliceBalanceAfter, bobBalanceAfter] = await getBalances([
+      { owner: aliceAddress, token_id: tokenIdBidToken },
+      { owner: bobAddress, token_id: tokenIdBidToken }
+    ], queryBalances, ftContract);
+    $log.info(`Bob's balance is ${bobBalanceAfter.toNumber()} and Alice's is ${aliceBalanceAfter.toNumber()}`)
+    if (aliceBalanceBefore.eq(aliceBalanceAfter) && bobBalanceBefore.eq(bobBalanceAfter)) $log.info("Only asset returned as expected")
+    else throw new Error(`FA2 returned incorrectly`);
   });
 });
