@@ -15,7 +15,7 @@ import { MichelsonMap } from '@taquito/taquito';
 
 import { addOperator } from '../../src/fa2-interface';
 import { Fa2_token, Tokens } from '../../src/auction-interface';
-import { queryBalancesWithLambdaView, getBalances, QueryBalances } from '../../test/fa2-balance-inspector'
+import { queryBalancesWithLambdaView, getBalances, QueryBalances } from '../../test/fa2-balance-inspector';
 
 jest.setTimeout(240000); // 4 minutes
 
@@ -181,7 +181,7 @@ describe('test NFT auction', () => {
   test('auction without bids that is cancelled should only return asset', async () => {
     const [aliceBalanceBefore, bobBalanceBefore] = await getBalances([
       { owner: aliceAddress, token_id: tokenIdBidToken },
-      { owner: bobAddress, token_id: tokenIdBidToken }
+      { owner: bobAddress, token_id: tokenIdBidToken },
     ], queryBalances, ftContract);
     $log.info(`Alices's balance is ${aliceBalanceBefore.toNumber()} and Bob's is ${bobBalanceBefore.toNumber()} `);
     $log.info("Cancelling auction");
@@ -190,16 +190,16 @@ describe('test NFT auction', () => {
     $log.info("Auction cancelled");
     const [aliceBalanceAfter, bobBalanceAfter] = await getBalances([
       { owner: aliceAddress, token_id: tokenIdBidToken },
-      { owner: bobAddress, token_id: tokenIdBidToken }
+      { owner: bobAddress, token_id: tokenIdBidToken },
     ], queryBalances, ftContract);
-    $log.info(`Bob's balance is ${bobBalanceAfter.toNumber()} and Alice's is ${aliceBalanceAfter.toNumber()}`)
-    if (aliceBalanceBefore.eq(aliceBalanceAfter) && bobBalanceBefore.eq(bobBalanceAfter)) $log.info("Only asset returned as expected")
+    $log.info(`Bob's balance is ${bobBalanceAfter.toNumber()} and Alice's is ${aliceBalanceAfter.toNumber()}`);
+    if (aliceBalanceBefore.eq(aliceBalanceAfter) && bobBalanceBefore.eq(bobBalanceAfter)) $log.info("Only asset returned as expected");
     else throw new Error(`FA2 returned incorrectly`);
   });
   test('auction with bid that is cancelled should return asset and bid', async () => {
     const [aliceBalanceBefore, bobBalanceBefore] = await getBalances([
       { owner: aliceAddress, token_id: tokenIdBidToken },
-      { owner: bobAddress, token_id: tokenIdBidToken }
+      { owner: bobAddress, token_id: tokenIdBidToken },
     ], queryBalances, ftContract);
     $log.info(`Bob's balance is ${bobBalanceBefore.toNumber()} and Alice's is ${aliceBalanceBefore.toNumber()}`);
     $log.info(`Alice bids 200 tokens`);
@@ -214,10 +214,10 @@ describe('test NFT auction', () => {
     $log.info("Auction cancelled");
     const [aliceBalanceAfter, bobBalanceAfter] = await getBalances([
       { owner: aliceAddress, token_id: tokenIdBidToken },
-      { owner: bobAddress, token_id: tokenIdBidToken }
+      { owner: bobAddress, token_id: tokenIdBidToken },
     ], queryBalances, ftContract);
-    $log.info(`Bob's balance is ${bobBalanceAfter.toNumber()} and Alice's is ${aliceBalanceAfter.toNumber()}`)
-    if (aliceBalanceBefore.eq(aliceBalanceAfter) && bobBalanceBefore.eq(bobBalanceAfter)) $log.info("Only asset returned as expected")
+    $log.info(`Bob's balance is ${bobBalanceAfter.toNumber()} and Alice's is ${aliceBalanceAfter.toNumber()}`);
+    if (aliceBalanceBefore.eq(aliceBalanceAfter) && bobBalanceBefore.eq(bobBalanceAfter)) $log.info("Only asset returned as expected");
     else throw new Error(`FA2 returned incorrectly`);
   });
 });
