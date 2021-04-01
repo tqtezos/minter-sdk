@@ -16,11 +16,12 @@ extra-doc-files:
 #
 # Didn't do this yet since Cleveland tests are used only for a small set of contracts.
 extra-source-files:
-  - ../bin/fa2_swap.tz
-  - ../bin/fa2_whitelisted_swap.tz
+  - bin/fa2_swap.tz
+  - bin/fa2_whitelisted_swap.tz
 
 library:
   <<: *lib-common
+  source-dirs: src-hs
 
   dependencies:
     - cleveland
@@ -34,6 +35,7 @@ library:
 tests:
   minter-sdk-tests:
     <<: *test-common
+    source-dirs: test-hs
 
     dependencies:
       - containers
