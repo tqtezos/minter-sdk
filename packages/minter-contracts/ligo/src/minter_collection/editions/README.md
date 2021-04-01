@@ -4,14 +4,14 @@
 
 We want to mint many _editions_ of an NFT that share the same metadata,
 but with unique serial numbers, e.g. in a _limited run_.
-With contracts not-specialized to editions, this results in redundant copies of the metadata that's shared between editions in a run.
-We also want the token Ids of tokens in an edition set to be consecutive, to make reasoning about them easier. 
+With contracts not specialized to editions, this results in redundant copies of the metadata that's shared between editions in a run.
+We also want the token ids of tokens in an edition set to be consecutive to make reasoning about them easier. 
 
 This propsal allows editions creators to easily mint an "unlimited" (limited only by big_map storage limits) number of editions and then distribute them concurrently. 
 
 ## Storage
 
-- FA2 w/ multi-admin + TZIP-16 storage
+- FA2 w/ single-admin + TZIP-16 storage
 
 - Editions-specific storage
   + `current_token_id : nat`
