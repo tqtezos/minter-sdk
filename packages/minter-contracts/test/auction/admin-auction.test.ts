@@ -31,7 +31,7 @@ describe('test NFT auction', () => {
 
   beforeAll(async () => {
     tezos = await bootstrap();
-    nftContract = await originateNftFaucet(tezos.bob, bobAddress);
+    nftContract = await originateNftFaucet(tezos.bob);
   });
 
   beforeEach(async() => {

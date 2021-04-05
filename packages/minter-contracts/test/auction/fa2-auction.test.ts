@@ -3,6 +3,7 @@ import { BigNumber } from 'bignumber.js';
 import moment from 'moment';
 import { bootstrap, TestTz } from '../bootstrap-sandbox';
 import { Contract, bytes, address } from '../../src/type-aliases';
+import { InternalOperationResult } from '@taquito/rpc';
 import {
   MintNftParam,
   originateFtFaucet,
@@ -14,8 +15,9 @@ import { MichelsonMap } from '@taquito/taquito';
 
 import { addOperator } from '../../src/fa2-interface';
 import { Fa2_token, Tokens } from '../../src/auction-interface';
+import { queryBalancesWithLambdaView, getBalances, QueryBalances } from '../../test/fa2-balance-inspector';
 
-jest.setTimeout(180000); // 3 minutes
+jest.setTimeout(240000); // 4 minutes
 
 describe('test NFT auction', () => {
   let tezos: TestTz;
@@ -34,6 +36,7 @@ describe('test NFT auction', () => {
   let nft : MintNftParam;
   let bid_tokens_bob : MintFtParam;
   let bid_tokens_alice : MintFtParam;
+  let queryBalances : QueryBalances;
 
   beforeAll(async () => {
     tezos = await bootstrap();
@@ -59,14 +62,15 @@ describe('test NFT auction', () => {
       owner: aliceAddress,
       amount : new BigNumber(300),
     };
+    queryBalances = queryBalancesWithLambdaView(tezos.lambdaView);
   });
 
   beforeEach(async() =>{
     $log.info('originating nft faucet...');
-    nftContract = await originateNftFaucet(tezos.bob, bobAddress);
+    nftContract = await originateNftFaucet(tezos.bob);
 
     $log.info('originating ft faucet...');
-    ftContract = await originateFtFaucet(tezos.bob, bobAddress);
+    ftContract = await originateFtFaucet(tezos.bob);
 
     $log.info('minting nft');
     const opMintNft = await nftContract.methods.mint([nft]).send();
@@ -130,46 +134,90 @@ describe('test NFT auction', () => {
       //start_time = now + 7seconds
       startTime,
       //end_time = start_time + 1hr,
-      endTime).send();
+      endTime,
+    ).send({ amount : 0 });
     await opAuction.confirmation();
     $log.info(`Auction configured. Consumed gas: ${opAuction.consumedGas}`);
   });
+  /*
   test('bid of less than asking price should fail', async() => {
     $log.info(`Alice bids 9 tokens expecting it to fail`);
-    const failedOpeningBid = nftAuctionAlice.methods.bid(0, 9).send();
+    const failedOpeningBid = nftAuctionAlice.methods.bid(0, 9).send({ amount : 0 });
     //TODO: test contents of error message
     return expect(failedOpeningBid).rejects.toHaveProperty('errors');
   });
   test('place bid meeting opening price and then raise it by valid amount by min_raise_percent', async () => {
     $log.info(`Alice bids 10 token`);
-    const opBid = await nftAuctionAlice.methods.bid(0, 10).send();
+    const opBid = await nftAuctionAlice.methods.bid(0, 10).send({ amount : 0 });
     await opBid.confirmation();
     $log.info(`Bid placed`);
 
     $log.info(`Alice bids 11 tokens`);
-    const opBid2 = await nftAuctionAlice.methods.bid(0, 11).send();
+    const opBid2 = await nftAuctionAlice.methods.bid(0, 11).send({ amount : 0 });
     await opBid2.confirmation();
     $log.info(`Bid placed`);
   });
   test('place bid meeting opening price and then raise it by valid amount by min_raise', async () => {
-    $log.info(`Alice bids 200tz`);
-    const opBid = await nftAuctionAlice.methods.bid(0, 200).send();
+    $log.info(`Alice bids 200 tokens`);
+    const opBid = await nftAuctionAlice.methods.bid(0, 200).send({ amount : 0 });
     await opBid.confirmation();
-    $log.info(`Bid placed. Amount sent: ${opBid.amount} mutez`);
+    $log.info(`Bid placed`);
 
-    $log.info(`Alice bids 210 , a 10 token increase but less than a 10% raise of previous bid `);
-    const opBid2 = await nftAuctionAlice.methods.bid(0, 210).send();
+    $log.info(`Alice bids 210 tokens, a 10 token increase but less than a 10% raise of previous bid `);
+    const opBid2 = await nftAuctionAlice.methods.bid(0, 210).send({ amount : 0 });
     await opBid2.confirmation();
-    $log.info(`Bid placed. Amount sent: ${opBid2.amount} mutez`);
+    $log.info(`Bid placed.`);
   });
   test('bid too small should fail', async () => {
     $log.info(`Alice bids 20  tokens`);
-    const opBid = await nftAuctionAlice.methods.bid(0, 20).send();
+    const opBid = await nftAuctionAlice.methods.bid(0, 20).send({ amount : 0 });
     await opBid.confirmation();
-    $log.info(`Bid placed. Amount sent: ${opBid.amount}`);
-    $log.info(`Alice bids 21tz and we expect it to fail`);
-    const smallBidPromise = nftAuctionAlice.methods.bid(0, 21).send();
+    $log.info(`Bid placed`);
+    $log.info(`Alice bids 21 tokens and we expect it to fail`);
+    const smallBidPromise = nftAuctionAlice.methods.bid(0, 21).send({ amount : 0 });
     return expect(smallBidPromise).rejects.toHaveProperty('errors' );
   });
+  */
+  test('auction without bids that is cancelled should only return asset', async () => {
+    const [aliceBalanceBefore, bobBalanceBefore] = await getBalances([
+      { owner: aliceAddress, token_id: tokenIdBidToken },
+      { owner: bobAddress, token_id: tokenIdBidToken },
+    ], queryBalances, ftContract);
+    $log.info(`Alices's balance is ${aliceBalanceBefore.toNumber()} and Bob's is ${bobBalanceBefore.toNumber()} `);
+    $log.info("Cancelling auction");
+    const opCancel = await nftAuctionBob.methods.cancel(0).send({ amount : 0, mutez : true });
+    await opCancel.confirmation();
+    $log.info("Auction cancelled");
+    const [aliceBalanceAfter, bobBalanceAfter] = await getBalances([
+      { owner: aliceAddress, token_id: tokenIdBidToken },
+      { owner: bobAddress, token_id: tokenIdBidToken },
+    ], queryBalances, ftContract);
+    $log.info(`Bob's balance is ${bobBalanceAfter.toNumber()} and Alice's is ${aliceBalanceAfter.toNumber()}`);
+    if (aliceBalanceBefore.eq(aliceBalanceAfter) && bobBalanceBefore.eq(bobBalanceAfter)) $log.info("Only asset returned as expected");
+    else throw new Error(`FA2 returned incorrectly`);
+  });
+  test('auction with bid that is cancelled should return asset and bid', async () => {
+    const [aliceBalanceBefore, bobBalanceBefore] = await getBalances([
+      { owner: aliceAddress, token_id: tokenIdBidToken },
+      { owner: bobAddress, token_id: tokenIdBidToken },
+    ], queryBalances, ftContract);
+    $log.info(`Bob's balance is ${bobBalanceBefore.toNumber()} and Alice's is ${aliceBalanceBefore.toNumber()}`);
+    $log.info(`Alice bids 200 tokens`);
+    const alicesBid = new BigNumber(200);
+    const opBid = await nftAuctionAlice.methods.bid(0, alicesBid.toNumber()).send({ amount : 0 });
+    await opBid.confirmation();
+    $log.info(`Bid placed`);
 
+    $log.info("Cancelling auction");
+    const opCancel = await nftAuctionBob.methods.cancel(0).send({ amount : 0, mutez : true });
+    await opCancel.confirmation();
+    $log.info("Auction cancelled");
+    const [aliceBalanceAfter, bobBalanceAfter] = await getBalances([
+      { owner: aliceAddress, token_id: tokenIdBidToken },
+      { owner: bobAddress, token_id: tokenIdBidToken },
+    ], queryBalances, ftContract);
+    $log.info(`Bob's balance is ${bobBalanceAfter.toNumber()} and Alice's is ${aliceBalanceAfter.toNumber()}`);
+    if (aliceBalanceBefore.eq(aliceBalanceAfter) && bobBalanceBefore.eq(bobBalanceAfter)) $log.info("Only asset returned as expected");
+    else throw new Error(`FA2 returned incorrectly`);
+  });
 });

@@ -164,8 +164,7 @@ let configure_auction(configure_param, storage : configure_param * storage) : re
     } in
     let updated_auctions : (nat, auction) big_map = Big_map.update storage.current_id (Some auction_data) storage.auctions in
     let asset_transfers : operation list = transfer_tokens(configure_param.asset, Tezos.sender, Tezos.self_address) in
-    let fee_transfer : operation = fa2_fee_transfer(Tezos.sender, Tezos.self_address, configure_param.opening_price, storage.bid_currency) in
-    ((fee_transfer :: asset_transfers), {storage with auctions = updated_auctions; current_id = storage.current_id + 1n})
+    (asset_transfers, {storage with auctions = updated_auctions; current_id = storage.current_id + 1n})
   end
 
 let resolve_auction(asset_id, storage : nat * storage) : return = begin
@@ -175,9 +174,12 @@ let resolve_auction(asset_id, storage : nat * storage) : return = begin
     assert_msg (Tezos.amount = 0mutez, "Amount must be 0mutez");
 
     let asset_transfers : operation list = transfer_tokens(auction.asset, Tezos.self_address, auction.highest_bidder) in
-    let fee_transfer : operation = fa2_fee_transfer(Tezos.self_address, auction.seller, auction.current_bid, storage.bid_currency) in
+    let op_list : operation list = if first_bid(auction) then 
+      asset_transfers else  
+      let return_bid : operation = fa2_fee_transfer(Tezos.self_address, auction.seller, auction.current_bid, storage.bid_currency) in 
+      (return_bid :: asset_transfers) in
     let updated_auctions = Big_map.remove asset_id storage.auctions in
-    (fee_transfer :: asset_transfers, {storage with auctions = updated_auctions})
+    (op_list, {storage with auctions = updated_auctions})
   end
 
 let cancel_auction(asset_id, storage : nat * storage) : return = begin
@@ -188,9 +190,12 @@ let cancel_auction(asset_id, storage : nat * storage) : return = begin
     assert_msg (Tezos.amount = 0mutez, "Amount must be 0mutez");
 
     let asset_transfers : operation list = transfer_tokens(auction.asset, Tezos.self_address, auction.seller) in
-    let fee_transfer : operation = fa2_fee_transfer(Tezos.self_address, auction.highest_bidder, auction.current_bid, storage.bid_currency) in
+    let op_list : operation list = if first_bid(auction) then 
+      asset_transfers else  
+      let return_bid : operation = fa2_fee_transfer(Tezos.self_address, auction.highest_bidder, auction.current_bid, storage.bid_currency) in 
+      (return_bid :: asset_transfers) in
     let updated_auctions = Big_map.remove asset_id storage.auctions in
-    (fee_transfer :: asset_transfers, {storage with auctions = updated_auctions})
+    (op_list, {storage with auctions = updated_auctions})
   end
 
 let place_bid(asset_id, token_amount, storage : nat * nat * storage) : return = begin
@@ -204,12 +209,15 @@ let place_bid(asset_id, token_amount, storage : nat * nat * storage) : return = 
       else ());
     
     let bid_self_transfer : operation = fa2_fee_transfer(Tezos.sender, Tezos.self_address, token_amount, storage.bid_currency) in
-    let return_previous_bid : operation = fa2_fee_transfer(Tezos.self_address, auction.highest_bidder, auction.current_bid, storage.bid_currency) in
+    let op_list : operation list = if first_bid(auction) then 
+      [bid_self_transfer] else  
+      let return_previous_bid : operation = fa2_fee_transfer(Tezos.self_address, auction.highest_bidder, auction.current_bid, storage.bid_currency) in
+      [return_previous_bid; bid_self_transfer] in
     let new_end_time = if auction.end_time - Tezos.now <= auction.extend_time then
       Tezos.now + auction.extend_time else auction.end_time in
     let updated_auction_data = {auction with current_bid = token_amount; highest_bidder = Tezos.sender; last_bid_time = Tezos.now; end_time = new_end_time;} in
     let updated_auctions = Big_map.update asset_id (Some updated_auction_data) storage.auctions in
-    ([return_previous_bid; bid_self_transfer] , {storage with auctions = updated_auctions})
+    (op_list , {storage with auctions = updated_auctions})
   end
 
 let admin(admin_param, storage : pauseable_admin * storage) : return =
