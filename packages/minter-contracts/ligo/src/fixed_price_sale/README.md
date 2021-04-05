@@ -4,7 +4,7 @@ The contracts titled `fixed_price_sale_market.mligo` and
 `fixed_price_sale_market_tez.mligo` both contain implementations of a sale of a
 non-fungible token (NFT) at a fixed price. The former contract allows a seller
 to sell an NFT for some fixed price of FA2 tokens. The latter instead allows a
-seller to sell an NFT for some fixed price of tezzies. Although, the general
+seller to sell an NFT for some fixed price of tez. Although, the general
 design and implementation of this contract is fairly straightforward, someone
 unfamiliar with the Tezos blockchain's inner workings needs to be aware of
 certain key items. These details will discussed in the following section
@@ -46,14 +46,15 @@ document. For now, simply note that this type endows this contract with
 administrative operations. Namely, these are the abilities to pause operations
 and prevent entrypoint invocation by unauthorized callers (if desired).
 
-The second field of this record `sales`is simply a "record" of currently active
-sales that the fixed price sale contract is hosting. To be clear, when we use
-the phrase "currently active sale", we mean to say that a seller has initiated
-some sale and there has of yet been no action taken that would prevent someone
-from buying the sale's offered product. The value of each entry in the big_map
-is the number of FA2 tokens that the seller specifies as the NFT's value. The
-"key" of this `big_map` is another record uniquely specifying an active sale
-(excluding its sale price). It is definition is:
+The second field of this record`sales`is simply a "record" (actually a big_map)
+of currently active sales that the fixed price sale contract is hosting. To be
+clear, when we use the phrase "currently active sale", we mean to say that a
+seller has initiated some sale and there has of yet been no action taken that
+would prevent someone from buying the sale's offered product. The value of each
+entry in the big_map (`sales`) is the number of FA2 tokens that the seller
+specifies as the NFT's value. The key of this big_map is another record
+uniquely specifying an active sale (excluding its sale price). It is definition
+is:
 
 ``` ocaml
 type sale_tokens_param =
@@ -68,7 +69,7 @@ type sale_tokens_param =
 type sale_param =
 [@layout:comb]
 {
-  sale_seller: address;
+  seller: address;
   tokens: sale_tokens_param;
 }
 ```
@@ -98,7 +99,7 @@ is precisely the same here. The second field is also similar, but we shall
 describe thoroughly as well.
 
 Like before, we keep a "record" of currently active sales. Unlike before, the
-value of each entry in the big_map is an NFT's price, but specified in tezzies
+value of each entry in the big_map is an NFT's price, but specified in tez
 instead of FA2 tokens. The key (type = `sale_param_tez`) is:
 
 ``` ocaml
@@ -112,7 +113,7 @@ type sale_token_param_tez =
 type sale_param_tez =
 [@layout:comb]
 {
-  sale_seller: address;
+  seller: address;
   sale_token: sale_token_param_tez;
 }
 
@@ -123,7 +124,7 @@ address of the sale's seller. Afterwards, we also see some additional sale
 parameters in the record `sale_token` (type = `sale_token_param_tez`). This
 record is simpler to understand than its counterpart above. It only contains the
 address and token id of the NFT on sale. This is unsurprising since a potential
-buyer must pay for the NFT on sale with tezzies!
+buyer must pay for the NFT on sale with tez!
 
 ## <a name="entrypoints-section"></a> Entrypoints
 
