@@ -234,6 +234,39 @@ The record associated to the `Buy` variant is either `sale_param` or
 `sale_param_tez`. Earlier sections of this document (see
 [Storage](#storage-section)) contain their definitions.
 
+More specifically, let's go through the steps that would transpire when the
+`%buy` entrypoint is invoked. As stated shortly before, the `Buy` variant either
+contains the `sale_param` or `sale_param_tez` record depending upon the version
+of the fixed price sale contract. Regardless of which, here are the basic steps
+that should occur following this entrypoint's invocation.
+
+1. Determine if the sale specified in record found in the `Buy` variant is a
+   currently active sale. This amounts to a big_map lookup. If this lookup
+   retrieval is successful, continue to the following steps while keeping track
+   of the price attached to the sale's contents, otherwise emit the
+   `failwith` operation with the following message "NO SALE".
+2. Create a set of operations corresponding to the transfer of the sale price
+   (recorded in the last step) from the buyer's available funds. Of course, this
+   will fail if the required funds are not available in the buyer's "purse". To
+   further clarify, when buying NFTs with FA2 tokens, this set of operations
+   includes two operations. Namely, the first operation sends FA2 tokens to the
+   marketplace contract and the second finally transfers the tokens just
+   begotten to the sale's seller. To be clear, this is a safe because if any of
+   the operations fail, then all will fail.
+
+   The same set of inner steps occurs for the other fixed price sale contract
+   (where NFTs are sold in tez), except that the buyer is expected to include
+   the required funds in the payload of their `%buy` entrypoint invocation. This
+   is the tez that the seller receives.
+
+3. The second to last step transfers the NFT from the marketplace to the buyer.
+   Hence, the seller will no longer own the NFT and the marketplace will cease
+   to be one of its operators.
+
+4. Finally, the marketplace contract removes the sale associated to the newly
+   bought NFT from the record of active sales and emits the list of operations
+   corresponding to the events described in the previous steps.
+
 ### %cancel
 
 Again as in previous sections, an administrator pausing the contract can prevent
@@ -262,5 +295,3 @@ each entrypoint:
 
 With `set_admin` and `confirm_admin` entrypoints, we can change the
 administrator of the fixed price sale contract.
-
-
