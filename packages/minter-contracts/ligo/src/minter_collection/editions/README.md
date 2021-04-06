@@ -68,6 +68,7 @@ editions_metadata :=
 
 - If a user attempts to distribute more editions than were created, the call fails with error `NO_EDITIONS_TO_DISTRIBUTE`. 
 - If a user attempts to distribute from an edition run that has not been created, the call fails with error `INVALID_EDITION_ID`.
+- If a user attempts to distribute from an edition run for which they are not the `creator` the call fails with error `INVALID_DISTRIBUTOR`.
 
 ## FA2 
 
