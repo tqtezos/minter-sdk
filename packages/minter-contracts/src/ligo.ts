@@ -120,7 +120,7 @@ export async function runCmd(cwd: string, cmd: string): Promise<void> {
 export async function originateContract(
   tz: TezosToolkit,
   code: string,
-  storage: any,
+  storage: string | object,
   name: string,
 ): Promise<Contract> {
   try {
@@ -132,6 +132,14 @@ export async function originateContract(
     const contract = await originationOp.contract();
     $log.info(`originated contract ${name} with address ${contract.address}`);
     $log.info(`consumed gas: ${originationOp.consumedGas}`);
+    let storageString : string;
+    if (typeof storage === "object"){
+      storageString = JSON.stringify(storage);
+    }
+    else {
+      storageString = storage;
+    }
+    $log.info(`storage initialized to: ${storageString}`);
     return Promise.resolve(contract);
   } catch (error) {
     const jsonError = JSON.stringify(error, null, 2);
