@@ -79,4 +79,4 @@ editions_metadata :=
 + The contract has a single admin at any given time, that can be updated following the two-step procedure described in [Simple-Admin](../../../fa2_modules/README.md). The admin can pause the contract and has sole authority over minting traditional NFTs as well as creating an editions run through `Mint_editions`. 
 
 ## Extending this contract
-+ Note, it is not possible when using this contract as a module to implement a custom transfer permission policy using [Transfer hooks](../../../fa2/fa2_hook.mligo). As such, it is necessary for `OWNER_HOOKS` be undefined in order to compile this contract as well as any contract that extends it. 
++ Note, it is not possible when using this contract as a module to implement a custom transfer permission policy using [Transfer hooks](../../../fa2/fa2_hook.mligo). As such, it is necessary for `OWNER_HOOKS` to be undefined in order to compile this contract as well as any contract that extends it. 
