@@ -9,7 +9,7 @@ import System.FilePath ((</>))
 getBinFolder :: IO FilePath
 getBinFolder = do
   mpath <- lookupEnv "TZ_BIN_PATH"
-  return (mpath ?: ".." </> "bin")
+  return (mpath ?: "bin")
 
 inBinFolder :: FilePath -> IO FilePath
 inBinFolder file = do

@@ -23,7 +23,7 @@ type permit_config_param =
 
 type permit_auction_entrypoints = 
   | Auction of auction_without_configure_entrypoints
-  | Permit_config of permit_config_param list
+  | Permit_configure of permit_config_param list
 
 type permit_return = operation list * permit_storage
 
@@ -72,4 +72,4 @@ let english_auction_tez_permit_main (params,permit_storage : permit_auction_entr
   | Auction auction -> 
       let ops, auction_storage  = english_auction_tez_no_configure(auction, permit_storage.auction_storage) in
       ops, {permit_storage with auction_storage = auction_storage}
-  | Permit_config pps -> configure_auction_with_permits(pps, permit_storage)
+  | Permit_configure pps -> configure_auction_with_permits(pps, permit_storage)
