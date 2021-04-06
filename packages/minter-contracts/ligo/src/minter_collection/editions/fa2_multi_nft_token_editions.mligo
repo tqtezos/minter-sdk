@@ -94,6 +94,8 @@ let rec distribute_editions (distribute_list, storage : distribute_edition list 
         let edition_metadata : edition_metadata = (match (Big_map.find_opt distribute_param.edition_id storage.editions_metadata) with 
           | Some edition_metadata -> edition_metadata 
           | None -> (failwith "INVALID_EDITION_ID" : edition_metadata)) in 
+        let u : unit = if (Tezos.sender <> edition_metadata.creator) 
+            then (failwith "INVALID_DISTRIBUTOR" : unit) else () in 
         let token_id = edition_metadata.initial_token_id + abs (edition_metadata.number_of_editions - edition_metadata.number_of_editions_to_distribute) in 
         let new_editions_storage, new_edition_metadata = distribute_edition_to_addresses(distribute_param.edition_id, distribute_param.receivers, edition_metadata, token_id, storage) in
         let new_editions_metadata = Big_map.update distribute_param.edition_id (Some new_edition_metadata) new_editions_storage.editions_metadata in

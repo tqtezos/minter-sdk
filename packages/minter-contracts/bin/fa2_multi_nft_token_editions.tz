@@ -213,6 +213,12 @@
                          GET ;
                          IF_NONE { PUSH string "INVALID_EDITION_ID" ; FAILWITH } {} ;
                          DUP ;
+                         CAR ;
+                         SENDER ;
+                         COMPARE ;
+                         NEQ ;
+                         IF { PUSH string "INVALID_DISTRIBUTOR" ; FAILWITH } {} ;
+                         DUP ;
                          CDR ;
                          CDR ;
                          CDR ;
