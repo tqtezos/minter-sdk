@@ -77,6 +77,27 @@ function compileContractImpl(
   return runCmd(cwd, cmd);
 }
 
+export function compileLigoExpression(
+  env: LigoEnv,
+  srcFile: string,
+  main: string,
+  dstFile: string,
+): Promise<void> {
+  const src = env.srcFilePath(srcFile);
+  const out = env.outFilePath(dstFile);
+  return compileLigoExpressionImpl(env.cwd, src, main, out);
+}
+
+function compileLigoExpressionImpl(
+  cwd: string,
+  srcFilePath: string,
+  main: string,
+  dstFilePath: string,
+): Promise<void> {
+  const cmd = `docker run --rm -v $PWD:$PWD -w $PWD ligolang/ligo:0.12.0 compile-expression --init-file ${srcFilePath} cameligo ${main} | tr '\n' ' ' >| ${dstFilePath}`;
+  return runCmd(cwd, cmd);
+}
+
 export async function runCmd(cwd: string, cmd: string): Promise<void> {
   // const shell = "/bin/zsh";
   return new Promise<void>((resolve, reject) =>

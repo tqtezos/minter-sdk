@@ -14,6 +14,7 @@ import {
   transfer,
 } from '../src/fa2-interface';
 import { QueryBalances, queryBalancesWithLambdaView, hasTokens } from './fa2-balance-inspector';
+import { Tzip16Module, tzip16, bytes2Char } from '@taquito/tzip16';
 
 jest.setTimeout(180000); // 3 minutes
 
@@ -41,12 +42,13 @@ describe('test NFT auction', () => {
   beforeAll(async () => {
     tezos = await bootstrap();
     empty_metadata_map = new MichelsonMap();
+    empty_metadata_map.setType({ prim :"map", args :[{prim:"string"},{prim:"bytes"}]});
     bobAddress = await tezos.bob.signer.publicKeyHash();
     aliceAddress = await tezos.alice.signer.publicKeyHash();
     queryBalances = queryBalancesWithLambdaView(tezos.lambdaView);
     $log.info('originating editions contract');
     nftEditions = await originateEditionsNftContract(tezos.bob, bobAddress);
-    $log.info('editions contract originated');
+    $log.info(`editions contract originated`);
   });
 
   test('mint 1000 editions of nft1 and 2 of nft2', async() => {
@@ -118,4 +120,18 @@ describe('test NFT auction', () => {
     expect(aliceHasATokenAfter).toBe(false);
     expect(bobHasATokenAfter).toBe(true);
   });
+
+  test ('test editions token-metadata with off-chain view', async() => {
+    tezos.bob.addExtension(new Tzip16Module());
+    const editionsContractMetadata = await tezos.bob.contract.at(nftEditions.address, tzip16);
+    $log.info(`Initialising the views for editions contract ...`)
+    const views = await editionsContractMetadata.tzip16().metadataViews();
+    $log.info(`The following view names were found in the metadata: ${Object.keys(views)}`)
+    $log.info(`get metadata for edition with token_id 0 ...`);
+    const token0Metadata = await views.token_metadata().executeView(0);
+    expect(token0Metadata).toEqual({
+      token_id : new BigNumber(0),
+      token_info : empty_metadata_map,
+    })
+  })
 });

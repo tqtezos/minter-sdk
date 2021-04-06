@@ -4,6 +4,7 @@ import { TezosToolkit } from '@taquito/taquito';
 import { char2Bytes } from '@taquito/tzip16';
 import { TokenMetadata } from './fa2-interface';
 import { BigNumber } from 'bignumber.js';
+import  { default as EditionsMetadata } from '../bin-ts/editions_token_metadata_view.tz';
 
 export interface MintNftParam {
     token_metadata: TokenMetadata;
@@ -59,7 +60,7 @@ export async function originateNft(
 
   const storage = `(Pair (Pair (Pair (Pair ${admin} True) None)
             (Pair (Pair {} 0) (Pair {} {})))
-      { Elt "" 0x${meta_uri} ; Elt "contents" 0x${meta_content} })`;
+      { Elt "" 0x${meta_uri} ; Elt "content" 0x${meta_content} })`;
   return originateContract(tz, code, storage, 'nft');
 }
 
@@ -205,15 +206,37 @@ export async function originateEditionsNftContract(
   );
   const meta_uri = char2Bytes('tezos-storage:content');
   const meta = {
-    name: 'example_name',
-    description: 'sample_token',
+    name: 'editions',
+    description: 'editions',
     interfaces: ['TZIP-012', 'TZIP-016'],
+    views : [{
+      name: 'token_metadata',
+      description: 'Get the metadata for the tokens minted using this contract',
+      pure: 'false',
+      implementations: [
+        { michelsonStorageView :
+           {
+             parameter : {
+               prim: 'nat',
+             },
+             returnType : {
+               prim : "pair",
+               args : [
+                 { prim: "nat", annots: ["%token_id"] },
+                 { prim :"map", args :[{prim:"string"},{prim:"bytes"}],annots:["%token_info"] },
+               ],
+             },
+             code : EditionsMetadata.code,
+           },
+        },
+      ],
+    }]
   };
 
   const meta_content = char2Bytes(JSON.stringify(meta, null, 2));
 
   const storage = `(Pair (Pair 0 {}) (Pair (Pair (Pair (Pair "${adminAddress}" False) None )
-    (Pair (Pair {} 0) (Pair {} {}))) { Elt "" 0x${meta_uri} ; Elt "contents" 0x${meta_content} }))`;
+    (Pair (Pair {} 0) (Pair {} {}))) { Elt "" 0x${meta_uri} ; Elt "content" 0x${meta_content} }))`;
   return originateContract(tz, code, storage, 'editions');
 }
 
