@@ -212,7 +212,7 @@ export async function originateEditionsNftContract(
 
   const meta_content = char2Bytes(JSON.stringify(meta, null, 2));
 
-  const storage = `(Pair (Pair 0 {}) (Pair (Pair (Pair (Pair {"${adminAddress}"} False) {})
+  const storage = `(Pair (Pair 0 {}) (Pair (Pair (Pair (Pair "${adminAddress}" False) None )
     (Pair (Pair {} 0) (Pair {} {}))) { Elt "" 0x${meta_uri} ; Elt "contents" 0x${meta_content} }))`;
   return originateContract(tz, code, storage, 'editions');
 }
