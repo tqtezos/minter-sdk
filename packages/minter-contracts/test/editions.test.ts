@@ -34,15 +34,20 @@ describe('test NFT auction', () => {
   let nftEditions : Contract;
   let nft1 : MintEditionParam;
   let nft2 : MintEditionParam;
-  let empty_metadata_map : MichelsonMap<string, bytes>;
+  let edition_1_metadata : MichelsonMap<string, bytes>;
+  let edition_2_metadata : MichelsonMap<string, bytes>;
   let bobAddress : address;
   let aliceAddress : address;
   let queryBalances: QueryBalances;
 
   beforeAll(async () => {
     tezos = await bootstrap();
-    empty_metadata_map = new MichelsonMap();
-    empty_metadata_map.setType({ prim :"map", args :[{prim:"string"},{prim:"bytes"}]});
+    edition_1_metadata = new MichelsonMap();
+    edition_1_metadata.setType({ prim :"map", args :[{prim:"string"},{prim:"bytes"}]});
+    edition_1_metadata.set("name", "66616b65206e616d65");
+    edition_2_metadata = new MichelsonMap();
+    edition_2_metadata.setType({ prim :"map", args :[{prim:"string"},{prim:"bytes"}]});
+    edition_2_metadata.set("name", "74657374206e616d65");
     bobAddress = await tezos.bob.signer.publicKeyHash();
     aliceAddress = await tezos.alice.signer.publicKeyHash();
     queryBalances = queryBalancesWithLambdaView(tezos.lambdaView);
@@ -53,12 +58,12 @@ describe('test NFT auction', () => {
 
   test('mint 1000 editions of nft1 and 2 of nft2', async() => {
     nft1 = {
-      edition_info: empty_metadata_map,
+      edition_info : edition_1_metadata,
       number_of_editions : new BigNumber(1000),
     };
 
     nft2 = {
-      edition_info: empty_metadata_map,
+      edition_info: edition_2_metadata,
       number_of_editions : new BigNumber(2),
     };
     const opMint = await nftEditions.methods.mint_editions([nft1, nft2]).send();
@@ -131,7 +136,7 @@ describe('test NFT auction', () => {
     const token0Metadata = await views.token_metadata().executeView(0);
     expect(token0Metadata).toEqual({
       token_id : new BigNumber(0),
-      token_info : empty_metadata_map,
+      token_info : edition_1_metadata,
     })
   })
 });
