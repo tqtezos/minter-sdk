@@ -120,7 +120,7 @@ export async function runCmd(cwd: string, cmd: string): Promise<void> {
 export async function originateContract(
   tz: TezosToolkit,
   code: string,
-  storage: string | object,
+  storage: string | Record<string, any>,
   name: string,
 ): Promise<Contract> {
   try {
