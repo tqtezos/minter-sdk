@@ -2,6 +2,12 @@
 #include "../nft/fa2_multi_nft_manager.mligo"
 #include "../nft/fa2_multi_nft_asset_simple_admin.mligo"
 
+#define OWNER_HOOKS
+
+#if OWNER_HOOKS
+"Sorry but this contract does not work with hooks yet" 
+#endif
+
 type mint_edition_run = 
 [@layout:comb]
 {
