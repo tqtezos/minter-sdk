@@ -61,4 +61,4 @@ type Methods = {
     }) => Promise<void>;
 };
 
-export type Fa2MultiNftAssetContractType = { methods: Methods, storage: Storage, code: { __type: 'Fa2MultiNftAssetCode' } };
+export type Fa2MultiNftAssetContractType = { methods: Methods, storage: Storage, code: { __type: 'Fa2MultiNftAssetCode', protocol: string, code: unknown } };

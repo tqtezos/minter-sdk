@@ -27,4 +27,4 @@ type Methods = {
     start: () => Promise<void>;
 };
 
-export type TicketAuctionContractType = { methods: Methods, storage: Storage, code: { __type: 'TicketAuctionCode' } };
+export type TicketAuctionContractType = { methods: Methods, storage: Storage, code: { __type: 'TicketAuctionCode', protocol: string, code: unknown } };

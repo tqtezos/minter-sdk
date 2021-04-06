@@ -12,9 +12,9 @@ type Storage = {
     }>;
     nft_asset_storage: {
         admin: {
-            admins: Array<address>;
+            admin: address;
             paused: boolean;
-            pending_admins: BigMap<address, unit>;
+            pending_admin?: address;
         };
         assets: {
             ledger: BigMap<nat, address>;
@@ -40,7 +40,6 @@ type Methods = {
     }) => Promise<void>;
     confirm_admin: () => Promise<void>;
     pause: (param: boolean) => Promise<void>;
-    remove_admin: (param: address) => Promise<void>;
     set_admin: (param: address) => Promise<void>;
     balance_of: (params: {
         requests: Array<{
@@ -80,4 +79,4 @@ type Methods = {
     }) => Promise<void>;
 };
 
-export type Fa2MultiNftTokenEditionsContractType = { methods: Methods, storage: Storage, code: { __type: 'Fa2MultiNftTokenEditionsCode' } };
+export type Fa2MultiNftTokenEditionsContractType = { methods: Methods, storage: Storage, code: { __type: 'Fa2MultiNftTokenEditionsCode', protocol: string, code: unknown } };

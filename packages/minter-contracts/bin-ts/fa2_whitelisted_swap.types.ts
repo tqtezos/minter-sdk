@@ -57,4 +57,4 @@ type Methods = {
     }) => Promise<void>;
 };
 
-export type Fa2WhitelistedSwapContractType = { methods: Methods, storage: Storage, code: { __type: 'Fa2WhitelistedSwapCode' } };
+export type Fa2WhitelistedSwapContractType = { methods: Methods, storage: Storage, code: { __type: 'Fa2WhitelistedSwapCode', protocol: string, code: unknown } };
