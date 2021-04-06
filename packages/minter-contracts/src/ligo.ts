@@ -94,7 +94,7 @@ function compileLigoExpressionImpl(
   main: string,
   dstFilePath: string,
 ): Promise<void> {
-  const cmd = `docker run --rm -v $PWD:$PWD -w $PWD ligolang/ligo:0.12.0 compile-expression --init-file ${srcFilePath} cameligo ${main} | tr '\n' ' ' >| ${dstFilePath}`;
+  const cmd = `docker run --rm -v $PWD:$PWD -w $PWD ligolang/ligo:0.12.0 compile-expression --init-file ${srcFilePath} cameligo ${main} | tr -s '\n' ' ' >| ${dstFilePath}`;
   return runCmd(cwd, cmd);
 }
 
