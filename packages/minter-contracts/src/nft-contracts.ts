@@ -211,16 +211,16 @@ export async function originateEditionsNftContract(
                prim : "pair",
                args : [
                  { prim: "nat", annots: ["%token_id"] },
-                 { prim :"map", args :[{prim:"string"},{prim:"bytes"}],annots:["%token_info"] },
+                 { prim :"map", args :[{ prim:"string" }, { prim:"bytes" }], annots:["%token_info"] },
                ],
              },
              code : EditionsMetadata.code,
            },
         },
       ],
-    }]
+    }],
   };
-  
+
   const editions_meta_encoded = char2Bytes(JSON.stringify(editions_metadata, null, 2));
 
   const storage = `(Pair (Pair 0 {}) (Pair (Pair (Pair (Pair "${adminAddress}" False) None )
