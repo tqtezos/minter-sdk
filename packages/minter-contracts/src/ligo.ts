@@ -26,6 +26,8 @@ export class LigoEnv {
   }
 }
 
+const ligoVersion  = '0.12.0';
+export const ligoImage : string = 'docker run --rm -v $PWD:$PWD -w $PWD ligolang/ligo:' + ligoVersion;
 export const defaultEnv: LigoEnv = defaultLigoEnv();
 
 function defaultLigoEnv(): LigoEnv {
@@ -72,8 +74,7 @@ function compileContractImpl(
   main: string,
   dstFilePath: string,
 ): Promise<void> {
-  // const cmd = `ligo compile-contract ${srcFilePath} ${main} --output=${dstFilePath}`;
-  const cmd = `docker run --rm -v $PWD:$PWD -w $PWD ligolang/ligo:0.12.0 compile-contract ${srcFilePath} ${main} --output=${dstFilePath}`;
+  const cmd = `${ligoImage} compile-contract ${srcFilePath} ${main} --output=${dstFilePath}`;
   return runCmd(cwd, cmd);
 }
 
@@ -94,7 +95,7 @@ function compileLigoExpressionImpl(
   main: string,
   dstFilePath: string,
 ): Promise<void> {
-  const cmd = `docker run --rm -v $PWD:$PWD -w $PWD ligolang/ligo:0.12.0 compile-expression --init-file ${srcFilePath} cameligo ${main} | tr -s '\n' ' ' >| ${dstFilePath}`;
+  const cmd = `${ligoImage} compile-expression --init-file ${srcFilePath} cameligo ${main} | tr -s '\n' ' ' >| ${dstFilePath}`;
   return runCmd(cwd, cmd);
 }
 
