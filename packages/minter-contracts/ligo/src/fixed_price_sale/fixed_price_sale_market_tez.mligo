@@ -17,7 +17,7 @@ type sale_token_param_tez =
 type sale_param_tez =
 [@layout:comb]
 {
-  sale_seller: address;
+  seller: address;
   sale_token: sale_token_param_tez;
 }
 
@@ -71,7 +71,7 @@ let buy_token(sale, storage: sale_param_tez * storage) : (operation list * stora
   let sale_price = match Big_map.find_opt sale storage.sales with
   | None -> (failwith "NO_SALE": tez)
   | Some s -> s
-  in let tx_ops = transfer_tez(sale_price, sale.sale_seller) in
+  in let tx_ops = transfer_tez(sale_price, sale.seller) in
   let tx_nft_op = transfer_nft(sale.sale_token.token_for_sale_address, sale.sale_token.token_for_sale_token_id, Tezos.self_address, Tezos.sender) in
   let new_s = { storage with sales = Big_map.remove sale storage.sales } in
   (tx_ops :: tx_nft_op :: []), new_s
@@ -82,7 +82,7 @@ let deposit_for_sale(sale_token, price, storage: sale_token_param_tez * tez * st
     let u = if Tezos.amount <> 0tez then failwith (tez_stuck_guard "SELL") else () in
     let transfer_op =
       transfer_nft (sale_token.token_for_sale_address, sale_token.token_for_sale_token_id, Tezos.sender, Tezos.self_address) in
-    let sale_param = { sale_seller = Tezos.sender; sale_token = sale_token } in
+    let sale_param = { seller = Tezos.sender; sale_token = sale_token } in
     let new_s = { storage with sales = Big_map.add sale_param price storage.sales } in
     (transfer_op :: []), new_s
 
@@ -90,7 +90,7 @@ let cancel_sale(sale, storage: sale_param_tez * storage) : (operation list * sto
   let u = if Tezos.amount <> 0tez then failwith (tez_stuck_guard "CANCEL") else () in
   match Big_map.find_opt sale storage.sales with
     | None -> (failwith "NO_SALE" : (operation list * storage))
-    | Some price -> if sale.sale_seller = Tezos.sender then
+    | Some price -> if sale.seller = Tezos.sender then
                       let tx_nft_back_op = transfer_nft(sale.sale_token.token_for_sale_address, sale.sale_token.token_for_sale_token_id, Tezos.self_address, Tezos.sender) in
                       (tx_nft_back_op :: []), {storage with sales = Big_map.remove sale storage.sales }
       else (failwith "NOT_OWNER": (operation list * storage))
@@ -103,7 +103,7 @@ let fixed_price_sale_tez_main (p, storage : market_entry_points * storage) : ope
      let u = fail_if_paused(storage.admin) in
      buy_token(sale, storage)
   | Cancel sale ->
-     let is_seller = Tezos.sender = sale.sale_seller in
+     let is_seller = Tezos.sender = sale.seller in
      let u = if is_seller then ()
              else fail_if_not_admin_ext (storage.admin, "OR A SELLER") in
      let v = fail_if_paused(storage.admin) in
