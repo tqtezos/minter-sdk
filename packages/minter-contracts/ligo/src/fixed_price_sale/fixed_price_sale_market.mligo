@@ -1,5 +1,5 @@
 #include "../../fa2/fa2_interface.mligo"
-#include "../../fa2_modules/pauseable_admin_option.mligo"
+#include "../../fa2_modules/admin/simple_admin.mligo"
 
 type global_token_id =
 {
@@ -31,7 +31,7 @@ type init_sale_param =
 }
 
 type storage = {
-    admin: pauseable_admin_storage;
+    admin: admin_storage;
     sales: (sale_param, nat) big_map;
 }
 
@@ -39,7 +39,7 @@ type market_entry_points =
   | Sell of init_sale_param
   | Buy of sale_param
   | Cancel of sale_param
-  | Admin of pauseable_admin
+  | Admin of admin_entrypoints
 
 let transfer_nft(fa2_address, token_id, from, to_: address * token_id * address * address): operation =
   let fa2_transfer : ((transfer list) contract) option =
@@ -113,6 +113,6 @@ let fixed_price_sale_main (p, storage : market_entry_points * storage) : operati
      let v = fail_if_paused(storage.admin) in
      cancel_sale(sale,storage)
   | Admin a ->
-    let ops, admin = pauseable_admin(a, storage.admin) in
+    let ops, admin = admin_main(a, storage.admin) in
     let new_storage = { storage with admin = admin; } in
     ops, new_storage
