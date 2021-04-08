@@ -40,9 +40,9 @@ type editions_storage =
     nft_asset_storage : nft_asset_storage;
 }
 
-let rec mint_editions ( editions_list , storage : mint_edition_run list * editions_storage)
+let mint_editions ( editions_list , storage : mint_edition_run list * editions_storage)
   : operation list * editions_storage =
-  let mint_single_edition_run : (mint_edition_run * editions_storage) -> editions_storage = fun (param, storage : mint_edition_run * editions_storage) ->  
+  let mint_single_edition_run : (editions_storage * mint_edition_run) -> editions_storage = fun (storage, param : editions_storage * mint_edition_run) ->
     let edition_metadata : edition_metadata = {
       creator = Tezos.sender;
       edition_info = param.edition_info;
@@ -57,11 +57,8 @@ let rec mint_editions ( editions_list , storage : mint_edition_run list * editio
         editions_metadata = new_editions_metadata; 
         nft_asset_storage = {storage.nft_asset_storage with assets = new_asset_storage}
     } in
-  (match editions_list with 
-    | edition_run :: remaining_editions -> 
-        let new_storage = mint_single_edition_run(edition_run, storage) in 
-        mint_editions (remaining_editions, new_storage)
-    | [] -> ([] : operation list), storage)
+  let new_storage = List.fold mint_single_edition_run editions_list storage in
+  ([] : operation list), new_storage
 
 let distribute_edition_to_address (edition_metadata, to_, token_id, storage : edition_metadata * address * nat * editions_storage) 
   : editions_storage * edition_metadata = 
