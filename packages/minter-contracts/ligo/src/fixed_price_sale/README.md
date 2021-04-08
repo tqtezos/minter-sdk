@@ -24,7 +24,7 @@ The contract's storage is:
 
 ``` ocaml
 type storage = {
-    admin: pauseable_admin_storage;
+    admin: admin_storage;
     sales: (sale_param, nat) big_map;
 }
 ```
@@ -32,13 +32,12 @@ type storage = {
 The first field of this record is `admin`. Its type is:
 
 ``` ocaml
-type pauseable_admin_storage_record = {
+type admin_storage = {
   admin : address;
   pending_admin : address option;
   paused : bool;
 }
 
-type pauseable_admin_storage = pauseable_admin_storage_record option
 ```
 
 A thorough explication of this type's semantics will delayed for later in this
@@ -89,7 +88,7 @@ The contract's storage is:
 type storage =
 [@layout:comb]
 {
-  admin: pauseable_admin_storage;
+  admin: admin_storage;
   sales: (sale_param_tez, tez) big_map;
 }
 ```
@@ -138,7 +137,7 @@ type market_entry_points =
   | Sell of init_sale_param
   | Buy of sale_param
   | Cancel of sale_param
-  | Admin of pauseable_admin
+  | Admin of admin_entrypoints
 
 ```
 
@@ -149,7 +148,7 @@ type market_entry_points =
   | Sell of init_sale_param_tez
   | Buy of sale_param_tez
   | Cancel of sale_param_tez
-  | Admin of pauseable_admin
+  | Admin of admin_entrypoints
 
 ```
 
