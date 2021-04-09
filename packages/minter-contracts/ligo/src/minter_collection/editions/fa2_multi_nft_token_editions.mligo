@@ -60,23 +60,30 @@ let mint_editions ( editions_list , storage : mint_edition_run list * editions_s
   let new_storage = List.fold mint_single_edition_run editions_list storage in
   ([] : operation list), new_storage
 
-let distribute_edition_to_addresses ( edition_id,receivers, edition_metadata, storage : nat * (address list) * edition_metadata * editions_storage)
-  : editions_storage * edition_metadata = 
-  let distribute_edition_to_address : ((editions_storage * edition_metadata) * address) -> (editions_storage * edition_metadata) = 
-    fun ( (storage, edition_metadata), to_  : (editions_storage * edition_metadata) * address ) ->
+let distribute_edition_to_addresses ( edition_id, token_info, receivers, edition_metadata, storage : nat *  ((string, bytes) map) * (address list) * edition_metadata * editions_storage)
+  : editions_storage = 
+  let distribute_edition_to_address : ((mint_tokens_param * edition_metadata) * address) -> (mint_tokens_param * edition_metadata) = 
+    fun ( (mint_tokens_param, edition_metadata), to_  : (mint_tokens_param * edition_metadata) * address) ->
       let u : unit = if (edition_metadata.number_of_editions_to_distribute  > 0) then ()
         else (failwith "NO_EDITIONS_TO_DISTRIBUTE" : unit) in 
       let mint_token_param : mint_token_param = {
           owner = to_;
           token_metadata = {
             token_id = edition_metadata.initial_token_id + abs (edition_metadata.number_of_editions - edition_metadata.number_of_editions_to_distribute); 
-            token_info = Map.literal [(("edition_id" : string), (Bytes.pack edition_id))];
+            token_info = token_info;
           }
       } in
-      let _ , nft_token_storage = mint_edition (mint_token_param, storage.nft_asset_storage.assets) in
-      {storage with nft_asset_storage = {storage.nft_asset_storage with assets = nft_token_storage}}, 
-      {edition_metadata with number_of_editions_to_distribute = edition_metadata.number_of_editions_to_distribute - 1} in
-  (List.fold distribute_edition_to_address receivers (storage, edition_metadata))
+      ((mint_token_param :: mint_tokens_param) , 
+      {edition_metadata with number_of_editions_to_distribute = edition_metadata.number_of_editions_to_distribute - 1}) 
+  in
+  let mint_tokens_param : mint_tokens_param = ([] : mint_tokens_param) in 
+  let mint_tokens_param, new_edition_metadata : mint_tokens_param * edition_metadata = (List.fold distribute_edition_to_address receivers (mint_tokens_param, edition_metadata)) in
+  let _ , nft_token_storage = mint_editions_to_addresses (mint_tokens_param, storage.nft_asset_storage.assets) in
+  let new_editions_metadata = Big_map.update edition_id (Some new_edition_metadata) storage.editions_metadata in
+  let new_storage = {storage with nft_asset_storage = {storage.nft_asset_storage with assets = nft_token_storage};
+                     editions_metadata = new_editions_metadata} in 
+  new_storage 
+  
 
 let distribute_editions (distribute_list, storage : distribute_edition list * editions_storage)
   : operation list * editions_storage =
@@ -87,10 +94,9 @@ let distribute_editions (distribute_list, storage : distribute_edition list * ed
           | None -> (failwith "INVALID_EDITION_ID" : edition_metadata)) in 
         let u : unit = if (Tezos.sender <> edition_metadata.creator) 
             then (failwith "INVALID_DISTRIBUTOR" : unit) else () in 
-        let new_editions_storage, new_edition_metadata = distribute_edition_to_addresses(distribute_param.edition_id, distribute_param.receivers, edition_metadata, storage) in
-        let new_editions_metadata = Big_map.update distribute_param.edition_id (Some new_edition_metadata) new_editions_storage.editions_metadata in
-        let new_storage = {new_editions_storage with editions_metadata = new_editions_metadata} in
-        new_storage
+        let token_info : ((string, bytes) map) =  Map.literal [(("edition_id" : string), (Bytes.pack distribute_param.edition_id))] in
+        let new_editions_storage = distribute_edition_to_addresses(distribute_param.edition_id, token_info, distribute_param.receivers, edition_metadata, storage) in
+        new_editions_storage
   in
   let new_storage = List.fold distribute_edition distribute_list storage in 
   ([] : operation list), new_storage
