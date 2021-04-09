@@ -68,22 +68,24 @@ let mint_editions ( editions_list , storage : mint_edition_run list * editions_s
 
 let distribute_edition_to_addresses ( edition_id, token_info, receivers, edition_metadata, storage : nat *  ((string, bytes) map) * (address list) * edition_metadata * editions_storage)
   : editions_storage = 
-  let distribute_edition_to_address : ((mint_tokens_param * edition_metadata) * address) -> (mint_tokens_param * edition_metadata) = 
-    fun ( (mint_tokens_param, edition_metadata), to_  : (mint_tokens_param * edition_metadata) * address) ->
-      let u : unit = if (edition_metadata.number_of_editions_to_distribute  > 0) then ()
-        else (failwith "NO_EDITIONS_TO_DISTRIBUTE" : unit) in 
+  let distribute_edition_to_address : ((mint_tokens_param * edition_metadata * token_id) * address) -> (mint_tokens_param * edition_metadata * token_id) = 
+    fun ( (mint_tokens_param, edition_metadata, token_id), to_  : (mint_tokens_param * edition_metadata * token_id) * address) ->
       let mint_token_param : mint_token_param = {
           owner = to_;
           token_metadata = {
-            token_id = edition_metadata.initial_token_id + abs (edition_metadata.number_of_editions - edition_metadata.number_of_editions_to_distribute); 
+            token_id = token_id;
             token_info = token_info;
           }
       } in
       ((mint_token_param :: mint_tokens_param) , 
-      {edition_metadata with number_of_editions_to_distribute = edition_metadata.number_of_editions_to_distribute - 1}) 
-  in
+      {edition_metadata with number_of_editions_to_distribute = edition_metadata.number_of_editions_to_distribute - 1},
+      token_id + 1n) 
+  in 
+  let u : unit = if (edition_metadata.number_of_editions_to_distribute >= int (List.length receivers)) then ()
+    else (failwith "NO_EDITIONS_TO_DISTRIBUTE" : unit) in 
+  let intial_token_id : nat = edition_metadata.initial_token_id + abs (edition_metadata.number_of_editions - edition_metadata.number_of_editions_to_distribute) in 
   let mint_tokens_param : mint_tokens_param = ([] : mint_tokens_param) in 
-  let mint_tokens_param, new_edition_metadata : mint_tokens_param * edition_metadata = (List.fold distribute_edition_to_address receivers (mint_tokens_param, edition_metadata)) in
+  let mint_tokens_param, new_edition_metadata, _ : mint_tokens_param * edition_metadata * token_id = (List.fold distribute_edition_to_address receivers (mint_tokens_param, edition_metadata, intial_token_id)) in
   let _ , nft_token_storage = mint_editions_to_addresses (mint_tokens_param, storage.nft_asset_storage.assets) in
   let new_editions_metadata = Big_map.update edition_id (Some new_edition_metadata) storage.editions_metadata in
   let new_storage = {storage with nft_asset_storage = {storage.nft_asset_storage with assets = nft_token_storage};
