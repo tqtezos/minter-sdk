@@ -162,6 +162,81 @@
          SWAP ;
          APPLY ;
          LAMBDA
+           (pair (pair (list (pair (pair nat (map string bytes)) address))
+                       (pair (pair (big_map nat address) nat)
+                             (pair (big_map (pair address (pair address nat)) unit)
+                                   (big_map nat (pair nat (map string bytes))))))
+                 bool)
+           (pair (list (pair (option address) (pair nat nat)))
+                 (pair (pair (big_map nat address) nat)
+                       (pair (big_map (pair address (pair address nat)) unit)
+                             (big_map nat (pair nat (map string bytes))))))
+           { UNPAIR ;
+             UNPAIR ;
+             SWAP ;
+             NIL (pair (option address) (pair nat nat)) ;
+             PAIR ;
+             SWAP ;
+             ITER { DUP ;
+                    DUG 2 ;
+                    CAR ;
+                    CAR ;
+                    SWAP ;
+                    DUP ;
+                    DUG 2 ;
+                    CDR ;
+                    CAR ;
+                    CAR ;
+                    SWAP ;
+                    DUP ;
+                    DUG 2 ;
+                    MEM ;
+                    IF { DROP 3 ; PUSH string "FA2_INVALID_TOKEN_ID" ; FAILWITH }
+                       { DUP 4 ;
+                         IF { DUP } { PUSH nat 1 ; SWAP ; DUP ; DUG 2 ; ADD } ;
+                         DUP 3 ;
+                         CDR ;
+                         DUP 4 ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         DUP 6 ;
+                         CAR ;
+                         DUP 5 ;
+                         SWAP ;
+                         SOME ;
+                         SWAP ;
+                         UPDATE ;
+                         SWAP ;
+                         DUP ;
+                         DUG 2 ;
+                         CDR ;
+                         CAR ;
+                         PAIR ;
+                         SWAP ;
+                         CAR ;
+                         PAIR ;
+                         DUP ;
+                         CDR ;
+                         DUG 2 ;
+                         CAR ;
+                         CAR ;
+                         PAIR ;
+                         PAIR ;
+                         DIG 2 ;
+                         CAR ;
+                         PUSH nat 1 ;
+                         DIG 3 ;
+                         PAIR ;
+                         DIG 3 ;
+                         CDR ;
+                         SOME ;
+                         PAIR ;
+                         CONS ;
+                         PAIR } } ;
+             SWAP ;
+             DROP } ;
+         LAMBDA
            (pair (pair address bool) (option address))
            unit
            { CAR ;
@@ -174,13 +249,13 @@
            (pair (pair address bool) (option address))
            unit
            { CAR ; CDR ; IF { PUSH string "PAUSED" ; FAILWITH } { UNIT } } ;
-         DIG 4 ;
+         DIG 5 ;
          UNPAIR ;
          IF_LEFT
            { IF_LEFT
                { DIG 3 ;
                  DROP ;
-                 DIG 4 ;
+                 DIG 5 ;
                  DROP ;
                  SWAP ;
                  DUP ;
@@ -275,59 +350,14 @@
                         CDR ;
                         CAR ;
                         CDR ;
-                        NIL (pair (option address) (pair nat nat)) ;
-                        PAIR ;
                         SWAP ;
-                        ITER { DUP ;
-                               DUG 2 ;
-                               CAR ;
-                               CAR ;
-                               SWAP ;
-                               DUP ;
-                               DUG 2 ;
-                               CDR ;
-                               CAR ;
-                               CAR ;
-                               SWAP ;
-                               DUP ;
-                               DUG 2 ;
-                               MEM ;
-                               IF { DROP 3 ; PUSH string "FA2_INVALID_TOKEN_ID" ; FAILWITH }
-                                  { SWAP ;
-                                    DUP ;
-                                    DUG 2 ;
-                                    CDR ;
-                                    DUP 3 ;
-                                    CDR ;
-                                    CDR ;
-                                    CDR ;
-                                    DUP 5 ;
-                                    CAR ;
-                                    DUP 4 ;
-                                    SWAP ;
-                                    SOME ;
-                                    SWAP ;
-                                    UPDATE ;
-                                    SWAP ;
-                                    DUP ;
-                                    DUG 2 ;
-                                    CDR ;
-                                    CAR ;
-                                    PAIR ;
-                                    SWAP ;
-                                    CAR ;
-                                    PAIR ;
-                                    DIG 2 ;
-                                    CAR ;
-                                    PUSH nat 1 ;
-                                    DIG 3 ;
-                                    PAIR ;
-                                    DIG 3 ;
-                                    CDR ;
-                                    SOME ;
-                                    PAIR ;
-                                    CONS ;
-                                    PAIR } } ;
+                        PUSH bool True ;
+                        DUG 2 ;
+                        PAIR ;
+                        PAIR ;
+                        DUP 6 ;
+                        SWAP ;
+                        EXEC ;
                         DUP ;
                         CDR ;
                         LAMBDA
@@ -342,7 +372,7 @@
                         CONS ;
                         PAIR ;
                         PAIR ;
-                        DUP 6 ;
+                        DUP 7 ;
                         SWAP ;
                         EXEC ;
                         CDR ;
@@ -394,6 +424,8 @@
                         PAIR } ;
                  SWAP ;
                  DROP ;
+                 SWAP ;
+                 DROP ;
                  NIL operation ;
                  PAIR }
                { SWAP ;
@@ -402,7 +434,9 @@
                  CDR ;
                  SWAP ;
                  IF_LEFT
-                   { IF_LEFT
+                   { DIG 5 ;
+                     DROP ;
+                     IF_LEFT
                        { DIG 3 ;
                          DROP ;
                          DIG 4 ;
@@ -658,7 +692,7 @@
                          PAIR } }
                    { DIG 3 ;
                      DROP ;
-                     DIG 5 ;
+                     DIG 6 ;
                      DROP ;
                      SWAP ;
                      DUP ;
@@ -674,69 +708,14 @@
                      DUG 2 ;
                      CAR ;
                      CDR ;
-                     NIL (pair (option address) (pair nat nat)) ;
-                     PAIR ;
                      SWAP ;
-                     ITER { DUP ;
-                            DUG 2 ;
-                            CAR ;
-                            CAR ;
-                            SWAP ;
-                            DUP ;
-                            DUG 2 ;
-                            CDR ;
-                            CAR ;
-                            CAR ;
-                            SWAP ;
-                            DUP ;
-                            DUG 2 ;
-                            MEM ;
-                            IF { DROP 3 ; PUSH string "FA2_INVALID_TOKEN_ID" ; FAILWITH }
-                               { SWAP ;
-                                 DUP ;
-                                 DUG 2 ;
-                                 CDR ;
-                                 DUP 3 ;
-                                 CDR ;
-                                 CDR ;
-                                 CDR ;
-                                 DUP 5 ;
-                                 CAR ;
-                                 DUP 4 ;
-                                 SWAP ;
-                                 SOME ;
-                                 SWAP ;
-                                 UPDATE ;
-                                 SWAP ;
-                                 DUP ;
-                                 DUG 2 ;
-                                 CDR ;
-                                 CAR ;
-                                 PAIR ;
-                                 SWAP ;
-                                 CAR ;
-                                 PAIR ;
-                                 DUP ;
-                                 CDR ;
-                                 PUSH nat 1 ;
-                                 DUP 4 ;
-                                 ADD ;
-                                 DIG 2 ;
-                                 CAR ;
-                                 CAR ;
-                                 PAIR ;
-                                 PAIR ;
-                                 DIG 2 ;
-                                 CAR ;
-                                 PUSH nat 1 ;
-                                 DIG 3 ;
-                                 PAIR ;
-                                 DIG 3 ;
-                                 CDR ;
-                                 SOME ;
-                                 PAIR ;
-                                 CONS ;
-                                 PAIR } } ;
+                     PUSH bool False ;
+                     DUG 2 ;
+                     PAIR ;
+                     PAIR ;
+                     DIG 3 ;
+                     SWAP ;
+                     EXEC ;
                      DUP ;
                      CDR ;
                      LAMBDA
@@ -773,6 +752,8 @@
                  SWAP ;
                  PAIR } }
            { DIG 4 ;
+             DROP ;
+             DIG 4 ;
              DROP ;
              DIG 4 ;
              DROP ;
