@@ -1,3 +1,4 @@
+import EditionsTokenMetadataViewCode, { EditionsTokenMetadataViewCodeType } from './bin-ts/editions_token_metadata_view.tz';
 import EnglishAuctionFa2Code, { EnglishAuctionFa2CodeType } from './bin-ts/english_auction_fa2.tz';
 import EnglishAuctionTezCode, { EnglishAuctionTezCodeType } from './bin-ts/english_auction_tez.tz';
 import EnglishAuctionTezPermitCode, { EnglishAuctionTezPermitCodeType } from './bin-ts/english_auction_tez_permit.tz';
@@ -14,6 +15,8 @@ import TicketAuctionCode, { TicketAuctionCodeType } from './bin-ts/ticket_auctio
 import TicketWalletCode, { TicketWalletCodeType } from './bin-ts/ticket_wallet.tz';
 
 export {
+  EditionsTokenMetadataViewCode,
+  EditionsTokenMetadataViewCodeType,
   EnglishAuctionFa2Code,
   EnglishAuctionFa2CodeType,
   EnglishAuctionTezCode,

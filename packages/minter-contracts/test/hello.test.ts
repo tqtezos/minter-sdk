@@ -1,6 +1,8 @@
 import { bootstrap, TestTz } from './bootstrap-sandbox';
 import { $log } from '@tsed/logger';
 
+jest.setTimeout(180000); // 3 minutes
+
 describe('balance of', () => {
   let tezos: TestTz;
 
