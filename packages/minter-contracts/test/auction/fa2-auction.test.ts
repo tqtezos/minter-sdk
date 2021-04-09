@@ -3,6 +3,7 @@ import { BigNumber } from 'bignumber.js';
 import moment from 'moment';
 import { bootstrap, TestTz } from '../bootstrap-sandbox';
 import { Contract, bytes, address } from '../../src/type-aliases';
+import { InternalOperationResult } from '@taquito/rpc';
 import {
   MintNftParam,
   originateFtFaucet,
