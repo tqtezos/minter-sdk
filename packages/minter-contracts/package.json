@@ -1,6 +1,6 @@
 {
   "name": "@tqtezos/minter-contracts",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "description": "smart contracts tests using flextesa sandbox and taquito",
   "main": "dist",
   "files": [
@@ -75,5 +75,6 @@
     "minter",
     "blockchain",
     "smart contracts"
-  ]
+  ],
+  "gitHead": "0c2113414a16122812a0bc57b316be16d388991a"
 }
