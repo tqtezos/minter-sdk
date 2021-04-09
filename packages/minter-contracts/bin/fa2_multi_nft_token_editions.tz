@@ -25,7 +25,7 @@
                    (pair (address %creator)
                          (pair (map %edition_info string bytes)
                                (pair (nat %initial_token_id)
-                                     (pair (nat %number_of_editions) (int %number_of_editions_to_distribute)))))))
+                                     (pair (nat %number_of_editions) (nat %number_of_editions_to_distribute)))))))
           (pair %nft_asset_storage
              (pair (pair %admin (pair (address %admin) (bool %paused)) (option %pending_admin address))
                    (pair %assets
@@ -365,6 +365,7 @@
                         CAR ;
                         CDR ;
                         DIG 3 ;
+                        ABS ;
                         DUP 5 ;
                         CDR ;
                         CDR ;
@@ -798,7 +799,6 @@
              ITER { DUP ;
                     DUG 2 ;
                     CDR ;
-                    INT ;
                     DUP 3 ;
                     CDR ;
                     PAIR ;
