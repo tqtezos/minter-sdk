@@ -60,17 +60,20 @@ let mint_editions ( editions_list , storage : mint_edition_run list * editions_s
   let new_storage = List.fold mint_single_edition_run editions_list storage in
   ([] : operation list), new_storage
 
-let distribute_edition_to_addresses ( receivers, edition_metadata, storage : (address list) * edition_metadata * editions_storage)
+let distribute_edition_to_addresses ( edition_id,receivers, edition_metadata, storage : nat * (address list) * edition_metadata * editions_storage)
   : editions_storage * edition_metadata = 
   let distribute_edition_to_address : ((editions_storage * edition_metadata) * address) -> (editions_storage * edition_metadata) = 
     fun ( (storage, edition_metadata), to_  : (editions_storage * edition_metadata) * address ) ->
       let u : unit = if (edition_metadata.number_of_editions_to_distribute  > 0) then ()
         else (failwith "NO_EDITIONS_TO_DISTRIBUTE" : unit) in 
-      let mint_edition_param : mint_edition_param = {
-          token_id = edition_metadata.initial_token_id + abs (edition_metadata.number_of_editions - edition_metadata.number_of_editions_to_distribute); 
+      let mint_token_param : mint_token_param = {
           owner = to_;
+          token_metadata = {
+            token_id = edition_metadata.initial_token_id + abs (edition_metadata.number_of_editions - edition_metadata.number_of_editions_to_distribute); 
+            token_info = Map.literal [(("edition_id" : string), (Bytes.pack edition_id))];
+          }
       } in
-      let _ , nft_token_storage = mint_edition (mint_edition_param, storage.nft_asset_storage.assets) in
+      let _ , nft_token_storage = mint_edition (mint_token_param, storage.nft_asset_storage.assets) in
       {storage with nft_asset_storage = {storage.nft_asset_storage with assets = nft_token_storage}}, 
       {edition_metadata with number_of_editions_to_distribute = edition_metadata.number_of_editions_to_distribute - 1} in
   (List.fold distribute_edition_to_address receivers (storage, edition_metadata))
@@ -84,7 +87,7 @@ let distribute_editions (distribute_list, storage : distribute_edition list * ed
           | None -> (failwith "INVALID_EDITION_ID" : edition_metadata)) in 
         let u : unit = if (Tezos.sender <> edition_metadata.creator) 
             then (failwith "INVALID_DISTRIBUTOR" : unit) else () in 
-        let new_editions_storage, new_edition_metadata = distribute_edition_to_addresses(distribute_param.receivers, edition_metadata, storage) in
+        let new_editions_storage, new_edition_metadata = distribute_edition_to_addresses(distribute_param.edition_id, distribute_param.receivers, edition_metadata, storage) in
         let new_editions_metadata = Big_map.update distribute_param.edition_id (Some new_edition_metadata) new_editions_storage.editions_metadata in
         let new_storage = {new_editions_storage with editions_metadata = new_editions_metadata} in
         new_storage
@@ -105,3 +108,26 @@ let editions_main (param, editions_storage : editions_entrypoints * editions_sto
     | Distribute_editions distribute_param -> 
         let u : unit = fail_if_paused editions_storage.nft_asset_storage.admin in
         (distribute_editions (distribute_param, editions_storage))
+
+let sample_storage : editions_storage = {
+  current_edition_id = 0n;
+  editions_metadata = (Big_map.empty : editions_metadata);
+  nft_asset_storage = {
+    admin  = {
+      admin = ("tz1YPSCGWXwBdTncK2aCctSZAXWvGsGwVJqU" : address);
+      pending_admin = (None : address option);
+      paused = false;
+    };
+    assets = {
+      ledger = (Big_map.empty : ledger);
+      token_metadata = (Big_map.empty : nft_meta);
+      next_token_id = 0n;
+      operators = (Big_map.empty : operator_storage);
+    };
+    metadata  = Big_map.literal [
+      ("", 0x74657a6f732d73746f726167653a636f6e74656e74 );
+      (* ("", "tezos-storage:content"); *)
+      ("content", 0x00) (* bytes encoded UTF-8 JSON *)
+    ];
+  };
+}
