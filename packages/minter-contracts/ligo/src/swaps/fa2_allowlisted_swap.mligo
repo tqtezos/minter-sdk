@@ -1,12 +1,11 @@
 #import "../../fa2/fa2_interface.mligo" "FA2"
 #include "../../fa2_modules/admin/non_pausable_simple_admin.mligo"
+#include "../../fa2_modules/allowlist.mligo"
 #include "fa2_swap.mligo"
 
 (* ======== Swaps allowlist component ======== *)
 
 (* ==== Types ==== *)
-
-type allowlist = (address, unit) big_map
 
 let swap_check_allowlist(allowlist, swap_param : allowlist * swap_entrypoints) : unit =
   match swap_param with
@@ -37,7 +36,7 @@ type storage =
 type entrypoints =
   | Swap of swap_entrypoints
   | Admin of admin_entrypoints
-  | Update_allowed of (address, unit) big_map
+  | Update_allowed of allowlist
 
 let allowlisted_swaps_main(param, storage : entrypoints * storage)
     : ((operation list) * storage) =

@@ -1,4 +1,4 @@
--- | Lorentz bindings for the swaps contract.
+-- | Lorentz bindings for the allowlisted swaps contract.
 module Lorentz.Contracts.AllowlistedSwaps
   ( module Lorentz.Contracts.AllowlistedSwaps
   ) where

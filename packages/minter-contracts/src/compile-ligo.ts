@@ -46,8 +46,8 @@ const compileSources: CompileSourceEntry[] = [
     contract : true,
   },
   {
-    srcFile:'minter_collection/nft/fa2_multi_nft_asset_simple_admin.mligo',
-    mainFn:'nft_asset_main',
+    srcFile: 'minter_collection/nft/fa2_multi_nft_asset_simple_admin.mligo',
+    mainFn: 'nft_asset_main',
     dstFile: 'fa2_multi_nft_asset.tz',
     contract : true,
   },
@@ -61,6 +61,18 @@ const compileSources: CompileSourceEntry[] = [
     srcFile: 'fixed_price_sale/fixed_price_sale_market_tez.mligo',
     mainFn: 'fixed_price_sale_tez_main',
     dstFile: 'fixed_price_sale_market_tez.tz',
+    contract : true,
+  },
+  {
+    srcFile: 'fixed_price_sale/fixed_price_sale_market_allowlisted.mligo',
+    mainFn: 'fixed_price_sale_allowlisted_main',
+    dstFile: 'fixed_price_sale_market_allowlisted.tz',
+    contract : true,
+  },
+  {
+    srcFile: 'fixed_price_sale/fixed_price_sale_market_tez_allowlisted.mligo',
+    mainFn: 'fixed_price_sale_tez_allowlisted_main',
+    dstFile: 'fixed_price_sale_market_tez_allowlisted.tz',
     contract : true,
   },
   {
