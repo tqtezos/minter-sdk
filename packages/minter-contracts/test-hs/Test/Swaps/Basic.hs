@@ -11,7 +11,7 @@ import Morley.Nettest
 import Morley.Nettest.Tasty (nettestScenarioCaps)
 import Tezos.Address (unsafeParseAddress)
 
-import Lorentz.Contracts.Swaps
+import Lorentz.Contracts.Swaps.Basic
 import Lorentz.Test.Consumer
 import Lorentz.Value
 import Test.Swaps.Util

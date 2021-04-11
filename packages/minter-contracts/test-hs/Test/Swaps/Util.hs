@@ -22,8 +22,8 @@ import Lorentz.Value
 import qualified Michelson.Typed as T
 import Morley.Nettest
 
-import Lorentz.Contracts.AllowlistedSwaps
-import Lorentz.Contracts.Swaps
+import Lorentz.Contracts.Swaps.Allowlisted
+import Lorentz.Contracts.Swaps.Basic
 import Test.Util
 
 -- | Test setup.

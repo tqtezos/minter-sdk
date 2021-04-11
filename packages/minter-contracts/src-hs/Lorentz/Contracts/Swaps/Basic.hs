@@ -1,6 +1,6 @@
 -- | Lorentz bindings for the swaps contract.
-module Lorentz.Contracts.Swaps
-  ( module Lorentz.Contracts.Swaps
+module Lorentz.Contracts.Swaps.Basic
+  ( module Lorentz.Contracts.Swaps.Basic
   ) where
 
 import Lorentz

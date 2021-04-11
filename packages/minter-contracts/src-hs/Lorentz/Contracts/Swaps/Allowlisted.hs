@@ -1,6 +1,6 @@
 -- | Lorentz bindings for the allowlisted swaps contract.
-module Lorentz.Contracts.AllowlistedSwaps
-  ( module Lorentz.Contracts.AllowlistedSwaps
+module Lorentz.Contracts.Swaps.Allowlisted
+  ( module Lorentz.Contracts.Swaps.Allowlisted
   ) where
 
 import Lorentz
@@ -10,7 +10,7 @@ import Michelson.Test.Import (embedContractM)
 import qualified Michelson.Typed as T
 
 import Lorentz.Contracts.NonPausableSimpleAdmin
-import Lorentz.Contracts.Swaps
+import Lorentz.Contracts.Swaps.Basic
 
 -- Types
 ----------------------------------------------------------------------------

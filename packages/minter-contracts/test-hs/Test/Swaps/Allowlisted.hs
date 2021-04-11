@@ -12,9 +12,9 @@ import Test.Tasty (TestTree)
 import Morley.Nettest
 import Morley.Nettest.Tasty (nettestScenarioCaps)
 
-import Lorentz.Contracts.AllowlistedSwaps
 import Lorentz.Contracts.NonPausableSimpleAdmin (errNotAdmin)
-import Lorentz.Contracts.Swaps
+import Lorentz.Contracts.Swaps.Allowlisted
+import Lorentz.Contracts.Swaps.Basic
 import Lorentz.Value
 import Test.Swaps.Util
 import Test.Util
