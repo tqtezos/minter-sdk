@@ -30,7 +30,7 @@ test_Swap = testGroup "Basic swap functionality"
 simpleHappyPaths :: TestTree
 simpleHappyPaths = testGroup "Simple happy paths"
   [ nettestScenarioCaps "Simple accepted swap" $ do
-      setup <- doSetup
+      setup <- doFA2Setup
       let alice ::< bob ::< SNil = sAddresses setup
       let tokenId1 ::< tokenId2 ::< SNil = sTokens setup
       swap <- originateSwap
@@ -51,7 +51,7 @@ simpleHappyPaths = testGroup "Simple happy paths"
             call swap (Call @"Accept") (SwapId 0)
 
   , nettestScenarioCaps "Simple cancelled swap" $ do
-      setup <- doSetup
+      setup <- doFA2Setup
       let alice ::< SNil = sAddresses setup
       let tokenId1 ::< tokenId2 ::< SNil = sTokens setup
       swap <- originateSwap
@@ -100,7 +100,7 @@ statusChecks = testGroup "Statuses"
 swapIdChecks :: TestTree
 swapIdChecks = testGroup "SwapIds"
   [ nettestScenarioCaps "Swap ids are properly assigned and can be worked with" $ do
-      setup <- doSetup
+      setup <- doFA2Setup
       let alice ::< bob ::< SNil = sAddresses setup
       let tokenId1 ::< tokenId2 ::< tokenId3 ::< SNil = sTokens setup
       swap <- originateSwap
@@ -143,7 +143,7 @@ swapIdChecks = testGroup "SwapIds"
 authorizationChecks :: TestTree
 authorizationChecks = testGroup "Authorization checks"
   [ nettestScenarioCaps "Swap can be cancelled by seller only" $ do
-      setup <- doSetup
+      setup <- doFA2Setup
       let alice ::< bob ::< SNil = sAddresses setup
       let !SNil = sTokens setup
       swap <- originateSwap
@@ -162,7 +162,7 @@ authorizationChecks = testGroup "Authorization checks"
 invalidFA2sChecks :: TestTree
 invalidFA2sChecks = testGroup "Invalid FA2s"
   [ nettestScenarioCaps "Swap can be cancelled by seller only" $ do
-      setup <- doSetup
+      setup <- doFA2Setup
       let alice ::< SNil = sAddresses setup
       let tokenId1 ::< SNil = sTokens setup
 
@@ -198,7 +198,7 @@ invalidFA2sChecks = testGroup "Invalid FA2s"
 complexCases :: TestTree
 complexCases = testGroup "Complex cases"
   [ nettestScenarioCaps "Multiple FA2s" $ do
-      setup <- doSetup
+      setup <- doFA2Setup
       let alice ::< bob ::< SNil = sAddresses setup
       let tokenId1 ::< tokenId2 ::< tokenId3 ::< SNil = sTokens setup
       swap <- originateSwap
