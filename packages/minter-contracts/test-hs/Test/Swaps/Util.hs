@@ -5,10 +5,10 @@ module Test.Swaps.Util
   , doSetup
   , originateFA2
   , originateSwap
-  , originateWhitelistedSwap
-  , originateWhitelistedSwapWithAdmin
+  , originateAllowlistedSwap
+  , originateAllowlistedSwapWithAdmin
   , mkFA2Assets
-  , mkWhitelistParam
+  , mkAllowlistParam
   ) where
 
 import qualified Data.Foldable as F
@@ -22,8 +22,8 @@ import Lorentz.Value
 import qualified Michelson.Typed as T
 import Morley.Nettest
 
+import Lorentz.Contracts.AllowlistedSwaps
 import Lorentz.Contracts.Swaps
-import Lorentz.Contracts.WhitelistedSwaps
 import Test.Util
 
 -- | Test setup.
@@ -113,23 +113,23 @@ originateSwap = do
     (T.untypeValue $ T.toVal initSwapStorage)
     (T.convertContract swapsContract)
 
--- | Originate the whitelisted swaps contract.
-originateWhitelistedSwap
+-- | Originate the allowlisted swaps contract.
+originateAllowlistedSwap
   :: MonadNettest caps base m
   => Address
-  -> m (TAddress WhitelistedSwapEntrypoints)
-originateWhitelistedSwap admin = do
+  -> m (TAddress AllowlistedSwapEntrypoints)
+originateAllowlistedSwap admin = do
   TAddress <$> originateUntypedSimple "swaps"
-    (T.untypeValue $ T.toVal $ initWhitelistedSwapStorage admin)
-    (T.convertContract whitelistedSwapsContract)
+    (T.untypeValue $ T.toVal $ initAllowlistedSwapStorage admin)
+    (T.convertContract allowlistedSwapsContract)
 
--- | Originate the whitelisted swaps contract and admin for it.
-originateWhitelistedSwapWithAdmin
+-- | Originate the allowlisted swaps contract and admin for it.
+originateAllowlistedSwapWithAdmin
   :: MonadNettest caps base m
-  => m (TAddress WhitelistedSwapEntrypoints, Address)
-originateWhitelistedSwapWithAdmin = do
+  => m (TAddress AllowlistedSwapEntrypoints, Address)
+originateAllowlistedSwapWithAdmin = do
   admin <- newAddress "swaps-admin"
-  swaps <- originateWhitelistedSwap admin
+  swaps <- originateAllowlistedSwap admin
   return (swaps, admin)
 
 -- | Construct 'FA2Assets' from a simplified representation.
@@ -137,6 +137,6 @@ mkFA2Assets :: TAddress fa2Param -> [(FA2.TokenId, Natural)] -> FA2Assets
 mkFA2Assets addr tokens =
   FA2Assets (toAddress addr) (uncurry FA2Token <$> tokens)
 
--- | Construct whitelist for passing to whitelist overriding entrypoint.
-mkWhitelistParam :: [Address] -> BigMap Address ()
-mkWhitelistParam = mconcat . map (\a -> one (a, ()))
+-- | Construct allowlist for passing to allowlist overriding entrypoint.
+mkAllowlistParam :: [Address] -> BigMap Address ()
+mkAllowlistParam = mconcat . map (\a -> one (a, ()))

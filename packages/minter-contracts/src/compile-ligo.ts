@@ -112,9 +112,9 @@ const compileSources: CompileSourceEntry[] = [
     contract : true,
   },
   {
-    srcFile: 'swaps/fa2_whitelisted_swap.mligo',
-    mainFn: 'whitelisted_swaps_main',
-    dstFile: 'fa2_whitelisted_swap.tz',
+    srcFile: 'swaps/fa2_allowlisted_swap.mligo',
+    mainFn: 'allowlisted_swaps_main',
+    dstFile: 'fa2_allowlisted_swap.tz',
     contract : true,
   },
   {

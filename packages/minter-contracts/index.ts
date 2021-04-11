@@ -8,7 +8,7 @@ import Fa2MultiNftAssetCode, { Fa2MultiNftAssetCodeType } from './bin-ts/fa2_mul
 import Fa2MultiNftFaucetCode, { Fa2MultiNftFaucetCodeType } from './bin-ts/fa2_multi_nft_faucet.tz';
 import Fa2MultiNftTokenEditionsCode, { Fa2MultiNftTokenEditionsCodeType } from './bin-ts/fa2_multi_nft_token_editions.tz';
 import Fa2SwapCode, { Fa2SwapCodeType } from './bin-ts/fa2_swap.tz';
-import Fa2WhitelistedSwapCode, { Fa2WhitelistedSwapCodeType } from './bin-ts/fa2_whitelisted_swap.tz';
+import Fa2AllowlistedSwapCode, { Fa2AllowlistedSwapCodeType } from './bin-ts/fa2_allowlisted_swap.tz';
 import FixedPriceSaleMarketCode, { FixedPriceSaleMarketCodeType } from './bin-ts/fixed_price_sale_market.tz';
 import FixedPriceSaleMarketTezCode, { FixedPriceSaleMarketTezCodeType } from './bin-ts/fixed_price_sale_market_tez.tz';
 import TicketAuctionCode, { TicketAuctionCodeType } from './bin-ts/ticket_auction.tz';
@@ -35,8 +35,8 @@ export {
   Fa2MultiNftTokenEditionsCodeType,
   Fa2SwapCode,
   Fa2SwapCodeType,
-  Fa2WhitelistedSwapCode,
-  Fa2WhitelistedSwapCodeType,
+  Fa2AllowlistedSwapCode,
+  Fa2AllowlistedSwapCodeType,
   FixedPriceSaleMarketCode,
   FixedPriceSaleMarketCodeType,
   FixedPriceSaleMarketTezCode,
