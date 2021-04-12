@@ -13,7 +13,7 @@ const args = yargs
   .help()
   .argv;
 
-const typesPath = args['path'];
+const typesPath = args.path;
 
 const fileNameToTitleCase = (fileName: string) =>
   fileName
@@ -43,18 +43,15 @@ const generateIndex = (codeFiles: string[]) => {
   return `${codeImports}\n\nexport {\n${exports}\n};\n`;
 };
 
-(async () => {
-  try {
+try {
+  const outputFiles = fs.readdirSync(typesPath);
+  const codeFiles = outputFiles
+    .filter(x => x.endsWith('.code.ts'));
 
-    const outputFiles = await fs.promises.readdir(typesPath);
-    const codeFiles = outputFiles
-      .filter(x => x.endsWith('.code.ts'));
-
-    $log.info('Writing index');
-    fs.writeFileSync('index.ts', generateIndex(codeFiles));
-    process.exit(0);
-  } catch (e) {
-    $log.error(e);
-    process.exit(1);
-  }
-})();
+  $log.info('Writing index');
+  fs.writeFileSync('index.ts', generateIndex(codeFiles));
+  process.exit(0);
+} catch (e) {
+  $log.error(e);
+  process.exit(1);
+}
