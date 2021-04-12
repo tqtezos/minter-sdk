@@ -33,7 +33,7 @@ const outPath = args['out-path'];
 const michelsonPath = args['michelson-path'];
 const endpoint = args['endpoint'];
 const michelsonToJson = (fileName: string) => new Promise<string>((resolve, reject) => {
-  child.exec(`TEZOS_CLIENT_UNSAFE_DISABLE_DISCLAIMER=yes ${tzClientPath} -E ${endpoint} convert script ${fileName} from michelson to JSON`, (err, stdout, stderr) => {
+  child.exec(`TEZOS_CLIENT_UNSAFE_DISABLE_DISCLAIMER=yes ${tzClientPath} -E ${endpoint} convert data ${fileName} from michelson to JSON`, (err, stdout, stderr) => {
     if (stderr) {
       $log.error(stderr);
     }

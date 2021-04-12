@@ -13,13 +13,6 @@ type mint_token_param =
 
 type mint_tokens_param = mint_token_param list
 
-type mint_edition_param = 
-[@layout:comb]
-{
-  token_id : token_id;
-  owner : address;
-}
-
 type minted1 = {
   storage : nft_token_storage;
   reversed_txs : transfer_destination_descriptor list;
@@ -70,22 +63,29 @@ let mint_tokens (param, storage : mint_tokens_param * nft_token_storage)
   let ops, storage = fa2_transfer ([tx_descriptor], nop_operator_validator, mint1.storage) in
   ops, storage
 
-let mint_edition (param, storage : mint_edition_param * nft_token_storage)
+let mint_edition (param, storage : mint_token_param * nft_token_storage)
     : operation list * nft_token_storage =
-  let token_id = param.token_id in
-  let tx : transfer_destination_descriptor = {
-    to_ = Some param.owner;
-    token_id = token_id;
-    amount = 1n;
-  } in
-  (* update ledger *)
-  let tx_descriptor : transfer_descriptor = {
-    from_ = (None : address option);
-    txs = [tx];
-  } in
-  let nop_operator_validator =
-    fun (p : address * address * token_id * operator_storage) -> unit in
-  let ops, storage = fa2_transfer ([tx_descriptor], nop_operator_validator, storage) in
-  ops, storage
+  let token_id = param.token_metadata.token_id in
+  if (Big_map.mem token_id storage.ledger)
+  then (failwith "FA2_INVALID_TOKEN_ID" : operation list * nft_token_storage) else 
+      let new_token_metadata =
+        Big_map.add token_id param.token_metadata storage.token_metadata in
+      let new_storage = { storage with
+        token_metadata = new_token_metadata;
+      } in
+      let tx : transfer_destination_descriptor = {
+        to_ = Some param.owner;
+        token_id = token_id;
+        amount = 1n;
+      } in
+      (* update ledger *)
+      let tx_descriptor : transfer_descriptor = {
+        from_ = (None : address option);
+        txs = [tx];
+      } in
+      let nop_operator_validator =
+        fun (p : address * address * token_id * operator_storage) -> unit in
+      let ops, s = fa2_transfer ([tx_descriptor], nop_operator_validator, new_storage) in
+      ops, s
 
 #endif
