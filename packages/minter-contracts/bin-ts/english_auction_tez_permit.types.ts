@@ -1,5 +1,5 @@
 
-import { address, BigMap, int, key, mutez, nat, signature, timestamp } from '@taquito/contract-type-generator';
+import { address, BigMap, int, key, mutez, nat, signature, timestamp } from './type-aliases';
 
 type Storage = {
     auction_storage: {

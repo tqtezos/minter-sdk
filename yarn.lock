@@ -1390,6 +1390,15 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
+"@taquito/contract-type-generator@8.1.0-964da83e--722":
+  version "8.1.0-964da83e--722"
+  resolved "https://npm.preview.tezostaquito.io/@taquito%2fcontract-type-generator/-/contract-type-generator-8.1.0-964da83e--722.tgz#0cf659e58cc6ddbcf766efa9b9677cb2f171e01d"
+  integrity sha512-qSgzi+DApN+YDXMDORuF/9gvKmp8JnczB6zquxDhMtvtjh4sSl/pR7R7WaTqdM3zdFcYHbSRSCytA3hJAoGP0w==
+  dependencies:
+    "@taquito/michel-codec" "^8.1.0-964da83e--722"
+    "@taquito/taquito" "^8.1.0-964da83e--722"
+    bignumber.js "^9.0.1"
+
 "@taquito/http-utils@^8.1.0":
   version "8.1.0"
   resolved "https://registry.yarnpkg.com/@taquito/http-utils/-/http-utils-8.1.0.tgz#75e198397e76cebd843d154b3114f6cfb411e1a7"
@@ -1397,7 +1406,7 @@
   dependencies:
     xhr2-cookies "^1.1.0"
 
-"@taquito/michel-codec@^8.1.0":
+"@taquito/michel-codec@^8.1.0", "@taquito/michel-codec@^8.1.0-964da83e--722":
   version "8.1.0"
   resolved "https://registry.yarnpkg.com/@taquito/michel-codec/-/michel-codec-8.1.0.tgz#2893271d1499b7a7f4abcb2e38bc7a059a60ea19"
   integrity sha512-FUye4GQxpkqsuK2Dyjs3yHa1AJdveXuUlM0DtbdBOodcf/b4bpNTD2fsuPzBm0u95Vd4KcPoAKb0GrOVro8V1w==
@@ -1435,7 +1444,7 @@
     pbkdf2 "^3.1.1"
     typedarray-to-buffer "^3.1.5"
 
-"@taquito/taquito@8.1.0", "@taquito/taquito@^8.1.0":
+"@taquito/taquito@8.1.0", "@taquito/taquito@^8.1.0", "@taquito/taquito@^8.1.0-964da83e--722":
   version "8.1.0"
   resolved "https://registry.yarnpkg.com/@taquito/taquito/-/taquito-8.1.0.tgz#f398e2675440f053bf3e78c55b1f70e5a103e1ea"
   integrity sha512-a5YSS4eeN9Rh/EzH0yH3pEK/QxjXyAHptpBn6bYrg1R4BPGgoEAZWY7XjQmf4C4qxNoyIhmCs35svsnTy2xDKA==
@@ -1461,15 +1470,6 @@
     "@taquito/utils" "^8.1.0"
     bignumber.js "^9.0.1"
     crypto-js "^4.0.0"
-
-"@taquito/utils@^8.1.0":
-  version "8.1.0"
-  resolved "https://registry.yarnpkg.com/@taquito/utils/-/utils-8.1.0.tgz#658f07171a611ee8b5b976959ae04c5acff0760c"
-  integrity sha512-1Md7K0r/Y2JTAOHIv9Z3lVuWHBRV+c3ZUCAePIYuPtljEAOuhLgcxMa7ZtoRXfSPutoIOum9yRSSJrKhFhcOhw==
-  dependencies:
-    blakejs "^1.1.0"
-    bs58check "^2.1.2"
-    buffer "^5.6.0"
 
 "@taquito/utils@^8.1.0":
   version "8.1.0"

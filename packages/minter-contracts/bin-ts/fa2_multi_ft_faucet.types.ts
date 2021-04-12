@@ -1,5 +1,5 @@
 
-import { address, BigMap, bytes, contract, MMap, nat, unit } from '@taquito/contract-type-generator';
+import { address, BigMap, bytes, contract, MMap, nat, unit } from './type-aliases';
 
 type Storage = {
     assets: {

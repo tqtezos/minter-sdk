@@ -1,5 +1,5 @@
 
-import { address, BigMap, mutez, nat } from '@taquito/contract-type-generator';
+import { address, BigMap, mutez, nat } from './type-aliases';
 
 type Storage = {
     admin?: {
