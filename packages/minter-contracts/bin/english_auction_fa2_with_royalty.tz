@@ -19,18 +19,19 @@
                 (pair (nat %max_auction_time)
                       (pair (nat %max_config_to_start_time)
                             (pair (pair %bid_currency (address %fa2_address) (nat %token_id))
-                                  (big_map %auctions
-                                     nat
-                                     (pair (address %seller)
-                                           (pair (nat %current_bid)
-                                                 (pair (timestamp %start_time)
-                                                       (pair (timestamp %last_bid_time)
-                                                             (pair (int %round_time)
-                                                                   (pair (int %extend_time)
-                                                                         (pair (list %asset
-                                                                                  (pair (address %fa2_address) (list %fa2_batch (pair (nat %token_id) (nat %amount)))))
-                                                                               (pair (nat %min_raise_percent)
-                                                                                     (pair (nat %min_raise) (pair (timestamp %end_time) (address %highest_bidder))))))))))))))))) ;
+                                  (pair (big_map %auctions
+                                           nat
+                                           (pair (address %seller)
+                                                 (pair (nat %current_bid)
+                                                       (pair (timestamp %start_time)
+                                                             (pair (timestamp %last_bid_time)
+                                                                   (pair (int %round_time)
+                                                                         (pair (int %extend_time)
+                                                                               (pair (list %asset
+                                                                                        (pair (address %fa2_address) (list %fa2_batch (pair (nat %token_id) (nat %amount)))))
+                                                                                     (pair (nat %min_raise_percent)
+                                                                                           (pair (nat %min_raise) (pair (timestamp %end_time) (address %highest_bidder))))))))))))
+                                        (pair %royalty (address %royalty_address) (nat %fee_percent)))))))) ;
   code { LAMBDA
            (option (pair (pair address bool) (option address)))
            unit
@@ -128,16 +129,17 @@
                              (pair nat
                                    (pair nat
                                          (pair (pair address nat)
-                                               (big_map
-                                                  nat
-                                                  (pair address
-                                                        (pair nat
-                                                              (pair timestamp
+                                               (pair (big_map
+                                                        nat
+                                                        (pair address
+                                                              (pair nat
                                                                     (pair timestamp
-                                                                          (pair int
+                                                                          (pair timestamp
                                                                                 (pair int
-                                                                                      (pair (list (pair address (list (pair nat nat))))
-                                                                                            (pair nat (pair nat (pair timestamp address)))))))))))))))))
+                                                                                      (pair int
+                                                                                            (pair (list (pair address (list (pair nat nat))))
+                                                                                                  (pair nat (pair nat (pair timestamp address)))))))))))
+                                                     (pair address nat))))))))
            (pair address
                  (pair nat
                        (pair timestamp
@@ -153,6 +155,7 @@
              CDR ;
              CDR ;
              CDR ;
+             CAR ;
              SWAP ;
              GET ;
              IF_NONE
@@ -225,14 +228,32 @@
              CDR ;
              COMPARE ;
              EQ } ;
-         DIG 8 ;
+         LAMBDA
+           (pair nat nat)
+           nat
+           { UNPAIR ;
+             PUSH nat 100 ;
+             SWAP ;
+             DIG 2 ;
+             MUL ;
+             SWAP ;
+             INT ;
+             SWAP ;
+             NEG ;
+             EDIV ;
+             IF_NONE { PUSH string "DIV by 0" ; FAILWITH } {} ;
+             CAR ;
+             ABS } ;
+         DIG 9 ;
          UNPAIR ;
          IF_LEFT
            { IF_LEFT
-               { DIG 6 ;
+               { DIG 7 ;
                  DROP ;
                  IF_LEFT
                    { DIG 2 ;
+                     DROP ;
+                     DIG 2 ;
                      DROP ;
                      DIG 2 ;
                      DROP ;
@@ -308,7 +329,7 @@
                      PAIR ;
                      SWAP ;
                      PAIR }
-                   { DIG 8 ;
+                   { DIG 9 ;
                      DROP ;
                      UNPAIR ;
                      DUP 3 ;
@@ -316,7 +337,7 @@
                      DUP ;
                      DUG 2 ;
                      PAIR ;
-                     DIG 6 ;
+                     DIG 7 ;
                      SWAP ;
                      EXEC ;
                      PUSH string "Bidder must be an implicit account" ;
@@ -325,13 +346,13 @@
                      COMPARE ;
                      EQ ;
                      PAIR ;
-                     DUP 9 ;
+                     DUP 10 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
                      DUP 4 ;
                      CAR ;
-                     DIG 9 ;
+                     DIG 10 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
@@ -339,7 +360,7 @@
                      SWAP ;
                      DUP ;
                      DUG 2 ;
-                     DIG 7 ;
+                     DIG 8 ;
                      SWAP ;
                      EXEC ;
                      NOT ;
@@ -352,7 +373,7 @@
                      GE ;
                      AND ;
                      PAIR ;
-                     DUP 8 ;
+                     DUP 9 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
@@ -365,7 +386,7 @@
                      COMPARE ;
                      NEQ ;
                      PAIR ;
-                     DIG 7 ;
+                     DIG 8 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
@@ -374,7 +395,7 @@
                      DUP ;
                      DUG 2 ;
                      DUP ;
-                     DUP 8 ;
+                     DUP 9 ;
                      SWAP ;
                      EXEC ;
                      SWAP ;
@@ -417,18 +438,10 @@
                      CDR ;
                      CDR ;
                      CAR ;
-                     PUSH nat 100 ;
+                     PAIR ;
+                     DIG 9 ;
                      SWAP ;
-                     DIG 2 ;
-                     MUL ;
-                     SWAP ;
-                     INT ;
-                     SWAP ;
-                     NEG ;
-                     EDIV ;
-                     IF_NONE { PUSH string "DIV by 0" ; FAILWITH } {} ;
-                     CAR ;
-                     ABS ;
+                     EXEC ;
                      DIG 3 ;
                      CDR ;
                      CAR ;
@@ -785,10 +798,19 @@
                      CDR ;
                      CDR ;
                      CDR ;
-                     SWAP ;
+                     CDR ;
+                     DUP 5 ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CAR ;
+                     DIG 2 ;
                      SOME ;
-                     DIG 3 ;
+                     DIG 4 ;
                      UPDATE ;
+                     PAIR ;
                      DUP 3 ;
                      CDR ;
                      CDR ;
@@ -816,7 +838,9 @@
                      PAIR ;
                      SWAP ;
                      PAIR } }
-               { IF_LEFT
+               { DIG 2 ;
+                 DROP ;
+                 IF_LEFT
                    { DIG 9 ;
                      DROP ;
                      SWAP ;
@@ -930,7 +954,15 @@
                      CDR ;
                      CDR ;
                      CDR ;
-                     DIG 2 ;
+                     CDR ;
+                     DUP 4 ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CAR ;
+                     DIG 3 ;
                      NONE (pair address
                                 (pair nat
                                       (pair timestamp
@@ -941,6 +973,7 @@
                                                                     (pair nat (pair nat (pair timestamp address)))))))))) ;
                      SWAP ;
                      UPDATE ;
+                     PAIR ;
                      DUP 3 ;
                      CDR ;
                      CDR ;
@@ -989,6 +1022,24 @@
                      DUG 2 ;
                      CAR ;
                      DIG 5 ;
+                     SWAP ;
+                     EXEC ;
+                     DROP ;
+                     PUSH string
+                          "Royalty fee_percent must be less than 100%. Please originate another contract." ;
+                     PUSH nat 100 ;
+                     DUP 4 ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     COMPARE ;
+                     LE ;
+                     PAIR ;
+                     DUP 5 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
@@ -1228,12 +1279,21 @@
                      CDR ;
                      CDR ;
                      CDR ;
-                     DIG 2 ;
-                     SOME ;
+                     CDR ;
                      DUP 4 ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CAR ;
+                     DIG 3 ;
+                     SOME ;
+                     DUP 5 ;
                      CDR ;
                      CAR ;
                      UPDATE ;
+                     PAIR ;
                      DUP 3 ;
                      CDR ;
                      CDR ;
@@ -1273,13 +1333,13 @@
                      PAIR ;
                      SWAP ;
                      PAIR } } }
-           { DIG 9 ;
+           { DIG 10 ;
              DROP ;
              SWAP ;
              DUP ;
              DUG 2 ;
              CAR ;
-             DIG 9 ;
+             DIG 10 ;
              SWAP ;
              EXEC ;
              DROP ;
@@ -1290,18 +1350,18 @@
              DUP ;
              DUG 2 ;
              PAIR ;
-             DIG 5 ;
+             DIG 6 ;
              SWAP ;
              EXEC ;
              PUSH string "Auction must have ended" ;
              SWAP ;
              DUP ;
              DUG 2 ;
-             DIG 6 ;
+             DIG 7 ;
              SWAP ;
              EXEC ;
              PAIR ;
-             DUP 8 ;
+             DUP 9 ;
              SWAP ;
              EXEC ;
              DROP ;
@@ -1311,7 +1371,7 @@
              COMPARE ;
              EQ ;
              PAIR ;
-             DIG 7 ;
+             DIG 8 ;
              SWAP ;
              EXEC ;
              DROP ;
@@ -1337,34 +1397,84 @@
              CAR ;
              PAIR ;
              PAIR ;
-             DIG 6 ;
+             DIG 7 ;
              SWAP ;
              EXEC ;
              SWAP ;
              DUP ;
              DUG 2 ;
-             DIG 5 ;
+             DIG 6 ;
              SWAP ;
              EXEC ;
-             IF { SWAP ; DROP ; DIG 3 ; DROP }
-                { DUP 4 ;
-                  CDR ;
-                  CDR ;
-                  CDR ;
-                  CDR ;
-                  CAR ;
-                  DUP 3 ;
+             IF { SWAP ; DROP ; DIG 3 ; DROP ; DIG 3 ; DROP }
+                { SWAP ;
+                  DUP ;
+                  DUG 2 ;
                   CDR ;
                   CAR ;
+                  DUP 5 ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
                   PAIR ;
-                  DIG 2 ;
+                  DIG 5 ;
+                  SWAP ;
+                  EXEC ;
+                  DUP 5 ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CAR ;
+                  SWAP ;
+                  DUP ;
+                  DUG 2 ;
+                  PAIR ;
+                  DUP 6 ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
                   CAR ;
                   SELF_ADDRESS ;
                   PAIR ;
                   PAIR ;
-                  DIG 4 ;
+                  DUP 7 ;
                   SWAP ;
                   EXEC ;
+                  SWAP ;
+                  DUP 4 ;
+                  CDR ;
+                  CAR ;
+                  SUB ;
+                  ISNAT ;
+                  IF_NONE { PUSH string "royalty is larger than winning bid" ; FAILWITH } {} ;
+                  DUP 6 ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CAR ;
+                  SWAP ;
+                  PAIR ;
+                  DIG 3 ;
+                  CAR ;
+                  SELF_ADDRESS ;
+                  PAIR ;
+                  PAIR ;
+                  DIG 5 ;
+                  SWAP ;
+                  EXEC ;
+                  DIG 2 ;
+                  SWAP ;
+                  CONS ;
+                  SWAP ;
                   CONS } ;
              DUP 3 ;
              CDR ;
@@ -1372,7 +1482,15 @@
              CDR ;
              CDR ;
              CDR ;
-             DIG 2 ;
+             CDR ;
+             DUP 4 ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CAR ;
+             DIG 3 ;
              NONE (pair address
                         (pair nat
                               (pair timestamp
@@ -1383,6 +1501,7 @@
                                                             (pair nat (pair nat (pair timestamp address)))))))))) ;
              SWAP ;
              UPDATE ;
+             PAIR ;
              DUP 3 ;
              CDR ;
              CDR ;

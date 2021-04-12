@@ -64,6 +64,8 @@ type auction_entrypoints =
   | Resolve of nat
   | Admin of pauseable_admin
 
+#if !ROYALTY
+
 type storage =
   [@layout:comb]
   {
@@ -74,6 +76,29 @@ type storage =
     bid_currency : bid_currency;
     auctions : (nat, auction) big_map
   }
+
+#else 
+
+type royalty_data = 
+  [@layout:comb]
+  {
+    royalty_address : address;
+    fee_percent : nat;
+  }
+
+type storage =
+  [@layout:comb]
+  {
+    pauseable_admin : pauseable_admin_storage;
+    current_id : nat;
+    max_auction_time : nat;
+    max_config_to_start_time : nat;
+    bid_currency : bid_currency;
+    auctions : (nat, auction) big_map;
+    royalty : royalty_data;
+  }
+
+#endif
 
 type return = operation list * storage
 
@@ -131,14 +156,21 @@ let first_bid (auction : auction) : bool =
 
 let ceil_div (numerator, denominator : nat * nat) : nat = abs ((- numerator) / (int denominator))
 
+let percent_of_bid (percent, bid : nat * nat) : nat = 
+  (ceil_div (bid *  percent, 100n))
+
 let valid_bid_amount (auction, token_amount : auction * nat) : bool =
-  (token_amount >= (auction.current_bid + (ceil_div (auction.min_raise_percent *  auction.current_bid, 100n)))) ||
+  (token_amount >= (auction.current_bid + (percent_of_bid (auction.min_raise_percent, auction.current_bid)))) ||
   (token_amount >= auction.current_bid + auction.min_raise)                                            ||
   ((token_amount >= auction.current_bid) && first_bid(auction))
 
 let configure_auction(configure_param, storage : configure_param * storage) : return = begin
     (fail_if_not_admin storage.pauseable_admin);
     (fail_if_paused storage.pauseable_admin);
+#if ROYALTY 
+    assert_msg (storage.royalty.fee_percent <= 100n, "Royalty fee_percent must be less than 100%. Please originate another contract.");
+#endif
+
     assert_msg (configure_param.end_time > configure_param.start_time, "end_time must be after start_time");
     assert_msg (abs(configure_param.end_time - configure_param.start_time) <= storage.max_auction_time, "Auction time must be less than max_auction_time");
 
@@ -172,12 +204,25 @@ let resolve_auction(asset_id, storage : nat * storage) : return = begin
     let auction : auction = get_auction_data(asset_id, storage) in
     assert_msg (auction_ended(auction) , "Auction must have ended");
     assert_msg (Tezos.amount = 0mutez, "Amount must be 0mutez");
-
     let asset_transfers : operation list = transfer_tokens(auction.asset, Tezos.self_address, auction.highest_bidder) in
+
+#if !ROYALTY 
     let op_list : operation list = if first_bid(auction) then 
       asset_transfers else  
-      let return_bid : operation = fa2_fee_transfer(Tezos.self_address, auction.seller, auction.current_bid, storage.bid_currency) in 
-      (return_bid :: asset_transfers) in
+      let send_final_bid : operation = fa2_fee_transfer(Tezos.self_address, auction.seller, auction.current_bid, storage.bid_currency) in 
+      (send_final_bid :: asset_transfers) in
+#else 
+    
+    let op_list : operation list = if first_bid(auction) then 
+      asset_transfers else  
+      let royalty : nat = percent_of_bid (storage.royalty.fee_percent, auction.current_bid) in
+      let pay_royalty : operation = fa2_fee_transfer(Tezos.self_address, storage.royalty.royalty_address, royalty, storage.bid_currency) in
+      let final_price_minus_royalty : nat =  (match (is_nat (auction.current_bid - royalty)) with 
+        | Some adjusted_price -> adjusted_price 
+        | None -> (failwith "royalty is larger than winning bid" : nat)) in
+      let send_final_bid_minus_royalty : operation = fa2_fee_transfer(Tezos.self_address, auction.seller, final_price_minus_royalty , storage.bid_currency) in 
+      (pay_royalty :: send_final_bid_minus_royalty :: asset_transfers) in
+#endif 
     let updated_auctions = Big_map.remove asset_id storage.auctions in
     (op_list, {storage with auctions = updated_auctions})
   end

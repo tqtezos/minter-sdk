@@ -129,6 +129,18 @@ const compileSources: CompileSourceEntry[] = [
     dstFile: 'editions_token_metadata_view.tz',
     contract : false,
   },
+  {
+    srcFile: 'english_auction/english_auction_tez_with_royalty.mligo',
+    mainFn: 'english_auction_tez_main',
+    dstFile: 'english_auction_tez_with_royalty.tz',
+    contract : true,
+  },
+  {
+    srcFile: 'english_auction/english_auction_fa2_with_royalty.mligo',
+    mainFn: 'english_auction_fa2_main',
+    dstFile: 'english_auction_fa2_with_royalty.tz',
+    contract : true,
+  },
 ];
 
 const filterSources = (sources: CompileSourceEntry[]): CompileSourceEntry[] => {
