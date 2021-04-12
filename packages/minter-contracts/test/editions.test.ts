@@ -14,6 +14,7 @@ import {
   transfer,
 } from '../src/fa2-interface';
 import { QueryBalances, queryBalancesWithLambdaView, hasTokens } from './fa2-balance-inspector';
+import { Tzip16Module, tzip16 } from '@taquito/tzip16';
 
 jest.setTimeout(180000); // 3 minutes
 
@@ -33,30 +34,36 @@ describe('test NFT auction', () => {
   let nftEditions : Contract;
   let nft1 : MintEditionParam;
   let nft2 : MintEditionParam;
-  let empty_metadata_map : MichelsonMap<string, bytes>;
+  let edition_1_metadata : MichelsonMap<string, bytes>;
+  let edition_2_metadata : MichelsonMap<string, bytes>;
   let bobAddress : address;
   let aliceAddress : address;
   let queryBalances: QueryBalances;
 
   beforeAll(async () => {
     tezos = await bootstrap();
-    empty_metadata_map = new MichelsonMap();
+    edition_1_metadata = new MichelsonMap();
+    edition_1_metadata.setType({ prim :"map", args :[{ prim:"string" }, { prim:"bytes" }] });
+    edition_1_metadata.set("name", "66616b65206e616d65");
+    edition_2_metadata = new MichelsonMap();
+    edition_2_metadata.setType({ prim :"map", args :[{ prim:"string" }, { prim:"bytes" }] });
+    edition_2_metadata.set("name", "74657374206e616d65");
     bobAddress = await tezos.bob.signer.publicKeyHash();
     aliceAddress = await tezos.alice.signer.publicKeyHash();
     queryBalances = queryBalancesWithLambdaView(tezos.lambdaView);
     $log.info('originating editions contract');
     nftEditions = await originateEditionsNftContract(tezos.bob, bobAddress);
-    $log.info('editions contract originated');
+    $log.info(`editions contract originated`);
   });
 
   test('mint 1000 editions of nft1 and 2 of nft2', async() => {
     nft1 = {
-      edition_info: empty_metadata_map,
+      edition_info : edition_1_metadata,
       number_of_editions : new BigNumber(1000),
     };
 
     nft2 = {
-      edition_info: empty_metadata_map,
+      edition_info: edition_2_metadata,
       number_of_editions : new BigNumber(2),
     };
     const opMint = await nftEditions.methods.mint_editions([nft1, nft2]).send();
@@ -117,5 +124,19 @@ describe('test NFT auction', () => {
     ], queryBalances, nftEditions);
     expect(aliceHasATokenAfter).toBe(false);
     expect(bobHasATokenAfter).toBe(true);
+  });
+
+  test ('test editions token-metadata with off-chain view', async() => {
+    tezos.bob.addExtension(new Tzip16Module());
+    const editionsContractMetadata = await tezos.bob.contract.at(nftEditions.address, tzip16);
+    $log.info(`Initialising the views for editions contract ...`);
+    const views = await editionsContractMetadata.tzip16().metadataViews();
+    $log.info(`The following view names were found in the metadata: ${Object.keys(views)}`);
+    $log.info(`get metadata for edition with token_id 0 ...`);
+    const token0Metadata = await views.token_metadata().executeView(0);
+    expect(token0Metadata).toEqual({
+      token_id : new BigNumber(0),
+      token_info : edition_1_metadata,
+    });
   });
 });

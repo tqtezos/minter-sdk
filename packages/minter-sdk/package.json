@@ -1,6 +1,6 @@
 {
   "name": "@tqtezos/minter-sdk",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "main": "dist",
   "description": "Utility library for interacting with minter-contracts",
   "files": [
@@ -16,7 +16,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@tqtezos/minter-contracts": "^1.0.3"
+    "@tqtezos/minter-contracts": "^1.1.0"
   },
   "devDependencies": {
     "@types/jest": "^26.0.21",
@@ -45,5 +45,6 @@
     "sdk",
     "blockchain",
     "smart contracts"
-  ]
+  ],
+  "gitHead": "0c2113414a16122812a0bc57b316be16d388991a"
 }

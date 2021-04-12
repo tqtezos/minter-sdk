@@ -4,6 +4,7 @@ import { TezosToolkit } from '@taquito/taquito';
 import { char2Bytes } from '@taquito/tzip16';
 import { TokenMetadata } from './fa2-interface';
 import { BigNumber } from 'bignumber.js';
+import  { default as EditionsMetadata } from '../bin-ts/editions_token_metadata_view.tz';
 
 export interface MintNftParam {
     token_metadata: TokenMetadata;
@@ -38,6 +39,14 @@ interface AdminStorage {
     paused: boolean;
 }
 
+const meta_uri = char2Bytes('tezos-storage:content');
+
+const sample_metadata = {
+  name: 'example_name',
+  description: 'sample_token',
+  interfaces: ['TZIP-012', 'TZIP-016'],
+};
+
 export async function originateNft(
   tz: TezosToolkit,
   admin: address,
@@ -48,18 +57,12 @@ export async function originateNft(
     'nft_asset_main',
     'fa2_multi_nft_asset.tz',
   );
-  const meta_uri = char2Bytes('tezos-storage:content');
-  const meta = {
-    name: 'example_name',
-    description: 'sample_token',
-    interfaces: ['TZIP-012', 'TZIP-016'],
-  };
 
-  const meta_content = char2Bytes(JSON.stringify(meta, null, 2));
+  const meta_content = char2Bytes(JSON.stringify(sample_metadata, null, 2));
 
   const storage = `(Pair (Pair (Pair (Pair ${admin} True) None)
             (Pair (Pair {} 0) (Pair {} {})))
-      { Elt "" 0x${meta_uri} ; Elt "contents" 0x${meta_content} })`;
+      { Elt "" 0x${meta_uri} ; Elt "content" 0x${meta_content} })`;
   return originateContract(tz, code, storage, 'nft');
 }
 
@@ -73,17 +76,10 @@ export async function originateNftFaucet(
     'fa2_multi_nft_faucet.tz',
   );
 
-  const meta_uri = char2Bytes('tezos-storage:content');
-  const meta = {
-    name: 'example_name',
-    description: 'sample_token',
-    interfaces: ['TZIP-012', 'TZIP-016'],
-  };
-
-  const meta_content = char2Bytes(JSON.stringify(meta, null, 2));
+  const meta_content = char2Bytes(JSON.stringify(sample_metadata, null, 2));
 
   const storage = `(Pair (Pair (Pair {} 0) (Pair {} {}))
-      { Elt "" 0x${meta_uri} ; Elt "contents" 0x${meta_content} })`;
+      { Elt "" 0x${meta_uri} ; Elt "content" 0x${meta_content} })`;
   return originateContract(tz, code, storage, 'nftFaucet');
 }
 
@@ -97,17 +93,10 @@ export async function originateFtFaucet(
     'fa2_multi_ft_faucet.tz',
   );
 
-  const meta_uri = char2Bytes('tezos-storage:content');
-  const meta = {
-    name: 'example_name',
-    description: 'sample_token',
-    interfaces: ['TZIP-012', 'TZIP-106'],
-  };
-
-  const meta_content = char2Bytes(JSON.stringify(meta, null, 2));
+  const meta_content = char2Bytes(JSON.stringify(sample_metadata, null, 2));
 
   const storage = `(Pair (Pair (Pair {} {}) (Pair {} {}))
-        { Elt "" 0x${meta_uri} ; Elt "contents" 0x${meta_content} })`;
+        { Elt "" 0x${meta_uri} ; Elt "content" 0x${meta_content} })`;
 
   return originateContract(tz, code, storage, 'ftFaucet');
 }
@@ -203,17 +192,39 @@ export async function originateEditionsNftContract(
     'editions_main',
     'fa2_multi_nft_token_editions.tz',
   );
-  const meta_uri = char2Bytes('tezos-storage:content');
-  const meta = {
-    name: 'example_name',
-    description: 'sample_token',
+
+  const editions_metadata = {
+    name: 'editions',
+    description: 'editions',
     interfaces: ['TZIP-012', 'TZIP-016'],
+    views : [{
+      name: 'token_metadata',
+      description: 'Get the metadata for the tokens minted using this contract',
+      pure: false,
+      implementations: [
+        { michelsonStorageView :
+           {
+             parameter : {
+               prim: 'nat',
+             },
+             returnType : {
+               prim : "pair",
+               args : [
+                 { prim: "nat", annots: ["%token_id"] },
+                 { prim :"map", args :[{ prim:"string" }, { prim:"bytes" }], annots:["%token_info"] },
+               ],
+             },
+             code : EditionsMetadata.code,
+           },
+        },
+      ],
+    }],
   };
 
-  const meta_content = char2Bytes(JSON.stringify(meta, null, 2));
+  const editions_meta_encoded = char2Bytes(JSON.stringify(editions_metadata, null, 2));
 
   const storage = `(Pair (Pair 0 {}) (Pair (Pair (Pair (Pair "${adminAddress}" False) None )
-    (Pair (Pair {} 0) (Pair {} {}))) { Elt "" 0x${meta_uri} ; Elt "contents" 0x${meta_content} }))`;
+    (Pair (Pair {} 0) (Pair {} {}))) { Elt "" 0x${meta_uri} ; Elt "content" 0x${editions_meta_encoded} }))`;
   return originateContract(tz, code, storage, 'editions');
 }
 

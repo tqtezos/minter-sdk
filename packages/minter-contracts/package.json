@@ -1,6 +1,6 @@
 {
   "name": "@tqtezos/minter-contracts",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "smart contracts tests using flextesa sandbox and taquito",
   "main": "dist",
   "files": [
@@ -36,11 +36,10 @@
   "author": "TQ Tezos Maintainers <info@tqtezos.com>",
   "license": "MIT",
   "devDependencies": {
-    "@taquito/contract-type-generator": "8.1.0-fcf775ff--722",
-    "@taquito/rpc": "8.0.3-beta.0",
-    "@taquito/signer": "8.0.3-beta.0",
-    "@taquito/taquito": "8.0.3-beta.0",
-    "@taquito/tzip16": "^8.0.4-beta.0",
+    "@taquito/rpc": "8.1.0",
+    "@taquito/signer": "8.1.0",
+    "@taquito/taquito": "8.1.0",
+    "@taquito/tzip16": "8.1.0",
     "@tsed/logger": "5.5.2",
     "@types/async-retry": "^1.4.2",
     "@types/configstore": "4.0.0",
@@ -76,5 +75,6 @@
     "minter",
     "blockchain",
     "smart contracts"
-  ]
+  ],
+  "gitHead": "0c2113414a16122812a0bc57b316be16d388991a"
 }
