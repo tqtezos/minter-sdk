@@ -16,7 +16,6 @@ import Morley.Nettest
 import Lorentz.Contracts.Marketplace.Allowlisted
 import Lorentz.Contracts.Marketplace.FA2
 import Test.Marketplace.Util
-import Test.Swaps.Util
 import Test.Util
 
 import Test.Allowlisted
@@ -37,7 +36,7 @@ test_AllowlistChecks = allowlistChecks
       let alice ::< SNil = sAddresses fa2Setup
       let tokenId ::< SNil = sTokens fa2Setup
       (swap, admin) <- originateWithAdmin originateMarketplaceAllowlisted
-      allowedFA2 <- originateFA2 "allowed-fa2" fa2Setup swap
+      allowedFA2 <- originateFA2 "allowed-fa2" fa2Setup [swap]
       return (admin, swap, (alice, tokenId, allowedFA2))
 
   , allowlistRestrictionsCases = fromList

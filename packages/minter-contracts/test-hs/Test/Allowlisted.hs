@@ -93,7 +93,7 @@ allowlistChecks AllowlistChecksSetup{..} =
   [ nettestScenarioCaps "Initially no FA2 works" $ do
       fa2Setup <- doFA2Setup
       (_admin, contract, setup) <- allowlistCheckSetup fa2Setup
-      fa2 <- originateFA2 "fa2" fa2Setup contract
+      fa2 <- originateFA2 "fa2" fa2Setup [contract]
 
       case allowlistRestrictionsCases of
         AllowlistRestrictionCase{..} :| _ ->
@@ -103,8 +103,8 @@ allowlistChecks AllowlistChecksSetup{..} =
   , nettestScenarioCaps "Only FA2s that has been allowed work" $ do
       fa2Setup <- doFA2Setup
       (admin, contract, setup) <- allowlistCheckSetup fa2Setup
-      fa2_1 <- originateFA2 "fa2-1" fa2Setup contract
-      fa2_2 <- originateFA2 "fa2-2" fa2Setup contract
+      fa2_1 <- originateFA2 "fa2-1" fa2Setup [contract]
+      fa2_2 <- originateFA2 "fa2-2" fa2Setup [contract]
 
       withSender (AddressResolved admin) $
         call contract (Call @"Update_allowed") $ mkFullAllowlist setup [fa2_2]
@@ -122,8 +122,8 @@ allowlistChecks AllowlistChecksSetup{..} =
   , nettestScenarioCaps "Permission can be revoked" $ do
       fa2Setup <- doFA2Setup
       (admin, contract, setup) <- allowlistCheckSetup fa2Setup
-      fa2 <- originateFA2 "fa2" fa2Setup contract
-      fa2_another <- originateFA2 "fa2" fa2Setup contract
+      fa2 <- originateFA2 "fa2" fa2Setup [contract]
+      fa2_another <- originateFA2 "fa2" fa2Setup [contract]
 
       withSender (AddressResolved admin) $
         call contract (Call @"Update_allowed") $ mkFullAllowlist setup [fa2]

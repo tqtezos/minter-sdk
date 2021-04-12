@@ -34,7 +34,7 @@ simpleHappyPaths = testGroup "Simple happy paths"
       let alice ::< bob ::< SNil = sAddresses setup
       let tokenId1 ::< tokenId2 ::< SNil = sTokens setup
       swap <- originateSwap
-      fa2 <- originateFA2 "fa2" setup swap
+      fa2 <- originateFA2 "fa2" setup [swap]
 
       assertingBalanceDeltas fa2
         [ (alice, tokenId1) -: -10
@@ -55,7 +55,7 @@ simpleHappyPaths = testGroup "Simple happy paths"
       let alice ::< SNil = sAddresses setup
       let tokenId1 ::< tokenId2 ::< SNil = sTokens setup
       swap <- originateSwap
-      fa2 <- originateFA2 "fa2" setup swap
+      fa2 <- originateFA2 "fa2" setup [swap]
 
       assertingBalanceDeltas fa2
         [ (alice, tokenId1) -: 0
@@ -104,7 +104,7 @@ swapIdChecks = testGroup "SwapIds"
       let alice ::< bob ::< SNil = sAddresses setup
       let tokenId1 ::< tokenId2 ::< tokenId3 ::< SNil = sTokens setup
       swap <- originateSwap
-      fa2 <- originateFA2 "fa2" setup swap
+      fa2 <- originateFA2 "fa2" setup [swap]
 
       withSender (AddressResolved alice) $
         for_ [tokenId1, tokenId2, tokenId3] $ \tokenId ->
@@ -202,8 +202,8 @@ complexCases = testGroup "Complex cases"
       let alice ::< bob ::< SNil = sAddresses setup
       let tokenId1 ::< tokenId2 ::< tokenId3 ::< SNil = sTokens setup
       swap <- originateSwap
-      fa2_1 <- originateFA2 "fa2-1" setup swap
-      fa2_2 <- originateFA2 "fa2-2" setup swap
+      fa2_1 <- originateFA2 "fa2-1" setup [swap]
+      fa2_2 <- originateFA2 "fa2-2" setup [swap]
 
       assertingBalanceDeltas fa2_1
         [ (alice, tokenId1) -: -100

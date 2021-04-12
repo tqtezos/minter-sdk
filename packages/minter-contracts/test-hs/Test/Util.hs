@@ -7,14 +7,19 @@ module Test.Util
   , pattern SNil
   , FA2Setup (..)
   , doFA2Setup
+  , originateFA2
   , assertingBalanceDeltas
   , mkAllowlistParam
+  , originateWithAdmin
 
     -- Re-exports
   , Sized
   ) where
 
+
+import qualified Data.Foldable as F
 import Data.Kind (Type)
+import qualified Data.Map as Map
 import Data.Sized (Sized)
 import qualified Data.Sized as Sized
 import Data.Type.Natural.Lemma.Order (type (<))
@@ -103,6 +108,37 @@ doFA2Setup = do
   let sTokens = Sized.generate' $ \i -> FA2.TokenId (ordToNatural i)
   return FA2Setup{..}
 
+-- | Originate a trivial FA2 contract suitable for testing the provided swaps
+-- contract:
+-- * Some money will be put on the addresses from setup, the swaps contract
+--   will be made operator of those addresses.
+-- * The tokenIds from setup will be supported by the originated contract.
+originateFA2
+  :: MonadNettest caps base m
+  => AliasHint
+  -> FA2Setup addrsNum tokensNum
+  -> [TAddress contractParam]
+  -> m (TAddress FA2.FA2SampleParameter)
+originateFA2 name FA2Setup{..} contracts = do
+  fa2 <- originateSimple name
+    FA2.Storage
+    { sLedger = BigMap $ Map.fromList do
+        -- put money on several tokenIds for each given address
+        addr <- F.toList sAddresses
+        tokenId <- F.toList sTokens
+        pure ((addr, tokenId), 1000)
+    , sOperators = BigMap $ Map.fromList do
+        owner <- F.toList sAddresses
+        operator <- contracts
+        pure ((owner, toAddress operator), ())
+    , sTokenMetadata = mempty
+    }
+    (FA2.fa2Contract def
+      { FA2.cAllowedTokenIds = F.toList sTokens
+      }
+    )
+  return fa2
+
 -- | Given a FA2 contract address, checks that balances of the given
 -- address/token_ids change by the specified delta values.
 assertingBalanceDeltas
@@ -147,3 +183,13 @@ assertingBalanceDeltas fa2 indicedDeltas action = do
 -- | Construct allowlist for passing to allowlist overriding entrypoint.
 mkAllowlistParam :: [Address] -> BigMap Address ()
 mkAllowlistParam = mconcat . map (\a -> one (a, ()))
+
+-- | Originate the a contract and admin for it.
+originateWithAdmin
+  :: MonadNettest caps base m
+  => (Address -> m (TAddress param))
+  -> m (TAddress param, Address)
+originateWithAdmin originateFn = do
+  admin <- newAddress "admin"
+  swaps <- originateFn admin
+  return (swaps, admin)

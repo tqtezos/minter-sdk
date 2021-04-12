@@ -16,7 +16,6 @@ import Morley.Nettest
 import Lorentz.Contracts.Marketplace.Allowlisted
 import Lorentz.Contracts.Marketplace.Tez
 import Test.Marketplace.Util
-import Test.Swaps.Util
 import Test.Util
 
 import Test.Allowlisted
