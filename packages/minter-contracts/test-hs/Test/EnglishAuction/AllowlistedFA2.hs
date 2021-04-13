@@ -1,10 +1,5 @@
 -- | Tests on the allowlisted FA2 english auction contract.
-module Test.EnglishAuction.AllowlistedFA2
-  ( test_AdminChecks
-  , test_AllowlistUpdateAuthorization
-  , test_AllowlistChecks
-  , test_Integrational
-  ) where
+module Test.EnglishAuction.AllowlistedFA2 where
 
 import Prelude hiding (swap)
 

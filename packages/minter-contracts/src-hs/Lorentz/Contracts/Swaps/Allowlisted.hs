@@ -1,7 +1,5 @@
 -- | Lorentz bindings for the allowlisted swaps contract.
-module Lorentz.Contracts.Swaps.Allowlisted
-  ( module Lorentz.Contracts.Swaps.Allowlisted
-  ) where
+module Lorentz.Contracts.Swaps.Allowlisted where
 
 import Lorentz
 

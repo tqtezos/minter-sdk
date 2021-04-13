@@ -1,7 +1,5 @@
 -- | Lorentz bindings for the fixed price sale contract (Tez version).
-module Lorentz.Contracts.Marketplace.Tez
-  ( module Lorentz.Contracts.Marketplace.Tez
-  ) where
+module Lorentz.Contracts.Marketplace.Tez where
 
 import Lorentz
 

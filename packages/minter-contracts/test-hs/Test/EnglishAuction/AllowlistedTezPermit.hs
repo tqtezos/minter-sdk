@@ -1,10 +1,5 @@
 -- | Tests on the allowlisted tez english auction contract with permit.
-module Test.EnglishAuction.AllowlistedTezPermit
-  ( test_AdminChecks
-  , test_AllowlistUpdateAuthorization
-  , test_AllowlistChecks
-  , test_Integrational
-  ) where
+module Test.EnglishAuction.AllowlistedTezPermit where
 
 import Prelude hiding (swap)
 

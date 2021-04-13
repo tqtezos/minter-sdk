@@ -1,7 +1,5 @@
 -- | Lorentz bindings for the fixed price sale contract (FA2 version).
-module Lorentz.Contracts.Marketplace.FA2
-  ( module Lorentz.Contracts.Marketplace.FA2
-  ) where
+module Lorentz.Contracts.Marketplace.FA2 where
 
 import Lorentz
 

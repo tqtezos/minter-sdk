@@ -1,8 +1,6 @@
 -- | Lorentz bindings for the fixed price sale contract
 -- with allowlist.
-module Lorentz.Contracts.EnglishAuction.Allowlisted
-  ( module Lorentz.Contracts.EnglishAuction.Allowlisted
-  ) where
+module Lorentz.Contracts.EnglishAuction.Allowlisted where
 
 import Lorentz
 

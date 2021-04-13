@@ -1,7 +1,5 @@
 -- | Tests on the swaps contract.
-module Test.Swaps.Basic
-  ( test_Swap
-  ) where
+module Test.Swaps.Basic where
 
 import Prelude hiding (swap)
 

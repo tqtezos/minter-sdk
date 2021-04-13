@@ -1,7 +1,5 @@
 -- | Lorentz bindings for the pausable admin contract.
-module Lorentz.Contracts.PausableAdminOption
-  ( module Lorentz.Contracts.PausableAdminOption
-  ) where
+module Lorentz.Contracts.PausableAdminOption where
 
 import Lorentz
 

@@ -1,7 +1,5 @@
 -- | Lorentz bindings for the english auction (Tez with permit version).
-module Lorentz.Contracts.EnglishAuction.TezPermit
-  ( module Lorentz.Contracts.EnglishAuction.TezPermit
-  ) where
+module Lorentz.Contracts.EnglishAuction.TezPermit where
 
 import Lorentz
 

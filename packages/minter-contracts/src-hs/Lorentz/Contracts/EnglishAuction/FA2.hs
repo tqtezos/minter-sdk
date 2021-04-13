@@ -1,7 +1,5 @@
 -- | Lorentz bindings for the english auction (FA2 version).
-module Lorentz.Contracts.EnglishAuction.FA2
-  ( module Lorentz.Contracts.EnglishAuction.FA2
-  ) where
+module Lorentz.Contracts.EnglishAuction.FA2 where
 
 import Lorentz
 

@@ -1,10 +1,5 @@
 -- | Tests on the allowlisted tez marketplace contract.
-module Test.Marketplace.AllowlistedTez
-  ( test_AdminChecks
-  , test_AllowlistUpdateAuthorization
-  , test_AllowlistChecks
-  , test_Integrational
-  ) where
+module Test.Marketplace.AllowlistedTez where
 
 import Test.Tasty (TestTree, testGroup)
 

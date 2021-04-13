@@ -1,10 +1,5 @@
 -- | Tests on the allowlisted marketplace contract.
-module Test.Marketplace.AllowlistedFA2
-  ( test_AdminChecks
-  , test_AllowlistUpdateAuthorization
-  , test_AllowlistChecks
-  , test_Integrational
-  ) where
+module Test.Marketplace.AllowlistedFA2 where
 
 import Test.Tasty (TestTree, testGroup)
 

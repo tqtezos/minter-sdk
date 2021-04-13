@@ -1,10 +1,5 @@
 -- | Tests on the swaps contract.
-module Test.Swaps.Allowlisted
-  ( test_AdminChecks
-  , test_AllowlistUpdateAuthorization
-  , test_AllowlistChecks
-  , test_Integrational
-  ) where
+module Test.Swaps.Allowlisted where
 
 import Prelude hiding (swap)
 
