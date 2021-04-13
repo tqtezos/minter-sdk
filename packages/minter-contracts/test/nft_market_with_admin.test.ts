@@ -15,14 +15,14 @@ import {
   addOperator,
 } from '../src/fa2-interface';
 import { QueryBalances, queryBalancesWithLambdaView } from './fa2-balance-inspector';
-import { Fa2MultiFtFaucetContractType, FixedPriceSaleMarketTezContractType } from '..';
+import { Fa2MultiNftFaucetContractType, FixedPriceSaleMarketTezContractType } from '..';
 
 jest.setTimeout(180000); // 3 minutes
 
 describe.each([originateFixedPriceTezAdminSale])
 ('marketplace test', (originateMarketplace) => {
   let tezos: TestTz;
-  let nft: Contract<Fa2MultiFtFaucetContractType>;
+  let nft: Contract<Fa2MultiNftFaucetContractType>;
   let queryBalances: QueryBalances;
   let marketplace: Contract<FixedPriceSaleMarketTezContractType>;
   let marketAddress: address;

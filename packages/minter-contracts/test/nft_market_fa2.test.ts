@@ -18,14 +18,14 @@ import {
   TokenMetadata,
 } from '../src/fa2-interface';
 import { QueryBalances, queryBalancesWithLambdaView } from './fa2-balance-inspector';
-import { Fa2MultiFtFaucetContractType, Fa2MultiFtAssetContractType, FixedPriceSaleMarketContractType } from '..';
+import { Fa2MultiNftFaucetContractType, Fa2MultiFtFaucetContractType, FixedPriceSaleMarketContractType } from '..';
 
 jest.setTimeout(180000); // 3 minutes
 
 describe.each([originateFixedPriceSale])
 ('marketplace test', (originateMarketplace) => {
   let tezos: TestTz;
-  let nft: Contract<Fa2MultiFtFaucetContractType>;
+  let nft: Contract<Fa2MultiNftFaucetContractType>;
   let ft: Contract<Fa2MultiFtFaucetContractType>;
   let queryBalances: QueryBalances;
   let marketplace: Contract<FixedPriceSaleMarketContractType>;

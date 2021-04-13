@@ -5,7 +5,7 @@ import { char2Bytes } from '@taquito/tzip16';
 import { TokenMetadata } from './fa2-interface';
 import { BigNumber } from 'bignumber.js';
 import { EditionsTokenMetadataViewCode } from '../bin-ts/editions_token_metadata_view.code';
-import { EnglishAuctionFa2ContractType, EnglishAuctionTezContractType, EnglishAuctionTezPermitContractType, Fa2MultiFtAssetContractType, Fa2MultiFtFaucetContractType, Fa2MultiNftAssetContractType, Fa2MultiNftTokenEditionsContractType, FixedPriceSaleMarketContractType, FixedPriceSaleMarketTezContractType } from '..';
+import { EnglishAuctionFa2ContractType, EnglishAuctionTezContractType, EnglishAuctionTezPermitContractType, Fa2MultiFtAssetContractType, Fa2MultiFtFaucetContractType, Fa2MultiNftAssetContractType, Fa2MultiNftFaucetContractType, Fa2MultiNftTokenEditionsContractType, FixedPriceSaleMarketContractType, FixedPriceSaleMarketTezContractType } from '..';
 
 export interface MintNftParam {
   token_metadata: TokenMetadata;
@@ -69,7 +69,7 @@ export async function originateNft(
 
 export async function originateNftFaucet(
   tz: TezosToolkit,
-): Promise<Contract<Fa2MultiFtFaucetContractType>> {
+): Promise<Contract<Fa2MultiNftFaucetContractType>> {
   const code = await compileAndLoadContract(
     defaultEnv,
     'minter_collection/nft/fa2_multi_nft_faucet.mligo',

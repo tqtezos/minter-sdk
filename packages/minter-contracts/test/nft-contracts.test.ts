@@ -22,7 +22,7 @@ import {
   removeOperator,
 } from '../src/fa2-interface';
 import { QueryBalances, queryBalancesWithLambdaView, hasTokens } from './fa2-balance-inspector';
-import { Fa2MultiFtFaucetContractType } from '..';
+import { Fa2MultiNftFaucetContractType } from '..';
 
 jest.setTimeout(180000); // 3 minutes
 
@@ -32,7 +32,7 @@ describe.each([originateNftFaucet])(
   'test NFT',
   createNft => {
     let tezos: TestTz;
-    let nft: Contract<Fa2MultiFtFaucetContractType>;
+    let nft: Contract<Fa2MultiNftFaucetContractType>;
     let queryBalances: QueryBalances;
 
     beforeAll(async () => {
