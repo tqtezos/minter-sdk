@@ -20,7 +20,8 @@ async function flextesaKeys(): Promise<TestKeys> {
   );
   const eve = await InMemorySigner.fromSecretKey(
     'edsk2rKA8YEExg9Zo2qNPiQnnYheF1DhqjLVmfKdxiFfu5GyGRZRnb',
-  );
+  ); //EMPTY IMPLICIT ACCOUNT. DO NOT USE TO ORIGINATE CONTRACT
+     //TODO: MAKE ACCOUNT NON-EMPTY
   return { bob, alice, eve };
 }
 
