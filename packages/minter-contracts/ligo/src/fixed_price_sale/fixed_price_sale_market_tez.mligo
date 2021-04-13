@@ -97,16 +97,17 @@ let cancel_sale(sale, storage: sale_param_tez * storage) : (operation list * sto
 
 let fixed_price_sale_tez_main (p, storage : market_entry_points * storage) : operation list * storage = match p with
   | Sell sale ->
-     let u = fail_if_paused(storage.admin) in
+     let u : unit = fail_if_paused(storage.admin) in
+     let v : unit = fail_if_not_admin(storage.admin) in
      deposit_for_sale(sale.sale_token_param_tez, sale.sale_price, storage)
   | Buy sale ->
-     let u = fail_if_paused(storage.admin) in
+     let u : unit = fail_if_paused(storage.admin) in
      buy_token(sale, storage)
   | Cancel sale ->
      let is_seller = Tezos.sender = sale.sale_seller in
-     let u = if is_seller then ()
+     let u : unit = if is_seller then ()
              else fail_if_not_admin_ext (storage.admin, "OR A SELLER") in
-     let v = fail_if_paused(storage.admin) in
+     let v : unit = fail_if_paused(storage.admin) in
      cancel_sale(sale,storage)
   | Admin a ->
      let ops, admin = pauseable_admin(a, storage.admin) in
