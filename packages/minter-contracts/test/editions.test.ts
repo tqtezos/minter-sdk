@@ -15,6 +15,7 @@ import {
 } from '../src/fa2-interface';
 import { QueryBalances, queryBalancesWithLambdaView, hasTokens } from './fa2-balance-inspector';
 import { Tzip16Module, tzip16 } from '@taquito/tzip16';
+import { Fa2MultiNftTokenEditionsContractType } from '..';
 
 jest.setTimeout(180000); // 3 minutes
 
@@ -31,7 +32,7 @@ export interface distribute_edition {
 
 describe('test NFT auction', () => {
   let tezos: TestTz;
-  let nftEditions : Contract;
+  let nftEditions : Contract<Fa2MultiNftTokenEditionsContractType>;
   let nft1 : MintEditionParam;
   let nft2 : MintEditionParam;
   let edition_1_metadata : MichelsonMap<string, bytes>;

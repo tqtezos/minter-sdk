@@ -22,6 +22,7 @@ import {
   removeOperator,
 } from '../src/fa2-interface';
 import { QueryBalances, queryBalancesWithLambdaView, hasTokens } from './fa2-balance-inspector';
+import { Fa2MultiFtFaucetContractType } from '..';
 
 jest.setTimeout(180000); // 3 minutes
 
@@ -31,7 +32,7 @@ describe.each([originateNftFaucet])(
   'test NFT',
   createNft => {
     let tezos: TestTz;
-    let nft: Contract;
+    let nft: Contract<Fa2MultiFtFaucetContractType>;
     let queryBalances: QueryBalances;
 
     beforeAll(async () => {
@@ -57,9 +58,9 @@ describe.each([originateNftFaucet])(
     test('mint token', async () => {
       const bobAddress = await tezos.bob.signer.publicKeyHash();
       const token_info: MichelsonMap<
-                string,
-                string
-            > = new MichelsonMap();
+        string,
+        string
+      > = new MichelsonMap();
 
       token_info.set('name', char2Bytes('A token'));
       token_info.set('description', char2Bytes('description'));
@@ -118,9 +119,9 @@ describe.each([originateNftFaucet])(
       const bobAddress = await tezos.bob.signer.publicKeyHash();
       const tokenId = new BigNumber(0);
       const token_info: MichelsonMap<
-                string,
-                string
-            > = new MichelsonMap();
+        string,
+        string
+      > = new MichelsonMap();
 
       token_info.set('name', char2Bytes('A token'));
       token_info.set('description', char2Bytes('description'));
@@ -164,9 +165,9 @@ describe.each([originateNftFaucet])(
       const bobAddress = await tezos.bob.signer.publicKeyHash();
       const tokenId = new BigNumber(0);
       const token_info: MichelsonMap<
-                string,
-                string
-            > = new MichelsonMap();
+        string,
+        string
+      > = new MichelsonMap();
 
       token_info.set('name', char2Bytes('A token'));
       token_info.set('description', char2Bytes('description'));
@@ -200,9 +201,9 @@ describe.each([originateNftFaucet])(
       const tokenId1 = new BigNumber(0);
       const tokenId2 = new BigNumber(1);
       const token_info_bob: MichelsonMap<
-                string,
-                string
-            > = new MichelsonMap();
+        string,
+        string
+      > = new MichelsonMap();
 
       token_info_bob.set('name', char2Bytes('A token'));
       token_info_bob.set('description', char2Bytes('description'));
@@ -213,9 +214,9 @@ describe.each([originateNftFaucet])(
       token_info_bob.set('symbol', char2Bytes('TK1'));
 
       const token_info_alice: MichelsonMap<
-                string,
-                string
-            > = new MichelsonMap();
+        string,
+        string
+      > = new MichelsonMap();
 
       token_info_alice.set('name', char2Bytes('B token'));
       token_info_alice.set('description', char2Bytes('description'));
