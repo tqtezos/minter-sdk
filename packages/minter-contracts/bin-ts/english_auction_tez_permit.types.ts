@@ -8,7 +8,7 @@ type key = string;
 type mutez = string | BigNumber | number;
 type nat = string | BigNumber | number;
 type signature = string;
-type timestamp = string;
+type timestamp = Date | string;
 
 type Storage = {
     auction_storage: {

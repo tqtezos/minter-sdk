@@ -7,7 +7,7 @@ type contract = string;
 type int = string | BigNumber | number;
 type nat = string | BigNumber | number;
 type ticket = string;
-type timestamp = string;
+type timestamp = Date | string;
 
 type Storage = {
     data: {

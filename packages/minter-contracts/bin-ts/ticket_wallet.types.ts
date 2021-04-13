@@ -9,7 +9,7 @@ type int = string | BigNumber | number;
 type MMap<K, T> = MichelsonMap<K, T>;
 type nat = string | BigNumber | number;
 type ticket = string;
-type timestamp = string;
+type timestamp = Date | string;
 
 type Storage = {
     admin: address;
