@@ -1,5 +1,13 @@
 
-import { address, BigMap, int, nat, ticket, timestamp } from './type-aliases';
+import BigNumber from 'bignumber.js';
+import { MichelsonMap } from '@taquito/taquito';
+type address = string;
+type BigMap<K, T> = MichelsonMap<K, T>;
+type contract = string;
+type int = string | BigNumber | number;
+type nat = string | BigNumber | number;
+type ticket = string;
+type timestamp = string;
 
 type Storage = {
     data: {
@@ -14,8 +22,8 @@ type Storage = {
 };
 
 type Methods = {
-    buy: (param: ticket) => Promise<void>;
-    cancel: (param: ticket) => Promise<void>;
+    buy: (param: contract) => Promise<void>;
+    cancel: (param: contract) => Promise<void>;
     configure: (
         opening_price: nat,
         set_reserve_price: nat,

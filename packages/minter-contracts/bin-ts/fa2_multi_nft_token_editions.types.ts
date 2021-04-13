@@ -1,5 +1,14 @@
 
-import { address, BigMap, bytes, contract, int, MMap, nat, unit } from './type-aliases';
+import BigNumber from 'bignumber.js';
+import { MichelsonMap } from '@taquito/taquito';
+type address = string;
+type BigMap<K, T> = MichelsonMap<K, T>;
+type bytes = string;
+type contract = string;
+type int = string | BigNumber | number;
+type MMap<K, T> = MichelsonMap<K, T>;
+type nat = string | BigNumber | number;
+type unit = (true | undefined);
 
 type Storage = {
     current_edition_id: nat;
@@ -34,10 +43,10 @@ type Storage = {
 };
 
 type Methods = {
-    distribute_editions: (
-        edition_id: nat,
-        receivers: Array<address>,
-    ) => Promise<void>;
+    distribute_editions: (param: Array<{
+            edition_id: nat;
+            receivers: Array<address>;
+        }>) => Promise<void>;
     confirm_admin: () => Promise<void>;
     pause: (param: boolean) => Promise<void>;
     set_admin: (param: address) => Promise<void>;
@@ -48,14 +57,14 @@ type Methods = {
         }>,
         callback: contract,
     ) => Promise<void>;
-    transfer: (
-        from_: address,
-        txs: Array<{
-            to_: address;
-            token_id: nat;
-            amount: nat;
-        }>,
-    ) => Promise<void>;
+    transfer: (param: Array<{
+            from_: address;
+            txs: Array<{
+                to_: address;
+                token_id: nat;
+                amount: nat;
+            }>;
+        }>) => Promise<void>;
     add_operator: (
         owner: address,
         operator: address,
@@ -66,17 +75,17 @@ type Methods = {
         operator: address,
         token_id: nat,
     ) => Promise<void>;
-    mint: (
-        token_metadata: {
-            token_id: nat;
-            token_info: MMap<string, bytes>;
-        },
-        owner: address,
-    ) => Promise<void>;
-    mint_editions: (
-        edition_info: MMap<string, bytes>,
-        number_of_editions: nat,
-    ) => Promise<void>;
+    mint: (param: Array<{
+            token_metadata: {
+                token_id: nat;
+                token_info: MMap<string, bytes>;
+            };
+            owner: address;
+        }>) => Promise<void>;
+    mint_editions: (param: Array<{
+            edition_info: MMap<string, bytes>;
+            number_of_editions: nat;
+        }>) => Promise<void>;
 };
 
 export type Fa2MultiNftTokenEditionsContractType = { methods: Methods, storage: Storage, code: { __type: 'Fa2MultiNftTokenEditionsCode', protocol: string, code: unknown } };

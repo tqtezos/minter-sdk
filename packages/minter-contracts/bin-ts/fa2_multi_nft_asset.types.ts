@@ -1,5 +1,13 @@
 
-import { address, BigMap, bytes, contract, MMap, nat, unit } from './type-aliases';
+import BigNumber from 'bignumber.js';
+import { MichelsonMap } from '@taquito/taquito';
+type address = string;
+type BigMap<K, T> = MichelsonMap<K, T>;
+type bytes = string;
+type contract = string;
+type MMap<K, T> = MichelsonMap<K, T>;
+type nat = string | BigNumber | number;
+type unit = (true | undefined);
 
 type Storage = {
     admin: {
@@ -34,14 +42,14 @@ type Methods = {
         }>,
         callback: contract,
     ) => Promise<void>;
-    transfer: (
-        from_: address,
-        txs: Array<{
-            to_: address;
-            token_id: nat;
-            amount: nat;
-        }>,
-    ) => Promise<void>;
+    transfer: (param: Array<{
+            from_: address;
+            txs: Array<{
+                to_: address;
+                token_id: nat;
+                amount: nat;
+            }>;
+        }>) => Promise<void>;
     add_operator: (
         owner: address,
         operator: address,
@@ -52,13 +60,13 @@ type Methods = {
         operator: address,
         token_id: nat,
     ) => Promise<void>;
-    mint: (
-        token_metadata: {
-            token_id: nat;
-            token_info: MMap<string, bytes>;
-        },
-        owner: address,
-    ) => Promise<void>;
+    mint: (param: Array<{
+            token_metadata: {
+                token_id: nat;
+                token_info: MMap<string, bytes>;
+            };
+            owner: address;
+        }>) => Promise<void>;
 };
 
 export type Fa2MultiNftAssetContractType = { methods: Methods, storage: Storage, code: { __type: 'Fa2MultiNftAssetCode', protocol: string, code: unknown } };

@@ -1,5 +1,14 @@
 
-import { address, BigMap, int, key, mutez, nat, signature, timestamp } from './type-aliases';
+import BigNumber from 'bignumber.js';
+import { MichelsonMap } from '@taquito/taquito';
+type address = string;
+type BigMap<K, T> = MichelsonMap<K, T>;
+type int = string | BigNumber | number;
+type key = string;
+type mutez = string | BigNumber | number;
+type nat = string | BigNumber | number;
+type signature = string;
+type timestamp = string;
 
 type Storage = {
     auction_storage: {
@@ -41,28 +50,28 @@ type Methods = {
     bid: (param: nat) => Promise<void>;
     cancel: (param: nat) => Promise<void>;
     resolve: (param: nat) => Promise<void>;
-    permit_configure: (
-        config: {
-            opening_price: mutez;
-            min_raise_percent: nat;
-            min_raise: mutez;
-            round_time: nat;
-            extend_time: nat;
-            asset: Array<{
-                fa2_address: address;
-                fa2_batch: Array<{
-                    token_id: nat;
-                    amount: nat;
+    permit_configure: (param: Array<{
+            config: {
+                opening_price: mutez;
+                min_raise_percent: nat;
+                min_raise: mutez;
+                round_time: nat;
+                extend_time: nat;
+                asset: Array<{
+                    fa2_address: address;
+                    fa2_batch: Array<{
+                        token_id: nat;
+                        amount: nat;
+                    }>;
                 }>;
-            }>;
-            start_time: timestamp;
-            end_time: timestamp;
-        },
-        optional_permit?: {
-            signerKey: key;
-            signature: signature;
-        },
-    ) => Promise<void>;
+                start_time: timestamp;
+                end_time: timestamp;
+            };
+            optional_permit?: {
+                signerKey: key;
+                signature: signature;
+            };
+        }>) => Promise<void>;
 };
 
 export type EnglishAuctionTezPermitContractType = { methods: Methods, storage: Storage, code: { __type: 'EnglishAuctionTezPermitCode', protocol: string, code: unknown } };

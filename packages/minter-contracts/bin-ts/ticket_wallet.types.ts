@@ -1,5 +1,15 @@
 
-import { address, BigMap, bytes, contract, int, MMap, nat, ticket, timestamp } from './type-aliases';
+import BigNumber from 'bignumber.js';
+import { MichelsonMap } from '@taquito/taquito';
+type address = string;
+type BigMap<K, T> = MichelsonMap<K, T>;
+type bytes = string;
+type contract = string;
+type int = string | BigNumber | number;
+type MMap<K, T> = MichelsonMap<K, T>;
+type nat = string | BigNumber | number;
+type ticket = string;
+type timestamp = string;
 
 type Storage = {
     admin: address;
@@ -21,11 +31,8 @@ type Methods = {
         ticket_id: nat,
     ) => Promise<void>;
     burn: (param: nat) => Promise<void>;
-    mint: (
-        0: string,
-        1: bytes,
-    ) => Promise<void>;
-    receive: (param: nat) => Promise<void>;
+    mint: (param: MMap<string, bytes>) => Promise<void>;
+    receive: (param: ticket) => Promise<void>;
     send: (
         destination: contract,
         ticket_id: nat,

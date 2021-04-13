@@ -1,5 +1,13 @@
 
-import { address, BigMap, bytes, contract, MMap, nat, unit } from './type-aliases';
+import BigNumber from 'bignumber.js';
+import { MichelsonMap } from '@taquito/taquito';
+type address = string;
+type BigMap<K, T> = MichelsonMap<K, T>;
+type bytes = string;
+type contract = string;
+type MMap<K, T> = MichelsonMap<K, T>;
+type nat = string | BigNumber | number;
+type unit = (true | undefined);
 
 type Storage = {
     admin?: {
@@ -37,14 +45,14 @@ type Methods = {
         }>,
         callback: contract,
     ) => Promise<void>;
-    transfer: (
-        from_: address,
-        txs: Array<{
-            to_: address;
-            token_id: nat;
-            amount: nat;
-        }>,
-    ) => Promise<void>;
+    transfer: (param: Array<{
+            from_: address;
+            txs: Array<{
+                to_: address;
+                token_id: nat;
+                amount: nat;
+            }>;
+        }>) => Promise<void>;
     add_operator: (
         owner: address,
         operator: address,
@@ -55,20 +63,20 @@ type Methods = {
         operator: address,
         token_id: nat,
     ) => Promise<void>;
-    burn_tokens: (
-        owner: address,
-        token_id: nat,
-        amount: nat,
-    ) => Promise<void>;
+    burn_tokens: (param: Array<{
+            owner: address;
+            token_id: nat;
+            amount: nat;
+        }>) => Promise<void>;
     create_token: (
         token_id: nat,
         token_info: MMap<string, bytes>,
     ) => Promise<void>;
-    mint_tokens: (
-        owner: address,
-        token_id: nat,
-        amount: nat,
-    ) => Promise<void>;
+    mint_tokens: (param: Array<{
+            owner: address;
+            token_id: nat;
+            amount: nat;
+        }>) => Promise<void>;
 };
 
 export type Fa2MultiFtAssetContractType = { methods: Methods, storage: Storage, code: { __type: 'Fa2MultiFtAssetCode', protocol: string, code: unknown } };
