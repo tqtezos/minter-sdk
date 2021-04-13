@@ -181,8 +181,8 @@ assertingBalanceDeltas fa2 indicedDeltas action = do
             consumer
 
 -- | Construct allowlist for passing to allowlist overriding entrypoint.
-mkAllowlistParam :: [Address] -> BigMap Address ()
-mkAllowlistParam = mconcat . map (\a -> one (a, ()))
+mkAllowlistParam :: [TAddress p] -> BigMap Address ()
+mkAllowlistParam = mconcat . map (\a -> one (toAddress a, ()))
 
 -- | Originate the a contract and admin for it.
 originateWithAdmin

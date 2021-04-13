@@ -3,15 +3,17 @@ module Test.EnglishAuction.AllowlistedTezPermit
   ( test_AdminChecks
   , test_AllowlistUpdateAuthorization
   , test_AllowlistChecks
+  , test_Integrational
   ) where
 
 import Prelude hiding (swap)
 
-import Test.Tasty (TestTree)
+import Test.Tasty (TestTree, testGroup)
 
 import GHC.Exts (fromList)
 import Lorentz.Value
 import Morley.Nettest
+import Morley.Nettest.Tasty
 
 import Lorentz.Contracts.EnglishAuction.Allowlisted
 import Lorentz.Contracts.EnglishAuction.Tez
@@ -60,3 +62,35 @@ test_AllowlistChecks = allowlistChecks
 
   , allowlistAlwaysIncluded = \_ -> []
   }
+
+test_Integrational :: TestTree
+test_Integrational = testGroup "Integrational"
+  [ -- Check that storage updates work
+    nettestScenarioCaps "Simple bid" $ do
+      setup <- doFA2Setup
+      let alice ::< bob ::< SNil = sAddresses setup
+      let !SNil = sTokens setup
+      auction <- originateAuctionTezPermitAllowlisted alice
+      fa2 <- originateFA2 "fa2" setup [auction]
+
+      withSender (AddressResolved alice) $
+        call auction (Call @"Update_allowed") (mkAllowlistParam [fa2])
+
+      now <- getNow
+
+      withSender (AddressResolved alice) $
+        call auction (Call @"Permit_configure") $ one PermitConfigParam
+          { config = (defConfigureParam :: ConfigureParam)
+              { startTime = now }
+          , optionalPermit = Nothing
+          }
+
+      withSender (AddressResolved bob) $
+        transfer TransferData
+          { tdTo = addressResolved auction
+          , tdAmount = toMutez 3
+          , tdEntrypoint = ep "bid"
+          , tdParameter = AuctionId 0
+          }
+
+  ]

@@ -88,7 +88,7 @@ data AllowlistChecksSetup =
 allowlistChecks :: AllowlistChecksSetup -> [TestTree]
 allowlistChecks AllowlistChecksSetup{..} =
   let mkFullAllowlist setup addrs =
-        mkAllowlistParam $ map toAddress (addrs ++ allowlistAlwaysIncluded setup)
+        mkAllowlistParam (addrs ++ allowlistAlwaysIncluded setup)
   in
   [ nettestScenarioCaps "Initially no FA2 works" $ do
       fa2Setup <- doFA2Setup

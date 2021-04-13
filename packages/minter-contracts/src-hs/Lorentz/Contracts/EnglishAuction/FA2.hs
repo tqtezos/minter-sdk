@@ -14,6 +14,10 @@ import qualified Michelson.Typed as T
 -- Types
 ----------------------------------------------------------------------------
 
+newtype AuctionId = AuctionId Natural
+  deriving stock (Generic, Eq, Ord)
+  deriving newtype (IsoValue, HasAnnotation)
+
 data FA2Token = FA2Token
   { tokenId :: TokenId
   , amount :: Natural
@@ -87,7 +91,7 @@ defConfigureParam = ConfigureParam
   }
 
 data BidParam = BidParam
-  { assetId :: Natural
+  { assetId :: AuctionId
   , bidAmount :: Natural
   }
 
@@ -121,8 +125,8 @@ initAuctionStorage as bc = AuctionStorage
 data AuctionEntrypoints
   = Configure ConfigureParam
   | Bid BidParam
-  | Cancel Natural
-  | Resolve Natural
+  | Cancel AuctionId
+  | Resolve AuctionId
   | Admin AdminEntrypoints
 
 customGeneric "AuctionEntrypoints" ligoLayout

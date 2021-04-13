@@ -3,14 +3,16 @@ module Test.Swaps.Allowlisted
   ( test_AdminChecks
   , test_AllowlistUpdateAuthorization
   , test_AllowlistChecks
+  , test_Integrational
   ) where
 
 import Prelude hiding (swap)
 
-import Test.Tasty (TestTree)
+import Test.Tasty (TestTree, testGroup)
 
 import GHC.Exts (fromList)
 import Morley.Nettest
+import Morley.Nettest.Tasty (nettestScenarioCaps)
 
 import Lorentz.Contracts.Swaps.Allowlisted
 import Lorentz.Contracts.Swaps.Basic
@@ -60,3 +62,30 @@ test_AllowlistChecks = allowlistChecks
 
   , allowlistAlwaysIncluded = \_ -> []
   }
+
+test_Integrational :: TestTree
+test_Integrational = testGroup "Integrational"
+  [ -- Check that storage updates work
+    nettestScenarioCaps "Simple accepted swap" $ do
+      setup <- doFA2Setup
+      let alice ::< bob ::< SNil = sAddresses setup
+      let tokenId ::< SNil = sTokens setup
+      (swap, admin) <- originateWithAdmin originateAllowlistedSwap
+      fa2 <- originateFA2 "fa2" setup [swap]
+
+      withSender (AddressResolved admin) $
+        call swap (Call @"Update_allowed") (mkAllowlistParam [fa2])
+
+      assertingBalanceDeltas fa2
+        [ (alice, tokenId) -: -3
+        , (bob, tokenId) -: 3
+        ] $ do
+          withSender (AddressResolved alice) $
+            call swap (Call @"Start") SwapOffer
+              { assetsOffered = [mkFA2Assets fa2 [(tokenId, 10)]]
+              , assetsRequested = [mkFA2Assets fa2 [(tokenId, 7)]]
+              }
+          withSender (AddressResolved bob) $
+            call swap (Call @"Accept") (SwapId 0)
+
+  ]

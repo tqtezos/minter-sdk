@@ -3,15 +3,15 @@ module Test.Marketplace.AllowlistedTez
   ( test_AdminChecks
   , test_AllowlistUpdateAuthorization
   , test_AllowlistChecks
+  , test_Integrational
   ) where
 
-import Prelude hiding (swap)
-
-import Test.Tasty (TestTree)
+import Test.Tasty (TestTree, testGroup)
 
 import GHC.Exts (fromList)
 import Lorentz.Value
 import Morley.Nettest
+import Morley.Nettest.Tasty (nettestScenarioCaps)
 
 import Lorentz.Contracts.Marketplace.Allowlisted
 import Lorentz.Contracts.Marketplace.Tez
@@ -52,3 +52,44 @@ test_AllowlistChecks = allowlistChecks
 
   , allowlistAlwaysIncluded = \_ -> []
   }
+
+test_Integrational :: TestTree
+test_Integrational = testGroup "Integrational"
+  [ -- Check that storage updates work
+    nettestScenarioCaps "Simple performed sale" $ do
+      setup <- doFA2Setup
+      let alice ::< bob ::< SNil = sAddresses setup
+      let tokenId1 ::< SNil = sTokens setup
+      (market, admin) <- originateWithAdmin originateMarketplaceTezAllowlisted
+      fa2 <- originateFA2 "fa2" setup [market]
+
+      withSender (AddressResolved admin) $
+        call market (Call @"Update_allowed") (mkAllowlistParam [fa2])
+
+      let saleTokensParam = SaleTokenParamTez
+            { tokenForSaleAddress = toAddress fa2
+            , tokenForSaleTokenId = tokenId1
+            }
+
+      assertingBalanceDeltas fa2
+        [ (alice, tokenId1) -: -1
+        , (bob, tokenId1) -: 1
+        ] $ do
+          withSender (AddressResolved alice) $
+            call market (Call @"Sell") InitSaleParamTez
+              { salePrice = toMutez 1
+              , saleTokensParam = saleTokensParam
+              }
+
+          withSender (AddressResolved bob) $
+            transfer TransferData
+              { tdTo = addressResolved market
+              , tdAmount = toMutez 1
+              , tdEntrypoint = ep "buy"
+              , tdParameter = SaleParamTez
+                { saleSeller = alice
+                , tokens = saleTokensParam
+                }
+              }
+
+  ]
