@@ -27,24 +27,18 @@ type Methods = {
     set_admin: (param: address) => Promise<void>;
     buy: (
         sale_seller: address,
-        sale_token: {
-            token_for_sale_address: address;
-            token_for_sale_token_id: nat;
-        },
+        token_for_sale_address: address,
+        token_for_sale_token_id: nat,
     ) => Promise<void>;
     cancel: (
         sale_seller: address,
-        sale_token: {
-            token_for_sale_address: address;
-            token_for_sale_token_id: nat;
-        },
+        token_for_sale_address: address,
+        token_for_sale_token_id: nat,
     ) => Promise<void>;
     sell: (
         sale_price: mutez,
-        sale_token_param_tez: {
-            token_for_sale_address: address;
-            token_for_sale_token_id: nat;
-        },
+        token_for_sale_address: address,
+        token_for_sale_token_id: nat,
     ) => Promise<void>;
 };
 
