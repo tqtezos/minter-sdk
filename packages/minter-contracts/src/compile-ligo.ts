@@ -130,15 +130,15 @@ const compileSources: CompileSourceEntry[] = [
     contract : false,
   },
   {
-    srcFile: 'english_auction/english_auction_tez_with_royalty.mligo',
+    srcFile: 'english_auction/english_auction_tez_fixed_fee.mligo',
     mainFn: 'english_auction_tez_main',
-    dstFile: 'english_auction_tez_with_royalty.tz',
+    dstFile: 'english_auction_tez_fixed_fee.tz',
     contract : true,
   },
   {
-    srcFile: 'english_auction/english_auction_fa2_with_royalty.mligo',
+    srcFile: 'english_auction/english_auction_fa2_fixed_fee.mligo',
     mainFn: 'english_auction_fa2_main',
-    dstFile: 'english_auction_fa2_with_royalty.tz',
+    dstFile: 'english_auction_fa2_fixed_fee.tz',
     contract : true,
   },
 ];

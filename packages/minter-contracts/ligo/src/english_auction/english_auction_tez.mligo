@@ -53,7 +53,7 @@ type auction_entrypoints =
   | Configure of configure_param
   | AdminAndInteract of auction_without_configure_entrypoints
 
-#if !ROYALTY
+#if !FEE
 
 type storage =
   [@layout:comb]
@@ -67,10 +67,10 @@ type storage =
 
 #else 
 
-type royalty_data = 
+type fee_data = 
   [@layout:comb]
   {
-    royalty_address : address;
+    fee_address : address;
     fee_percent : nat;
   }
 
@@ -82,7 +82,7 @@ type storage =
     max_auction_time : nat;
     max_config_to_start_time : nat;
     auctions : (nat, auction) big_map;
-    royalty : royalty_data;
+    fee : fee_data;
   }
 
 #endif
@@ -197,8 +197,8 @@ let configure_auction_storage(configure_param, seller, storage : configure_param
   end
 
 let configure_auction(configure_param, storage : configure_param * storage) : return = 
-#if ROYALTY 
-  let u : unit = assert_msg (storage.royalty.fee_percent <= 100n, "Royalty fee_percent must be less than 100%. Please originate another contract.") in
+#if FEE
+  let u : unit = assert_msg (storage.fee.fee_percent <= 100n, "Fee_percent must be less than 100%. Please originate another contract.") in
 #endif
   let new_storage = configure_auction_storage(configure_param, Tezos.sender, storage) in
   let fa2_transfers : operation list = transfer_tokens(configure_param.asset, Tezos.sender, Tezos.self_address) in
@@ -214,7 +214,7 @@ let resolve_auction(asset_id, storage : nat * storage) : return = begin
     let fa2_transfers : operation list = transfer_tokens(auction.asset, Tezos.self_address, auction.highest_bidder) in
     let seller_contract : unit contract = resolve_contract(auction.seller) in
     
-#if !ROYALTY 
+#if !FEE 
 
     let op_list = if first_bid(auction) then 
       fa2_transfers else 
@@ -222,13 +222,13 @@ let resolve_auction(asset_id, storage : nat * storage) : return = begin
       (send_final_bid :: fa2_transfers) in
 
 #else 
-    let royalty_contract : unit contract = resolve_contract(storage.royalty.royalty_address) in
+    let fee_contract : unit contract = resolve_contract(storage.fee.fee_address) in
     let op_list = if first_bid(auction) then 
       fa2_transfers else 
-      let royalty : tez = percent_of_bid (storage.royalty.fee_percent, auction.current_bid) in 
-      let pay_royalty : operation = Tezos.transaction unit royalty royalty_contract in 
-      let send_final_bid_minus_royalty : operation = Tezos.transaction unit (auction.current_bid - royalty) seller_contract in
-      (pay_royalty :: send_final_bid_minus_royalty :: fa2_transfers) in
+      let fee : tez = percent_of_bid (storage.fee.fee_percent, auction.current_bid) in 
+      let pay_fee : operation = Tezos.transaction unit fee fee_contract in 
+      let send_final_bid_minus_fee : operation = Tezos.transaction unit (auction.current_bid - fee) seller_contract in
+      (pay_fee :: send_final_bid_minus_fee :: fa2_transfers) in
 
 #endif
 

@@ -18,3 +18,5 @@ export interface ConfigureAuctionParam {
     auction_time : nat;
     start_time : timestamp;
 }
+
+export const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));

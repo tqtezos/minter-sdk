@@ -1,9 +1,9 @@
 import EditionsTokenMetadataViewCode, { EditionsTokenMetadataViewCodeType } from './bin-ts/editions_token_metadata_view.tz';
 import EnglishAuctionFa2Code, { EnglishAuctionFa2CodeType } from './bin-ts/english_auction_fa2.tz';
-import EnglishAuctionFa2WithRoyaltyCode, { EnglishAuctionFa2WithRoyaltyCodeType } from './bin-ts/english_auction_fa2_with_royalty.tz';
+import EnglishAuctionFa2FixedFeeCode, { EnglishAuctionFa2FixedFeeCodeType } from './bin-ts/english_auction_fa2_fixed_fee.tz';
 import EnglishAuctionTezCode, { EnglishAuctionTezCodeType } from './bin-ts/english_auction_tez.tz';
+import EnglishAuctionTezFixedFeeCode, { EnglishAuctionTezFixedFeeCodeType } from './bin-ts/english_auction_tez_fixed_fee.tz';
 import EnglishAuctionTezPermitCode, { EnglishAuctionTezPermitCodeType } from './bin-ts/english_auction_tez_permit.tz';
-import EnglishAuctionTezWithRoyaltyCode, { EnglishAuctionTezWithRoyaltyCodeType } from './bin-ts/english_auction_tez_with_royalty.tz';
 import Fa2MultiFtAssetCode, { Fa2MultiFtAssetCodeType } from './bin-ts/fa2_multi_ft_asset.tz';
 import Fa2MultiFtFaucetCode, { Fa2MultiFtFaucetCodeType } from './bin-ts/fa2_multi_ft_faucet.tz';
 import Fa2MultiNftAssetCode, { Fa2MultiNftAssetCodeType } from './bin-ts/fa2_multi_nft_asset.tz';
@@ -21,14 +21,14 @@ export {
   EditionsTokenMetadataViewCodeType,
   EnglishAuctionFa2Code,
   EnglishAuctionFa2CodeType,
-  EnglishAuctionFa2WithRoyaltyCode,
-  EnglishAuctionFa2WithRoyaltyCodeType,
+  EnglishAuctionFa2FixedFeeCode,
+  EnglishAuctionFa2FixedFeeCodeType,
   EnglishAuctionTezCode,
   EnglishAuctionTezCodeType,
+  EnglishAuctionTezFixedFeeCode,
+  EnglishAuctionTezFixedFeeCodeType,
   EnglishAuctionTezPermitCode,
   EnglishAuctionTezPermitCodeType,
-  EnglishAuctionTezWithRoyaltyCode,
-  EnglishAuctionTezWithRoyaltyCodeType,
   Fa2MultiFtAssetCode,
   Fa2MultiFtAssetCodeType,
   Fa2MultiFtFaucetCode,

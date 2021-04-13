@@ -64,7 +64,7 @@ type auction_entrypoints =
   | Resolve of nat
   | Admin of pauseable_admin
 
-#if !ROYALTY
+#if !FEE
 
 type storage =
   [@layout:comb]
@@ -79,10 +79,10 @@ type storage =
 
 #else 
 
-type royalty_data = 
+type fee_data = 
   [@layout:comb]
   {
-    royalty_address : address;
+    fee_address : address;
     fee_percent : nat;
   }
 
@@ -95,7 +95,7 @@ type storage =
     max_config_to_start_time : nat;
     bid_currency : bid_currency;
     auctions : (nat, auction) big_map;
-    royalty : royalty_data;
+    fee : fee_data;
   }
 
 #endif
@@ -167,8 +167,8 @@ let valid_bid_amount (auction, token_amount : auction * nat) : bool =
 let configure_auction(configure_param, storage : configure_param * storage) : return = begin
     (fail_if_not_admin storage.pauseable_admin);
     (fail_if_paused storage.pauseable_admin);
-#if ROYALTY 
-    assert_msg (storage.royalty.fee_percent <= 100n, "Royalty fee_percent must be less than 100%. Please originate another contract.");
+#if FEE
+    assert_msg (storage.fee.fee_percent <= 100n, "Fee_percent must be less than 100%. Please originate another contract.");
 #endif
 
     assert_msg (configure_param.end_time > configure_param.start_time, "end_time must be after start_time");
@@ -206,7 +206,7 @@ let resolve_auction(asset_id, storage : nat * storage) : return = begin
     assert_msg (Tezos.amount = 0mutez, "Amount must be 0mutez");
     let asset_transfers : operation list = transfer_tokens(auction.asset, Tezos.self_address, auction.highest_bidder) in
 
-#if !ROYALTY 
+#if !FEE
     let op_list : operation list = if first_bid(auction) then 
       asset_transfers else  
       let send_final_bid : operation = fa2_fee_transfer(Tezos.self_address, auction.seller, auction.current_bid, storage.bid_currency) in 
@@ -215,13 +215,13 @@ let resolve_auction(asset_id, storage : nat * storage) : return = begin
     
     let op_list : operation list = if first_bid(auction) then 
       asset_transfers else  
-      let royalty : nat = percent_of_bid (storage.royalty.fee_percent, auction.current_bid) in
-      let pay_royalty : operation = fa2_fee_transfer(Tezos.self_address, storage.royalty.royalty_address, royalty, storage.bid_currency) in
-      let final_price_minus_royalty : nat =  (match (is_nat (auction.current_bid - royalty)) with 
+      let fee : nat = percent_of_bid (storage.fee.fee_percent, auction.current_bid) in
+      let pay_fee : operation = fa2_fee_transfer(Tezos.self_address, storage.fee.fee_address, fee, storage.bid_currency) in
+      let final_price_minus_fee : nat =  (match (is_nat (auction.current_bid - fee)) with 
         | Some adjusted_price -> adjusted_price 
-        | None -> (failwith "royalty is larger than winning bid" : nat)) in
-      let send_final_bid_minus_royalty : operation = fa2_fee_transfer(Tezos.self_address, auction.seller, final_price_minus_royalty , storage.bid_currency) in 
-      (pay_royalty :: send_final_bid_minus_royalty :: asset_transfers) in
+        | None -> (failwith "fee is larger than winning bid" : nat)) in
+      let send_final_bid_minus_fee : operation = fa2_fee_transfer(Tezos.self_address, auction.seller, final_price_minus_fee, storage.bid_currency) in 
+      (pay_fee :: send_final_bid_minus_fee :: asset_transfers) in
 #endif 
     let updated_auctions = Big_map.remove asset_id storage.auctions in
     (op_list, {storage with auctions = updated_auctions})
