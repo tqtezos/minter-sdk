@@ -189,14 +189,14 @@ describe.each([originateFixedPriceTezAdminSale])
       try
       {
         $log.info('alice cancels sale (not admin nor seller)');
-        await marketplace.methods.cancel(salePrice, nft.address, tokenId).send({ source: aliceAddress, amount: 0 });
+        await marketplace.methods.cancel(aliceAddress, nft.address, tokenId).send({ source: aliceAddress, amount: 0 });
       } catch (error) {
         $log.info(`Alice cannot cancel sale, since she is not an admin`);
       }
 
       $log.info('bob cancels sale');
       const removeSaleOp = await marketplace.methods
-        .cancel(salePrice, nft.address, tokenId)
+        .cancel(bobAddress, nft.address, tokenId)
         .send({ source: bobAddress, amount: 0 });
       $log.info(`Waiting for ${removeSaleOp.hash} to be confirmed...`);
       const removeSaleOpHash = await removeSaleOp.confirmation(1).then(() => removeSaleOp.hash);
