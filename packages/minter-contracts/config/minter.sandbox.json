@@ -1,5 +1,5 @@
 {
-	"rpc": "http://localhost:8732",
+	"rpc": "http://localhost:20000",
 	"network": "sandboxnet",
 	"bcd": {
 		"api": "http://localhost:42000",
