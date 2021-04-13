@@ -16,13 +16,13 @@ type Storage = {
 type Methods = {
     buy: (param: ticket) => Promise<void>;
     cancel: (param: ticket) => Promise<void>;
-    configure: (params: {
-        opening_price: nat;
-        set_reserve_price: nat;
-        set_start_time: timestamp;
-        set_round_time: int;
-        ticket: ticket;
-    }) => Promise<void>;
+    configure: (
+        opening_price: nat,
+        set_reserve_price: nat,
+        set_start_time: timestamp,
+        set_round_time: int,
+        ticket: ticket,
+    ) => Promise<void>;
     drop_price: (param: nat) => Promise<void>;
     start: () => Promise<void>;
 };

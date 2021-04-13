@@ -12,24 +12,24 @@ type Storage = {
 };
 
 type Methods = {
-    auction: (params: {
-        destination: contract;
-        opening_price: nat;
-        reserve_price: nat;
-        start_time: timestamp;
-        round_time: int;
-        ticket_id: nat;
-    }) => Promise<void>;
+    auction: (
+        destination: contract,
+        opening_price: nat,
+        reserve_price: nat,
+        start_time: timestamp,
+        round_time: int,
+        ticket_id: nat,
+    ) => Promise<void>;
     burn: (param: nat) => Promise<void>;
-    mint: (params: {
-        0: string;
-        1: bytes;
-    }) => Promise<void>;
+    mint: (
+        0: string,
+        1: bytes,
+    ) => Promise<void>;
     receive: (param: nat) => Promise<void>;
-    send: (params: {
-        destination: contract;
-        ticket_id: nat;
-    }) => Promise<void>;
+    send: (
+        destination: contract,
+        ticket_id: nat,
+    ) => Promise<void>;
 };
 
 export type TicketWalletContractType = { methods: Methods, storage: Storage, code: { __type: 'TicketWalletCode', protocol: string, code: unknown } };

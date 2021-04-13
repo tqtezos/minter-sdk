@@ -27,22 +27,22 @@ type Storage = {
 type Methods = {
     accept: (param: nat) => Promise<void>;
     cancel: (param: nat) => Promise<void>;
-    start: (params: {
+    start: (
         assets_offered: Array<{
             fa2_address: address;
             tokens: Array<{
                 token_id: nat;
                 amount: nat;
             }>;
-        }>;
+        }>,
         assets_requested: Array<{
             fa2_address: address;
             tokens: Array<{
                 token_id: nat;
                 amount: nat;
             }>;
-        }>;
-    }) => Promise<void>;
+        }>,
+    ) => Promise<void>;
 };
 
 export type Fa2SwapContractType = { methods: Methods, storage: Storage, code: { __type: 'Fa2SwapCode', protocol: string, code: unknown } };

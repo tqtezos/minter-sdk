@@ -20,27 +20,27 @@ type Methods = {
     confirm_admin: () => Promise<void>;
     pause: (param: boolean) => Promise<void>;
     set_admin: (param: address) => Promise<void>;
-    buy: (params: {
-        sale_seller: address;
+    buy: (
+        sale_seller: address,
         sale_token: {
             token_for_sale_address: address;
             token_for_sale_token_id: nat;
-        };
-    }) => Promise<void>;
-    cancel: (params: {
-        sale_seller: address;
+        },
+    ) => Promise<void>;
+    cancel: (
+        sale_seller: address,
         sale_token: {
             token_for_sale_address: address;
             token_for_sale_token_id: nat;
-        };
-    }) => Promise<void>;
-    sell: (params: {
-        sale_price: mutez;
+        },
+    ) => Promise<void>;
+    sell: (
+        sale_price: mutez,
         sale_token_param_tez: {
             token_for_sale_address: address;
             token_for_sale_token_id: nat;
-        };
-    }) => Promise<void>;
+        },
+    ) => Promise<void>;
 };
 
 export type FixedPriceSaleMarketTezContractType = { methods: Methods, storage: Storage, code: { __type: 'FixedPriceSaleMarketTezCode', protocol: string, code: unknown } };

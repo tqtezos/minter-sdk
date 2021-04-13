@@ -41,7 +41,7 @@ type Methods = {
     bid: (param: nat) => Promise<void>;
     cancel: (param: nat) => Promise<void>;
     resolve: (param: nat) => Promise<void>;
-    permit_configure: (params: {
+    permit_configure: (
         config: {
             opening_price: mutez;
             min_raise_percent: nat;
@@ -57,12 +57,12 @@ type Methods = {
             }>;
             start_time: timestamp;
             end_time: timestamp;
-        };
+        },
         optional_permit?: {
             signerKey: key;
             signature: signature;
-        };
-    }) => Promise<void>;
+        },
+    ) => Promise<void>;
 };
 
 export type EnglishAuctionTezPermitContractType = { methods: Methods, storage: Storage, code: { __type: 'EnglishAuctionTezPermitCode', protocol: string, code: unknown } };
