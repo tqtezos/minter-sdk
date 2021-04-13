@@ -26,7 +26,7 @@ describe('test NFT auction', () => {
   let nftAuctionBob : Contract<EnglishAuctionFa2ContractType>;
   let nftAuctionAlice : Contract<EnglishAuctionFa2ContractType>;
   let nftContract : Contract<Fa2MultiFtFaucetContractType>;
-  let ftContract : Contract<Fa2MultiFtAssetContractType>;
+  let ftContract : Contract<Fa2MultiFtFaucetContractType>;
   let bobAddress : address;
   let aliceAddress : address;
   let startTime : Date;

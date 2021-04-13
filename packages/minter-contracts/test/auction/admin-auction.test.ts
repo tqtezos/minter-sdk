@@ -12,14 +12,15 @@ import { MichelsonMap } from '@taquito/taquito';
 
 import { addOperator } from '../../src/fa2-interface';
 import { Fa2_token, Tokens } from '../../src/auction-interface';
+import { EnglishAuctionTezContractType, Fa2MultiFtFaucetContractType } from '../..';
 
 jest.setTimeout(180000); // 3 minutes
 
 describe('test NFT auction', () => {
   let tezos: TestTz;
-  let nftAuction: Contract;
-  let nftAuctionAlice : Contract;
-  let nftContract : Contract;
+  let nftAuction: Contract<EnglishAuctionTezContractType>;
+  let nftAuctionAlice : Contract<EnglishAuctionTezContractType>;
+  let nftContract : Contract<Fa2MultiFtFaucetContractType>;
   let bobAddress : address;
   let startTime : Date;
   let endTime : Date;

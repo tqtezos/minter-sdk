@@ -27,7 +27,7 @@ describe.each([originateFixedPriceAdminSale])
 ('marketplace test', (originateMarketplace) => {
   let tezos: TestTz;
   let nft: Contract<Fa2MultiFtFaucetContractType>;
-  let ft: Contract<Fa2MultiFtAssetContractType>;
+  let ft: Contract<Fa2MultiFtFaucetContractType>;
   let marketplace: Contract<FixedPriceSaleMarketContractType>;
   let marketAddress: address;
   let bobAddress: address;

@@ -86,7 +86,7 @@ export async function originateNftFaucet(
 
 export async function originateFtFaucet(
   tz: TezosToolkit,
-): Promise<Contract<Fa2MultiFtAssetContractType>> {
+): Promise<Contract<Fa2MultiFtFaucetContractType>> {
   const code = await compileAndLoadContract(
     defaultEnv,
     'minter_collection/ft/fa2_multi_ft_faucet.mligo',
