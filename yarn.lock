@@ -1446,8 +1446,8 @@
   resolved "https://npm.preview.tezostaquito.io/@taquito%2fcontract-type-generator/-/contract-type-generator-8.1.0-23e7eb54--722.tgz#979753aca8524a425c4ffb8c9d4beb91798abbcb"
   integrity sha512-c7zeXZao3rFjuWOJwH2ZI+JzMU7rBMTedGIVNYq/aA3X+I/F10ljWjFuKRbRahmcf0THOCq7Z5RjABv07NRe2g==
   dependencies:
-    "@taquito/michel-codec" "^8.1.0-23e7eb54--722"
-    "@taquito/taquito" "^8.1.0-23e7eb54--722"
+    "@taquito/michel-codec" "^8.1.0-e06c8330--722"
+    "@taquito/taquito" "^8.1.0-e06c8330--722"
     bignumber.js "^9.0.1"
 
 "@taquito/http-utils@8.1.0-23e7eb54--722", "@taquito/http-utils@^8.1.0-23e7eb54--722":

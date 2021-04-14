@@ -1,14 +1,5 @@
 
-import BigNumber from 'bignumber.js';
-import { MichelsonMap } from '@taquito/taquito';
-type address = string;
-type BigMap<K, T> = MichelsonMap<K, T>;
-type bytes = string;
-type contract = string;
-type int = string | BigNumber | number;
-type MMap<K, T> = MichelsonMap<K, T>;
-type nat = string | BigNumber | number;
-type unit = (true | undefined);
+import { address, BigMap, bytes, contract, MMap, nat, unit } from './type-aliases';
 
 type Storage = {
     current_edition_id: nat;
@@ -17,7 +8,7 @@ type Storage = {
         edition_info: MMap<string, bytes>;
         initial_token_id: nat;
         number_of_editions: nat;
-        number_of_editions_to_distribute: int;
+        number_of_editions_to_distribute: nat;
     }>;
     nft_asset_storage: {
         admin: {

@@ -1,6 +1,7 @@
 -- | Helpers to test simple admin functionality.
 module Test.NonPausableSimpleAdmin
-  ( adminOwnershipTransferChecks
+  ( OriginateAdminContractFn
+  , adminOwnershipTransferChecks
   ) where
 
 import Lorentz.Entrypoints
@@ -15,9 +16,8 @@ import Morley.Nettest.Tasty (nettestScenarioCaps)
 import Lorentz.Contracts.NonPausableSimpleAdmin
 
 type OriginateAdminContractFn param =
-  forall caps base m.
-     (MonadNettest caps base m)
-  => Address -> m (TAddress param)
+  forall m. (Monad m)
+  => Address -> NettestT m (TAddress param)
 
 adminOwnershipTransferChecks
   :: ( ParameterContainsEntrypoints param

@@ -11,6 +11,7 @@ type Storage = {
         admin: address;
         pending_admin?: address;
     };
+    allowlist: BigMap<address, unit>;
     swap: {
         next_swap_id: nat;
         swaps: BigMap<nat, {
@@ -33,7 +34,6 @@ type Storage = {
             seller: address;
         }>;
     };
-    whitelist: BigMap<address, unit>;
 };
 
 type Methods = {
@@ -60,4 +60,4 @@ type Methods = {
     update_allowed: (param: BigMap<address, unit>) => Promise<void>;
 };
 
-export type Fa2WhitelistedSwapContractType = { methods: Methods, storage: Storage, code: { __type: 'Fa2WhitelistedSwapCode', protocol: string, code: object[] } };
+export type Fa2AllowlistedSwapContractType = { methods: Methods, storage: Storage, code: { __type: 'Fa2AllowlistedSwapCode', protocol: string, code: object[] } };
