@@ -43,7 +43,7 @@ An implementation of an NFT marketplace that allows users to initiate NFT sales 
 ### [FA2-FA2 swaps](ligo/src/swaps)
 
 An implementation of a swaps contract that allows two participants to safely exchange their FA2 tokens.
-There is a whitelisted extension that allows specifying the permitted set of FA2 contracts involved.
+There is an extension with allowlist that allows specifying the permitted set of FA2 contracts involved.
 
 ### [Ticket-based NFTs](ligo/src/tickets)
 
