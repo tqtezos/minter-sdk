@@ -49,4 +49,4 @@ type Methods = {
     ) => Promise<void>;
 };
 
-export type Fa2SwapContractType = { methods: Methods, storage: Storage, code: { __type: 'Fa2SwapCode', protocol: string, code: unknown } };
+export type Fa2SwapContractType = { methods: Methods, storage: Storage, code: { __type: 'Fa2SwapCode', protocol: string, code: object[] } };

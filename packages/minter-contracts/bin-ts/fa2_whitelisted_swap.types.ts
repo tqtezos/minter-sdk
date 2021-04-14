@@ -60,4 +60,4 @@ type Methods = {
     update_allowed: (param: BigMap<address, unit>) => Promise<void>;
 };
 
-export type Fa2WhitelistedSwapContractType = { methods: Methods, storage: Storage, code: { __type: 'Fa2WhitelistedSwapCode', protocol: string, code: unknown } };
+export type Fa2WhitelistedSwapContractType = { methods: Methods, storage: Storage, code: { __type: 'Fa2WhitelistedSwapCode', protocol: string, code: object[] } };

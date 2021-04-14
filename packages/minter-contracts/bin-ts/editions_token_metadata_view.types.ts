@@ -9,4 +9,4 @@ type Methods = {
     
 };
 
-export type EditionsTokenMetadataViewContractType = { methods: Methods, storage: Storage, code: { __type: 'EditionsTokenMetadataViewCode', protocol: string, code: unknown } };
+export type EditionsTokenMetadataViewContractType = { methods: Methods, storage: Storage, code: { __type: 'EditionsTokenMetadataViewCode', protocol: string, code: object[] } };

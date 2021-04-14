@@ -39,4 +39,4 @@ type Methods = {
     ) => Promise<void>;
 };
 
-export type TicketWalletContractType = { methods: Methods, storage: Storage, code: { __type: 'TicketWalletCode', protocol: string, code: unknown } };
+export type TicketWalletContractType = { methods: Methods, storage: Storage, code: { __type: 'TicketWalletCode', protocol: string, code: object[] } };

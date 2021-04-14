@@ -69,4 +69,4 @@ type Methods = {
     resolve: (param: nat) => Promise<void>;
 };
 
-export type EnglishAuctionFa2ContractType = { methods: Methods, storage: Storage, code: { __type: 'EnglishAuctionFa2Code', protocol: string, code: unknown } };
+export type EnglishAuctionFa2ContractType = { methods: Methods, storage: Storage, code: { __type: 'EnglishAuctionFa2Code', protocol: string, code: object[] } };

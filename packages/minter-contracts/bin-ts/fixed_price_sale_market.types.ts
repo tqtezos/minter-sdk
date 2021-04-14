@@ -49,4 +49,4 @@ type Methods = {
     ) => Promise<void>;
 };
 
-export type FixedPriceSaleMarketContractType = { methods: Methods, storage: Storage, code: { __type: 'FixedPriceSaleMarketCode', protocol: string, code: unknown } };
+export type FixedPriceSaleMarketContractType = { methods: Methods, storage: Storage, code: { __type: 'FixedPriceSaleMarketCode', protocol: string, code: object[] } };
