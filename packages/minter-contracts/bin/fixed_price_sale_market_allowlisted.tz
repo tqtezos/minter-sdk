@@ -312,10 +312,10 @@
                      PAIR } }
                { DIG 3 ;
                  DROP ;
-                 DIG 5 ;
-                 DROP ;
                  IF_LEFT
-                   { DUP ;
+                   { DIG 5 ;
+                     DROP ;
+                     DUP ;
                      CAR ;
                      SENDER ;
                      COMPARE ;
@@ -392,6 +392,14 @@
                               PAIR }
                             { DROP 2 ; SWAP ; DROP ; PUSH string "NOT_OWNER" ; FAILWITH } } }
                    { SWAP ;
+                     DUP ;
+                     DUG 2 ;
+                     CAR ;
+                     DIG 5 ;
+                     SWAP ;
+                     EXEC ;
+                     DROP ;
+                     SWAP ;
                      DUP ;
                      DUG 2 ;
                      CAR ;

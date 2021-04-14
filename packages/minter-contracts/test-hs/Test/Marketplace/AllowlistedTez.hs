@@ -30,8 +30,8 @@ test_AllowlistChecks = allowlistChecks
   { allowlistCheckSetup = \fa2Setup -> do
       let alice ::< SNil = sAddresses fa2Setup
       let tokenId ::< SNil = sTokens fa2Setup
-      (contract, admin) <- originateWithAdmin originateMarketplaceTezAllowlisted
-      return (admin, contract, (alice, tokenId))
+      contract <- originateMarketplaceTezAllowlisted alice
+      return (alice, contract, (alice, tokenId))
 
   , allowlistRestrictionsCases = fromList
       [ AllowlistRestrictionCase
@@ -55,10 +55,10 @@ test_Integrational = testGroup "Integrational"
       setup <- doFA2Setup
       let alice ::< bob ::< SNil = sAddresses setup
       let tokenId1 ::< SNil = sTokens setup
-      (market, admin) <- originateWithAdmin originateMarketplaceTezAllowlisted
+      market <- originateMarketplaceTezAllowlisted alice
       fa2 <- originateFA2 "fa2" setup [market]
 
-      withSender (AddressResolved admin) $
+      withSender (AddressResolved alice) $
         call market (Call @"Update_allowed") (mkAllowlistParam [fa2])
 
       let saleTokensParam = SaleTokenParamTez
