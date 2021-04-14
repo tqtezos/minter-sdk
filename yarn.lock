@@ -1390,13 +1390,13 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
-"@taquito/contract-type-generator@8.1.0-23e7eb54--722":
-  version "8.1.0-23e7eb54--722"
-  resolved "https://npm.preview.tezostaquito.io/@taquito%2fcontract-type-generator/-/contract-type-generator-8.1.0-23e7eb54--722.tgz#979753aca8524a425c4ffb8c9d4beb91798abbcb"
-  integrity sha512-c7zeXZao3rFjuWOJwH2ZI+JzMU7rBMTedGIVNYq/aA3X+I/F10ljWjFuKRbRahmcf0THOCq7Z5RjABv07NRe2g==
+"@taquito/contract-type-generator@8.1.0-e06c8330--722":
+  version "8.1.0-e06c8330--722"
+  resolved "https://npm.preview.tezostaquito.io/@taquito%2fcontract-type-generator/-/contract-type-generator-8.1.0-e06c8330--722.tgz#d0cc0e4fba39a3ab757a85a52d818d8861841b24"
+  integrity sha512-p5a19CzaIYL3hHjd+LnfFt5GJvFzlWl+aL5E8Vl3RAlzhdQQWbOFDvCBrqV65Gqwo92dAWfghp6eaS+TyA5kUA==
   dependencies:
-    "@taquito/michel-codec" "^8.1.0-23e7eb54--722"
-    "@taquito/taquito" "^8.1.0-23e7eb54--722"
+    "@taquito/michel-codec" "^8.1.0-e06c8330--722"
+    "@taquito/taquito" "^8.1.0-e06c8330--722"
     bignumber.js "^9.0.1"
 
 "@taquito/http-utils@^8.1.0":
@@ -1411,7 +1411,7 @@
   resolved "https://registry.yarnpkg.com/@taquito/michel-codec/-/michel-codec-8.1.0.tgz#2893271d1499b7a7f4abcb2e38bc7a059a60ea19"
   integrity sha512-FUye4GQxpkqsuK2Dyjs3yHa1AJdveXuUlM0DtbdBOodcf/b4bpNTD2fsuPzBm0u95Vd4KcPoAKb0GrOVro8V1w==
 
-"@taquito/michel-codec@^8.1.0-23e7eb54--722", "@taquito/michel-codec@^8.1.1":
+"@taquito/michel-codec@^8.1.0-e06c8330--722", "@taquito/michel-codec@^8.1.1":
   version "8.1.1"
   resolved "https://npm.preview.tezostaquito.io/@taquito%2fmichel-codec/-/michel-codec-8.1.1.tgz#23ba8255215db72c60e0f52ff1616cf9830c6aa5"
   integrity sha512-Clp6LfFVxXuLIUTdMi0XK7lnPBhrj9p8XIismf1Gobg/nxqMCW5idWAprl4f3ickpOzlNLm8UHjCs4aUee1GiQ==
@@ -1482,7 +1482,7 @@
     rx-sandbox "^1.0.3"
     rxjs "^6.6.3"
 
-"@taquito/taquito@^8.1.0-23e7eb54--722":
+"@taquito/taquito@^8.1.0-e06c8330--722":
   version "8.1.1"
   resolved "https://npm.preview.tezostaquito.io/@taquito%2ftaquito/-/taquito-8.1.1.tgz#284c760414013d9aa12343a4784c3057f62ffa8b"
   integrity sha512-A8aOYaaAxiwcdGhftdg8lgiX1ZivtrLoqvhWow+JGfvAyAsVabAvckpEgEHgBUvmFClSFVbuM/TOAarnHUfd3A==
