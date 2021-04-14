@@ -8,10 +8,10 @@ Table of contents:
   * [Types](#swap-basic-types)
   * [Entrypoints](#swap-basic-entrypoints)
   * [Notes to the middleware implementors](#notes-to-the-middleware-implementors)
-* [Whitelisted extension](#whitelisted-extension)
+* [Allowlisted extension](#allowlisted-extension)
   * [Contract parts](#contract-parts)
-  * [Types](#whitelist-types)
-  * [Entrypoints](#whitelist-entrypoints)
+  * [Types](#allowlist-types)
+  * [Entrypoints](#allowlist-entrypoints)
 
 ## Build instructions
 
@@ -173,12 +173,12 @@ Be sure to handle not only the errors listed in the entrypoints description, but
 1. Forbid empty offered/requested assets to avoid user's mistakes.
 2. Preserve info about resolved swaps in storage - decided not to go with this is favor of using blockchain explorers.
 
-## Whitelisted extension
+## Allowlisted extension
 
 This contract additionally provides a way to restrict the set of allowed FA2 tokens that can participate in exchanges.
 This set is managed by the administrator entity.
 
-Source code: [ligo](fa2_whitelisted_swap.mligo).
+Source code: [ligo](fa2_allowlisted_swap.mligo).
 
 ### Contract parts
 
@@ -187,39 +187,39 @@ The plan is to develop one contract consisting of a few components that can be r
 The contract has to consist of the following parts:
 1. Base swap contract;
 2. Simple administrator contract. We picked the existing [`simple_admin` contract](../../fa2_modules/admin/non_pausable_simple_admin.mligo) that is already present in the `minter-sdk` repository.
-3. Whitelisting component (reuses the swaps contract and implements the whitelisting capabilities).
+3. Allowlisting component (reuses the swaps contract and implements the allowlisting capabilities).
 
 The last point will be described further in this document.
 
-<a name="whitelist-types"></a>
+<a name="allowlist-types"></a>
 ### Types
 
-The storage of the whitelist component is solely `big_map address ()`.
+The storage of the allowlist component is solely `big_map address ()`.
 
 We do not use mere `list` or `set` because `big_map` is more efficient for the `Start` entrypoint.
 
-<a name="whitelist-entrypoints"></a>
+<a name="allowlist-entrypoints"></a>
 ### Entrypoints
 
-#### Update whitelist
+#### Update allowlist
 
 ```ocaml
 | Update_allowed of (address, unit) big_map
 ```
 
-This entrypoint allows setting a new whitelist, overriding the current one.
+This entrypoint allows setting a new allowlist, overriding the current one.
 
-It accepts `(address, unit) big_map` for the sake of efficiency (whitelist is kept in this form in the storage).
+It accepts `(address, unit) big_map` for the sake of efficiency (allowlist is kept in this form in the storage).
 
 Can be invoked only by the admin, fails with `NOT_ADMIN` otherwise.
 
 ### Modification of the base swaps contract
 
-The whitelisting component provides a method for modifying behaviour of `main` of the base swaps contract. This ensures that the whitelisting capability can be composed with other extensions to the swaps contract that may be requested in the future.
+The allowlisting component provides a method for modifying behaviour of `main` of the base swaps contract. This ensures that the allowlisting capability can be composed with other extensions to the swaps contract that may be requested in the future.
 
 #### Start swap entrypoint
 
-In case any of `assets_offered.fa2_address` or `assets_requested.fa2_address` addresses do not appear in the whitelist `big_map`, `SWAP_OFFERED_FA2_NOT_WHITELISTED` or `SWAP_REQUESTED_FA2_NOT_WHITELISTED` error is raised respectively.
+In case any of `assets_offered.fa2_address` or `assets_requested.fa2_address` addresses do not appear in the allowlist `big_map`, `SWAP_OFFERED_FA2_NOT_ALLOWLISTED` or `SWAP_REQUESTED_FA2_NOT_ALLOWLISTED` error is raised respectively.
 
 #### Cancel swap entrypoint
 

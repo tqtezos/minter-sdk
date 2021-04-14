@@ -1,44 +1,41 @@
-import { EditionsTokenMetadataViewCode } from './bin-ts/editions_token_metadata_view.code';
-import { EditionsTokenMetadataViewContractType } from './bin-ts/editions_token_metadata_view.types';
-import { EnglishAuctionFa2Code } from './bin-ts/english_auction_fa2.code';
-import { EnglishAuctionFa2ContractType } from './bin-ts/english_auction_fa2.types';
-import { EnglishAuctionTezCode } from './bin-ts/english_auction_tez.code';
-import { EnglishAuctionTezContractType } from './bin-ts/english_auction_tez.types';
-import { EnglishAuctionTezPermitCode } from './bin-ts/english_auction_tez_permit.code';
-import { EnglishAuctionTezPermitContractType } from './bin-ts/english_auction_tez_permit.types';
-import { Fa2MultiFtAssetCode } from './bin-ts/fa2_multi_ft_asset.code';
-import { Fa2MultiFtAssetContractType } from './bin-ts/fa2_multi_ft_asset.types';
-import { Fa2MultiFtFaucetCode } from './bin-ts/fa2_multi_ft_faucet.code';
-import { Fa2MultiFtFaucetContractType } from './bin-ts/fa2_multi_ft_faucet.types';
-import { Fa2MultiNftAssetCode } from './bin-ts/fa2_multi_nft_asset.code';
-import { Fa2MultiNftAssetContractType } from './bin-ts/fa2_multi_nft_asset.types';
-import { Fa2MultiNftFaucetCode } from './bin-ts/fa2_multi_nft_faucet.code';
-import { Fa2MultiNftFaucetContractType } from './bin-ts/fa2_multi_nft_faucet.types';
-import { Fa2MultiNftTokenEditionsCode } from './bin-ts/fa2_multi_nft_token_editions.code';
-import { Fa2MultiNftTokenEditionsContractType } from './bin-ts/fa2_multi_nft_token_editions.types';
-import { Fa2SwapCode } from './bin-ts/fa2_swap.code';
-import { Fa2SwapContractType } from './bin-ts/fa2_swap.types';
-import { Fa2WhitelistedSwapCode } from './bin-ts/fa2_whitelisted_swap.code';
-import { Fa2WhitelistedSwapContractType } from './bin-ts/fa2_whitelisted_swap.types';
-import { FixedPriceSaleMarketCode } from './bin-ts/fixed_price_sale_market.code';
-import { FixedPriceSaleMarketContractType } from './bin-ts/fixed_price_sale_market.types';
-import { FixedPriceSaleMarketTezCode } from './bin-ts/fixed_price_sale_market_tez.code';
-import { FixedPriceSaleMarketTezContractType } from './bin-ts/fixed_price_sale_market_tez.types';
-import { TicketAuctionCode } from './bin-ts/ticket_auction.code';
-import { TicketAuctionContractType } from './bin-ts/ticket_auction.types';
-import { TicketWalletCode } from './bin-ts/ticket_wallet.code';
-import { TicketWalletContractType } from './bin-ts/ticket_wallet.types';
+import EditionsTokenMetadataViewCode, { EditionsTokenMetadataViewCodeType } from './bin-ts/editions_token_metadata_view.tz';
+import EnglishAuctionFa2Code, { EnglishAuctionFa2CodeType } from './bin-ts/english_auction_fa2.tz';
+import EnglishAuctionFa2AllowlistedCode, { EnglishAuctionFa2AllowlistedCodeType } from './bin-ts/english_auction_fa2_allowlisted.tz';
+import EnglishAuctionTezCode, { EnglishAuctionTezCodeType } from './bin-ts/english_auction_tez.tz';
+import EnglishAuctionTezAllowlistedCode, { EnglishAuctionTezAllowlistedCodeType } from './bin-ts/english_auction_tez_allowlisted.tz';
+import EnglishAuctionTezPermitCode, { EnglishAuctionTezPermitCodeType } from './bin-ts/english_auction_tez_permit.tz';
+import EnglishAuctionTezPermitAllowlistedCode, { EnglishAuctionTezPermitAllowlistedCodeType } from './bin-ts/english_auction_tez_permit_allowlisted.tz';
+import Fa2AllowlistedSwapCode, { Fa2AllowlistedSwapCodeType } from './bin-ts/fa2_allowlisted_swap.tz';
+import Fa2MultiFtAssetCode, { Fa2MultiFtAssetCodeType } from './bin-ts/fa2_multi_ft_asset.tz';
+import Fa2MultiFtFaucetCode, { Fa2MultiFtFaucetCodeType } from './bin-ts/fa2_multi_ft_faucet.tz';
+import Fa2MultiNftAssetCode, { Fa2MultiNftAssetCodeType } from './bin-ts/fa2_multi_nft_asset.tz';
+import Fa2MultiNftFaucetCode, { Fa2MultiNftFaucetCodeType } from './bin-ts/fa2_multi_nft_faucet.tz';
+import Fa2SwapCode, { Fa2SwapCodeType } from './bin-ts/fa2_swap.tz';
+import FixedPriceSaleMarketCode, { FixedPriceSaleMarketCodeType } from './bin-ts/fixed_price_sale_market.tz';
+import FixedPriceSaleMarketAllowlistedCode, { FixedPriceSaleMarketAllowlistedCodeType } from './bin-ts/fixed_price_sale_market_allowlisted.tz';
+import FixedPriceSaleMarketTezCode, { FixedPriceSaleMarketTezCodeType } from './bin-ts/fixed_price_sale_market_tez.tz';
+import FixedPriceSaleMarketTezAllowlistedCode, { FixedPriceSaleMarketTezAllowlistedCodeType } from './bin-ts/fixed_price_sale_market_tez_allowlisted.tz';
+import TicketAuctionCode, { TicketAuctionCodeType } from './bin-ts/ticket_auction.tz';
+import TicketWalletCode, { TicketWalletCodeType } from './bin-ts/ticket_wallet.tz';
 
 export {
   EditionsTokenMetadataViewContractType,
   EditionsTokenMetadataViewCode,
   EnglishAuctionFa2ContractType,
   EnglishAuctionFa2Code,
-  EnglishAuctionTezContractType,
+  EnglishAuctionFa2CodeType,
+  EnglishAuctionFa2AllowlistedCode,
+  EnglishAuctionFa2AllowlistedCodeType,
   EnglishAuctionTezCode,
-  EnglishAuctionTezPermitContractType,
+  EnglishAuctionTezCodeType,
+  EnglishAuctionTezAllowlistedCode,
+  EnglishAuctionTezAllowlistedCodeType,
   EnglishAuctionTezPermitCode,
-  Fa2MultiFtAssetContractType,
+  EnglishAuctionTezPermitCodeType,
+  EnglishAuctionTezPermitAllowlistedCode,
+  EnglishAuctionTezPermitAllowlistedCodeType,
+  Fa2AllowlistedSwapCode,
+  Fa2AllowlistedSwapCodeType,
   Fa2MultiFtAssetCode,
   Fa2MultiFtFaucetContractType,
   Fa2MultiFtFaucetCode,
@@ -46,17 +43,17 @@ export {
   Fa2MultiNftAssetCode,
   Fa2MultiNftFaucetContractType,
   Fa2MultiNftFaucetCode,
-  Fa2MultiNftTokenEditionsContractType,
-  Fa2MultiNftTokenEditionsCode,
-  Fa2SwapContractType,
+  Fa2MultiNftFaucetCodeType,
   Fa2SwapCode,
-  Fa2WhitelistedSwapContractType,
-  Fa2WhitelistedSwapCode,
-  FixedPriceSaleMarketContractType,
+  Fa2SwapCodeType,
   FixedPriceSaleMarketCode,
-  FixedPriceSaleMarketTezContractType,
+  FixedPriceSaleMarketCodeType,
+  FixedPriceSaleMarketAllowlistedCode,
+  FixedPriceSaleMarketAllowlistedCodeType,
   FixedPriceSaleMarketTezCode,
-  TicketAuctionContractType,
+  FixedPriceSaleMarketTezCodeType,
+  FixedPriceSaleMarketTezAllowlistedCode,
+  FixedPriceSaleMarketTezAllowlistedCodeType,
   TicketAuctionCode,
   TicketWalletContractType,
   TicketWalletCode,

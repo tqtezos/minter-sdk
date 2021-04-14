@@ -112,7 +112,6 @@ jobs:
     - uses: serokell/xrefcheck-action@v1
       with:
         xrefcheck-version: 0.1.3
-      continue-on-error: true
 
   eslint:
     name: ESLint

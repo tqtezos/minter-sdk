@@ -10,17 +10,17 @@
         (big_map %update_allowed address unit)) ;
   storage
     (pair (pair (pair %admin (address %admin) (option %pending_admin address))
-                (pair %swap
-                   (nat %next_swap_id)
-                   (big_map %swaps
-                      nat
-                      (pair (pair %swap_offer
-                               (list %assets_offered
-                                  (pair (address %fa2_address) (list %tokens (pair (nat %token_id) (nat %amount)))))
-                               (list %assets_requested
-                                  (pair (address %fa2_address) (list %tokens (pair (nat %token_id) (nat %amount))))))
-                            (address %seller)))))
-          (big_map %whitelist address unit)) ;
+                (big_map %allowlist address unit))
+          (pair %swap
+             (nat %next_swap_id)
+             (big_map %swaps
+                nat
+                (pair (pair %swap_offer
+                         (list %assets_offered
+                            (pair (address %fa2_address) (list %tokens (pair (nat %token_id) (nat %amount)))))
+                         (list %assets_requested
+                            (pair (address %fa2_address) (list %tokens (pair (nat %token_id) (nat %amount))))))
+                      (address %seller))))) ;
   code { LAMBDA
            (pair address (option address))
            unit
@@ -124,6 +124,7 @@
                  DROP ;
                  DUP ;
                  DUP 3 ;
+                 CAR ;
                  CDR ;
                  SWAP ;
                  IF_LEFT
@@ -135,7 +136,7 @@
                             CAR ;
                             GET ;
                             IF_NONE
-                              { PUSH string "SWAP_OFFERED_FA2_NOT_WHITELISTED" ; FAILWITH }
+                              { PUSH string "SWAP_OFFERED_FA2_NOT_ALLOWLISTED" ; FAILWITH }
                               { DROP } } ;
                      CDR ;
                      ITER { SWAP ;
@@ -145,7 +146,7 @@
                             CAR ;
                             GET ;
                             IF_NONE
-                              { PUSH string "SWAP_REQUESTED_FA2_NOT_WHITELISTED" ; FAILWITH }
+                              { PUSH string "SWAP_REQUESTED_FA2_NOT_ALLOWLISTED" ; FAILWITH }
                               { DROP } } ;
                      DROP ;
                      UNIT } ;
@@ -153,7 +154,6 @@
                  SWAP ;
                  DUP ;
                  DUG 2 ;
-                 CAR ;
                  CDR ;
                  SWAP ;
                  IF_LEFT
@@ -305,13 +305,9 @@
                      DROP ;
                      PAIR } ;
                  UNPAIR ;
-                 DUP 3 ;
-                 CDR ;
+                 SWAP ;
                  DIG 2 ;
-                 DIG 3 ;
                  CAR ;
-                 CAR ;
-                 PAIR ;
                  PAIR ;
                  SWAP ;
                  PAIR } }
@@ -327,7 +323,14 @@
              EXEC ;
              DROP ;
              SWAP ;
+             DUP ;
+             DUG 2 ;
+             CDR ;
+             SWAP ;
+             DIG 2 ;
              CAR ;
+             CAR ;
+             PAIR ;
              PAIR ;
              NIL operation ;
              PAIR } } }
