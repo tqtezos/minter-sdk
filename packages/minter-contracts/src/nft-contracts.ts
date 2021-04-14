@@ -4,39 +4,40 @@ import { TezosToolkit } from '@taquito/taquito';
 import { char2Bytes } from '@taquito/tzip16';
 import { TokenMetadata } from './fa2-interface';
 import { BigNumber } from 'bignumber.js';
-import  { EditionsTokenMetadataViewCode } from '../bin-ts/editions_token_metadata_view.code';
+import { EditionsTokenMetadataViewCode } from '../bin-ts/editions_token_metadata_view.code';
+import { EnglishAuctionFa2ContractType, EnglishAuctionTezContractType, EnglishAuctionTezPermitContractType, Fa2MultiFtAssetContractType, Fa2MultiFtFaucetContractType, Fa2MultiNftAssetContractType, Fa2MultiNftFaucetContractType, Fa2MultiNftTokenEditionsContractType, FixedPriceSaleMarketContractType, FixedPriceSaleMarketTezContractType } from '..';
 
 export interface MintNftParam {
-    token_metadata: TokenMetadata;
-    owner: address;
+  token_metadata: TokenMetadata;
+  owner: address;
 }
 
 export interface MintFtParam {
-    owner: address;
-    token_id: nat;
-    amount: nat;
+  owner: address;
+  token_id: nat;
+  amount: nat;
 }
 
 export interface MintFtPaarm {
-    token_medata: TokenMetadata;
-    owner: address;
+  token_medata: TokenMetadata;
+  owner: address;
 }
 
 export interface SaleTokenParamTez {
-    token_for_sale_address: address;
-    token_for_sale_token_id: nat;
+  token_for_sale_address: address;
+  token_for_sale_token_id: nat;
 }
 
 export interface SaleParamTez {
-    sale_price: BigNumber;
-    sale_token: SaleTokenParamTez;
+  sale_price: BigNumber;
+  sale_token: SaleTokenParamTez;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface AdminStorage {
-    admin: string;
-    pending_admin?: string;
-    paused: boolean;
+  admin: string;
+  pending_admin?: string;
+  paused: boolean;
 }
 
 const meta_uri = char2Bytes('tezos-storage:content');
@@ -50,7 +51,7 @@ const sample_metadata = {
 export async function originateNft(
   tz: TezosToolkit,
   admin: address,
-): Promise<Contract> {
+): Promise<Contract<Fa2MultiNftAssetContractType>> {
   const code = await compileAndLoadContract(
     defaultEnv,
     'minter_collection/nft/fa2_multi_nft_asset_simple_admin.mligo',
@@ -68,7 +69,7 @@ export async function originateNft(
 
 export async function originateNftFaucet(
   tz: TezosToolkit,
-): Promise<Contract> {
+): Promise<Contract<Fa2MultiNftFaucetContractType>> {
   const code = await compileAndLoadContract(
     defaultEnv,
     'minter_collection/nft/fa2_multi_nft_faucet.mligo',
@@ -85,7 +86,7 @@ export async function originateNftFaucet(
 
 export async function originateFtFaucet(
   tz: TezosToolkit,
-): Promise<Contract> {
+): Promise<Contract<Fa2MultiFtFaucetContractType>> {
   const code = await compileAndLoadContract(
     defaultEnv,
     'minter_collection/ft/fa2_multi_ft_faucet.mligo',
@@ -103,7 +104,7 @@ export async function originateFtFaucet(
 
 export async function originateFixedPriceSale(
   tz: TezosToolkit,
-): Promise<Contract> {
+): Promise<Contract<FixedPriceSaleMarketContractType>> {
   const code = await compileAndLoadContract(
     defaultEnv,
     'fixed_price_sale/fixed_price_sale_market.mligo',
@@ -116,7 +117,7 @@ export async function originateFixedPriceSale(
 
 export async function originateFixedPriceTezSale(
   tz: TezosToolkit,
-): Promise<Contract> {
+): Promise<Contract<FixedPriceSaleMarketTezContractType>> {
   const code = await compileAndLoadContract(
     defaultEnv,
     'fixed_price_sale/fixed_price_sale_market_tez.mligo',
@@ -130,7 +131,7 @@ export async function originateFixedPriceTezSale(
 export async function originateFixedPriceAdminSale(
   tz: TezosToolkit,
   adminAddress: address,
-): Promise<Contract> {
+): Promise<Contract<FixedPriceSaleMarketContractType>> {
   const code = await compileAndLoadContract(
     defaultEnv,
     'fixed_price_sale/fixed_price_sale_market.mligo',
@@ -144,7 +145,7 @@ export async function originateFixedPriceAdminSale(
 export async function originateFixedPriceTezAdminSale(
   tz: TezosToolkit,
   adminAddress: address,
-): Promise<Contract> {
+): Promise<Contract<FixedPriceSaleMarketTezContractType>> {
   const code = await compileAndLoadContract(
     defaultEnv,
     'fixed_price_sale/fixed_price_sale_market_tez.mligo',
@@ -185,7 +186,7 @@ export async function originateFixedPriceTezAllowlistedSale(
 
 export async function originateEnglishAuctionTez(
   tz: TezosToolkit,
-): Promise<Contract> {
+): Promise<Contract<EnglishAuctionTezContractType>> {
   const code = await compileAndLoadContract(
     defaultEnv,
     'english_auction/english_auction_tez.mligo',
@@ -198,7 +199,7 @@ export async function originateEnglishAuctionTez(
 
 export async function originateEnglishAuctionTezAdmin(
   tz: TezosToolkit,
-): Promise<Contract> {
+): Promise<Contract<EnglishAuctionTezContractType>> {
   const code = await compileAndLoadContract(
     defaultEnv,
     'english_auction/english_auction_tez.mligo',
@@ -213,7 +214,7 @@ export async function originateEnglishAuctionTezAdmin(
 export async function originateEditionsNftContract(
   tz: TezosToolkit,
   adminAddress: address,
-): Promise<Contract> {
+): Promise<Contract<Fa2MultiNftTokenEditionsContractType>> {
   const code = await compileAndLoadContract(
     defaultEnv,
     'minter_collection/editions/fa2_multi_nft_token_editions.mligo',
@@ -225,25 +226,26 @@ export async function originateEditionsNftContract(
     name: 'editions',
     description: 'editions',
     interfaces: ['TZIP-012', 'TZIP-016'],
-    views : [{
+    views: [{
       name: 'token_metadata',
       description: 'Get the metadata for the tokens minted using this contract',
       pure: false,
       implementations: [
-        { michelsonStorageView :
-           {
-             parameter : {
-               prim: 'nat',
-             },
-             returnType : {
-               prim : "pair",
-               args : [
-                 { prim: "nat", annots: ["%token_id"] },
-                 { prim :"map", args :[{ prim:"string" }, { prim:"bytes" }], annots:["%token_info"] },
-               ],
-             },
-             code : EditionsTokenMetadataViewCode.code,
-           },
+        {
+          michelsonStorageView:
+          {
+            parameter: {
+              prim: 'nat',
+            },
+            returnType: {
+              prim: "pair",
+              args: [
+                { prim: "nat", annots: ["%token_id"] },
+                { prim: "map", args: [{ prim: "string" }, { prim: "bytes" }], annots: ["%token_info"] },
+              ],
+            },
+            code: EditionsTokenMetadataViewCode.code,
+          },
         },
       ],
     }],
@@ -258,9 +260,9 @@ export async function originateEditionsNftContract(
 
 export async function originateEnglishAuctionFA2(
   tz: TezosToolkit,
-  fa2_address : address,
-  token_id : nat,
-): Promise<Contract> {
+  fa2_address: address,
+  token_id: nat,
+): Promise<Contract<EnglishAuctionFa2ContractType>> {
   const code = await compileAndLoadContract(
     defaultEnv,
     'english_auction/english_auction_fa2.mligo',
@@ -273,8 +275,8 @@ export async function originateEnglishAuctionFA2(
 
 export async function originateEnglishAuctionTezPermit(
   tz: TezosToolkit,
-  adminAddress : address,
-): Promise<Contract> {
+  adminAddress: address,
+): Promise<Contract<EnglishAuctionTezPermitContractType>> {
   const code = await compileAndLoadContract(
     defaultEnv,
     'english_auction/english_auction_tez_permit.mligo',

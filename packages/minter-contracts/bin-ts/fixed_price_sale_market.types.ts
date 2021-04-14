@@ -1,5 +1,9 @@
 
-import { address, BigMap, nat } from './type-aliases';
+import BigNumber from 'bignumber.js';
+import { MichelsonMap } from '@taquito/taquito';
+type address = string;
+type BigMap<K, T> = MichelsonMap<K, T>;
+type nat = string | BigNumber | number;
 
 type Storage = {
     admin?: {

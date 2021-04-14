@@ -15,15 +15,16 @@ import {
   addOperator,
 } from '../src/fa2-interface';
 import { QueryBalances, queryBalancesWithLambdaView } from './fa2-balance-inspector';
+import { Fa2MultiNftFaucetContractType, FixedPriceSaleMarketTezContractType } from '..';
 
 jest.setTimeout(180000); // 3 minutes
 
 describe.each([originateFixedPriceTezAdminSale])
 ('marketplace test', (originateMarketplace) => {
   let tezos: TestTz;
-  let nft: Contract;
+  let nft: Contract<Fa2MultiNftFaucetContractType>;
   let queryBalances: QueryBalances;
-  let marketplace: Contract;
+  let marketplace: Contract<FixedPriceSaleMarketTezContractType>;
   let marketAddress: address;
   let bobAddress: address;
   let aliceAddress: address;
@@ -188,14 +189,14 @@ describe.each([originateFixedPriceTezAdminSale])
       try
       {
         $log.info('alice cancels sale (not admin nor seller)');
-        await marketplace.methods.cancel(salePrice, nft.address, tokenId).send({ source: aliceAddress, amount: 0 });
+        await marketplace.methods.cancel(aliceAddress, nft.address, tokenId).send({ source: aliceAddress, amount: 0 });
       } catch (error) {
         $log.info(`Alice cannot cancel sale, since she is not an admin`);
       }
 
       $log.info('bob cancels sale');
       const removeSaleOp = await marketplace.methods
-        .cancel(salePrice, nft.address, tokenId)
+        .cancel(bobAddress, nft.address, tokenId)
         .send({ source: bobAddress, amount: 0 });
       $log.info(`Waiting for ${removeSaleOp.hash} to be confirmed...`);
       const removeSaleOpHash = await removeSaleOp.confirmation(1).then(() => removeSaleOp.hash);

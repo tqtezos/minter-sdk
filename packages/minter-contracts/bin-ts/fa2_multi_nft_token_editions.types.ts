@@ -1,5 +1,13 @@
 
-import { address, BigMap, bytes, contract, MMap, nat, unit } from './type-aliases';
+import BigNumber from 'bignumber.js';
+import { MichelsonMap } from '@taquito/taquito';
+type address = string;
+type BigMap<K, T> = MichelsonMap<K, T>;
+type bytes = string;
+type contract = string;
+type MMap<K, T> = MichelsonMap<K, T>;
+type nat = string | BigNumber | number;
+type unit = (true | undefined);
 
 type Storage = {
     current_edition_id: nat;

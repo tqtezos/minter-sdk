@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { $log } from '@tsed/logger';
 
-import { TezosToolkit } from '@taquito/taquito';
+import { ContractAbstraction, ContractProvider, TezosToolkit } from '@taquito/taquito';
 import { Contract } from './type-aliases';
 
 export class LigoEnv {
@@ -26,8 +26,8 @@ export class LigoEnv {
   }
 }
 
-const ligoVersion  = '0.12.0';
-export const ligoImage : string = 'docker run --rm -v $PWD:$PWD -w $PWD ligolang/ligo:' + ligoVersion;
+const ligoVersion = '0.12.0';
+export const ligoImage: string = 'docker run --rm -v $PWD:$PWD -w $PWD ligolang/ligo:' + ligoVersion;
 export const defaultEnv: LigoEnv = defaultLigoEnv();
 
 function defaultLigoEnv(): LigoEnv {
@@ -118,14 +118,15 @@ export async function runCmd(cwd: string, cmd: string): Promise<void> {
   );
 }
 
-export async function originateContract(
+export async function originateContract<TContract extends { methods: unknown; storage: unknown; }>(
   tz: TezosToolkit,
   code: string,
   storage: string | Record<string, any>,
   name: string,
-): Promise<Contract> {
+): Promise<ContractAbstraction<ContractProvider<TContract>, TContract>> {
   try {
-    const originationOp = await tz.contract.originate({
+    const tzTyped = tz as TezosToolkit<TContract>;
+    const originationOp = await tzTyped.contract.originate({
       code: code,
       init: storage,
     });
@@ -133,8 +134,8 @@ export async function originateContract(
     const contract = await originationOp.contract();
     $log.info(`originated contract ${name} with address ${contract.address}`);
     $log.info(`consumed gas: ${originationOp.consumedGas}`);
-    let storageString : string;
-    if (typeof storage === "object"){
+    let storageString: string;
+    if (typeof storage === "object") {
       storageString = JSON.stringify(storage);
     }
     else {

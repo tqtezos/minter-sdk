@@ -11,6 +11,7 @@ import { defaultEnv, loadFile } from './ligo';
 import { MichelsonMap, TezosToolkit } from '@taquito/taquito';
 import { InMemorySigner } from '@taquito/signer';
 import { Contract } from './type-aliases';
+import { Fa2MultiNftFaucetContractType } from '..';
 
 function genClientConfig(mainConfig: Configstore) {
   const configPath = path.join(__dirname, `../../client/src/config.json`);
@@ -101,7 +102,7 @@ async function shouldOriginate(
 export async function originateNftFaucet(
   tz: TezosToolkit,
   code: string,
-): Promise<Contract> {
+): Promise<Contract<Fa2MultiNftFaucetContractType>> {
   const name = 'nft_faucet_main';
   const metadata = new MichelsonMap<string, string>();
   const contents = {
@@ -126,7 +127,7 @@ export async function originateNftFaucet(
       },
     });
 
-    const contract = await originationOp.contract();
+    const contract = await originationOp.contract() as Contract<Fa2MultiNftFaucetContractType>;
     $log.info(`originated contract ${name} with address ${contract.address}`);
     $log.info(`consumed gas: ${originationOp.consumedGas}`);
     return Promise.resolve(contract);

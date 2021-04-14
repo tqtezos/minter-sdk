@@ -1,5 +1,15 @@
 
-import { address, BigMap, bytes, contract, int, MMap, nat, ticket, timestamp } from './type-aliases';
+import BigNumber from 'bignumber.js';
+import { MichelsonMap } from '@taquito/taquito';
+type address = string;
+type BigMap<K, T> = MichelsonMap<K, T>;
+type bytes = string;
+type contract = string;
+type int = string | BigNumber | number;
+type MMap<K, T> = MichelsonMap<K, T>;
+type nat = string | BigNumber | number;
+type ticket = string;
+type timestamp = Date | string;
 
 type Storage = {
     admin: address;

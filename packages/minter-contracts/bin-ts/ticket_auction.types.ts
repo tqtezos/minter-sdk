@@ -1,5 +1,13 @@
 
-import { address, BigMap, contract, int, nat, ticket, timestamp } from './type-aliases';
+import BigNumber from 'bignumber.js';
+import { MichelsonMap } from '@taquito/taquito';
+type address = string;
+type BigMap<K, T> = MichelsonMap<K, T>;
+type contract = string;
+type int = string | BigNumber | number;
+type nat = string | BigNumber | number;
+type ticket = string;
+type timestamp = Date | string;
 
 type Storage = {
     data: {

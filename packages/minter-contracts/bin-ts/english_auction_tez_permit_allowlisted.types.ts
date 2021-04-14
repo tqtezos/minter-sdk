@@ -1,5 +1,15 @@
 
-import { address, BigMap, int, key, mutez, nat, signature, timestamp, unit } from './type-aliases';
+import BigNumber from 'bignumber.js';
+import { MichelsonMap } from '@taquito/taquito';
+type address = string;
+type BigMap<K, T> = MichelsonMap<K, T>;
+type int = string | BigNumber | number;
+type key = string;
+type mutez = string | BigNumber | number;
+type nat = string | BigNumber | number;
+type signature = string;
+type timestamp = Date | string;
+type unit = (true | undefined);
 
 type Storage = {
     allowlist: BigMap<address, unit>;
