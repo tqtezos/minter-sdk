@@ -2,19 +2,6 @@
 # yarn lockfile v1
 
 
-"@airgap/beacon-sdk@^2.2.3":
-  version "2.2.3"
-  resolved "https://npm.preview.tezostaquito.io/@airgap%2fbeacon-sdk/-/beacon-sdk-2.2.3.tgz#82b0b3060dd6f9d20a78cd81ef366c45f58ed358"
-  integrity sha512-G1VRfHvPNJHq2I5NBVANdgavz8E9AcbhxrcCbmBXXHXgh1eHQb7X2+ntIFgCJ686aOPbbk8JOi6L98VDg57HYg==
-  dependencies:
-    "@types/chrome" "0.0.115"
-    "@types/libsodium-wrappers" "0.7.7"
-    axios "0.21.1"
-    bignumber.js "9.0.0"
-    bs58check "2.1.2"
-    libsodium-wrappers "0.7.8"
-    qrcode-generator "1.4.4"
-
 "@babel/code-frame@7.12.11":
   version "7.12.11"
   resolved "https://registry.yarnpkg.com/@babel/code-frame/-/code-frame-7.12.11.tgz#f4ad435aa263db935b8f10f2c552d23fb716a63f"
@@ -1403,45 +1390,33 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
-"@taquito/beacon-wallet@8.1.0":
-  version "8.1.0"
-  resolved "https://npm.preview.tezostaquito.io/@taquito%2fbeacon-wallet/-/beacon-wallet-8.1.0.tgz#e51bf9914ef49d8166a673b0b53d2343ecec6fd4"
-  integrity sha512-OFtf890RN0M55eNAZREKSsa6ug0n9SmRg2MKhVb6CT3MzYe4Ez+NWiLaLBrTLrv3frfpkGot13sflmGyMNSpsw==
+"@taquito/contract-type-generator@8.1.0-39bc59de--722":
+  version "8.1.0-39bc59de--722"
+  resolved "https://npm.preview.tezostaquito.io/@taquito%2fcontract-type-generator/-/contract-type-generator-8.1.0-39bc59de--722.tgz#79a7a041e7c32adb29bc654ec76ccd3f0ff1c1e2"
+  integrity sha512-ayk+jDPzeUDxxtQ6Rj1etk7VvYsnWhBXsBcckSSFwNrL3GXvOuRUs6K/7GA2tylslGBE0Jhkyy9RNU5egGCAwA==
   dependencies:
-    "@airgap/beacon-sdk" "^2.2.3"
-    "@taquito/taquito" "^8.1.0"
-    "@taquito/utils" "^8.1.0"
-
-"@taquito/contract-type-generator@8.1.0-23e7eb54--722":
-  version "8.1.0-23e7eb54--722"
-  resolved "https://npm.preview.tezostaquito.io/@taquito%2fcontract-type-generator/-/contract-type-generator-8.1.0-23e7eb54--722.tgz#979753aca8524a425c4ffb8c9d4beb91798abbcb"
-  integrity sha512-c7zeXZao3rFjuWOJwH2ZI+JzMU7rBMTedGIVNYq/aA3X+I/F10ljWjFuKRbRahmcf0THOCq7Z5RjABv07NRe2g==
-  dependencies:
-    "@taquito/michel-codec" "^8.1.0-23e7eb54--722"
-    "@taquito/taquito" "^8.1.0-23e7eb54--722"
+    "@taquito/michel-codec" "^8.1.0-39bc59de--722"
+    "@taquito/taquito" "^8.1.0-39bc59de--722"
     bignumber.js "^9.0.1"
 
-"@taquito/http-utils@8.1.0", "@taquito/http-utils@^8.1.0":
+"@taquito/http-utils@^8.1.0":
   version "8.1.0"
   resolved "https://npm.preview.tezostaquito.io/@taquito%2fhttp-utils/-/http-utils-8.1.0.tgz#75e198397e76cebd843d154b3114f6cfb411e1a7"
   integrity sha512-Bkj5awWn+ftmjBb+8VBjVXRJSMP2rayOnZUbJjkvitbMize8/gzGY86xrLw4j462FIuVlrqos9VHbLw5vVzMvw==
   dependencies:
     xhr2-cookies "^1.1.0"
 
-"@taquito/local-forging@8.1.0":
-  version "8.1.0"
-  resolved "https://npm.preview.tezostaquito.io/@taquito%2flocal-forging/-/local-forging-8.1.0.tgz#1cb8c515529a67e51728dab03e797d61020f33af"
-  integrity sha512-dHzPHCKg8urZ8CuSTz9Z7H0+K78oEACZzxRenvDk4mxp4O4MFO25awwuD4RoP513z0ZkF5df2ZXHt1TGrj9Psw==
-  dependencies:
-    "@taquito/utils" "^8.1.0"
-    bignumber.js "^9.0.1"
-
-"@taquito/michel-codec@8.1.0", "@taquito/michel-codec@^8.1.0", "@taquito/michel-codec@^8.1.0-23e7eb54--722":
+"@taquito/michel-codec@^8.1.0":
   version "8.1.0"
   resolved "https://npm.preview.tezostaquito.io/@taquito%2fmichel-codec/-/michel-codec-8.1.0.tgz#2893271d1499b7a7f4abcb2e38bc7a059a60ea19"
   integrity sha512-FUye4GQxpkqsuK2Dyjs3yHa1AJdveXuUlM0DtbdBOodcf/b4bpNTD2fsuPzBm0u95Vd4KcPoAKb0GrOVro8V1w==
 
-"@taquito/michelson-encoder@8.1.0", "@taquito/michelson-encoder@^8.1.0":
+"@taquito/michel-codec@^8.1.0-39bc59de--722":
+  version "8.1.1"
+  resolved "https://npm.preview.tezostaquito.io/@taquito%2fmichel-codec/-/michel-codec-8.1.1.tgz#23ba8255215db72c60e0f52ff1616cf9830c6aa5"
+  integrity sha512-Clp6LfFVxXuLIUTdMi0XK7lnPBhrj9p8XIismf1Gobg/nxqMCW5idWAprl4f3ickpOzlNLm8UHjCs4aUee1GiQ==
+
+"@taquito/michelson-encoder@^8.1.0":
   version "8.1.0"
   resolved "https://npm.preview.tezostaquito.io/@taquito%2fmichelson-encoder/-/michelson-encoder-8.1.0.tgz#3948c0bff160c8748330f8b7fe89144b5435d8b9"
   integrity sha512-vaZjtDwOmVcFPJXHW3u6Y1O96voJJp3b95eluhxULk+wCN+NS1Yb4TPS0UhDHzBqS9WYQEXI2d62z4QFKDmulw==
@@ -1450,19 +1425,6 @@
     "@taquito/utils" "^8.1.0"
     bignumber.js "^9.0.1"
     fast-json-stable-stringify "^2.1.0"
-
-"@taquito/remote-signer@8.1.0":
-  version "8.1.0"
-  resolved "https://npm.preview.tezostaquito.io/@taquito%2fremote-signer/-/remote-signer-8.1.0.tgz#c14e5e99a879dba3036e399988460a628986b472"
-  integrity sha512-voQDZLVnB+eKQ6YqE3VuiIIM3xhc7jg1u7LyKLIopDT05hVXzl81nOrV8TUhvDr8VmALFVRFwPQhsoM80vJ9Ew==
-  dependencies:
-    "@taquito/http-utils" "^8.1.0"
-    "@taquito/taquito" "^8.1.0"
-    "@taquito/utils" "^8.1.0"
-    "@types/jest" "^26.0.16"
-    elliptic "^6.5.4"
-    libsodium-wrappers "^0.7.8"
-    typedarray-to-buffer "^3.1.5"
 
 "@taquito/rpc@8.1.0", "@taquito/rpc@^8.1.0":
   version "8.1.0"
@@ -1487,7 +1449,7 @@
     pbkdf2 "^3.1.1"
     typedarray-to-buffer "^3.1.5"
 
-"@taquito/taquito@8.1.0", "@taquito/taquito@^8.1.0", "@taquito/taquito@^8.1.0-23e7eb54--722":
+"@taquito/taquito@8.1.0", "@taquito/taquito@^8.1.0", "@taquito/taquito@^8.1.0-39bc59de--722":
   version "8.1.0"
   resolved "https://npm.preview.tezostaquito.io/@taquito%2ftaquito/-/taquito-8.1.0.tgz#f398e2675440f053bf3e78c55b1f70e5a103e1ea"
   integrity sha512-a5YSS4eeN9Rh/EzH0yH3pEK/QxjXyAHptpBn6bYrg1R4BPGgoEAZWY7XjQmf4C4qxNoyIhmCs35svsnTy2xDKA==
@@ -1501,32 +1463,7 @@
     rx-sandbox "^1.0.3"
     rxjs "^6.6.3"
 
-"@taquito/tezbridge-signer@8.1.0":
-  version "8.1.0"
-  resolved "https://npm.preview.tezostaquito.io/@taquito%2ftezbridge-signer/-/tezbridge-signer-8.1.0.tgz#680e6a5416895e3b867db8baca2b5f4bd7e5fd7c"
-  integrity sha512-8wXLdQq87GOpeb3BodTYY1ibm2hx94NbcQ8GqLaYb5gmflZLWfLMjAxFTi+0t4AwEhYJU4uvlLZIX0poM1GUog==
-  dependencies:
-    "@taquito/utils" "^8.1.0"
-    typedarray-to-buffer "^3.1.5"
-
-"@taquito/tezbridge-wallet@8.1.0":
-  version "8.1.0"
-  resolved "https://npm.preview.tezostaquito.io/@taquito%2ftezbridge-wallet/-/tezbridge-wallet-8.1.0.tgz#590a2ed13c271eeb36fd7afae16798f1cdf6e19e"
-  integrity sha512-QdmLMSBfC4KiAY69X0szDvpFkojdpsjPihBVVONfqUqRoINwVou5706FLybkoXamjb8LMeAE7wXr8Z439Ah9Lg==
-  dependencies:
-    "@taquito/taquito" "^8.1.0"
-
-"@taquito/tzip12@8.1.0":
-  version "8.1.0"
-  resolved "https://npm.preview.tezostaquito.io/@taquito%2ftzip12/-/tzip12-8.1.0.tgz#9d892bbbcb2b6f90d795c4fba0419dacdfffede3"
-  integrity sha512-yXoJZdfLYns+J6pab7n2UPew6oEYfD4AXIAJGg9JS197fnFYyO9yNHjxy0xTCis9bqdAuiwr0GS81a70ok/FPg==
-  dependencies:
-    "@taquito/michelson-encoder" "^8.1.0"
-    "@taquito/taquito" "^8.1.0"
-    "@taquito/tzip16" "^8.1.0"
-    bignumber.js "^9.0.1"
-
-"@taquito/tzip16@8.1.0", "@taquito/tzip16@^8.1.0":
+"@taquito/tzip16@8.1.0":
   version "8.1.0"
   resolved "https://npm.preview.tezostaquito.io/@taquito%2ftzip16/-/tzip16-8.1.0.tgz#e7ea9198677b133d80daaa6759c19ead1527a2e1"
   integrity sha512-8BBL2r8MTmuvfHG8MCO5CUNWpfYXz8JIDk0wAuGj1cGpM7PBYF8GU9MwnNMb4fpWCb3Wt59+zOSAF5/j9xfkUg==
@@ -1539,7 +1476,7 @@
     bignumber.js "^9.0.1"
     crypto-js "^4.0.0"
 
-"@taquito/utils@8.1.0", "@taquito/utils@^8.1.0":
+"@taquito/utils@^8.1.0":
   version "8.1.0"
   resolved "https://npm.preview.tezostaquito.io/@taquito%2futils/-/utils-8.1.0.tgz#658f07171a611ee8b5b976959ae04c5acff0760c"
   integrity sha512-1Md7K0r/Y2JTAOHIv9Z3lVuWHBRV+c3ZUCAePIYuPtljEAOuhLgcxMa7ZtoRXfSPutoIOum9yRSSJrKhFhcOhw==
@@ -1604,30 +1541,10 @@
   dependencies:
     "@babel/types" "^7.3.0"
 
-"@types/chrome@0.0.115":
-  version "0.0.115"
-  resolved "https://npm.preview.tezostaquito.io/@types%2fchrome/-/chrome-0.0.115.tgz#dde40ff715a76d8c8125b0fe35287b9fdbc9f3de"
-  integrity sha512-pNoYoYgGuI1/kiz53kjrXrKIjn2H8YWOI+vxVTOubX6arCHk/m/jInoyflKiP2qZHZf8+P+hh6d2y9tjaG4BPQ==
-  dependencies:
-    "@types/filesystem" "*"
-    "@types/har-format" "*"
-
 "@types/configstore@4.0.0":
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/@types/configstore/-/configstore-4.0.0.tgz#cb718f9507e9ee73782f40d07aaca1cd747e36fa"
   integrity sha512-SvCBBPzOIe/3Tu7jTl2Q8NjITjLmq9m7obzjSyb8PXWWZ31xVK6w4T6v8fOx+lrgQnqk3Yxc00LDolFsSakKCA==
-
-"@types/filesystem@*":
-  version "0.0.30"
-  resolved "https://npm.preview.tezostaquito.io/@types%2ffilesystem/-/filesystem-0.0.30.tgz#a7373a2edf34d13e298baf7ee1101f738b2efb7e"
-  integrity sha512-NCoRgmGmLpTT9VFL6Bb6z0jQuqI3d0E5FGl7M0JOv/J5RQYo9s5aOItPYnpckx9MbYQk1APLXcF8f20Vqnf2yA==
-  dependencies:
-    "@types/filewriter" "*"
-
-"@types/filewriter@*":
-  version "0.0.29"
-  resolved "https://npm.preview.tezostaquito.io/@types%2ffilewriter/-/filewriter-0.0.29.tgz#a48795ecadf957f6c0d10e0c34af86c098fa5bee"
-  integrity sha512-BsPXH/irW0ht0Ji6iw/jJaK8Lj3FJemon2gvEqHKpCdDCeemHa+rI3WBGq5z7cDMZgoLjY40oninGxqk+8NzNQ==
 
 "@types/graceful-fs@^4.1.2":
   version "4.1.5"
@@ -1635,11 +1552,6 @@
   integrity sha512-anKkLmZZ+xm4p8JWBf4hElkM4XR+EZeA2M9BAkkTldmcyDY4mbdIJnRghDJH3Ov5ooY7/UAoENtmdMSkaAd7Cw==
   dependencies:
     "@types/node" "*"
-
-"@types/har-format@*":
-  version "1.2.5"
-  resolved "https://npm.preview.tezostaquito.io/@types%2fhar-format/-/har-format-1.2.5.tgz#4f6648814d0fdcb6a510e3364a9db439a753c4b1"
-  integrity sha512-IG8AE1m2pWtPqQ7wXhFhy6Q59bwwnLwO36v5Rit2FrbXCIp8Sk8E2PfUCreyrdo17STwFSKDAkitVuVYbpEHvQ==
 
 "@types/istanbul-lib-coverage@*", "@types/istanbul-lib-coverage@^2.0.0", "@types/istanbul-lib-coverage@^2.0.1":
   version "2.0.3"
@@ -1676,14 +1588,6 @@
     jest-diff "^25.2.1"
     pretty-format "^25.2.1"
 
-"@types/jest@^26.0.16":
-  version "26.0.22"
-  resolved "https://npm.preview.tezostaquito.io/@types%2fjest/-/jest-26.0.22.tgz#8308a1debdf1b807aa47be2838acdcd91e88fbe6"
-  integrity sha512-eeWwWjlqxvBxc4oQdkueW5OF/gtfSceKk4OnOAGlUSwS/liBRtZppbJuz1YkgbrbfGOoeBHun9fOvXnjNwrSOw==
-  dependencies:
-    jest-diff "^26.0.0"
-    pretty-format "^26.0.0"
-
 "@types/jest@^26.0.21":
   version "26.0.21"
   resolved "https://registry.yarnpkg.com/@types/jest/-/jest-26.0.21.tgz#3a73c2731e7e4f0fbaea56ce7ff8c79cf812bd24"
@@ -1696,11 +1600,6 @@
   version "7.0.7"
   resolved "https://registry.yarnpkg.com/@types/json-schema/-/json-schema-7.0.7.tgz#98a993516c859eb0d5c4c8f098317a9ea68db9ad"
   integrity sha512-cxWFQVseBm6O9Gbw1IWb8r6OS4OhSt3hPZLkFApLjM8TEXROBuQGLAH2i2gZpcXdLBIrpXuTDhH7Vbm1iXmNGA==
-
-"@types/libsodium-wrappers@0.7.7":
-  version "0.7.7"
-  resolved "https://npm.preview.tezostaquito.io/@types%2flibsodium-wrappers/-/libsodium-wrappers-0.7.7.tgz#cdb25e85458612ec80f0157c3815fac187d0b6d2"
-  integrity sha512-Li91pVKcLvQJK3ZolwCPo85oxf2gKBCApgnesRxYg4OVYchLXcJB2eivX8S87vfQVv6ZRnyCO1lLDosZGJfpRg==
 
 "@types/minimatch@^3.0.3":
   version "3.0.3"
@@ -2127,13 +2026,6 @@ aws4@^1.8.0:
   resolved "https://registry.yarnpkg.com/aws4/-/aws4-1.11.0.tgz#d61f46d83b2519250e2784daf5b09479a8b41c59"
   integrity sha512-xh1Rl34h6Fi1DC2WWKfxUTVqRsNnr6LsKz2+hfwDxQJWmrx8+c7ylaqBMcHfl1U1r2dsifOvKX3LQuLNZ+XSvA==
 
-axios@0.21.1:
-  version "0.21.1"
-  resolved "https://npm.preview.tezostaquito.io/axios/-/axios-0.21.1.tgz#22563481962f4d6bde9a76d516ef0e5d3c09b2b8"
-  integrity sha512-dKQiRHxGD9PPRIUNIWvZhPTPpl1rf/OxTYKsqKUDjBwYylTvV7SjSHJb9ratfyzM6wCdLCOYLzs73qpg5c4iGA==
-  dependencies:
-    follow-redirects "^1.10.0"
-
 babel-jest@^26.6.3:
   version "26.6.3"
   resolved "https://registry.yarnpkg.com/babel-jest/-/babel-jest-26.6.3.tgz#d87d25cb0037577a0c89f82e5755c5d293c01056"
@@ -2237,11 +2129,6 @@ before-after-hook@^2.2.0:
   resolved "https://registry.yarnpkg.com/before-after-hook/-/before-after-hook-2.2.0.tgz#09c40d92e936c64777aa385c4e9b904f8147eaf0"
   integrity sha512-jH6rKQIfroBbhEXVmI7XmXe3ix5S/PgJqpzdDPnR8JGLHWNYLsYZ6tK5iWOF/Ra3oqEX0NobXGlzbiylIzVphQ==
 
-bignumber.js@9.0.0:
-  version "9.0.0"
-  resolved "https://npm.preview.tezostaquito.io/bignumber.js/-/bignumber.js-9.0.0.tgz#805880f84a329b5eac6e7cb6f8274b6d82bdf075"
-  integrity sha512-t/OYhhJ2SD+YGBQcjY8GzzDHEk9f3nerxjtfa6tlMXfe7frs/WozhvCNoGvpM0P3bNf3Gq5ZRMlGr5f3r4/N8A==
-
 bignumber.js@^9.0.1:
   version "9.0.1"
   resolved "https://registry.yarnpkg.com/bignumber.js/-/bignumber.js-9.0.1.tgz#8d7ba124c882bfd8e43260c67475518d0689e4e5"
@@ -2333,7 +2220,7 @@ bs58@^4.0.0:
   dependencies:
     base-x "^3.0.2"
 
-bs58check@2.1.2, bs58check@^2.1.2:
+bs58check@^2.1.2:
   version "2.1.2"
   resolved "https://registry.yarnpkg.com/bs58check/-/bs58check-2.1.2.tgz#53b018291228d82a5aa08e7d796fdafda54aebfc"
   integrity sha512-0TS1jicxdU09dwJMNZtVAfzPi6Q6QeN0pM1Fkzrjn+XYHvzMKPU3pHVpva+769iNVSfIYWf7LJ6WR+BuuMf8cA==
@@ -3668,11 +3555,6 @@ flatted@^3.1.0:
   version "3.1.1"
   resolved "https://registry.yarnpkg.com/flatted/-/flatted-3.1.1.tgz#c4b489e80096d9df1dfc97c79871aea7c617c469"
   integrity sha512-zAoAQiudy+r5SvnSw3KJy5os/oRJYHzrzja/tBDqrZtNhUw8bt6y8OBzMWcjWr+8liV8Eb6yOhw8WZ7VFZ5ZzA==
-
-follow-redirects@^1.10.0:
-  version "1.13.3"
-  resolved "https://npm.preview.tezostaquito.io/follow-redirects/-/follow-redirects-1.13.3.tgz#e5598ad50174c1bc4e872301e82ac2cd97f90267"
-  integrity sha512-DUgl6+HDzB0iEptNQEXLx/KhTmDb8tZUHSeLqpnjpknR70H0nC2t9N73BK6fN4hOvJ84pKlIQVQ4k5FFlBedKA==
 
 for-in@^1.0.2:
   version "1.0.2"
@@ -5239,24 +5121,12 @@ libnpmpublish@^4.0.0:
     semver "^7.1.3"
     ssri "^8.0.0"
 
-libsodium-wrappers@0.7.8:
-  version "0.7.8"
-  resolved "https://npm.preview.tezostaquito.io/libsodium-wrappers/-/libsodium-wrappers-0.7.8.tgz#d95cdf3e7236c2aef76844bf8e1929ba9eef3e9e"
-  integrity sha512-PDhPWXBqd/SaqAFUBgH2Ux7b3VEEJgyD6BQB+VdNFJb9PbExGr/T/myc/MBoSvl8qLzfm0W0IVByOQS5L1MrCg==
-  dependencies:
-    libsodium "0.7.8"
-
 libsodium-wrappers@^0.7.8:
   version "0.7.9"
   resolved "https://registry.yarnpkg.com/libsodium-wrappers/-/libsodium-wrappers-0.7.9.tgz#4ffc2b69b8f7c7c7c5594a93a4803f80f6d0f346"
   integrity sha512-9HaAeBGk1nKTRFRHkt7nzxqCvnkWTjn1pdjKgcUnZxj0FyOP4CnhgFhMdrFfgNsukijBGyBLpP2m2uKT1vuWhQ==
   dependencies:
     libsodium "^0.7.0"
-
-libsodium@0.7.8:
-  version "0.7.8"
-  resolved "https://npm.preview.tezostaquito.io/libsodium/-/libsodium-0.7.8.tgz#fbd12247b7b1353f88d8de1cbc66bc1a07b2e008"
-  integrity sha512-/Qc+APf0jbeWSaeEruH0L1/tbbT+sbf884ZL0/zV/0JXaDPBzYkKbyb/wmxMHgAHzm3t6gqe7bOOXAVwfqVikQ==
 
 libsodium@^0.7.0:
   version "0.7.9"
@@ -6514,11 +6384,6 @@ q@^1.5.1:
   version "1.5.1"
   resolved "https://registry.yarnpkg.com/q/-/q-1.5.1.tgz#7e32f75b41381291d04611f1bf14109ac00651d7"
   integrity sha1-fjL3W0E4EpHQRhHxvxQQmsAGUdc=
-
-qrcode-generator@1.4.4:
-  version "1.4.4"
-  resolved "https://npm.preview.tezostaquito.io/qrcode-generator/-/qrcode-generator-1.4.4.tgz#63f771224854759329a99048806a53ed278740e7"
-  integrity sha512-HM7yY8O2ilqhmULxGMpcHSF1EhJJ9yBj8gvDEuZ6M+KGJ0YY2hKpnXvRD+hZPLrDVck3ExIGhmPtSdcjC+guuw==
 
 qs@^6.9.4:
   version "6.10.1"
