@@ -1446,8 +1446,8 @@
   resolved "https://npm.preview.tezostaquito.io/@taquito%2fcontract-type-generator/-/contract-type-generator-8.1.0-23e7eb54--722.tgz#979753aca8524a425c4ffb8c9d4beb91798abbcb"
   integrity sha512-c7zeXZao3rFjuWOJwH2ZI+JzMU7rBMTedGIVNYq/aA3X+I/F10ljWjFuKRbRahmcf0THOCq7Z5RjABv07NRe2g==
   dependencies:
-    "@taquito/michel-codec" "^8.1.0-e06c8330--722"
-    "@taquito/taquito" "^8.1.0-e06c8330--722"
+    "@taquito/michel-codec" "^8.1.0-23e7eb54--722"
+    "@taquito/taquito" "^8.1.0-23e7eb54--722"
     bignumber.js "^9.0.1"
 
 "@taquito/http-utils@8.1.0-23e7eb54--722", "@taquito/http-utils@^8.1.0-23e7eb54--722":
@@ -1477,7 +1477,7 @@
     "@taquito/utils" "^8.1.0-23e7eb54--722"
     bignumber.js "^9.0.1"
 
-"@taquito/michel-codec@8.1.0-23e7eb54--722", "@taquito/michel-codec@^8.1.0-23e7eb54--722":
+"@taquito/michel-codec@8.1.0-23e7eb54--722", "@taquito/michel-codec@^8.1.0-23e7eb54--722", "@taquito/michel-codec@^8.1.0-e06c8330--722":
   version "8.1.0-23e7eb54--722"
   resolved "https://npm.preview.tezostaquito.io/@taquito%2fmichel-codec/-/michel-codec-8.1.0-23e7eb54--722.tgz#308fff4763767c5004d32607b1359506b153a425"
   integrity sha512-bZMvW5tNcmduPUAYLqnwlOqmquPdoIjEoiCx3yGnlWhNao9HAJa57R7ZFSaMtCIm4BTWbaQH1c6MWPGsKqXJaw==
@@ -1528,7 +1528,7 @@
     pbkdf2 "^3.1.1"
     typedarray-to-buffer "^3.1.5"
 
-"@taquito/taquito@8.1.0-23e7eb54--722", "@taquito/taquito@^8.1.0-23e7eb54--722":
+"@taquito/taquito@8.1.0-23e7eb54--722", "@taquito/taquito@^8.1.0-23e7eb54--722", "@taquito/taquito@^8.1.0-e06c8330--722":
   version "8.1.0-23e7eb54--722"
   resolved "https://npm.preview.tezostaquito.io/@taquito%2ftaquito/-/taquito-8.1.0-23e7eb54--722.tgz#0334c7707d32796e48bf9cf6d9a4518f64e6d126"
   integrity sha512-0Bb774rbH2Yh/07fQm9HXiySKb290urqApxVN6avPjMFVgOD0VFOyaYT3yS8xjhBh+p8wAa+6opBPsq0+0dKuw==
