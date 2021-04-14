@@ -20,7 +20,7 @@ describe('test NFT auction', () => {
   let nftAuction: Contract;
   let nftAuctionAlice : Contract;
   let nftContract : Contract;
-  let bobAddress : address;
+  let aliceAddress : address;
   let startTime : Date;
   let endTime : Date;
   let empty_metadata_map: MichelsonMap<string, bytes>;
@@ -31,19 +31,17 @@ describe('test NFT auction', () => {
 
   beforeAll(async () => {
     tezos = await bootstrap();
-    nftContract = await originateNftFaucet(tezos.bob);
+    nftContract = await originateNftFaucet(tezos.alice);
   });
 
   beforeEach(async() => {
-    $log.info('originating nft auction...');
-    nftAuction = await originateEnglishAuctionTezAdmin(tezos.bob);
-    await tezos.bob.contract.at(nftAuction.address);
+    $log.info('originating nft auction with eve as admin...');
+    nftAuction = await originateEnglishAuctionTezAdmin(tezos.eve);
     nftAuctionAlice = await tezos.alice.contract.at(nftAuction.address);
 
     $log.info('minting token');
 
-    bobAddress = await tezos.bob.signer.publicKeyHash();
-    await tezos.alice.signer.publicKeyHash();
+    aliceAddress = await tezos.alice.signer.publicKeyHash();
     empty_metadata_map = new MichelsonMap();
 
     tokenId = new BigNumber(0);
@@ -53,14 +51,14 @@ describe('test NFT auction', () => {
         token_id: tokenId,
         token_info: empty_metadata_map,
       },
-      owner: bobAddress,
+      owner: aliceAddress,
     };
     const opMint = await nftContract.methods.mint([mintToken]).send();
     await opMint.confirmation();
     $log.info(`Minted tokens. Consumed gas: ${opMint.consumedGas}`);
 
     $log.info('adding auction contract as operator');
-    await addOperator(nftContract.address, tezos.bob, nftAuction.address, tokenId);
+    await addOperator(nftContract.address, tezos.alice, nftAuction.address, tokenId);
     $log.info('Auction contract added as operator');
 
     fa2_token = {
