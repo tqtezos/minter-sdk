@@ -43,7 +43,7 @@ export type TestTzMarket = {
 };
 
 function signerToToolkit(signer: Signer, rpc: string): TezosToolkit {
-  const tezos = new TezosToolkit(rpc);
+  const tezos = new TezosToolkit(rpc) as TezosToolkit;
   tezos.setProvider({
     signer,
     rpc,

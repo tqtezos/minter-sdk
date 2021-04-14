@@ -90,8 +90,8 @@ describe('test NFT auction', () => {
 
     $log.info('originating nft auction with payment in FA2...');
     nftAuction = await originateEnglishAuctionFA2(tezos.bob, ftContract.address, tokenIdBidToken);
-    nftAuctionBob = await tezos.bob.contract.at(nftAuction.address);
-    nftAuctionAlice = await tezos.alice.contract.at(nftAuction.address);
+    nftAuctionBob = await tezos.bob.contract.at(nftAuction.address) as unknown as typeof nftAuction;
+    nftAuctionAlice = await tezos.alice.contract.at(nftAuction.address) as unknown as typeof nftAuction;
 
 
     $log.info('adding auction contract as operator for nft');

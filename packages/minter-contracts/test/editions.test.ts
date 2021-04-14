@@ -1,6 +1,8 @@
 import { $log } from '@tsed/logger';
 import { BigNumber } from 'bignumber.js';
 import {
+  Context,
+  Extension,
   MichelsonMap,
 } from '@taquito/taquito';
 

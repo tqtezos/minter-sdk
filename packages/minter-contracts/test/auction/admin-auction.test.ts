@@ -39,7 +39,7 @@ describe('test NFT auction', () => {
     $log.info('originating nft auction...');
     nftAuction = await originateEnglishAuctionTezAdmin(tezos.bob);
     await tezos.bob.contract.at(nftAuction.address);
-    nftAuctionAlice = await tezos.alice.contract.at(nftAuction.address);
+    nftAuctionAlice = await tezos.alice.contract.at(nftAuction.address) as unknown as typeof nftAuction;
 
     $log.info('minting token');
 

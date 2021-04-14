@@ -123,15 +123,15 @@ export async function originateContract<TContract extends { methods: unknown; st
   code: string,
   storage: string | Record<string, any>,
   name: string,
-): Promise<ContractAbstraction<ContractProvider<TContract>, TContract>> {
+): Promise<Contract<TContract>> {
   try {
-    const tzTyped = tz as TezosToolkit<TContract>;
+    const tzTyped = tz;
     const originationOp = await tzTyped.contract.originate({
       code: code,
       init: storage,
     });
 
-    const contract = await originationOp.contract();
+    const contract = await originationOp.contract() as unknown as Contract<TContract>;
     $log.info(`originated contract ${name} with address ${contract.address}`);
     $log.info(`consumed gas: ${originationOp.consumedGas}`);
     let storageString: string;

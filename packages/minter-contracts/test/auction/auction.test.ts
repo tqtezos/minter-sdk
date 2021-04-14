@@ -47,8 +47,8 @@ describe('test NFT auction', () => {
   beforeEach(async() => {
     $log.info('originating nft auction...');
     nftAuction = await originateEnglishAuctionTez(tezos.bob);
-    nftAuctionBob = await tezos.bob.contract.at(nftAuction.address);
-    nftAuctionAlice = await tezos.alice.contract.at(nftAuction.address);
+    nftAuctionBob = await tezos.bob.contract.at(nftAuction.address) as unknown as typeof nftAuction;
+    nftAuctionAlice = await tezos.alice.contract.at(nftAuction.address) as unknown as typeof nftAuction;
 
     $log.info('originating nft faucets...');
     nftContract = await originateNftFaucet(tezos.bob);

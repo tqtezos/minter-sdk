@@ -127,7 +127,7 @@ export async function originateNftFaucet(
       },
     });
 
-    const contract = await originationOp.contract() as Contract<Fa2MultiNftFaucetContractType>;
+    const contract = await originationOp.contract() as unknown as Contract<Fa2MultiNftFaucetContractType>;
     $log.info(`originated contract ${name} with address ${contract.address}`);
     $log.info(`consumed gas: ${originationOp.consumedGas}`);
     return Promise.resolve(contract);
