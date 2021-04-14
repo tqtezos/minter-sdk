@@ -4,7 +4,7 @@ import { TezosToolkit } from '@taquito/taquito';
 import { char2Bytes } from '@taquito/tzip16';
 import { TokenMetadata } from './fa2-interface';
 import { BigNumber } from 'bignumber.js';
-import  { default as EditionsMetadata } from '../bin-ts/editions_token_metadata_view.tz';
+import  { EditionsTokenMetadataViewCode } from '../bin-ts/editions_token_metadata_view.code';
 
 export interface MintNftParam {
     token_metadata: TokenMetadata;
@@ -242,7 +242,7 @@ export async function originateEditionsNftContract(
                  { prim :"map", args :[{ prim:"string" }, { prim:"bytes" }], annots:["%token_info"] },
                ],
              },
-             code : EditionsMetadata.code,
+             code : EditionsTokenMetadataViewCode.code,
            },
         },
       ],
