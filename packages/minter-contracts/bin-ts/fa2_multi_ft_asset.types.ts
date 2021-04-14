@@ -30,45 +30,45 @@ type Methods = {
     confirm_admin: () => Promise<void>;
     pause: (param: boolean) => Promise<void>;
     set_admin: (param: address) => Promise<void>;
-    balance_of: (params: {
+    balance_of: (
         requests: Array<{
             owner: address;
             token_id: nat;
-        }>;
-        callback: contract;
-    }) => Promise<void>;
-    transfer: (params: {
-        from_: address;
-        txs: Array<{
-            to_: address;
+        }>,
+        callback: contract,
+    ) => Promise<void>;
+    transfer: (param: Array<{
+            from_: address;
+            txs: Array<{
+                to_: address;
+                token_id: nat;
+                amount: nat;
+            }>;
+        }>) => Promise<void>;
+    add_operator: (
+        owner: address,
+        operator: address,
+        token_id: nat,
+    ) => Promise<void>;
+    remove_operator: (
+        owner: address,
+        operator: address,
+        token_id: nat,
+    ) => Promise<void>;
+    burn_tokens: (param: Array<{
+            owner: address;
             token_id: nat;
             amount: nat;
-        }>;
-    }) => Promise<void>;
-    add_operator: (params: {
-        owner: address;
-        operator: address;
-        token_id: nat;
-    }) => Promise<void>;
-    remove_operator: (params: {
-        owner: address;
-        operator: address;
-        token_id: nat;
-    }) => Promise<void>;
-    burn_tokens: (params: {
-        owner: address;
-        token_id: nat;
-        amount: nat;
-    }) => Promise<void>;
-    create_token: (params: {
-        token_id: nat;
-        token_info: MMap<string, bytes>;
-    }) => Promise<void>;
-    mint_tokens: (params: {
-        owner: address;
-        token_id: nat;
-        amount: nat;
-    }) => Promise<void>;
+        }>) => Promise<void>;
+    create_token: (
+        token_id: nat,
+        token_info: MMap<string, bytes>,
+    ) => Promise<void>;
+    mint_tokens: (param: Array<{
+            owner: address;
+            token_id: nat;
+            amount: nat;
+        }>) => Promise<void>;
 };
 
-export type Fa2MultiFtAssetContractType = { methods: Methods, storage: Storage, code: { __type: 'Fa2MultiFtAssetCode', protocol: string, code: unknown } };
+export type Fa2MultiFtAssetContractType = { methods: Methods, storage: Storage, code: { __type: 'Fa2MultiFtAssetCode', protocol: string, code: object[] } };

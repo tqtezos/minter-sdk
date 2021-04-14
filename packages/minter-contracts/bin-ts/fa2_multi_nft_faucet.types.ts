@@ -19,38 +19,38 @@ type Storage = {
 };
 
 type Methods = {
-    balance_of: (params: {
+    balance_of: (
         requests: Array<{
             owner: address;
             token_id: nat;
-        }>;
-        callback: contract;
-    }) => Promise<void>;
-    transfer: (params: {
-        from_: address;
-        txs: Array<{
-            to_: address;
-            token_id: nat;
-            amount: nat;
-        }>;
-    }) => Promise<void>;
-    add_operator: (params: {
-        owner: address;
-        operator: address;
-        token_id: nat;
-    }) => Promise<void>;
-    remove_operator: (params: {
-        owner: address;
-        operator: address;
-        token_id: nat;
-    }) => Promise<void>;
-    mint: (params: {
-        token_metadata: {
-            token_id: nat;
-            token_info: MMap<string, bytes>;
-        };
-        owner: address;
-    }) => Promise<void>;
+        }>,
+        callback: contract,
+    ) => Promise<void>;
+    transfer: (param: Array<{
+            from_: address;
+            txs: Array<{
+                to_: address;
+                token_id: nat;
+                amount: nat;
+            }>;
+        }>) => Promise<void>;
+    add_operator: (
+        owner: address,
+        operator: address,
+        token_id: nat,
+    ) => Promise<void>;
+    remove_operator: (
+        owner: address,
+        operator: address,
+        token_id: nat,
+    ) => Promise<void>;
+    mint: (param: Array<{
+            token_metadata: {
+                token_id: nat;
+                token_info: MMap<string, bytes>;
+            };
+            owner: address;
+        }>) => Promise<void>;
 };
 
-export type Fa2MultiNftFaucetContractType = { methods: Methods, storage: Storage, code: { __type: 'Fa2MultiNftFaucetCode', protocol: string, code: unknown } };
+export type Fa2MultiNftFaucetContractType = { methods: Methods, storage: Storage, code: { __type: 'Fa2MultiNftFaucetCode', protocol: string, code: object[] } };

@@ -41,28 +41,28 @@ type Methods = {
     bid: (param: nat) => Promise<void>;
     cancel: (param: nat) => Promise<void>;
     resolve: (param: nat) => Promise<void>;
-    permit_configure: (params: {
-        config: {
-            opening_price: mutez;
-            min_raise_percent: nat;
-            min_raise: mutez;
-            round_time: nat;
-            extend_time: nat;
-            asset: Array<{
-                fa2_address: address;
-                fa2_batch: Array<{
-                    token_id: nat;
-                    amount: nat;
+    permit_configure: (param: Array<{
+            config: {
+                opening_price: mutez;
+                min_raise_percent: nat;
+                min_raise: mutez;
+                round_time: nat;
+                extend_time: nat;
+                asset: Array<{
+                    fa2_address: address;
+                    fa2_batch: Array<{
+                        token_id: nat;
+                        amount: nat;
+                    }>;
                 }>;
-            }>;
-            start_time: timestamp;
-            end_time: timestamp;
-        };
-        optional_permit?: {
-            signerKey: key;
-            signature: signature;
-        };
-    }) => Promise<void>;
+                start_time: timestamp;
+                end_time: timestamp;
+            };
+            optional_permit?: {
+                signerKey: key;
+                signature: signature;
+            };
+        }>) => Promise<void>;
 };
 
-export type EnglishAuctionTezPermitContractType = { methods: Methods, storage: Storage, code: { __type: 'EnglishAuctionTezPermitCode', protocol: string, code: unknown } };
+export type EnglishAuctionTezPermitContractType = { methods: Methods, storage: Storage, code: { __type: 'EnglishAuctionTezPermitCode', protocol: string, code: object[] } };

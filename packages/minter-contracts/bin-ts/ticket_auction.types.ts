@@ -1,5 +1,5 @@
 
-import { address, BigMap, int, nat, ticket, timestamp } from './type-aliases';
+import { address, BigMap, contract, int, nat, ticket, timestamp } from './type-aliases';
 
 type Storage = {
     data: {
@@ -14,17 +14,17 @@ type Storage = {
 };
 
 type Methods = {
-    buy: (param: ticket) => Promise<void>;
-    cancel: (param: ticket) => Promise<void>;
-    configure: (params: {
-        opening_price: nat;
-        set_reserve_price: nat;
-        set_start_time: timestamp;
-        set_round_time: int;
-        ticket: ticket;
-    }) => Promise<void>;
+    buy: (param: contract) => Promise<void>;
+    cancel: (param: contract) => Promise<void>;
+    configure: (
+        opening_price: nat,
+        set_reserve_price: nat,
+        set_start_time: timestamp,
+        set_round_time: int,
+        ticket: ticket,
+    ) => Promise<void>;
     drop_price: (param: nat) => Promise<void>;
     start: () => Promise<void>;
 };
 
-export type TicketAuctionContractType = { methods: Methods, storage: Storage, code: { __type: 'TicketAuctionCode', protocol: string, code: unknown } };
+export type TicketAuctionContractType = { methods: Methods, storage: Storage, code: { __type: 'TicketAuctionCode', protocol: string, code: object[] } };
