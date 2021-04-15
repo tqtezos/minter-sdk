@@ -12,6 +12,8 @@ This propsal allows editions creators to easily mint an "unlimited" (limited onl
 ## Storage
 
 - FA2 w/ single-admin + TZIP-16 storage
+  + [Michelson](../../../../bin/fa2_multi_nft_asset.tz)
+  + [Ligo](../nft/fa2_multi_nft_asset_simple_admin.mligo)
 
 - Editions-specific storage
   + `current_token_id : nat`
@@ -45,7 +47,7 @@ editions_metadata :=
   + For each entry in the list, an entry is created in `editions_metadata`for key `current_edition_id`
     with:
     * `number_of_editions = number_of_editions_to_distribute = number_of_editions'`
-    * `initial_token_id = current_token_id`
+    * `initial_token_id = next_token_id`
     * `current_token_id += number_of_editions`
     * `creator = SENDER` (admin)
     * `edition_info = edition_info'`
@@ -60,9 +62,8 @@ editions_metadata :=
   + A creator can distribute editions for multiple edition runs that they created, in a single call to `distribute_editions`. 
 
   For each "distribution":
-    * When an edition is distributed, a single `initial_token_id + (number_of_editions - number_of_editions_to_distribute)` token is minted to `address`
-    * `number_of_editions_to_distribute` is decremented and we fail if `number_of_editions_to_distribute < 0` after an edition is distributed. 
-    * `current_token_id` is incremented by `1`
+    * `mint_edition` allocates the next available range of `token_id`s with `number_of_editions` elements, and `distribute_edition` uses them sequentially.
+    * We fail if more editions are distributed than were initially allocated by `mint_editions`
 
 ## Errors
 
