@@ -752,21 +752,13 @@
                  PAIR ;
                  SWAP ;
                  PAIR } }
-           { DIG 4 ;
+           { DIG 2 ;
              DROP ;
-             DIG 4 ;
+             DIG 3 ;
              DROP ;
-             DIG 4 ;
+             DIG 3 ;
              DROP ;
-             SWAP ;
-             DUP ;
-             DUG 2 ;
-             CDR ;
-             CAR ;
-             CAR ;
-             DIG 4 ;
-             SWAP ;
-             EXEC ;
+             DIG 3 ;
              DROP ;
              SWAP ;
              DUP ;

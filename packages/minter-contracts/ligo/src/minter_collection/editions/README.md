@@ -57,7 +57,7 @@ editions_metadata :=
 - `distribute_editions : list (edition_id, receivers : nat * (address list))`
     For each `Edition run` corresponding to a given `edition_id`, `editions` are distributed to the addresses in `receivers`. Each distribution mints a new token to some `token_id` in the `token_id`s reserved for that edition when `mint_edition` was called.  
 
-  + Only a creator of some edition run can distribute or mint to `token_id`s belonging to their `edition run` and the contract must NOT be paused.
+  + Only a creator of some edition run can distribute or mint to `token_id`s belonging to their `edition run`.
   + A creator cannot distribute more than the `number_of_editions` set in the creation of the edition run.
   + A creator can distribute editions for multiple edition runs that they created, in a single call to `distribute_editions`. 
 
@@ -65,8 +65,9 @@ editions_metadata :=
     * `mint_edition` allocates the next available range of `token_id`s with `number_of_editions` elements, and `distribute_edition` uses them sequentially.
     * We fail if more editions are distributed than were initially allocated by `mint_editions`
 
-## Errors
-
+## Errors 
+- If a non-admin attempts to call `Mint`, `Mint_editions`, `Set_admin`, or `Pause` fail with `NOT_AN_ADMIN`.
+- If the contract is paused and a user attempts to call any FA2 entrypoint or `Distribute_editions`,failwith `PAUSED`. 
 - If a user attempts to distribute more editions than were created, the call fails with error `NO_EDITIONS_TO_DISTRIBUTE`. 
 - If a user attempts to distribute from an edition run that has not been created, the call fails with error `INVALID_EDITION_ID`.
 - If a user attempts to distribute from an edition run for which they are not the `creator` the call fails with error `INVALID_DISTRIBUTOR`.
