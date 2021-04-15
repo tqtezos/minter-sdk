@@ -40,5 +40,6 @@ module.exports = {
     "indent": [2, 2],
     "no-tabs": "error",
     "comma-spacing": "error",
+    "dot-notation": "error",
   },
 };

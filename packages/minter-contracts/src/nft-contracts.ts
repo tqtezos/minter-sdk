@@ -4,7 +4,7 @@ import { TezosToolkit } from '@taquito/taquito';
 import { char2Bytes } from '@taquito/tzip16';
 import { TokenMetadata } from './fa2-interface';
 import { BigNumber } from 'bignumber.js';
-import  { default as EditionsMetadata } from '../bin-ts/editions_token_metadata_view.tz';
+import  { EditionsTokenMetadataViewCode } from '../bin-ts/editions_token_metadata_view.code';
 
 export interface MintNftParam {
     token_metadata: TokenMetadata;
@@ -155,6 +155,34 @@ export async function originateFixedPriceTezAdminSale(
   return originateContract(tz, code, storage, 'fixed-price-sale-market-tez-with-admin');
 }
 
+export async function originateFixedPriceAllowlistedSale(
+  tz: TezosToolkit,
+  adminAddress: address,
+): Promise<Contract> {
+  const code = await compileAndLoadContract(
+    defaultEnv,
+    'fixed_price_sale/fixed_price_sale_market_allowlisted.mligo',
+    'fixed_price_sale_allowlisted_main',
+    'fixed_price_sale_market_allowlisted.tz',
+  );
+  const storage = `(Pair {} (Pair (Some (Pair (Pair "${adminAddress}" False) None)) {}))`;
+  return originateContract(tz, code, storage, 'fixed-price-sale-market-allowlisted');
+}
+
+export async function originateFixedPriceTezAllowlistedSale(
+  tz: TezosToolkit,
+  adminAddress: address,
+): Promise<Contract> {
+  const code = await compileAndLoadContract(
+    defaultEnv,
+    'fixed_price_sale/fixed_price_sale_market_tez_allowlisted.mligo',
+    'fixed_price_sale_tez_allowlisted_main',
+    'fixed_price_sale_market_tez_allowlisted.tz',
+  );
+  const storage = `(Pair {} (Pair (Some (Pair (Pair "${adminAddress}" False) None)) {}))`;
+  return originateContract(tz, code, storage, 'fixed-price-sale-market-tez-allowlisted');
+}
+
 export async function originateEnglishAuctionTez(
   tz: TezosToolkit,
 ): Promise<Contract> {
@@ -214,7 +242,7 @@ export async function originateEditionsNftContract(
                  { prim :"map", args :[{ prim:"string" }, { prim:"bytes" }], annots:["%token_info"] },
                ],
              },
-             code : EditionsMetadata.code,
+             code : EditionsTokenMetadataViewCode.code,
            },
         },
       ],

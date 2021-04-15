@@ -78,6 +78,7 @@ _definitions:
         - -Wno-prepositive-qualified-module
         - -Wno-missing-safe-haskell-mode
         - -Wno-unused-packages
+        - -Wno-missing-export-lists
 
   _utils:
     # Additional options, they will be merged with the ones above when both

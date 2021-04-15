@@ -20,7 +20,7 @@ async function flextesaKeys(): Promise<TestKeys> {
   );
   const eve = await InMemorySigner.fromSecretKey(
     'edsk3Sb16jcx9KrgMDsbZDmKnuN11v4AbTtPBgBSBTqYftd8Cq3i1e',
-  ); 
+  );
   return { bob, alice, eve };
 }
 

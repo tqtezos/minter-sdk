@@ -1,7 +1,5 @@
 -- | Tests on the swaps contract.
-module Test.Swaps.Basic
-  ( test_Swap
-  ) where
+module Test.Swaps.Basic where
 
 import Prelude hiding (swap)
 
@@ -11,7 +9,7 @@ import Morley.Nettest
 import Morley.Nettest.Tasty (nettestScenarioCaps)
 import Tezos.Address (unsafeParseAddress)
 
-import Lorentz.Contracts.Swaps
+import Lorentz.Contracts.Swaps.Basic
 import Lorentz.Test.Consumer
 import Lorentz.Value
 import Test.Swaps.Util
@@ -30,11 +28,11 @@ test_Swap = testGroup "Basic swap functionality"
 simpleHappyPaths :: TestTree
 simpleHappyPaths = testGroup "Simple happy paths"
   [ nettestScenarioCaps "Simple accepted swap" $ do
-      setup <- doSetup
+      setup <- doFA2Setup
       let alice ::< bob ::< SNil = sAddresses setup
       let tokenId1 ::< tokenId2 ::< SNil = sTokens setup
       swap <- originateSwap
-      fa2 <- originateFA2 "fa2" setup swap
+      fa2 <- originateFA2 "fa2" setup [swap]
 
       assertingBalanceDeltas fa2
         [ (alice, tokenId1) -: -10
@@ -51,11 +49,11 @@ simpleHappyPaths = testGroup "Simple happy paths"
             call swap (Call @"Accept") (SwapId 0)
 
   , nettestScenarioCaps "Simple cancelled swap" $ do
-      setup <- doSetup
+      setup <- doFA2Setup
       let alice ::< SNil = sAddresses setup
       let tokenId1 ::< tokenId2 ::< SNil = sTokens setup
       swap <- originateSwap
-      fa2 <- originateFA2 "fa2" setup swap
+      fa2 <- originateFA2 "fa2" setup [swap]
 
       assertingBalanceDeltas fa2
         [ (alice, tokenId1) -: 0
@@ -100,11 +98,11 @@ statusChecks = testGroup "Statuses"
 swapIdChecks :: TestTree
 swapIdChecks = testGroup "SwapIds"
   [ nettestScenarioCaps "Swap ids are properly assigned and can be worked with" $ do
-      setup <- doSetup
+      setup <- doFA2Setup
       let alice ::< bob ::< SNil = sAddresses setup
       let tokenId1 ::< tokenId2 ::< tokenId3 ::< SNil = sTokens setup
       swap <- originateSwap
-      fa2 <- originateFA2 "fa2" setup swap
+      fa2 <- originateFA2 "fa2" setup [swap]
 
       withSender (AddressResolved alice) $
         for_ [tokenId1, tokenId2, tokenId3] $ \tokenId ->
@@ -143,7 +141,7 @@ swapIdChecks = testGroup "SwapIds"
 authorizationChecks :: TestTree
 authorizationChecks = testGroup "Authorization checks"
   [ nettestScenarioCaps "Swap can be cancelled by seller only" $ do
-      setup <- doSetup
+      setup <- doFA2Setup
       let alice ::< bob ::< SNil = sAddresses setup
       let !SNil = sTokens setup
       swap <- originateSwap
@@ -162,7 +160,7 @@ authorizationChecks = testGroup "Authorization checks"
 invalidFA2sChecks :: TestTree
 invalidFA2sChecks = testGroup "Invalid FA2s"
   [ nettestScenarioCaps "Swap can be cancelled by seller only" $ do
-      setup <- doSetup
+      setup <- doFA2Setup
       let alice ::< SNil = sAddresses setup
       let tokenId1 ::< SNil = sTokens setup
 
@@ -198,12 +196,12 @@ invalidFA2sChecks = testGroup "Invalid FA2s"
 complexCases :: TestTree
 complexCases = testGroup "Complex cases"
   [ nettestScenarioCaps "Multiple FA2s" $ do
-      setup <- doSetup
+      setup <- doFA2Setup
       let alice ::< bob ::< SNil = sAddresses setup
       let tokenId1 ::< tokenId2 ::< tokenId3 ::< SNil = sTokens setup
       swap <- originateSwap
-      fa2_1 <- originateFA2 "fa2-1" setup swap
-      fa2_2 <- originateFA2 "fa2-2" setup swap
+      fa2_1 <- originateFA2 "fa2-1" setup [swap]
+      fa2_2 <- originateFA2 "fa2-2" setup [swap]
 
       assertingBalanceDeltas fa2_1
         [ (alice, tokenId1) -: -100

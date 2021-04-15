@@ -24,7 +24,7 @@
     "bootstrap-testnet": "env TZ_NETWORK=testnet ts-node src/bootstrap-contracts-config.ts",
     "bootstrap-mainnet": "env TZ_NETWORK=mainnet ts-node src/bootstrap-contracts-config.ts",
     "compile-ligo": "ts-node src/compile-ligo.ts",
-    "michelson-to-ts": "ts-node src/michelson-to-ts.ts"
+    "generate-types": "rimraf ./bin-ts && contract-type-generator --types file --g ./bin ./bin-ts && ts-node src/generate-index.ts"
   },
   "bin": {
     "compile-ligo": "ts-node src/compile-ligo.ts",
@@ -36,6 +36,7 @@
   "author": "TQ Tezos Maintainers <info@tqtezos.com>",
   "license": "MIT",
   "devDependencies": {
+    "@taquito/contract-type-generator": "8.1.0-e06c8330--722",
     "@taquito/rpc": "8.1.0",
     "@taquito/signer": "8.1.0",
     "@taquito/taquito": "8.1.0",
@@ -58,7 +59,7 @@
     "source-map-support": "0.5.19",
     "ts-jest": "26.1.3",
     "ts-node": "9.0.0",
-    "typescript": "3.9.7",
+    "typescript": "4.1.5",
     "yargs": "^16.2.0"
   },
   "bugs": {
