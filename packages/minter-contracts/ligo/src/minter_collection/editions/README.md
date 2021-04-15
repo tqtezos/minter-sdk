@@ -81,3 +81,12 @@ editions_metadata :=
 
 ## Extending this contract
 + Note, it is not possible when using this contract as a module to implement a custom transfer permission policy using [Transfer hooks](../../../fa2/fa2_hook.mligo). As such, it is necessary for `OWNER_HOOKS` to be undefined in order to compile this contract as well as any contract that extends it. 
+
+## Performance 
+Although the contract has not been heavily testsed, brief benchmarking suggests that it is possible to mint upwards of 10 trillion copies of some edition set (as we are only limited by constraints on the `nat` type in Michelson) and then distribute ~394 copies of some edition in a single call to `distribute_edition`. 
+
+See https://better-call.dev/edo2net/KT1WBznjUzW54bS2PxkJc1sMohVmsrMamp1G/operations for an example of an originated version of https://github.com/tqtezos/minter-sdk/blob/e67b88241d59f2161d44f960e1919bafd52305d8/packages/minter-contracts/ligo/src/minter_collection/editions/fa2_multi_nft_token_editions.mligo on edonet. 
+
+In that contract a call to `mint_editions` for a 100 edition edition collection cost ~0.03tz and a call to `distribute_editions` for the distribution of a single one of those editions cost ~0.05tz. 
+
+
