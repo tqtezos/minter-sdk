@@ -10,7 +10,7 @@
     "access": "public"
   },
   "scripts": {
-    "test": "yarn lint && yarn start-sandbox && yarn compile-ligo && yarn test-contracts ; yarn kill-sandbox",
+    "test": "yarn lint && yarn start-sandbox && yarn compile-ligo && yarn generate-types && yarn test-contracts ; yarn kill-sandbox",
     "lint": "yarn eslint . --ext .js,.ts",
     "test-contract": "yarn start-sandbox && jest",
     "test-contracts": "jest --runInBand",

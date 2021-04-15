@@ -57,50 +57,20 @@
            unit
            { UNPAIR ; NOT ; IF { FAILWITH } { DROP ; UNIT } } ;
          LAMBDA
-           (pair address (pair address (pair address (list (pair nat nat)))))
+           (pair (list (pair address (list (pair address (pair nat nat))))) address)
            operation
-           { UNPAIR 3 ;
+           { UNPAIR ;
              SWAP ;
-             DIG 2 ;
-             DUP ;
-             CDR ;
-             MAP { DUP 3 ; PAIR } ;
-             DIG 2 ;
-             DROP ;
-             SWAP ;
-             CAR ;
              CONTRACT %transfer
                (list (pair (address %from_)
                            (list %txs (pair (address %to_) (pair (nat %token_id) (nat %amount)))))) ;
              IF_NONE { PUSH string "Invalid FA2 Address" ; FAILWITH } {} ;
              PUSH mutez 0 ;
-             NIL (pair address (list (pair address (pair nat nat)))) ;
-             DIG 3 ;
-             DIG 4 ;
-             PAIR ;
-             CONS ;
+             DIG 2 ;
              TRANSFER_TOKENS } ;
          DUP ;
          LAMBDA
-           (pair (lambda (pair address (pair address (pair address (list (pair nat nat))))) operation)
-                 (pair (pair (list (pair address (list (pair nat nat)))) address) address))
-           (list operation)
-           { UNPAIR ;
-             SWAP ;
-             UNPAIR ;
-             UNPAIR ;
-             MAP { DUP 3 ; PAIR ; SWAP ; DUP ; DUG 2 ; PAIR ; DUP 4 ; SWAP ; EXEC } ;
-             SWAP ;
-             DROP ;
-             SWAP ;
-             DROP ;
-             SWAP ;
-             DROP } ;
-         SWAP ;
-         APPLY ;
-         SWAP ;
-         LAMBDA
-           (pair (lambda (pair address (pair address (pair address (list (pair nat nat))))) operation)
+           (pair (lambda (pair (list (pair address (list (pair address (pair nat nat))))) address) operation)
                  (pair (pair address address) (pair nat (pair address nat))))
            operation
            { UNPAIR ;
@@ -109,20 +79,55 @@
              UNPAIR ;
              DIG 2 ;
              UNPAIR ;
-             NIL (pair nat nat) ;
              SWAP ;
-             DUP 3 ;
+             DUP ;
+             DUG 2 ;
+             CAR ;
+             NIL (pair address (list (pair address (pair nat nat)))) ;
+             NIL (pair address (pair nat nat)) ;
+             DIG 3 ;
+             DIG 4 ;
              CDR ;
              PAIR ;
+             DIG 5 ;
+             PAIR ;
              CONS ;
-             SWAP ;
-             CAR ;
+             DIG 3 ;
              PAIR ;
-             DIG 2 ;
-             PAIR ;
-             SWAP ;
+             CONS ;
              PAIR ;
              EXEC } ;
+         SWAP ;
+         APPLY ;
+         SWAP ;
+         LAMBDA
+           (pair (lambda (pair (list (pair address (list (pair address (pair nat nat))))) address) operation)
+                 (pair (pair (list (pair address (list (pair nat nat)))) address) address))
+           (list operation)
+           { UNPAIR ;
+             SWAP ;
+             UNPAIR ;
+             UNPAIR ;
+             MAP { DUP ;
+                   CDR ;
+                   MAP { DUP 4 ; PAIR } ;
+                   SWAP ;
+                   CAR ;
+                   NIL (pair address (list (pair address (pair nat nat)))) ;
+                   DIG 2 ;
+                   DUP 4 ;
+                   PAIR ;
+                   CONS ;
+                   PAIR ;
+                   DUP 4 ;
+                   SWAP ;
+                   EXEC } ;
+             SWAP ;
+             DROP ;
+             SWAP ;
+             DROP ;
+             SWAP ;
+             DROP } ;
          SWAP ;
          APPLY ;
          LAMBDA
@@ -267,7 +272,7 @@
              SWAP ;
              IF_LEFT
                { IF_LEFT
-                   { DIG 7 ;
+                   { DIG 6 ;
                      DROP ;
                      IF_LEFT
                        { DIG 3 ;
@@ -443,12 +448,11 @@
                          DUP 4 ;
                          COMPARE ;
                          GE ;
-                         PUSH nat 100 ;
+                         DUP 3 ;
+                         CDR ;
+                         CAR ;
                          DUP 4 ;
                          CDR ;
-                         CAR ;
-                         DUP 5 ;
-                         CDR ;
                          CDR ;
                          CDR ;
                          CDR ;
@@ -456,6 +460,9 @@
                          CDR ;
                          CDR ;
                          CAR ;
+                         PUSH nat 100 ;
+                         SWAP ;
+                         DIG 2 ;
                          MUL ;
                          SWAP ;
                          INT ;
@@ -922,7 +929,7 @@
                          CAR ;
                          PAIR ;
                          PAIR ;
-                         DIG 7 ;
+                         DIG 6 ;
                          SWAP ;
                          EXEC ;
                          SWAP ;
@@ -1010,7 +1017,7 @@
                          DROP ;
                          DIG 3 ;
                          DROP ;
-                         DIG 3 ;
+                         DIG 4 ;
                          DROP ;
                          SWAP ;
                          DUP ;
@@ -1373,7 +1380,7 @@
                  CAR ;
                  PAIR ;
                  PAIR ;
-                 DIG 7 ;
+                 DIG 6 ;
                  SWAP ;
                  EXEC ;
                  SWAP ;
