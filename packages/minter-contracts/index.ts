@@ -4,10 +4,14 @@ import { EnglishAuctionFa2Code } from './bin-ts/english_auction_fa2.code';
 import { EnglishAuctionFa2ContractType } from './bin-ts/english_auction_fa2.types';
 import { EnglishAuctionFa2AllowlistedCode } from './bin-ts/english_auction_fa2_allowlisted.code';
 import { EnglishAuctionFa2AllowlistedContractType } from './bin-ts/english_auction_fa2_allowlisted.types';
+import { EnglishAuctionFa2FixedFeeCode } from './bin-ts/english_auction_fa2_fixed_fee.code';
+import { EnglishAuctionFa2FixedFeeContractType } from './bin-ts/english_auction_fa2_fixed_fee.types';
 import { EnglishAuctionTezCode } from './bin-ts/english_auction_tez.code';
 import { EnglishAuctionTezContractType } from './bin-ts/english_auction_tez.types';
 import { EnglishAuctionTezAllowlistedCode } from './bin-ts/english_auction_tez_allowlisted.code';
 import { EnglishAuctionTezAllowlistedContractType } from './bin-ts/english_auction_tez_allowlisted.types';
+import { EnglishAuctionTezFixedFeeCode } from './bin-ts/english_auction_tez_fixed_fee.code';
+import { EnglishAuctionTezFixedFeeContractType } from './bin-ts/english_auction_tez_fixed_fee.types';
 import { EnglishAuctionTezPermitCode } from './bin-ts/english_auction_tez_permit.code';
 import { EnglishAuctionTezPermitContractType } from './bin-ts/english_auction_tez_permit.types';
 import { EnglishAuctionTezPermitAllowlistedCode } from './bin-ts/english_auction_tez_permit_allowlisted.code';
@@ -46,10 +50,14 @@ export {
   EnglishAuctionFa2Code,
   EnglishAuctionFa2AllowlistedContractType,
   EnglishAuctionFa2AllowlistedCode,
+  EnglishAuctionFa2FixedFeeContractType,
+  EnglishAuctionFa2FixedFeeCode,
   EnglishAuctionTezContractType,
   EnglishAuctionTezCode,
   EnglishAuctionTezAllowlistedContractType,
   EnglishAuctionTezAllowlistedCode,
+  EnglishAuctionTezFixedFeeContractType,
+  EnglishAuctionTezFixedFeeCode,
   EnglishAuctionTezPermitContractType,
   EnglishAuctionTezPermitCode,
   EnglishAuctionTezPermitAllowlistedContractType,

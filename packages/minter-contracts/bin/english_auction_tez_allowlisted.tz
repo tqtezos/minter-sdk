@@ -396,12 +396,11 @@
                          AMOUNT ;
                          COMPARE ;
                          GE ;
-                         PUSH nat 100 ;
+                         DUP 3 ;
+                         CDR ;
+                         CAR ;
                          DUP 4 ;
                          CDR ;
-                         CAR ;
-                         DUP 5 ;
-                         CDR ;
                          CDR ;
                          CDR ;
                          CDR ;
@@ -409,6 +408,9 @@
                          CDR ;
                          CDR ;
                          CAR ;
+                         PUSH nat 100 ;
+                         SWAP ;
+                         DIG 2 ;
                          MUL ;
                          EDIV ;
                          IF_NONE

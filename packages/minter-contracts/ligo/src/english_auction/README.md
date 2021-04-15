@@ -149,10 +149,8 @@ Besides, the following restriction takes place:
 
 ## Future work
 
-1. Bidding in FA2
-1. Contract fee.
-1. Bidding with permits.
-1. Full front running protection.
+1. Whitelisting: Only allow certain addresses to configure auctions.
+2. Full front running protection. 
 
 # English Auction w/ FA2 bids
 
@@ -160,5 +158,9 @@ In this version of the NFT English Auction contract, bids are made in some FA2 t
 
 # English Auction with permit configuration
 
-This is an implementation of the auction contract in which the standard `Configure` entrypoint is replaced by one that accepts a batch of optional permits that can be used to configure auctions for accounts different than `SENDER.` This could serve useful for applications looking to allow users without tez to auction off their assets. See [One-step Permit](https://gitlab.com/tzip/tzip/-/merge_requests/151) for 
-reference. 
+This is an implementation of the auction contract in which the standard `Configure` entrypoint is replaced by one that accepts a batch of optional permits that can be used to configure auctions for accounts different than `SENDER.` This could serve useful for applications looking to allow users without tez to auction off their assets. See [One-step Permit](https://gitlab.com/tzip/tzip/-/merge_requests/151) for reference. 
+
+# English Auction with Auction Fee
+
+This is a version of the Auction contract in which an address fixed at contract origination gets a fixed percent of any sale that takes place using the contract. 
+

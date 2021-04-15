@@ -284,3 +284,33 @@ export async function originateEnglishAuctionTezPermit(
   const storage = `(Pair (Pair (Pair "${adminAddress}" False) None) (Pair 0 (Pair 86400 (Pair 86400 (Pair {} 0)))))`;
   return originateContract(tz, code, storage, 'english_auction_tez_permit');
 }
+
+export async function originateEnglishAuctionTezFixedFee(
+  tz: TezosToolkit,
+  feeAddress : address,
+): Promise<Contract> {
+  const code = await compileAndLoadContract(
+    defaultEnv,
+    'english_auction/english_auction_tez_fixed_fee.mligo',
+    'english_auction_tez_main',
+    'english_auction_tez_fixed_fee.tz',
+  );
+  const storage = `(Pair None (Pair 0 (Pair 86400 (Pair 86400 (Pair {} (Pair "${feeAddress}" 10))))))`;
+  return originateContract(tz, code, storage, 'english_auction_tez');
+}
+
+export async function originateEnglishAuctionFA2FixedFee(
+  tz: TezosToolkit,
+  feeAddress : address,
+  fa2_address : address,
+  token_id : nat,
+): Promise<Contract> {
+  const code = await compileAndLoadContract(
+    defaultEnv,
+    'english_auction/english_auction_fa2_fixed_fee.mligo',
+    'english_auction_fa2_main',
+    'english_auction_fa2_fixed_fee.tz',
+  );
+  const storage = `(Pair None (Pair 0 (Pair 86400 (Pair 86400 (Pair (Pair "${fa2_address}" ${token_id}) (Pair {} (Pair "${feeAddress}" 10)))))))`;
+  return originateContract(tz, code, storage, 'english_auction_fa2');
+}

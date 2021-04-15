@@ -7,6 +7,7 @@ import retry from 'async-retry';
 type TestKeys = {
     bob: Signer;
     alice: Signer;
+    eve: Signer;
     lambdaView?: string;
 };
 
@@ -17,22 +18,16 @@ async function flextesaKeys(): Promise<TestKeys> {
   const alice = await InMemorySigner.fromSecretKey(
     'edsk3QoqBuvdamxouPhin7swCvkQNgq4jP5KZPbwWNnwdZpSpJiEbq',
   );
-  return { bob, alice };
-}
-
-async function testnetKeys(): Promise<TestKeys> {
-  const bob = await InMemorySigner.fromSecretKey(
-    'edskRfLsHb49bP4dTpYzAZ7qHCX4ByK2g6Cwq2LWqRYAQSeRpziaZGBW72vrJnp1ahLGKd9rXUf7RHzm8EmyPgseUi3VS9putT',
+  const eve = await InMemorySigner.fromSecretKey(
+    'edsk3Sb16jcx9KrgMDsbZDmKnuN11v4AbTtPBgBSBTqYftd8Cq3i1e',
   );
-  const alice = await InMemorySigner.fromSecretKey(
-    'edskRqb8GgnD4d2B7nR3ofJajDU7kwooUzXz7yMwRdLDP9j7Z1DvhaeBcs8WkJ4ELXXJgVkq5tGwrFibojDjYVaG7n4Tq1qDxZ',
-  );
-  return { bob, alice };
+  return { bob, alice, eve };
 }
 
 export type TestTz = {
     bob: TezosToolkit;
     alice: TezosToolkit;
+    eve: TezosToolkit;
     lambdaView?: string;
 };
 
@@ -65,10 +60,11 @@ export async function awaitForNetwork(tz: TezosToolkit): Promise<void> {
 }
 
 export async function bootstrap(): Promise<TestTz> {
-  const { bob, alice } = await flextesaKeys();
+  const { bob, alice, eve } = await flextesaKeys();
   const rpc = 'http://localhost:20000';
   const bobToolkit = signerToToolkit(bob, rpc);
   const aliceToolkit = signerToToolkit(alice, rpc);
+  const eveToolkit = signerToToolkit(eve, rpc);
 
   await awaitForNetwork(bobToolkit);
 
@@ -82,6 +78,7 @@ export async function bootstrap(): Promise<TestTz> {
   return {
     bob: bobToolkit,
     alice: aliceToolkit,
+    eve: eveToolkit,
     lambdaView: lambdaContract.address,
   };
 }
@@ -94,11 +91,3 @@ export async function adminBootstrap(): Promise<TezosToolkit> {
   return signerToToolkit(adminSigner, rpc);
 }
 
-export async function bootstrapTestnet(): Promise<TestTz> {
-  const { bob, alice } = await testnetKeys();
-  const rpc = 'https://testnet-tezos.giganode.io';
-  return {
-    bob: signerToToolkit(bob, rpc),
-    alice: signerToToolkit(alice, rpc),
-  };
-}
