@@ -111,29 +111,35 @@ let address_to_contract_transfer_entrypoint(add : address) : ((transfer list) co
     None -> (failwith "Invalid FA2 Address" : (transfer list) contract)
   | Some c ->  c
 
-let transfer_tokens_in_single_contract (from_ : address) (to_ : address) (tokens : tokens) : operation = 
+let transfer_tokens_in_single_contract (transfer_param, fa2: (transfer list) * address) : operation = 
+  let c = address_to_contract_transfer_entrypoint(fa2) in
+  (Tezos.transaction transfer_param 0mutez c) 
+
+let transfer_tokens_in_single_contract_to_address (from_ : address) (to_ : address) (tokens : tokens) : operation = 
   let to_tx (fa2_token : fa2_token) : transfer_destination = {
       to_ = to_;
       token_id = fa2_token.token_id;
       amount = fa2_token.amount;
    } in
-   let txs = List.map to_tx tokens.fa2_batch in
-   let transfer_param = [{from_ = from_; txs = txs}] in
-   let c = address_to_contract_transfer_entrypoint(tokens.fa2_address) in
-   (Tezos.transaction transfer_param 0mutez c) 
+   let txs = List.map to_tx tokens.fa2_batch in 
+   let transfer_list : transfer list = [{from_ = from_; txs = txs}] in
+   (transfer_tokens_in_single_contract (transfer_list, tokens.fa2_address))
+
+let single_fa2_transfer (from_, to_, qty, fa2 : address * address * nat * bid_currency) : operation = 
+  let single_transfer_tx : transfer = {
+    from_ = from_;
+    txs = [{
+      to_ = to_;
+      token_id = fa2.token_id;
+      amount = qty;
+    }];
+  } in
+  let single_transfer : operation = transfer_tokens_in_single_contract ([single_transfer_tx], fa2.fa2_address) in
+  single_transfer
 
 (*Handles transfers of tokens across FA2 Contracts*)
 let transfer_tokens(tokens_list, from_, to_ : tokens list * address * address) : (operation list) =
-   (List.map (transfer_tokens_in_single_contract from_ to_) tokens_list)
-
-let fa2_fee_transfer (from_, to_, qty, bid_currency : address * address * nat * bid_currency) : operation = 
-  let tx_param : tokens = 
-    ({
-        fa2_address = bid_currency.fa2_address;
-        fa2_batch = [({token_id = bid_currency.token_id; amount = qty} : fa2_token)]
-    }) in
-  let op = transfer_tokens_in_single_contract from_ to_ tx_param in
-  op
+   (List.map (transfer_tokens_in_single_contract_to_address from_ to_) tokens_list)
 
 let get_auction_data (asset_id, storage : nat * storage) : auction =
   match (Big_map.find_opt asset_id storage.auctions) with
@@ -209,19 +215,32 @@ let resolve_auction(asset_id, storage : nat * storage) : return = begin
 #if !FEE
     let op_list : operation list = if first_bid(auction) then 
       asset_transfers else  
-      let send_final_bid : operation = fa2_fee_transfer(Tezos.self_address, auction.seller, auction.current_bid, storage.bid_currency) in 
+      let send_final_bid : operation = single_fa2_transfer(Tezos.self_address, auction.seller, auction.current_bid, storage.bid_currency) in
       (send_final_bid :: asset_transfers) in
 #else 
     
     let op_list : operation list = if first_bid(auction) then 
       asset_transfers else  
       let fee : nat = percent_of_bid (storage.fee.fee_percent, auction.current_bid) in
-      let pay_fee : operation = fa2_fee_transfer(Tezos.self_address, storage.fee.fee_address, fee, storage.bid_currency) in
       let final_price_minus_fee : nat =  (match (is_nat (auction.current_bid - fee)) with 
         | Some adjusted_price -> adjusted_price 
         | None -> (failwith "fee is larger than winning bid" : nat)) in
-      let send_final_bid_minus_fee : operation = fa2_fee_transfer(Tezos.self_address, auction.seller, final_price_minus_fee, storage.bid_currency) in 
-      (pay_fee :: send_final_bid_minus_fee :: asset_transfers) in
+      let pay_fee_tx : transfer_destination = { 
+          to_ = storage.fee.fee_address;
+          token_id = storage.bid_currency.token_id;
+          amount = fee; 
+        } in
+      let send_final_bid_minus_fee_tx : transfer_destination = {
+          to_ = auction.seller;
+          token_id = storage.bid_currency.token_id;
+          amount = final_price_minus_fee;
+      } in
+      let txs : transfer list = [{
+        from_ = Tezos.self_address; 
+        txs = [pay_fee_tx; send_final_bid_minus_fee_tx];
+      }] in
+      let payments : operation = transfer_tokens_in_single_contract (txs, storage.bid_currency.fa2_address) in
+      (payments :: asset_transfers) in
 #endif 
     let updated_auctions = Big_map.remove asset_id storage.auctions in
     (op_list, {storage with auctions = updated_auctions})
@@ -237,7 +256,7 @@ let cancel_auction(asset_id, storage : nat * storage) : return = begin
     let asset_transfers : operation list = transfer_tokens(auction.asset, Tezos.self_address, auction.seller) in
     let op_list : operation list = if first_bid(auction) then 
       asset_transfers else  
-      let return_bid : operation = fa2_fee_transfer(Tezos.self_address, auction.highest_bidder, auction.current_bid, storage.bid_currency) in 
+      let return_bid : operation = single_fa2_transfer(Tezos.self_address, auction.highest_bidder, auction.current_bid, storage.bid_currency) in 
       (return_bid :: asset_transfers) in
     let updated_auctions = Big_map.remove asset_id storage.auctions in
     (op_list, {storage with auctions = updated_auctions})
@@ -253,10 +272,10 @@ let place_bid(asset_id, token_amount, storage : nat * nat * storage) : return = 
       then ([%Michelson ({| { FAILWITH } |} : string * (nat * nat * address * timestamp * timestamp) -> unit)] ("Invalid Bid amount", (auction.current_bid, token_amount, auction.highest_bidder, auction.last_bid_time, Tezos.now)) : unit)
       else ());
     
-    let bid_self_transfer : operation = fa2_fee_transfer(Tezos.sender, Tezos.self_address, token_amount, storage.bid_currency) in
+    let bid_self_transfer : operation = single_fa2_transfer(Tezos.sender, Tezos.self_address, token_amount, storage.bid_currency) in
     let op_list : operation list = if first_bid(auction) then 
       [bid_self_transfer] else  
-      let return_previous_bid : operation = fa2_fee_transfer(Tezos.self_address, auction.highest_bidder, auction.current_bid, storage.bid_currency) in
+      let return_previous_bid : operation = single_fa2_transfer(Tezos.self_address, auction.highest_bidder, auction.current_bid, storage.bid_currency) in
       [return_previous_bid; bid_self_transfer] in
     let new_end_time = if auction.end_time - Tezos.now <= auction.extend_time then
       Tezos.now + auction.extend_time else auction.end_time in
