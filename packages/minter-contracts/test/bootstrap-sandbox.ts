@@ -82,12 +82,3 @@ export async function bootstrap(): Promise<TestTz> {
     lambdaView: lambdaContract.address,
   };
 }
-
-export async function adminBootstrap(): Promise<TezosToolkit> {
-  // SECRET MAY HAVE TO BE UPDATED
-  const secret = 'edsk3g1kc8UzJJhZn6kTecW6vb6m1qnaWXYDFahGHqcmLbepUT3pFe';
-  const adminSigner = await InMemorySigner.fromSecretKey(secret);
-  const rpc = 'http://localhost:20000';
-  return signerToToolkit(adminSigner, rpc);
-}
-

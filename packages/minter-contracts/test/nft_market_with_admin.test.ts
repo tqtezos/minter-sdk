@@ -2,7 +2,7 @@ import { $log } from '@tsed/logger';
 import { BigNumber } from 'bignumber.js';
 import { TezosToolkit, MichelsonMap } from '@taquito/taquito';
 
-import { adminBootstrap, bootstrap, TestTz } from './bootstrap-sandbox';
+import { bootstrap, TestTz } from './bootstrap-sandbox';
 import { Contract, address, bytes } from '../src/type-aliases';
 
 import {
@@ -30,22 +30,18 @@ describe.each([originateFixedPriceTezAdminSale])
   let tokenId: BigNumber;
   let tokenMetadata: MichelsonMap<string, bytes>;
   let salePrice: BigNumber;
-  let adminAddress: address;
-  let adminToolkit: TezosToolkit;
 
   beforeAll(async () => {
     tezos = await bootstrap();
     queryBalances = queryBalancesWithLambdaView(tezos.lambdaView);
-    adminToolkit = await adminBootstrap();
-    adminAddress = await adminToolkit.signer.publicKeyHash();
   });
 
   beforeEach(async () => {
-    nft = await originateNftFaucet(adminToolkit);
-    marketplace = await originateMarketplace(tezos.bob, adminAddress);
-    marketAddress = marketplace.address;
+    nft = await originateNftFaucet(tezos.bob);
     aliceAddress = await tezos.alice.signer.publicKeyHash();
     bobAddress = await tezos.bob.signer.publicKeyHash();
+    marketplace = await originateMarketplace(tezos.bob, bobAddress);
+    marketAddress = marketplace.address;
     tokenId = new BigNumber(0);
     tokenMetadata = new MichelsonMap();
     salePrice = new BigNumber(1000000);
@@ -100,14 +96,6 @@ describe.each([originateFixedPriceTezAdminSale])
       const assets:any = await storage.assets;
       const operators:any = await assets.operators;
       $log.info(`operators ${JSON.stringify(operators, null, 2)}`);
-      // const assets = await storage.assets;
-
-      // const ret = await assets.operators;
-
-      // const retIterator = ret.keys();
-
-      // $log.info(`storage.assets: ${JSON.stringify(assets,null,2)}`);
-      // $log.info(retIterator.next());
 
       $log.info('starting sale...');
 
