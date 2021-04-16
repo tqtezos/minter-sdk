@@ -116,7 +116,6 @@ let editions_main (param, editions_storage : editions_entrypoints * editions_sto
         ops, {editions_storage with nft_asset_storage = new_nft_asset_storage}
     | Mint_editions mint_param -> 
         let u : unit = fail_if_not_admin editions_storage.nft_asset_storage.admin in
-        let u : unit = fail_if_paused editions_storage.nft_asset_storage.admin in
         (mint_editions (mint_param, editions_storage))
     | Distribute_editions distribute_param -> 
         let u : unit = fail_if_paused editions_storage.nft_asset_storage.admin in
