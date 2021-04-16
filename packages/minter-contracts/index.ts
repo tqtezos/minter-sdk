@@ -6,6 +6,8 @@ import { EnglishAuctionFa2AllowlistedCode } from './bin-ts/english_auction_fa2_a
 import { EnglishAuctionFa2AllowlistedContractType } from './bin-ts/english_auction_fa2_allowlisted.types';
 import { EnglishAuctionFa2FixedFeeCode } from './bin-ts/english_auction_fa2_fixed_fee.code';
 import { EnglishAuctionFa2FixedFeeContractType } from './bin-ts/english_auction_fa2_fixed_fee.types';
+import { EnglishAuctionFa2SimpleAdminCode } from './bin-ts/english_auction_fa2_simple_admin.code';
+import { EnglishAuctionFa2SimpleAdminContractType } from './bin-ts/english_auction_fa2_simple_admin.types';
 import { EnglishAuctionTezCode } from './bin-ts/english_auction_tez.code';
 import { EnglishAuctionTezContractType } from './bin-ts/english_auction_tez.types';
 import { EnglishAuctionTezAllowlistedCode } from './bin-ts/english_auction_tez_allowlisted.code';
@@ -16,6 +18,8 @@ import { EnglishAuctionTezPermitCode } from './bin-ts/english_auction_tez_permit
 import { EnglishAuctionTezPermitContractType } from './bin-ts/english_auction_tez_permit.types';
 import { EnglishAuctionTezPermitAllowlistedCode } from './bin-ts/english_auction_tez_permit_allowlisted.code';
 import { EnglishAuctionTezPermitAllowlistedContractType } from './bin-ts/english_auction_tez_permit_allowlisted.types';
+import { EnglishAuctionTezSimpleAdminCode } from './bin-ts/english_auction_tez_simple_admin.code';
+import { EnglishAuctionTezSimpleAdminContractType } from './bin-ts/english_auction_tez_simple_admin.types';
 import { Fa2AllowlistedSwapCode } from './bin-ts/fa2_allowlisted_swap.code';
 import { Fa2AllowlistedSwapContractType } from './bin-ts/fa2_allowlisted_swap.types';
 import { Fa2MultiFtAssetCode } from './bin-ts/fa2_multi_ft_asset.code';
@@ -52,6 +56,8 @@ export {
   EnglishAuctionFa2AllowlistedCode,
   EnglishAuctionFa2FixedFeeContractType,
   EnglishAuctionFa2FixedFeeCode,
+  EnglishAuctionFa2SimpleAdminContractType,
+  EnglishAuctionFa2SimpleAdminCode,
   EnglishAuctionTezContractType,
   EnglishAuctionTezCode,
   EnglishAuctionTezAllowlistedContractType,
@@ -62,6 +68,8 @@ export {
   EnglishAuctionTezPermitCode,
   EnglishAuctionTezPermitAllowlistedContractType,
   EnglishAuctionTezPermitAllowlistedCode,
+  EnglishAuctionTezSimpleAdminContractType,
+  EnglishAuctionTezSimpleAdminCode,
   Fa2AllowlistedSwapContractType,
   Fa2AllowlistedSwapCode,
   Fa2MultiFtAssetContractType,
