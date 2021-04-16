@@ -78,7 +78,7 @@ editions_metadata :=
 + Once an edition is `distributed` it can be transferred just as any NFT is, by its owner calling the `transfer` entrypoint.
 
 ## Admin 
-+ The contract has a single admin at any given time, that can be updated following the two-step procedure described in [Simple-Admin](../../../fa2_modules/README.md). The admin can pause the contract and has sole authority over minting traditional NFTs as well as creating an editions run through `Mint_editions`. 
++ The contract has a single admin at any given time, that can be updated following the two-step procedure described in [Simple-Admin](../../../fa2_modules/README.md). The admin can pause the contract and has sole authority over minting traditional NFTs as well as creating an editions run through `Mint_editions`. If admin is changed, the new admin cannot distribute editions from an edition collection that they did not create. 
 
 ## Extending this contract
 + Note, it is not possible when using this contract as a module to implement a custom transfer permission policy using [Transfer hooks](../../../fa2/fa2_hook.mligo). As such, it is necessary for `OWNER_HOOKS` to be undefined in order to compile this contract as well as any contract that extends it. 
