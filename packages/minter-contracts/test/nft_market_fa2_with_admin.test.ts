@@ -2,7 +2,7 @@ import { $log } from '@tsed/logger';
 import { BigNumber } from 'bignumber.js';
 import { TezosToolkit, MichelsonMap } from '@taquito/taquito';
 
-import { adminBootstrap, bootstrap, TestTz } from './bootstrap-sandbox';
+import { bootstrap, TestTz } from './bootstrap-sandbox';
 import { Contract, address, bytes } from '../src/type-aliases';
 
 import {
@@ -19,7 +19,7 @@ import {
 } from '../src/fa2-interface';
 import { queryBalancesWithLambdaView, QueryBalances } from './fa2-balance-inspector';
 
-jest.setTimeout(180000); // 3 minutes
+jest.setTimeout(240000); // 4 minutes
 
 
 describe.each([originateFixedPriceAdminSale])
@@ -34,25 +34,21 @@ describe.each([originateFixedPriceAdminSale])
   let ftTokenId: BigNumber;
   let nftTokenId: BigNumber;
   let tokenMetadata: MichelsonMap<string, bytes>;
-  let adminAddress: address;
-  let adminToolkit: TezosToolkit;
 
   let queryBalances: QueryBalances;
 
   beforeAll(async () => {
     tezos = await bootstrap();
     queryBalances = queryBalancesWithLambdaView(tezos.lambdaView);
-    adminToolkit = await adminBootstrap();
-    adminAddress = await adminToolkit.signer.publicKeyHash();
   });
 
   beforeEach(async () => {
-    nft = await originateNftFaucet(adminToolkit);
-    ft = await originateFtFaucet(adminToolkit);
-    marketplace = await originateMarketplace(tezos.bob, adminAddress);
-    marketAddress = marketplace.address;
     aliceAddress = await tezos.alice.signer.publicKeyHash();
     bobAddress = await tezos.bob.signer.publicKeyHash();
+    nft = await originateNftFaucet(tezos.eve);
+    ft = await originateFtFaucet(tezos.eve);
+    marketplace = await originateMarketplace(tezos.bob, bobAddress);
+    marketAddress = marketplace.address;
     nftTokenId = new BigNumber(0);
     ftTokenId = new BigNumber(5);
     tokenMetadata = new MichelsonMap();
@@ -110,10 +106,6 @@ describe.each([originateFixedPriceAdminSale])
   }
 
   test('bob makes sale, and alice buys nft', async () => {
-
-    // $log.info(`bruh`);
-    // let methods = ft.parameterSchema.ExtractSignatures();
-    // $log.info(`Error: ${JSON.stringify(methods, null, 2)}`);
 
     await createFtToken(tezos.alice, { token_id : ftTokenId, token_info: tokenMetadata });
     await mintFtTokens(tezos.alice, [

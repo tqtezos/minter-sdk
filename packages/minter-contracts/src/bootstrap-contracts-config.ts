@@ -35,7 +35,7 @@ function genServerConfig(mainConfig: Configstore) {
 }
 
 function getEnv(): string {
-  const env = process.env['TZ_NETWORK'];
+  const env = process.env.TZ_NETWORK;
   if (!env) {
     $log.error(`TZ_NETWORK environment variable is not set`);
     process.exit(1);

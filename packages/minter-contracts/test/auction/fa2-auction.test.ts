@@ -3,7 +3,6 @@ import { BigNumber } from 'bignumber.js';
 import moment from 'moment';
 import { bootstrap, TestTz } from '../bootstrap-sandbox';
 import { Contract, bytes, address } from '../../src/type-aliases';
-import { InternalOperationResult } from '@taquito/rpc';
 import {
   MintNftParam,
   originateFtFaucet,
@@ -139,7 +138,7 @@ describe('test NFT auction', () => {
     await opAuction.confirmation();
     $log.info(`Auction configured. Consumed gas: ${opAuction.consumedGas}`);
   });
-  /*
+
   test('bid of less than asking price should fail', async() => {
     $log.info(`Alice bids 9 tokens expecting it to fail`);
     const failedOpeningBid = nftAuctionAlice.methods.bid(0, 9).send({ amount : 0 });
@@ -177,7 +176,7 @@ describe('test NFT auction', () => {
     const smallBidPromise = nftAuctionAlice.methods.bid(0, 21).send({ amount : 0 });
     return expect(smallBidPromise).rejects.toHaveProperty('errors' );
   });
-  */
+
   test('auction without bids that is cancelled should only return asset', async () => {
     const [aliceBalanceBefore, bobBalanceBefore] = await getBalances([
       { owner: aliceAddress, token_id: tokenIdBidToken },

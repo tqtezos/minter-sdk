@@ -53,6 +53,8 @@ type auction_entrypoints =
   | Configure of configure_param
   | AdminAndInteract of auction_without_configure_entrypoints
 
+#if !FEE
+
 type storage =
   [@layout:comb]
   {
@@ -62,6 +64,28 @@ type storage =
     max_config_to_start_time : nat;
     auctions : (nat, auction) big_map
   }
+
+#else 
+
+type fee_data = 
+  [@layout:comb]
+  {
+    fee_address : address;
+    fee_percent : nat;
+  }
+
+type storage =
+  [@layout:comb]
+  {
+    pauseable_admin : pauseable_admin_storage;
+    current_id : nat;
+    max_auction_time : nat;
+    max_config_to_start_time : nat;
+    auctions : (nat, auction) big_map;
+    fee : fee_data;
+  }
+
+#endif
 
 type return = operation list * storage
 
@@ -133,8 +157,11 @@ let ceil_div (tz_qty, nat_qty : tez * nat) : tez =
        let (quotient, remainder) = e in
        if remainder > 0mutez then (quotient + 1mutez) else quotient
 
+let percent_of_bid (percent, bid : nat * tez) : tez = 
+  (ceil_div (bid *  percent, 100n))
+
 let valid_bid_amount (auction : auction) : bool =
-  (Tezos.amount >= (auction.current_bid + (ceil_div (auction.min_raise_percent *  auction.current_bid, 100n)))) ||
+  (Tezos.amount >= (auction.current_bid + (percent_of_bid (auction.min_raise_percent, auction.current_bid)))) ||
   (Tezos.amount >= auction.current_bid + auction.min_raise)                                            ||
   ((Tezos.amount >= auction.current_bid) && first_bid(auction))
 
@@ -170,6 +197,9 @@ let configure_auction_storage(configure_param, seller, storage : configure_param
   end
 
 let configure_auction(configure_param, storage : configure_param * storage) : return = 
+#if FEE
+  let u : unit = assert_msg (storage.fee.fee_percent <= 100n, "Fee_percent must be less than 100%. Please originate another contract.") in
+#endif
   let new_storage = configure_auction_storage(configure_param, Tezos.sender, storage) in
   let fa2_transfers : operation list = transfer_tokens(configure_param.asset, Tezos.sender, Tezos.self_address) in
   (fa2_transfers, new_storage)
@@ -183,10 +213,25 @@ let resolve_auction(asset_id, storage : nat * storage) : return = begin
 
     let fa2_transfers : operation list = transfer_tokens(auction.asset, Tezos.self_address, auction.highest_bidder) in
     let seller_contract : unit contract = resolve_contract(auction.seller) in
+    
+#if !FEE 
+
     let op_list = if first_bid(auction) then 
       fa2_transfers else 
-      let return_bid : operation = Tezos.transaction unit auction.current_bid seller_contract in
-      (return_bid :: fa2_transfers) in
+      let send_final_bid : operation = Tezos.transaction unit auction.current_bid seller_contract in
+      (send_final_bid :: fa2_transfers) in
+
+#else 
+    let fee_contract : unit contract = resolve_contract(storage.fee.fee_address) in
+    let op_list = if first_bid(auction) then 
+      fa2_transfers else 
+      let fee : tez = percent_of_bid (storage.fee.fee_percent, auction.current_bid) in 
+      let pay_fee : operation = Tezos.transaction unit fee fee_contract in 
+      let send_final_bid_minus_fee : operation = Tezos.transaction unit (auction.current_bid - fee) seller_contract in
+      (pay_fee :: send_final_bid_minus_fee :: fa2_transfers) in
+
+#endif
+
     let updated_auctions = Big_map.remove asset_id storage.auctions in
     (op_list, {storage with auctions = updated_auctions})
   end

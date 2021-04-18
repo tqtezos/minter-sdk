@@ -116,20 +116,41 @@ This entrypoint checks the auction has ended and sends asset to `highest_bidder`
 
 ```
 
+## Allowlisted extension
+
+Some contract versions allow restricting the set of FA2 contracts that can participate in them.
+
+### Entrypoints
+
+#### %update_allowed
+
+```ocaml
+| Update_allowed of (address, unit) big_map
+```
+
+This entrypoint allows setting a new allowlist, overriding the current one.
+
+It accepts `(address, unit) big_map` for the sake of efficiency (allowlist is kept in this form in the storage).
+
+Can be invoked only by the admin, fails with `NOT_ADMIN` otherwise.
+
+### Modification of the base marketplace contract
+
+Each contract with allowlist restriction inherits the behaviour of the respected non-restricted contract.
+
+Besides, the following restriction takes place:
+* For `%configure` entrypoint and its variations: in case any of `fa2_address` in the assets list does not belong to the allowlist, `ASSET_ADDRESS_NOT_ALLOWED` error is raised.
 
 ## Design Choices/Cautions
 
 1. Only Implicit accounts can place bids.
-2. **CAUTION:**   Smart contracts can configure bids. Bidders are encouraged to inspect the code of the selling contract and confirm that the first bid as well as the final reward (upon a call to `resolve_contract`) will be accepted and not be used to steal gas in the process. See https://www.notion.so/Review-report-for-English-auction-contract-iteration-2-c3610435cc1446d1b6f2b2d60dc86c8e for more details on this. 
+2. **CAUTION:**   Smart contracts can configure bids. Bidders are encouraged to inspect the code of the selling contract and confirm that the first bid as well as the final reward (upon a call to `resolve_contract`) will be accepted and not be used to steal gas in the process. See https://www.notion.so/Review-report-for-English-auction-contract-iteration-2-c3610435cc1446d1b6f2b2d60dc86c8e for more details on this.
 
 
 ## Future work
 
 1. Whitelisting: Only allow certain addresses to configure auctions.
-2. Bidding in FA2
-3. Contract fee.
-4. Bidding with permits. 
-5. Full front running protection. 
+2. Full front running protection. 
 
 # English Auction w/ FA2 bids
 
@@ -137,5 +158,9 @@ In this version of the NFT English Auction contract, bids are made in some FA2 t
 
 # English Auction with permit configuration
 
-This is an implementation of the auction contract in which the standard `Configure` entrypoint is replaced by one that accepts a batch of optional permits that can be used to configure auctions for accounts different than `SENDER.` This could serve useful for applications looking to allow users without tez to auction off their assets. See [One-step Permit](https://gitlab.com/tzip/tzip/-/merge_requests/151) for 
-reference. 
+This is an implementation of the auction contract in which the standard `Configure` entrypoint is replaced by one that accepts a batch of optional permits that can be used to configure auctions for accounts different than `SENDER.` This could serve useful for applications looking to allow users without tez to auction off their assets. See [One-step Permit](https://gitlab.com/tzip/tzip/-/merge_requests/151) for reference. 
+
+# English Auction with Auction Fee
+
+This is a version of the Auction contract in which an address fixed at contract origination gets a fixed percent of any sale that takes place using the contract. 
+

@@ -12,7 +12,8 @@ import {
 import { MichelsonMap } from '@taquito/taquito';
 
 import { addOperator } from '../../src/fa2-interface';
-import { Fa2_token, Tokens } from '../../src/auction-interface';
+import { Fa2_token, Tokens, sleep } from '../../src/auction-interface';
+import { queryBalancesWithLambdaView, hasTokens, QueryBalances } from '../../test/fa2-balance-inspector';
 
 jest.setTimeout(180000); // 3 minutes
 
@@ -28,6 +29,7 @@ describe('test NFT auction', () => {
   let tokenId : BigNumber;
   let empty_metadata_map : MichelsonMap<string, bytes>;
   let mintToken : MintNftParam;
+  let queryBalances : QueryBalances;
 
   beforeAll(async () => {
     tezos = await bootstrap();
@@ -41,6 +43,7 @@ describe('test NFT auction', () => {
       },
       owner: bobAddress,
     };
+    queryBalances = queryBalancesWithLambdaView(tezos.lambdaView);
   });
 
   beforeEach(async() => {
@@ -73,7 +76,7 @@ describe('test NFT auction', () => {
     };
 
     startTime = moment.utc().add(7, 'seconds').toDate();
-    endTime = moment(startTime).add(1, 'hours').toDate();
+    endTime = moment(startTime).add(40, 'seconds').toDate();
     const opAuction = await nftAuctionBob.methods.configure(
       //opening price = 10 tz
       new BigNumber(10000000),
@@ -83,13 +86,13 @@ describe('test NFT auction', () => {
       new BigNumber(10000000),
       //round_time = 1 hr
       new BigNumber(3600),
-      //extend_time = 5 mins
-      new BigNumber(300),
+      //extend_time = 0 seconds
+      new BigNumber(0),
       //assset
       [tokens],
       //start_time = now + 7seconds
       startTime,
-      //end_time = start_time + 1hr,
+      //end_time = start_time + 5seconds,
       endTime,
     ).send({ amount : 0 });
     await opAuction.confirmation();
@@ -158,5 +161,28 @@ describe('test NFT auction', () => {
     const amountReturned = internalOps[0].amount;
     if (amountReturned !== bidMutez.toString()) throw new Error(`Operation resulted in a transfer of ${amountReturned}`);
     else $log.info(`${amountReturned}tz returned to seller as expected`);
+  });
+  test('resovled auction should send payment to seller and NFT to winning bidder', async () => {
+    $log.info(`Alice bids 200tz`);
+    const bidMutez = 200000000;
+    const opBid = await nftAuctionAlice.methods.bid(0).send({ amount : bidMutez, mutez : true });
+    await opBid.confirmation();
+    $log.info(`Bid placed. Amount sent: ${opBid.amount} mutez`);
+    await sleep(41000); //1 seconds
+
+    $log.info("Resolving auction");
+    const opResolve = await nftAuctionBob.methods.resolve(0).send({ amount : 0 });
+    await opResolve.confirmation();
+    $log.info("Auction Resolve");
+    const internalOps = opResolve.operationResults[0].metadata.internal_operation_results as InternalOperationResult[];
+    const payment = internalOps[0].amount;
+    if (payment !== bidMutez.toString()) throw new Error(`Operation resulted in a transfer of ${payment}`);
+    else $log.info(`${payment}tz sent to seller as expected`);
+    const aliceAddress = await tezos.alice.signer.publicKeyHash();
+
+    const [aliceHasNft] = await hasTokens([
+      { owner: aliceAddress, token_id: tokenId },
+    ], queryBalances, nftContract);
+    expect(aliceHasNft).toBe(true);
   });
 });
