@@ -217,7 +217,7 @@ type init_sale_param_tez =
 
 This record, like the one above, contains the sale price in tez (instead of some
 FA2 token) and the `sale_token_param_tez`, again described earlier in this
-document (the section [Storage](#torage-section)).
+document (the section [Storage](#storage-section)).
 
 ### %buy
 

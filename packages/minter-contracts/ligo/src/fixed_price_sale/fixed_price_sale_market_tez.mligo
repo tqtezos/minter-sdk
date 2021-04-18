@@ -58,20 +58,20 @@ let transfer_nft(fa2_address, token_id, from, to_: address * token_id * address 
   transfer_op
 
 let transfer_tez (price, seller : tez * address) : operation =
-  let seller_account = match (Tezos.get_contract_opt seller : unit contract option) with
+  let seller_account = (match (Tezos.get_contract_opt seller : unit contract option) with
     | None -> (failwith "NO_SELLER_ACCOUNT" : unit contract)
-    | Some acc -> acc
-  in let amountError =
-       if Tezos.amount <> price
-       then ([%Michelson ({| { FAILWITH } |} : string * tez * tez -> unit)] ("WRONG_TEZ_PRICE", price, Tezos.amount) : unit)
-       else () in
-        Tezos.transaction () Tezos.amount seller_account
+    | Some acc -> acc) in 
+  let amountError =
+    if Tezos.amount <> price
+    then ([%Michelson ({| { FAILWITH } |} : string * tez * tez -> unit)] ("WRONG_TEZ_PRICE", price, Tezos.amount) : unit)
+    else () in
+  Tezos.transaction () Tezos.amount seller_account
 
 let buy_token(sale, storage: sale_param_tez * storage) : (operation list * storage) =
-  let sale_price = match Big_map.find_opt sale storage.sales with
+  let sale_price = (match Big_map.find_opt sale storage.sales with
   | None -> (failwith "NO_SALE": tez)
-  | Some s -> s
-  in let tx_ops = transfer_tez(sale_price, sale.seller) in
+  | Some s -> s) in 
+  let tx_ops = transfer_tez(sale_price, sale.seller) in
   let tx_nft_op = transfer_nft(sale.sale_token.token_for_sale_address, sale.sale_token.token_for_sale_token_id, Tezos.self_address, Tezos.sender) in
   let new_s = { storage with sales = Big_map.remove sale storage.sales } in
   (tx_ops :: tx_nft_op :: []), new_s
@@ -79,7 +79,7 @@ let buy_token(sale, storage: sale_param_tez * storage) : (operation list * stora
 let tez_stuck_guard(entrypoint: string) : string = "DON'T TRANSFER TEZ TO THIS ENTRYPOINT (" ^ entrypoint ^ ")"
 
 let deposit_for_sale(sale_token, price, storage: sale_token_param_tez * tez * storage) : (operation list * storage) =
-    let u = if Tezos.amount <> 0tez then failwith (tez_stuck_guard "SELL") else () in
+    let u : unit = if Tezos.amount <> 0tez then failwith (tez_stuck_guard "SELL") else () in
     let transfer_op =
       transfer_nft (sale_token.token_for_sale_address, sale_token.token_for_sale_token_id, Tezos.sender, Tezos.self_address) in
     let sale_param = { seller = Tezos.sender; sale_token = sale_token } in
@@ -87,7 +87,7 @@ let deposit_for_sale(sale_token, price, storage: sale_token_param_tez * tez * st
     (transfer_op :: []), new_s
 
 let cancel_sale(sale, storage: sale_param_tez * storage) : (operation list * storage) =
-  let u = if Tezos.amount <> 0tez then failwith (tez_stuck_guard "CANCEL") else () in
+  let u : unit = if Tezos.amount <> 0tez then failwith (tez_stuck_guard "CANCEL") else () in
   match Big_map.find_opt sale storage.sales with
     | None -> (failwith "NO_SALE" : (operation list * storage))
     | Some price -> if sale.seller = Tezos.sender then
