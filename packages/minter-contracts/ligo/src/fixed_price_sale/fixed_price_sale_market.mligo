@@ -84,7 +84,6 @@ let cancel_sale(sale, storage: sale_param * storage) : (operation list * storage
 
 let fixed_price_sale_main (p, storage : market_entry_points * storage) : operation list * storage = match p with
   | Sell sale ->
-     let u : unit = fail_if_paused(storage.admin) in
      let v : unit = fail_if_not_admin(storage.admin) in
      deposit_for_sale(sale, storage)
   | Buy sale ->
@@ -94,7 +93,6 @@ let fixed_price_sale_main (p, storage : market_entry_points * storage) : operati
      let is_seller = Tezos.sender = sale.seller in
      let u : unit = if is_seller then ()
              else fail_if_not_admin_ext (storage.admin, "OR A SELLER") in
-     let v : unit = fail_if_paused(storage.admin) in
      cancel_sale(sale,storage)
   | Admin a ->
     let ops, admin = admin_main(a, storage.admin) in
