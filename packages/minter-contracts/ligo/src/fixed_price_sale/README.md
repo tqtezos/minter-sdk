@@ -36,7 +36,7 @@ type pauseable_admin_storage_record = {
 type pauseable_admin_storage = pauseable_admin_storage_record option
 ```
 
-The `admin` storage fields are used by the admin entrypoints. See [Admin modules](../../fa2_modules/README.md) for more info. 
+The `admin` storage fields are used by the [admin entrypoints](#admin-entrypoints). 
 
 The second field of this record`sales`is a big_map
 of currently active sales that the fixed price sale contract is hosting. A sale
@@ -172,7 +172,7 @@ sale contract transfers the NFT back to the seller and
 deletes the record of the cancelled sale.
 
 ### %admin entrypoints
-An `admin` can pause/unpause the contract, guard other operations to be invoked only by the admin and change the admin using two steps confirmation. See [README.md](../../fa2_modules/README.md) for a thoroughdiscussion of each admin entrypoint. Briefly,
+An `admin` can pause/unpause the contract, guard other operations to be invoked only by the admin and change the admin using two steps confirmation. 
 
 *  `set_admin` - Admin initiate a process that will set the current administrator to
    some specified address.
