@@ -110,7 +110,7 @@ type sale_param_tez =
 The entrypoints for both versions of the fixed price sale contract
 are named the same, but they accept different parameters.
 
-The entrypoints for [`SALE_FA2`](#sale-fa2-section) are:
+The entrypoints for [`SALE_FA2`](#sale_fa2-storage) are:
 
 ``` ocaml
 type market_entry_points =
@@ -121,7 +121,7 @@ type market_entry_points =
 
 ```
 
-and the entrypoints for [`SALE_TEZ`](#sale-tez-section) are:
+and the entrypoints for [`SALE_TEZ`](#sale_tez-storage) are:
 
 ``` ocaml
 type market_entry_points =
