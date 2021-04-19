@@ -3,7 +3,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main, develop]
+    branches: [main]
 
 env:
   LIGO_VERSION: 0.12.0
@@ -63,6 +63,29 @@ jobs:
     - name: Generate Types
       working-directory: packages/minter-contracts
       run: yarn run generate-types
+
+  test-jest:
+    name: Jest tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        worker: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: actions/cache@v2
+      id: yarn
+      with:
+        path: '**/node_modules'
+        key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
+    - run: yarn
+      if: steps.yarn.outputs.cache-hit != 'true'
+
+    - run: ./flextesa/start-sandbox.sh
+      name: Start sandbox
+
+    - run: yarn spawn-jest-worker -w 12 -i ${{ matrix.worker }}
+      working-directory: packages/minter-contracts
 
   # Test LIGO contracts (whose that are covered with cleveland)
   test-cleveland:
