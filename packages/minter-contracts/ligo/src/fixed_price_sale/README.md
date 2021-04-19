@@ -19,7 +19,7 @@ The contract's storage is:
 
 ``` ocaml
 type storage = {
-    admin: admin_storage;
+    admin: pauseable_admin_storage;
     sales: (sale_param, nat) big_map;
 }
 ```
@@ -27,12 +27,13 @@ type storage = {
 The first field of this record is `admin`. Its type is:
 
 ``` ocaml
-type admin_storage = {
+type pauseable_admin_storage_record = {
   admin : address;
   pending_admin : address option;
   paused : bool;
 }
 
+type pauseable_admin_storage = pauseable_admin_storage_record option
 ```
 
 The `admin` storage fields are used by the admin entrypoints. See [Admin modules](../../fa2_modules/README.md) for more info. 
@@ -80,7 +81,7 @@ The contract's storage is:
 type storage =
 [@layout:comb]
 {
-  admin: admin_storage;
+  admin: pauseable_admin_storage;
   sales: (sale_param_tez, tez) big_map;
 }
 ```
@@ -117,7 +118,7 @@ type market_entry_points =
   | Sell of init_sale_param
   | Buy of sale_param
   | Cancel of sale_param
-  | Admin of admin_entrypoints
+  | Admin of pauseable_admin
 
 ```
 
@@ -128,7 +129,7 @@ type market_entry_points =
   | Sell of init_sale_param_tez
   | Buy of sale_param_tez
   | Cancel of sale_param_tez
-  | Admin of admin_entrypoints
+  | Admin of pauseable_admin
 
 ```
 
