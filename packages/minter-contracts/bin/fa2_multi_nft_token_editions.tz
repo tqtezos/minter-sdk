@@ -193,7 +193,8 @@
                     MEM ;
                     IF { DROP 3 ; PUSH string "FA2_INVALID_TOKEN_ID" ; FAILWITH }
                        { DUP 4 ;
-                         IF { DUP } { PUSH nat 1 ; SWAP ; DUP ; DUG 2 ; ADD } ;
+                         IF { SWAP ; DUP ; DUG 2 ; CDR ; CAR ; CDR }
+                            { PUSH nat 1 ; SWAP ; DUP ; DUG 2 ; ADD } ;
                          DUP 3 ;
                          CDR ;
                          DUP 4 ;
@@ -751,21 +752,13 @@
                  PAIR ;
                  SWAP ;
                  PAIR } }
-           { DIG 4 ;
+           { DIG 2 ;
              DROP ;
-             DIG 4 ;
+             DIG 3 ;
              DROP ;
-             DIG 4 ;
+             DIG 3 ;
              DROP ;
-             SWAP ;
-             DUP ;
-             DUG 2 ;
-             CDR ;
-             CAR ;
-             CAR ;
-             DIG 4 ;
-             SWAP ;
-             EXEC ;
+             DIG 3 ;
              DROP ;
              SWAP ;
              DUP ;

@@ -32,7 +32,7 @@ let update_meta_and_create_txs (param, storage, is_edition_set
       else
         let new_token_metadata = 
           Big_map.add new_token_id t.token_metadata acc.storage.token_metadata in
-        let next_token_id : nat = if is_edition_set then new_token_id 
+        let next_token_id : nat = if is_edition_set then acc.storage.next_token_id
           else new_token_id + 1n in 
         let new_storage = { acc.storage with
           token_metadata = new_token_metadata;
