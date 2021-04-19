@@ -4,7 +4,7 @@ import { address, BigMap, nat, unit } from './type-aliases';
 type Storage = {
     allowlist: BigMap<address, unit>;
     market_storage: {
-        admin: {
+        admin?: {
             admin: address;
             paused: boolean;
             pending_admin?: address;
