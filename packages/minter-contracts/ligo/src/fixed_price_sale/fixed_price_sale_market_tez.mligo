@@ -1,5 +1,5 @@
 #include "../../fa2/fa2_interface.mligo"
-#include "../../fa2_modules/admin/simple_admin.mligo"
+#include "../../fa2_modules/pauseable_admin_option.mligo"
 #include "../common.mligo"
 
 type global_token_id =
@@ -27,7 +27,7 @@ type sale_param_tez =
 type storage =
 [@layout:comb]
 {
-  admin: admin_storage;
+  admin: pauseable_admin_storage;
   sales: (sale_param_tez, tez) big_map;
 }
 
@@ -36,7 +36,7 @@ type storage =
 type storage =
 [@layout:comb]
 {
-  admin: admin_storage;
+  admin: pauseable_admin_storage;
   sales: (sale_param_tez, tez) big_map;
   fee : fee_data;
 }
@@ -54,7 +54,7 @@ type market_entry_points =
   | Sell of init_sale_param_tez
   | Buy of sale_param_tez
   | Cancel of sale_param_tez
-  | Admin of admin_entrypoints
+  | Admin of pauseable_admin
 
 let assert_msg (condition, msg : bool * string ) : unit =
   if (not condition) then failwith(msg) else unit
@@ -138,7 +138,7 @@ let fixed_price_sale_tez_main (p, storage : market_entry_points * storage) : ope
              else fail_if_not_admin_ext (storage.admin, "OR A SELLER") in
      cancel_sale(sale,storage)
   | Admin a ->
-     let ops, admin = admin_main(a, storage.admin) in
+     let ops, admin = pauseable_admin(a, storage.admin) in
      let new_storage = { storage with admin = admin; } in
      ops, new_storage
 
@@ -146,10 +146,10 @@ let fixed_price_sale_tez_main (p, storage : market_entry_points * storage) : ope
 
 let sample_storage : storage =
   {
-    admin = {
+    admin = Some ({
         admin =  ("tz1KqTpEZ7Yob7QbPE4Hy4Wo8fHG8LhKxZSx" :address);
         pending_admin = (None : address option);
-        paused = false;};
+        paused = false;});
     sales = (Big_map.empty : (sale_param_tez, tez) big_map);
   }
 
@@ -157,10 +157,11 @@ let sample_storage : storage =
 
 let sample_storage : storage =
   {
-    admin = {
+    admin = Some ( {
         admin =  ("tz1KqTpEZ7Yob7QbPE4Hy4Wo8fHG8LhKxZSx" :address);
         pending_admin = (None : address option);
-        paused = false;};
+        paused = false;
+              });
     sales = (Big_map.empty : (sale_param_tez, tez) big_map);
     fee = {
       fee_address = ("tz1KqTpEZ7Yob7QbPE4Hy4Wo8fHG8LhKxZSx" :address);

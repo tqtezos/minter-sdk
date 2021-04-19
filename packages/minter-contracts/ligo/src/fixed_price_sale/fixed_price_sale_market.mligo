@@ -1,5 +1,5 @@
 #include "../../fa2/fa2_interface.mligo"
-#include "../../fa2_modules/admin/simple_admin.mligo"
+#include "../../fa2_modules/pauseable_admin_option.mligo"
 #include "../common.mligo"
 
 type global_token_id =
@@ -34,14 +34,14 @@ type init_sale_param =
 #if !FEE 
 
 type storage = {
-    admin: admin_storage;
+    admin: pauseable_admin_storage;
     sales: (sale_param, nat) big_map;
 }
 
 #else 
 
 type storage = {
-    admin: admin_storage;
+    admin: pauseable_admin_storage;
     sales: (sale_param, nat) big_map;
     fee : fee_data;
 }
@@ -52,7 +52,7 @@ type market_entry_points =
   | Sell of init_sale_param
   | Buy of sale_param
   | Cancel of sale_param
-  | Admin of admin_entrypoints
+  | Admin of pauseable_admin
 
 let transfer_fa2(fa2_address, token_id, amount_, from, to_: address * token_id * nat * address * address): operation =
   let fa2_transfer : ((transfer list) contract) option =
@@ -121,6 +121,6 @@ let fixed_price_sale_main (p, storage : market_entry_points * storage) : operati
              else fail_if_not_admin_ext (storage.admin, "OR A SELLER") in
      cancel_sale(sale,storage)
   | Admin a ->
-    let ops, admin = admin_main(a, storage.admin) in
+    let ops, admin = pauseable_admin(a, storage.admin) in
     let new_storage = { storage with admin = admin; } in
     ops, new_storage

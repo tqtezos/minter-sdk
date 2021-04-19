@@ -19,7 +19,8 @@
                   (pair (nat %token_for_sale_token_id)
                         (pair (address %money_token_address) (nat %money_token_token_id))))))) ;
   storage
-    (pair (pair (pair %admin (pair (address %admin) (bool %paused)) (option %pending_admin address))
+    (pair (pair (option %admin
+                   (pair (pair (address %admin) (bool %paused)) (option %pending_admin address)))
                 (pair %fee (address %fee_address) (nat %fee_percent)))
           (big_map %sales
              (pair (address %seller)
@@ -29,14 +30,16 @@
                             (pair (address %money_token_address) (nat %money_token_token_id)))))
              nat)) ;
   code { LAMBDA
-           (pair (pair address bool) (option address))
+           (option (pair (pair address bool) (option address)))
            unit
-           { CAR ;
-             CAR ;
-             SENDER ;
-             COMPARE ;
-             NEQ ;
-             IF { PUSH string "NOT_AN_ADMIN" ; FAILWITH } { UNIT } } ;
+           { IF_NONE
+               { UNIT }
+               { CAR ;
+                 CAR ;
+                 SENDER ;
+                 COMPARE ;
+                 NEQ ;
+                 IF { PUSH string "NOT_AN_ADMIN" ; FAILWITH } { UNIT } } } ;
          LAMBDA
            (pair (pair (pair address nat) (pair nat address)) address)
            operation
@@ -81,15 +84,17 @@
                        { DROP ;
                          DIG 2 ;
                          DROP ;
-                         DUP ;
-                         CDR ;
                          IF_NONE
-                           { DROP ; PUSH string "NO_PENDING_ADMIN" ; FAILWITH }
-                           { SENDER ;
-                             COMPARE ;
-                             EQ ;
-                             IF { NONE address ; SWAP ; CAR ; CDR ; SENDER ; PAIR ; PAIR }
-                                { DROP ; PUSH string "NOT_A_PENDING_ADMIN" ; FAILWITH } } ;
+                           { PUSH string "NO_ADMIN_CAPABILITIES_CONFIGURED" ; FAILWITH }
+                           { DUP ;
+                             CDR ;
+                             IF_NONE
+                               { DROP ; PUSH string "NO_PENDING_ADMIN" ; FAILWITH }
+                               { SENDER ;
+                                 COMPARE ;
+                                 EQ ;
+                                 IF { NONE address ; SWAP ; CAR ; CDR ; SENDER ; PAIR ; PAIR ; SOME }
+                                    { DROP ; PUSH string "NOT_A_PENDING_ADMIN" ; FAILWITH } } } ;
                          NIL operation ;
                          PAIR }
                        { SWAP ;
@@ -100,15 +105,9 @@
                          EXEC ;
                          DROP ;
                          SWAP ;
-                         DUP ;
-                         DUG 2 ;
-                         CDR ;
-                         SWAP ;
-                         DIG 2 ;
-                         CAR ;
-                         CAR ;
-                         PAIR ;
-                         PAIR ;
+                         IF_NONE
+                           { DROP ; PUSH string "NO_ADMIN_CAPABILITIES_CONFIGURED" ; FAILWITH }
+                           { DUP ; CDR ; DUG 2 ; CAR ; CAR ; PAIR ; PAIR ; SOME } ;
                          NIL operation ;
                          PAIR } }
                    { SWAP ;
@@ -118,10 +117,10 @@
                      SWAP ;
                      EXEC ;
                      DROP ;
-                     SOME ;
                      SWAP ;
-                     CAR ;
-                     PAIR ;
+                     IF_NONE
+                       { DROP ; PUSH string "NO_ADMIN_CAPABILITIES_CONFIGURED" ; FAILWITH }
+                       { SWAP ; SOME ; SWAP ; CAR ; PAIR ; SOME } ;
                      NIL operation ;
                      PAIR } ;
                  UNPAIR ;
@@ -142,9 +141,10 @@
                  DUG 2 ;
                  CAR ;
                  CAR ;
-                 CAR ;
-                 CDR ;
-                 IF { PUSH string "PAUSED" ; FAILWITH } {} ;
+                 IF_NONE
+                   { UNIT }
+                   { CAR ; CDR ; IF { PUSH string "PAUSED" ; FAILWITH } { UNIT } } ;
+                 DROP ;
                  SWAP ;
                  DUP ;
                  DUG 2 ;
@@ -269,13 +269,15 @@
                       DUP 3 ;
                       CAR ;
                       CAR ;
-                      CAR ;
-                      CAR ;
-                      SENDER ;
-                      COMPARE ;
-                      NEQ ;
-                      IF { PUSH string " " ; CONCAT ; PUSH string "NOT_AN_ADMIN" ; CONCAT ; FAILWITH }
-                         { DROP ; UNIT } } ;
+                      IF_NONE
+                        { DROP ; UNIT }
+                        { CAR ;
+                          CAR ;
+                          SENDER ;
+                          COMPARE ;
+                          NEQ ;
+                          IF { PUSH string " " ; CONCAT ; PUSH string "NOT_AN_ADMIN" ; CONCAT ; FAILWITH }
+                             { DROP ; UNIT } } } ;
                  DROP ;
                  SWAP ;
                  DUP ;

@@ -2,7 +2,7 @@
 import { address, BigMap, nat } from './type-aliases';
 
 type Storage = {
-    admin: {
+    admin?: {
         admin: address;
         paused: boolean;
         pending_admin?: address;
