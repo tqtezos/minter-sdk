@@ -60,6 +60,13 @@
            unit
            { UNPAIR ; NOT ; IF { FAILWITH } { DROP ; UNIT } } ;
          LAMBDA
+           address
+           (contract unit)
+           { CONTRACT unit ;
+             IF_NONE
+               { PUSH string "Return address does not resolve to contract" ; FAILWITH }
+               {} } ;
+         LAMBDA
            (pair address (pair address (pair address (list (pair nat nat)))))
            operation
            { UNPAIR 3 ;
@@ -135,13 +142,6 @@
              GET ;
              IF_NONE
                { PUSH string "Auction does not exist for given asset_id" ; FAILWITH }
-               {} } ;
-         LAMBDA
-           address
-           (contract unit)
-           { CONTRACT unit ;
-             IF_NONE
-               { PUSH string "Return address does not resolve to contract" ; FAILWITH }
                {} } ;
          LAMBDA
            (pair address
@@ -247,7 +247,7 @@
              IF_LEFT
                { DIG 3 ;
                  DROP ;
-                 DIG 8 ;
+                 DIG 7 ;
                  DROP ;
                  SWAP ;
                  DUP ;
@@ -255,7 +255,7 @@
                  CAR ;
                  SWAP ;
                  IF_LEFT
-                   { DIG 8 ;
+                   { DIG 7 ;
                      DROP ;
                      IF_LEFT
                        { DIG 4 ;
@@ -343,7 +343,7 @@
                          DUP ;
                          DUG 2 ;
                          PAIR ;
-                         DIG 8 ;
+                         DIG 7 ;
                          SWAP ;
                          EXEC ;
                          PUSH string "Bidder must be an implicit account" ;
@@ -827,7 +827,7 @@
                          DUP ;
                          DUG 2 ;
                          PAIR ;
-                         DIG 8 ;
+                         DIG 7 ;
                          SWAP ;
                          EXEC ;
                          PUSH string "Only seller can cancel auction" ;
@@ -879,7 +879,7 @@
                          CAR ;
                          PAIR ;
                          PAIR ;
-                         DIG 8 ;
+                         DIG 7 ;
                          SWAP ;
                          EXEC ;
                          SWAP ;
@@ -955,7 +955,7 @@
                          DUP ;
                          DUG 2 ;
                          PAIR ;
-                         DIG 8 ;
+                         DIG 7 ;
                          SWAP ;
                          EXEC ;
                          PUSH string "Auction must have ended" ;
@@ -1002,7 +1002,7 @@
                          CAR ;
                          PAIR ;
                          PAIR ;
-                         DIG 8 ;
+                         DIG 7 ;
                          SWAP ;
                          EXEC ;
                          SWAP ;
@@ -1069,7 +1069,7 @@
                  DROP ;
                  DIG 4 ;
                  DROP ;
-                 DIG 4 ;
+                 DIG 5 ;
                  DROP ;
                  NIL operation ;
                  DUG 2 ;

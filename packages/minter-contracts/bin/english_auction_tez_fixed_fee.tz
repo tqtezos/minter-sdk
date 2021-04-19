@@ -49,9 +49,33 @@
                { UNIT }
                { CAR ; CDR ; IF { PUSH string "PAUSED" ; FAILWITH } { UNIT } } } ;
          LAMBDA
+           (pair nat mutez)
+           mutez
+           { UNPAIR ;
+             PUSH nat 100 ;
+             SWAP ;
+             DIG 2 ;
+             MUL ;
+             EDIV ;
+             IF_NONE
+               { PUSH string "DIVISION_BY_ZERO" ; FAILWITH }
+               { UNPAIR ;
+                 PUSH mutez 0 ;
+                 DIG 2 ;
+                 COMPARE ;
+                 GT ;
+                 IF { PUSH mutez 1 ; ADD } {} } } ;
+         LAMBDA
            (pair bool string)
            unit
            { UNPAIR ; NOT ; IF { FAILWITH } { DROP ; UNIT } } ;
+         LAMBDA
+           address
+           (contract unit)
+           { CONTRACT unit ;
+             IF_NONE
+               { PUSH string "Return address does not resolve to contract" ; FAILWITH }
+               {} } ;
          LAMBDA
            (pair (pair (list (pair address (list (pair nat nat)))) address) address)
            (list operation)
@@ -113,13 +137,6 @@
              GET ;
              IF_NONE
                { PUSH string "Auction does not exist for given asset_id" ; FAILWITH }
-               {} } ;
-         LAMBDA
-           address
-           (contract unit)
-           { CONTRACT unit ;
-             IF_NONE
-               { PUSH string "Return address does not resolve to contract" ; FAILWITH }
                {} } ;
          LAMBDA
            (pair address
@@ -188,28 +205,11 @@
              CDR ;
              COMPARE ;
              EQ } ;
-         LAMBDA
-           (pair nat mutez)
-           mutez
-           { UNPAIR ;
-             PUSH nat 100 ;
-             SWAP ;
-             DIG 2 ;
-             MUL ;
-             EDIV ;
-             IF_NONE
-               { PUSH string "DIVISION_BY_ZERO" ; FAILWITH }
-               { UNPAIR ;
-                 PUSH mutez 0 ;
-                 DIG 2 ;
-                 COMPARE ;
-                 GT ;
-                 IF { PUSH mutez 1 ; ADD } {} } } ;
          DIG 9 ;
          UNPAIR ;
          IF_LEFT
            { IF_LEFT
-               { DIG 7 ;
+               { DIG 5 ;
                  DROP ;
                  IF_LEFT
                    { DIG 2 ;
@@ -220,7 +220,7 @@
                      DROP ;
                      DIG 2 ;
                      DROP ;
-                     DIG 2 ;
+                     DIG 3 ;
                      DROP ;
                      DIG 3 ;
                      DROP ;
@@ -299,7 +299,7 @@
                      DUP ;
                      DUG 2 ;
                      PAIR ;
-                     DIG 7 ;
+                     DIG 5 ;
                      SWAP ;
                      EXEC ;
                      PUSH string "Bidder must be an implicit account" ;
@@ -308,7 +308,7 @@
                      COMPARE ;
                      EQ ;
                      PAIR ;
-                     DUP 9 ;
+                     DUP 8 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
@@ -322,7 +322,7 @@
                      SWAP ;
                      DUP ;
                      DUG 2 ;
-                     DIG 7 ;
+                     DIG 6 ;
                      SWAP ;
                      EXEC ;
                      NOT ;
@@ -335,7 +335,7 @@
                      GE ;
                      AND ;
                      PAIR ;
-                     DUP 8 ;
+                     DUP 7 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
@@ -348,12 +348,12 @@
                      COMPARE ;
                      NEQ ;
                      PAIR ;
-                     DIG 7 ;
+                     DIG 6 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
                      DUP ;
-                     DUP 6 ;
+                     DUP 5 ;
                      SWAP ;
                      EXEC ;
                      SWAP ;
@@ -397,7 +397,7 @@
                      CDR ;
                      CAR ;
                      PAIR ;
-                     DIG 6 ;
+                     DIG 8 ;
                      SWAP ;
                      EXEC ;
                      DUP 4 ;
@@ -767,7 +767,7 @@
                { DIG 10 ;
                  DROP ;
                  IF_LEFT
-                   { DIG 2 ;
+                   { DIG 8 ;
                      DROP ;
                      SWAP ;
                      DUP ;
@@ -784,7 +784,7 @@
                      DUP ;
                      DUG 2 ;
                      PAIR ;
-                     DIG 6 ;
+                     DIG 5 ;
                      SWAP ;
                      EXEC ;
                      PUSH string "Only seller can cancel auction" ;
@@ -836,7 +836,7 @@
                      CAR ;
                      PAIR ;
                      PAIR ;
-                     DIG 6 ;
+                     DIG 5 ;
                      SWAP ;
                      EXEC ;
                      SWAP ;
@@ -920,18 +920,18 @@
                      DUP ;
                      DUG 2 ;
                      PAIR ;
-                     DIG 7 ;
+                     DIG 5 ;
                      SWAP ;
                      EXEC ;
                      PUSH string "Auction must have ended" ;
                      SWAP ;
                      DUP ;
                      DUG 2 ;
-                     DIG 7 ;
+                     DIG 6 ;
                      SWAP ;
                      EXEC ;
                      PAIR ;
-                     DUP 9 ;
+                     DUP 8 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
@@ -941,7 +941,7 @@
                      COMPARE ;
                      EQ ;
                      PAIR ;
-                     DIG 8 ;
+                     DIG 7 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
@@ -967,14 +967,14 @@
                      CAR ;
                      PAIR ;
                      PAIR ;
-                     DIG 7 ;
+                     DIG 5 ;
                      SWAP ;
                      EXEC ;
                      SWAP ;
                      DUP ;
                      DUG 2 ;
                      CAR ;
-                     DUP 8 ;
+                     DUP 7 ;
                      SWAP ;
                      EXEC ;
                      DUP 5 ;
@@ -984,11 +984,11 @@
                      CDR ;
                      CDR ;
                      CAR ;
-                     DIG 8 ;
+                     DIG 7 ;
                      SWAP ;
                      EXEC ;
                      DUP 4 ;
-                     DIG 8 ;
+                     DIG 7 ;
                      SWAP ;
                      EXEC ;
                      IF { DROP 2 ; SWAP ; DROP ; DIG 3 ; DROP }
@@ -1072,9 +1072,9 @@
              DROP ;
              DIG 2 ;
              DROP ;
-             DIG 2 ;
+             DIG 3 ;
              DROP ;
-             DIG 2 ;
+             DIG 4 ;
              DROP ;
              PUSH string
                   "Fee_percent must be less than 100%. Please originate another contract." ;

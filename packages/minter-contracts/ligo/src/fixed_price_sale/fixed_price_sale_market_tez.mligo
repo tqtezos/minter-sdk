@@ -1,5 +1,6 @@
 #include "../../fa2/fa2_interface.mligo"
 #include "../../fa2_modules/admin/simple_admin.mligo"
+#include "../common.mligo"
 
 type global_token_id =
 {
@@ -21,12 +22,26 @@ type sale_param_tez =
   sale_token: sale_token_param_tez;
 }
 
+#if !FEE 
+
 type storage =
 [@layout:comb]
 {
   admin: admin_storage;
   sales: (sale_param_tez, tez) big_map;
 }
+
+#else 
+
+type storage =
+[@layout:comb]
+{
+  admin: admin_storage;
+  sales: (sale_param_tez, tez) big_map;
+  fee : fee_data;
+}
+
+#endif 
 
 type init_sale_param_tez =
 [@layout:comb]
@@ -40,6 +55,9 @@ type market_entry_points =
   | Buy of sale_param_tez
   | Cancel of sale_param_tez
   | Admin of admin_entrypoints
+
+let assert_msg (condition, msg : bool * string ) : unit =
+  if (not condition) then failwith(msg) else unit
 
 let transfer_nft(fa2_address, token_id, from, to_: address * token_id * address * address): operation =
   let fa2_transfer : ((transfer list) contract) option =
@@ -57,24 +75,33 @@ let transfer_nft(fa2_address, token_id, from, to_: address * token_id * address 
     Tezos.transaction [tx] 0mutez c in
   transfer_op
 
-let transfer_tez (price, seller : tez * address) : operation =
-  let seller_account = (match (Tezos.get_contract_opt seller : unit contract option) with
-    | None -> (failwith "NO_SELLER_ACCOUNT" : unit contract)
+let transfer_tez (qty, to_ : tez * address) : operation =
+  let destination = (match (Tezos.get_contract_opt to_ : unit contract option) with
+    | None -> (failwith "ADDRESS_DOES_NOT_RESOLVE" : unit contract)
     | Some acc -> acc) in 
-  let amountError =
-    if Tezos.amount <> price
-    then ([%Michelson ({| { FAILWITH } |} : string * tez * tez -> unit)] ("WRONG_TEZ_PRICE", price, Tezos.amount) : unit)
-    else () in
-  Tezos.transaction () Tezos.amount seller_account
+  Tezos.transaction () qty destination
 
 let buy_token(sale, storage: sale_param_tez * storage) : (operation list * storage) =
-  let sale_price = (match Big_map.find_opt sale storage.sales with
+  let sale_price : tez = (match Big_map.find_opt sale storage.sales with
   | None -> (failwith "NO_SALE": tez)
   | Some s -> s) in 
-  let tx_ops = transfer_tez(sale_price, sale.seller) in
-  let tx_nft_op = transfer_nft(sale.sale_token.token_for_sale_address, sale.sale_token.token_for_sale_token_id, Tezos.self_address, Tezos.sender) in
+  let amountError : unit =
+    if Tezos.amount <> sale_price
+    then ([%Michelson ({| { FAILWITH } |} : string * tez * tez -> unit)] ("WRONG_TEZ_PRICE", sale_price, Tezos.amount) : unit)
+    else () in
+  let tx_nft = transfer_nft(sale.sale_token.token_for_sale_address, sale.sale_token.token_for_sale_token_id, Tezos.self_address, Tezos.sender) in
+#if !FEE 
+  let tx_price = transfer_tez(sale_price, sale.seller) in
+  let oplist : operation list = [tx_nft; tx_price] in 
+#else 
+  let fee : tez = percent_of_bid_tez (storage.fee.fee_percent, sale_price) in
+  let sale_price_minus_fee : tez = sale_price - fee in
+  let tx_fee : operation = transfer_tez(fee, storage.fee.fee_address) in
+  let tx_price = transfer_tez(sale_price_minus_fee, sale.seller) in
+  let oplist : operation list = [tx_price; tx_nft; tx_fee] in
+#endif 
   let new_s = { storage with sales = Big_map.remove sale storage.sales } in
-  (tx_ops :: tx_nft_op :: []), new_s
+  oplist, new_s
 
 let tez_stuck_guard(entrypoint: string) : string = "DON'T TRANSFER TEZ TO THIS ENTRYPOINT (" ^ entrypoint ^ ")"
 
@@ -97,6 +124,9 @@ let cancel_sale(sale, storage: sale_param_tez * storage) : (operation list * sto
 
 let fixed_price_sale_tez_main (p, storage : market_entry_points * storage) : operation list * storage = match p with
   | Sell sale ->
+#if FEE
+     let u : unit = assert_msg (storage.fee.fee_percent <= 100n, "FEE_PERCENT_TOO_HIGH") in
+#endif
      let v : unit = fail_if_not_admin(storage.admin) in
      deposit_for_sale(sale.sale_token_param_tez, sale.sale_price, storage)
   | Buy sale ->
@@ -112,6 +142,7 @@ let fixed_price_sale_tez_main (p, storage : market_entry_points * storage) : ope
      let new_storage = { storage with admin = admin; } in
      ops, new_storage
 
+#if !FEE
 
 let sample_storage : storage =
   {
@@ -121,3 +152,20 @@ let sample_storage : storage =
         paused = false;};
     sales = (Big_map.empty : (sale_param_tez, tez) big_map);
   }
+
+#else 
+
+let sample_storage : storage =
+  {
+    admin = {
+        admin =  ("tz1KqTpEZ7Yob7QbPE4Hy4Wo8fHG8LhKxZSx" :address);
+        pending_admin = (None : address option);
+        paused = false;};
+    sales = (Big_map.empty : (sale_param_tez, tez) big_map);
+    fee = {
+      fee_address = ("tz1KqTpEZ7Yob7QbPE4Hy4Wo8fHG8LhKxZSx" :address);
+      fee_percent = 15n;
+    }
+  }
+
+#endif 
