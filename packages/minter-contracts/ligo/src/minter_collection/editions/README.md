@@ -7,7 +7,7 @@ but with unique serial numbers, e.g. in a _limited run_.
 With contracts not specialized to editions, this results in redundant copies of the metadata that's shared between editions in a run.
 We also want the token ids of tokens in an edition set to be consecutive to make reasoning about them easier. 
 
-This propsal allows editions creators to easily mint an "unlimited" (limited only by big_map storage limits) number of editions and then distribute them concurrently. 
+Editions-FA2 allows editions creators to easily mint an "unlimited" (limited only by big_map storage limits) number of editions and then distribute them concurrently. 
 
 ## Storage
 
