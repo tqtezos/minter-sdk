@@ -2,12 +2,6 @@
 #include "../../fa2_modules/pauseable_admin_option.mligo"
 #include "../common.mligo"
 
-type global_token_id =
-{
-  fa2: address;
-  token_id: token_id;
-}
-
 type sale_token_param_tez =
 [@layout:comb]
 {
@@ -111,7 +105,7 @@ let deposit_for_sale(sale_token, price, storage: sale_token_param_tez * tez * st
       transfer_nft (sale_token.token_for_sale_address, sale_token.token_for_sale_token_id, Tezos.sender, Tezos.self_address) in
     let sale_param = { seller = Tezos.sender; sale_token = sale_token } in
     let new_s = { storage with sales = Big_map.add sale_param price storage.sales } in
-    (transfer_op :: []), new_s
+    [transfer_op], new_s
 
 let cancel_sale(sale, storage: sale_param_tez * storage) : (operation list * storage) =
   let u : unit = if Tezos.amount <> 0tez then failwith (tez_stuck_guard "CANCEL") else () in
@@ -119,7 +113,7 @@ let cancel_sale(sale, storage: sale_param_tez * storage) : (operation list * sto
     | None -> (failwith "NO_SALE" : (operation list * storage))
     | Some price -> if sale.seller = Tezos.sender then
                       let tx_nft_back_op = transfer_nft(sale.sale_token.token_for_sale_address, sale.sale_token.token_for_sale_token_id, Tezos.self_address, Tezos.sender) in
-                      (tx_nft_back_op :: []), {storage with sales = Big_map.remove sale storage.sales }
+                      [tx_nft_back_op], {storage with sales = Big_map.remove sale storage.sales }
       else (failwith "NOT_OWNER": (operation list * storage))
 
 let fixed_price_sale_tez_main (p, storage : market_entry_points * storage) : operation list * storage = match p with

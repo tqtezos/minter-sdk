@@ -1,3 +1,6 @@
+#if !COMMON
+#define COMMON
+
 (*TYPES*)
 
 type fee_data = 
@@ -7,7 +10,7 @@ type fee_data =
     fee_percent : nat;
   }
 
-type fa2_token =
+type fa2_tokens =
   [@layout:comb]
   {
     token_id : token_id;
@@ -17,9 +20,15 @@ type tokens =
   [@layout:comb]
   {
     fa2_address : address;
-    fa2_batch : (fa2_token list);
+    fa2_batch : (fa2_tokens list);
   }
 
+type global_token_id =
+  [@layout:comb]
+  {
+      fa2_address : address;
+      token_id : token_id;
+  }
 
 (*MATH*) 
 
@@ -55,3 +64,5 @@ let resolve_contract (add : address) : unit contract =
   match ((Tezos.get_contract_opt add) : (unit contract) option) with
       None -> (failwith "Return address does not resolve to contract" : unit contract)
     | Some c -> c
+
+#endif

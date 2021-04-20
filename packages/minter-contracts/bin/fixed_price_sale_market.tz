@@ -52,7 +52,7 @@
                (list (pair (address %from_)
                            (list %txs (pair (address %to_) (pair (nat %token_id) (nat %amount)))))) ;
              IF_NONE
-               { DROP 4 ; PUSH string "CANNOT_INVOKE_MONEY_FA2" ; FAILWITH }
+               { DROP 4 ; PUSH string "CANNOT_INVOKE_FA2_TRANSFER" ; FAILWITH }
                { PUSH mutez 0 ;
                  NIL (pair address (list (pair address (pair nat nat)))) ;
                  NIL (pair address (pair nat nat)) ;

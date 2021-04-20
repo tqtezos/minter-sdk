@@ -2,12 +2,6 @@
 #include "../../fa2_modules/pauseable_admin_option.mligo"
 #include "../common.mligo"
 
-type global_token_id =
-{
-  fa2: address;
-  token_id: token_id;
-}
-
 type sale_tokens_param =
 [@layout:comb]
 {
@@ -58,7 +52,7 @@ let transfer_fa2(fa2_address, token_id, amount_, from, to_: address * token_id *
   let fa2_transfer : ((transfer list) contract) option =
       Tezos.get_entrypoint_opt "%transfer"  fa2_address in
   let transfer_op = match fa2_transfer with
-  | None -> (failwith "CANNOT_INVOKE_MONEY_FA2" : operation)
+  | None -> (failwith "CANNOT_INVOKE_FA2_TRANSFER" : operation)
   | Some c ->
     let tx = {
       from_ = from;

@@ -2,12 +2,7 @@
 #include "../../fa2_modules/pauseable_admin_option.mligo"
 #include "../common.mligo"
 
-type bid_currency = 
-  [@layout:comb]
-  {
-      fa2_address : address;
-      token_id : token_id;
-  }
+type bid_currency = global_token_id
 
 type auction =
   [@layout:comb]
@@ -88,10 +83,10 @@ let transfer_tokens_in_single_contract (transfer_param, fa2: (transfer list) * a
   (Tezos.transaction transfer_param 0mutez c) 
 
 let transfer_tokens_in_single_contract_to_address (from_ : address) (to_ : address) (tokens : tokens) : operation = 
-  let to_tx (fa2_token : fa2_token) : transfer_destination = {
+  let to_tx (fa2_tokens : fa2_tokens) : transfer_destination = {
       to_ = to_;
-      token_id = fa2_token.token_id;
-      amount = fa2_token.amount;
+      token_id = fa2_tokens.token_id;
+      amount = fa2_tokens.amount;
    } in
    let txs = List.map to_tx tokens.fa2_batch in 
    let transfer_list : transfer list = [{from_ = from_; txs = txs}] in
