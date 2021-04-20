@@ -19,8 +19,9 @@
                   (pair (nat %token_for_sale_token_id)
                         (pair (address %money_token_address) (nat %money_token_token_id))))))) ;
   storage
-    (pair (option %admin
-             (pair (pair (address %admin) (bool %paused)) (option %pending_admin address)))
+    (pair (pair (option %admin
+                   (pair (pair (address %admin) (bool %paused)) (option %pending_admin address)))
+                (pair %fee (address %fee_address) (nat %fee_percent)))
           (big_map %sales
              (pair (address %seller)
                    (pair %tokens
@@ -76,6 +77,7 @@
                  DUP ;
                  DUG 2 ;
                  CAR ;
+                 CAR ;
                  SWAP ;
                  IF_LEFT
                    { IF_LEFT
@@ -122,9 +124,13 @@
                      NIL operation ;
                      PAIR } ;
                  UNPAIR ;
-                 DIG 2 ;
+                 DUP 3 ;
                  CDR ;
-                 DIG 2 ;
+                 DIG 3 ;
+                 CAR ;
+                 CDR ;
+                 DIG 3 ;
+                 PAIR ;
                  PAIR ;
                  SWAP ;
                  PAIR }
@@ -133,6 +139,7 @@
                  SWAP ;
                  DUP ;
                  DUG 2 ;
+                 CAR ;
                  CAR ;
                  IF_NONE
                    { UNIT }
@@ -164,37 +171,86 @@
                  DUP 5 ;
                  SWAP ;
                  EXEC ;
-                 DUP 3 ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 DUP 5 ;
+                 CAR ;
+                 CDR ;
+                 CDR ;
+                 PUSH nat 100 ;
+                 SWAP ;
+                 DIG 2 ;
+                 MUL ;
+                 SWAP ;
+                 INT ;
+                 SWAP ;
+                 NEG ;
+                 EDIV ;
+                 IF_NONE { PUSH string "DIV by 0" ; FAILWITH } {} ;
+                 CAR ;
+                 ABS ;
+                 DUP ;
+                 DIG 3 ;
+                 SUB ;
+                 ISNAT ;
+                 IF_NONE { PUSH string "FEE_TOO_HIGH" ; FAILWITH } {} ;
+                 DUP 5 ;
+                 CAR ;
+                 CDR ;
                  CAR ;
                  SENDER ;
                  DIG 3 ;
                  PAIR ;
-                 DUP 4 ;
-                 CDR ;
-                 CDR ;
-                 CDR ;
-                 CDR ;
                  DUP 5 ;
                  CDR ;
                  CDR ;
                  CDR ;
+                 CDR ;
+                 DUP 6 ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
                  CAR ;
                  PAIR ;
                  PAIR ;
                  PAIR ;
-                 DIG 4 ;
+                 DUP 6 ;
                  SWAP ;
                  EXEC ;
                  DUP 4 ;
-                 CDR ;
+                 CAR ;
+                 SENDER ;
                  DIG 3 ;
+                 PAIR ;
+                 DUP 5 ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 DUP 6 ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CAR ;
+                 PAIR ;
+                 PAIR ;
+                 PAIR ;
+                 DIG 5 ;
+                 SWAP ;
+                 EXEC ;
+                 DUP 5 ;
+                 CDR ;
+                 DIG 4 ;
                  NONE nat ;
                  SWAP ;
                  UPDATE ;
-                 DIG 3 ;
+                 DIG 4 ;
                  CAR ;
                  PAIR ;
                  NIL operation ;
+                 DIG 3 ;
+                 CONS ;
                  DIG 3 ;
                  CONS ;
                  DIG 2 ;
@@ -211,6 +267,7 @@
                  IF { PUSH unit Unit }
                     { PUSH string "OR A SELLER" ;
                       DUP 3 ;
+                      CAR ;
                       CAR ;
                       IF_NONE
                         { DROP ; UNIT }
@@ -271,9 +328,20 @@
                           CONS ;
                           PAIR }
                         { DROP 3 ; PUSH string "NOT_OWNER" ; FAILWITH } } }
-               { SWAP ;
+               { PUSH string "FEE_TOO_HIGH" ;
+                 PUSH nat 100 ;
+                 DUP 4 ;
+                 CAR ;
+                 CDR ;
+                 CDR ;
+                 COMPARE ;
+                 LE ;
+                 NOT ;
+                 IF { FAILWITH } { DROP } ;
+                 SWAP ;
                  DUP ;
                  DUG 2 ;
+                 CAR ;
                  CAR ;
                  DIG 4 ;
                  SWAP ;

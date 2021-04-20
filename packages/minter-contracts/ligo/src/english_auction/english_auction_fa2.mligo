@@ -1,25 +1,8 @@
 #include "../../fa2/fa2_interface.mligo"
 #include "../../fa2_modules/pauseable_admin_option.mligo"
+#include "../common.mligo"
 
-type fa2_token =
-  [@layout:comb]
-  {
-    token_id : token_id;
-    amount : nat;
-  }
-type tokens =
-  [@layout:comb]
-  {
-    fa2_address : address;
-    fa2_batch : (fa2_token list);
-  }
-
-type bid_currency = 
-  [@layout:comb]
-  {
-      fa2_address : address;
-      token_id : token_id;
-  }
+type bid_currency = global_token_id
 
 type auction =
   [@layout:comb]
@@ -79,13 +62,6 @@ type storage =
 
 #else 
 
-type fee_data = 
-  [@layout:comb]
-  {
-    fee_address : address;
-    fee_percent : nat;
-  }
-
 type storage =
   [@layout:comb]
   {
@@ -102,24 +78,15 @@ type storage =
 
 type return = operation list * storage
 
-let assert_msg (condition, msg : bool * string ) : unit =
-  if (not condition) then failwith(msg) else unit
-
-let address_to_contract_transfer_entrypoint(add : address) : ((transfer list) contract) =
-  let c : (transfer list) contract option = Tezos.get_entrypoint_opt "%transfer" add in
-  match c with
-    None -> (failwith "Invalid FA2 Address" : (transfer list) contract)
-  | Some c ->  c
-
 let transfer_tokens_in_single_contract (transfer_param, fa2: (transfer list) * address) : operation = 
   let c = address_to_contract_transfer_entrypoint(fa2) in
   (Tezos.transaction transfer_param 0mutez c) 
 
 let transfer_tokens_in_single_contract_to_address (from_ : address) (to_ : address) (tokens : tokens) : operation = 
-  let to_tx (fa2_token : fa2_token) : transfer_destination = {
+  let to_tx (fa2_tokens : fa2_tokens) : transfer_destination = {
       to_ = to_;
-      token_id = fa2_token.token_id;
-      amount = fa2_token.amount;
+      token_id = fa2_tokens.token_id;
+      amount = fa2_tokens.amount;
    } in
    let txs = List.map to_tx tokens.fa2_batch in 
    let transfer_list : transfer list = [{from_ = from_; txs = txs}] in
@@ -160,13 +127,8 @@ let auction_in_progress (auction : auction) : bool =
 let first_bid (auction : auction) : bool =
   auction.highest_bidder = auction.seller
 
-let ceil_div (numerator, denominator : nat * nat) : nat = abs ((- numerator) / (int denominator))
-
-let percent_of_bid (percent, bid : nat * nat) : nat = 
-  (ceil_div (bid *  percent, 100n))
-
 let valid_bid_amount (auction, token_amount : auction * nat) : bool =
-  (token_amount >= (auction.current_bid + (percent_of_bid (auction.min_raise_percent, auction.current_bid)))) ||
+  (token_amount >= (auction.current_bid + (percent_of_bid_nat (auction.min_raise_percent, auction.current_bid)))) ||
   (token_amount >= auction.current_bid + auction.min_raise)                                            ||
   ((token_amount >= auction.current_bid) && first_bid(auction))
 
@@ -221,7 +183,7 @@ let resolve_auction(asset_id, storage : nat * storage) : return = begin
     
     let op_list : operation list = if first_bid(auction) then 
       asset_transfers else  
-      let fee : nat = percent_of_bid (storage.fee.fee_percent, auction.current_bid) in
+      let fee : nat = percent_of_bid_nat (storage.fee.fee_percent, auction.current_bid) in
       let final_price_minus_fee : nat =  (match (is_nat (auction.current_bid - fee)) with 
         | Some adjusted_price -> adjusted_price 
         | None -> (failwith "fee is larger than winning bid" : nat)) in

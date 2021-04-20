@@ -38,10 +38,14 @@ import { FixedPriceSaleMarketCode } from './bin-ts/fixed_price_sale_market.code'
 import { FixedPriceSaleMarketContractType } from './bin-ts/fixed_price_sale_market.types';
 import { FixedPriceSaleMarketAllowlistedCode } from './bin-ts/fixed_price_sale_market_allowlisted.code';
 import { FixedPriceSaleMarketAllowlistedContractType } from './bin-ts/fixed_price_sale_market_allowlisted.types';
+import { FixedPriceSaleMarketFixedFeeCode } from './bin-ts/fixed_price_sale_market_fixed_fee.code';
+import { FixedPriceSaleMarketFixedFeeContractType } from './bin-ts/fixed_price_sale_market_fixed_fee.types';
 import { FixedPriceSaleMarketTezCode } from './bin-ts/fixed_price_sale_market_tez.code';
 import { FixedPriceSaleMarketTezContractType } from './bin-ts/fixed_price_sale_market_tez.types';
 import { FixedPriceSaleMarketTezAllowlistedCode } from './bin-ts/fixed_price_sale_market_tez_allowlisted.code';
 import { FixedPriceSaleMarketTezAllowlistedContractType } from './bin-ts/fixed_price_sale_market_tez_allowlisted.types';
+import { FixedPriceSaleTezFixedFeeCode } from './bin-ts/fixed_price_sale_tez_fixed_fee.code';
+import { FixedPriceSaleTezFixedFeeContractType } from './bin-ts/fixed_price_sale_tez_fixed_fee.types';
 import { TicketAuctionCode } from './bin-ts/ticket_auction.code';
 import { TicketAuctionContractType } from './bin-ts/ticket_auction.types';
 import { TicketWalletCode } from './bin-ts/ticket_wallet.code';
@@ -88,10 +92,14 @@ export {
   FixedPriceSaleMarketCode,
   FixedPriceSaleMarketAllowlistedContractType,
   FixedPriceSaleMarketAllowlistedCode,
+  FixedPriceSaleMarketFixedFeeContractType,
+  FixedPriceSaleMarketFixedFeeCode,
   FixedPriceSaleMarketTezContractType,
   FixedPriceSaleMarketTezCode,
   FixedPriceSaleMarketTezAllowlistedContractType,
   FixedPriceSaleMarketTezAllowlistedCode,
+  FixedPriceSaleTezFixedFeeContractType,
+  FixedPriceSaleTezFixedFeeCode,
   TicketAuctionContractType,
   TicketAuctionCode,
   TicketWalletContractType,

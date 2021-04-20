@@ -50,6 +50,22 @@
                { UNIT }
                { CAR ; CDR ; IF { PUSH string "PAUSED" ; FAILWITH } { UNIT } } } ;
          LAMBDA
+           (pair nat nat)
+           nat
+           { UNPAIR ;
+             PUSH nat 100 ;
+             SWAP ;
+             DIG 2 ;
+             MUL ;
+             SWAP ;
+             INT ;
+             SWAP ;
+             NEG ;
+             EDIV ;
+             IF_NONE { PUSH string "DIV by 0" ; FAILWITH } {} ;
+             CAR ;
+             ABS } ;
+         LAMBDA
            (pair bool string)
            unit
            { UNPAIR ; NOT ; IF { FAILWITH } { DROP ; UNIT } } ;
@@ -235,29 +251,13 @@
              CDR ;
              COMPARE ;
              EQ } ;
-         LAMBDA
-           (pair nat nat)
-           nat
-           { UNPAIR ;
-             PUSH nat 100 ;
-             SWAP ;
-             DIG 2 ;
-             MUL ;
-             SWAP ;
-             INT ;
-             SWAP ;
-             NEG ;
-             EDIV ;
-             IF_NONE { PUSH string "DIV by 0" ; FAILWITH } {} ;
-             CAR ;
-             ABS } ;
          DIG 10 ;
          UNPAIR ;
          IF_LEFT
-           { DIG 8 ;
+           { DIG 7 ;
              DROP ;
              IF_LEFT
-               { DIG 6 ;
+               { DIG 5 ;
                  DROP ;
                  IF_LEFT
                    { DIG 2 ;
@@ -268,7 +268,7 @@
                      DROP ;
                      DIG 2 ;
                      DROP ;
-                     DIG 2 ;
+                     DIG 3 ;
                      DROP ;
                      DIG 3 ;
                      DROP ;
@@ -346,7 +346,7 @@
                      DUP ;
                      DUG 2 ;
                      PAIR ;
-                     DIG 7 ;
+                     DIG 6 ;
                      SWAP ;
                      EXEC ;
                      PUSH string "Bidder must be an implicit account" ;
@@ -355,7 +355,7 @@
                      COMPARE ;
                      EQ ;
                      PAIR ;
-                     DUP 10 ;
+                     DUP 9 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
@@ -369,7 +369,7 @@
                      SWAP ;
                      DUP ;
                      DUG 2 ;
-                     DIG 8 ;
+                     DIG 7 ;
                      SWAP ;
                      EXEC ;
                      NOT ;
@@ -382,7 +382,7 @@
                      GE ;
                      AND ;
                      PAIR ;
-                     DUP 9 ;
+                     DUP 8 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
@@ -395,7 +395,7 @@
                      COMPARE ;
                      NEQ ;
                      PAIR ;
-                     DIG 8 ;
+                     DIG 7 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
@@ -404,7 +404,7 @@
                      DUP ;
                      DUG 2 ;
                      DUP ;
-                     DUP 9 ;
+                     DUP 8 ;
                      SWAP ;
                      EXEC ;
                      SWAP ;
@@ -448,7 +448,7 @@
                      CDR ;
                      CAR ;
                      PAIR ;
-                     DIG 9 ;
+                     DIG 11 ;
                      SWAP ;
                      EXEC ;
                      DIG 3 ;
@@ -847,7 +847,7 @@
                      PAIR ;
                      SWAP ;
                      PAIR } }
-               { DIG 2 ;
+               { DIG 8 ;
                  DROP ;
                  IF_LEFT
                    { DIG 9 ;
@@ -1342,7 +1342,7 @@
                      PAIR ;
                      SWAP ;
                      PAIR } } }
-           { DIG 7 ;
+           { DIG 6 ;
              DROP ;
              DIG 10 ;
              DROP ;
@@ -1361,18 +1361,18 @@
              DUP ;
              DUG 2 ;
              PAIR ;
-             DIG 6 ;
+             DIG 5 ;
              SWAP ;
              EXEC ;
              PUSH string "Auction must have ended" ;
              SWAP ;
              DUP ;
              DUG 2 ;
-             DIG 7 ;
+             DIG 6 ;
              SWAP ;
              EXEC ;
              PAIR ;
-             DUP 9 ;
+             DUP 8 ;
              SWAP ;
              EXEC ;
              DROP ;
@@ -1382,7 +1382,7 @@
              COMPARE ;
              EQ ;
              PAIR ;
-             DIG 8 ;
+             DIG 7 ;
              SWAP ;
              EXEC ;
              DROP ;
@@ -1408,13 +1408,13 @@
              CAR ;
              PAIR ;
              PAIR ;
-             DIG 6 ;
+             DIG 5 ;
              SWAP ;
              EXEC ;
              SWAP ;
              DUP ;
              DUG 2 ;
-             DIG 6 ;
+             DIG 5 ;
              SWAP ;
              EXEC ;
              IF { SWAP ; DROP ; DIG 3 ; DROP ; DIG 3 ; DROP }
@@ -1432,7 +1432,7 @@
                   CDR ;
                   CDR ;
                   PAIR ;
-                  DIG 5 ;
+                  DIG 6 ;
                   SWAP ;
                   EXEC ;
                   DUP ;

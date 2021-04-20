@@ -1,18 +1,6 @@
 #include "../../fa2/fa2_interface.mligo"
 #include "../../fa2_modules/pauseable_admin_option.mligo"
-
-type fa2_token =
-  [@layout:comb]
-  {
-    token_id : token_id;
-    amount : nat;
-  }
-type tokens =
-  [@layout:comb]
-  {
-    fa2_address : address;
-    fa2_batch : (fa2_token list);
-  }
+#include "../common.mligo"
 
 type auction =
   [@layout:comb]
@@ -67,13 +55,6 @@ type storage =
 
 #else 
 
-type fee_data = 
-  [@layout:comb]
-  {
-    fee_address : address;
-    fee_percent : nat;
-  }
-
 type storage =
   [@layout:comb]
   {
@@ -89,20 +70,11 @@ type storage =
 
 type return = operation list * storage
 
-let assert_msg (condition, msg : bool * string ) : unit =
-  if (not condition) then failwith(msg) else unit
-
-let address_to_contract_transfer_entrypoint(add : address) : ((transfer list) contract) =
-  let c : (transfer list) contract option = Tezos.get_entrypoint_opt "%transfer" add in
-  match c with
-    None -> (failwith "Invalid FA2 Address" : (transfer list) contract)
-  | Some c ->  c
-
 let transfer_tokens_in_single_contract (from_ : address) (to_ : address) (tokens : tokens) : operation = 
-  let to_tx (fa2_token : fa2_token) : transfer_destination = {
+  let to_tx (fa2_tokens : fa2_tokens) : transfer_destination = {
       to_ = to_;
-      token_id = fa2_token.token_id;
-      amount = fa2_token.amount;
+      token_id = fa2_tokens.token_id;
+      amount = fa2_tokens.amount;
    } in
    let txs = List.map to_tx tokens.fa2_batch in
    let transfer_param = [{from_ = from_; txs = txs}] in
@@ -130,11 +102,6 @@ let get_auction_data ((asset_id, storage) : nat * storage) : auction =
       None -> (failwith "Auction does not exist for given asset_id" : auction)
     | Some auction -> auction
 
-let resolve_contract (add : address) : unit contract =
-  match ((Tezos.get_contract_opt add) : (unit contract) option) with
-      None -> (failwith "Return address does not resolve to contract" : unit contract)
-    | Some c -> c
-
 let auction_ended (auction : auction) : bool =
   ((Tezos.now >= auction.end_time) || (* auction has passed auction time*)
    (Tezos.now > auction.last_bid_time + auction.round_time)) (*round time has passed after bid has been placed*)
@@ -149,19 +116,8 @@ let auction_in_progress (auction : auction) : bool =
 let first_bid (auction : auction) : bool =
   auction.highest_bidder = auction.seller
 
-let ceil_div (tz_qty, nat_qty : tez * nat) : tez = 
-  let ediv1 : (tez * tez) option = ediv tz_qty nat_qty in 
-  match ediv1 with 
-    | None -> (failwith "DIVISION_BY_ZERO"  : tez) 
-    | Some e -> 
-       let (quotient, remainder) = e in
-       if remainder > 0mutez then (quotient + 1mutez) else quotient
-
-let percent_of_bid (percent, bid : nat * tez) : tez = 
-  (ceil_div (bid *  percent, 100n))
-
 let valid_bid_amount (auction : auction) : bool =
-  (Tezos.amount >= (auction.current_bid + (percent_of_bid (auction.min_raise_percent, auction.current_bid)))) ||
+  (Tezos.amount >= (auction.current_bid + (percent_of_bid_tez (auction.min_raise_percent, auction.current_bid)))) ||
   (Tezos.amount >= auction.current_bid + auction.min_raise)                                            ||
   ((Tezos.amount >= auction.current_bid) && first_bid(auction))
 
@@ -225,7 +181,7 @@ let resolve_auction(asset_id, storage : nat * storage) : return = begin
     let fee_contract : unit contract = resolve_contract(storage.fee.fee_address) in
     let op_list = if first_bid(auction) then 
       fa2_transfers else 
-      let fee : tez = percent_of_bid (storage.fee.fee_percent, auction.current_bid) in 
+      let fee : tez = percent_of_bid_tez (storage.fee.fee_percent, auction.current_bid) in 
       let pay_fee : operation = Tezos.transaction unit fee fee_contract in 
       let send_final_bid_minus_fee : operation = Tezos.transaction unit (auction.current_bid - fee) seller_contract in
       (pay_fee :: send_final_bid_minus_fee :: fa2_transfers) in

@@ -152,23 +152,19 @@
                  DUG 2 ;
                  GET ;
                  IF_NONE { PUSH string "NO_SALE" ; FAILWITH } {} ;
-                 SWAP ;
                  DUP ;
-                 DUG 2 ;
-                 CAR ;
-                 CONTRACT unit ;
-                 IF_NONE { PUSH string "NO_SELLER_ACCOUNT" ; FAILWITH } {} ;
-                 SWAP ;
-                 DUP ;
-                 DUG 2 ;
                  AMOUNT ;
                  COMPARE ;
                  NEQ ;
-                 IF { AMOUNT ; DIG 2 ; PUSH string "WRONG_TEZ_PRICE" ; PAIR ; PAIR ; FAILWITH }
-                    { SWAP ; DROP } ;
-                 AMOUNT ;
-                 PUSH unit Unit ;
-                 TRANSFER_TOKENS ;
+                 IF { AMOUNT ;
+                      SWAP ;
+                      DUP ;
+                      DUG 2 ;
+                      PUSH string "WRONG_TEZ_PRICE" ;
+                      PAIR ;
+                      PAIR ;
+                      FAILWITH }
+                    {} ;
                  SENDER ;
                  SELF_ADDRESS ;
                  PAIR ;
@@ -183,6 +179,15 @@
                  DIG 4 ;
                  SWAP ;
                  EXEC ;
+                 DUP 3 ;
+                 CAR ;
+                 DIG 2 ;
+                 SWAP ;
+                 CONTRACT unit ;
+                 IF_NONE { PUSH string "ADDRESS_DOES_NOT_RESOLVE" ; FAILWITH } {} ;
+                 SWAP ;
+                 PUSH unit Unit ;
+                 TRANSFER_TOKENS ;
                  DUP 4 ;
                  CDR ;
                  DIG 3 ;
