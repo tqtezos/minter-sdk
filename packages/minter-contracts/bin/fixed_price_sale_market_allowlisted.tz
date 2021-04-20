@@ -44,6 +44,12 @@
                  NEQ ;
                  IF { PUSH string "NOT_AN_ADMIN" ; FAILWITH } { UNIT } } } ;
          LAMBDA
+           (option (pair (pair address bool) (option address)))
+           unit
+           { IF_NONE
+               { UNIT }
+               { CAR ; CDR ; IF { PUSH string "PAUSED" ; FAILWITH } { UNIT } } } ;
+         LAMBDA
            (pair (pair (pair address nat) (pair nat address)) address)
            operation
            { UNPAIR ;
@@ -74,7 +80,7 @@
            (pair (pair address (big_map address unit)) string)
            unit
            { UNPAIR ; UNPAIR ; GET ; IF_NONE { FAILWITH } { SWAP ; DROP } } ;
-         DIG 3 ;
+         DIG 4 ;
          UNPAIR ;
          IF_LEFT
            { SWAP ;
@@ -125,6 +131,8 @@
              IF_LEFT
                { IF_LEFT
                    { DIG 3 ;
+                     DROP ;
+                     DIG 3 ;
                      DROP ;
                      SWAP ;
                      DUP ;
@@ -182,15 +190,15 @@
                      PAIR ;
                      SWAP ;
                      PAIR }
-                   { DIG 4 ;
+                   { DIG 5 ;
                      DROP ;
                      SWAP ;
                      DUP ;
                      DUG 2 ;
                      CAR ;
-                     IF_NONE
-                       { UNIT }
-                       { CAR ; CDR ; IF { PUSH string "PAUSED" ; FAILWITH } { UNIT } } ;
+                     DIG 5 ;
+                     SWAP ;
+                     EXEC ;
                      DROP ;
                      SWAP ;
                      DUP ;
@@ -255,7 +263,15 @@
                      CONS ;
                      PAIR } }
                { IF_LEFT
-                   { DIG 4 ;
+                   { DIG 5 ;
+                     DROP ;
+                     SWAP ;
+                     DUP ;
+                     DUG 2 ;
+                     CAR ;
+                     DIG 5 ;
+                     SWAP ;
+                     EXEC ;
                      DROP ;
                      DUP ;
                      CAR ;
@@ -333,6 +349,14 @@
                      SWAP ;
                      EXEC ;
                      DROP ;
+                     SWAP ;
+                     DUP ;
+                     DUG 2 ;
+                     CAR ;
+                     DIG 5 ;
+                     SWAP ;
+                     EXEC ;
+                     DROP ;
                      SELF_ADDRESS ;
                      SENDER ;
                      PUSH nat 1 ;
@@ -380,6 +404,8 @@
              SWAP ;
              PAIR }
            { DIG 2 ;
+             DROP ;
+             DIG 2 ;
              DROP ;
              DIG 2 ;
              DROP ;

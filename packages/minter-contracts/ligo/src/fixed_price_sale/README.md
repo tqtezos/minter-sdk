@@ -177,7 +177,7 @@ An `admin` can pause/unpause the contract, guard other operations to be invoked 
 *  `set_admin` - Admin initiate a process that will set the current administrator to
    some specified address.
 *  `confirm_admin` - If set_admin entrypoint was successfully run, the `pending_admin` set by the admin in that step calls this entrypoint to confirm themself as admin. 
-*  `pause` - pause/unpause the contract.
+*  `pause` - pause/unpause the contract. When the contract is paused any entrypoint other than these 3 admin entrypoints will fail with `PAUSED`.
 
 <a name="allowlisted-extension"></a>
 ## Allowlisted extension
