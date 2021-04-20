@@ -3,7 +3,9 @@ module Lorentz.Contracts.EnglishAuction.FA2 where
 
 import Lorentz
 
+import qualified Lorentz.Contracts.AllowlistSimple as AllowlistSimple
 import Lorentz.Contracts.MinterSdk
+import qualified Lorentz.Contracts.NoAllowlist as NoAllowlist
 import Lorentz.Contracts.PausableAdminOption
 import Lorentz.Contracts.Spec.FA2Interface
 import Michelson.Test.Import (embedContractM)
@@ -97,20 +99,21 @@ customGeneric "BidParam" ligoCombLayout
 deriving anyclass instance IsoValue BidParam
 deriving anyclass instance HasAnnotation BidParam
 
-data AuctionStorage = AuctionStorage
+data AuctionStorage al = AuctionStorage
   { pausableAdmin :: AdminStorage
   , currentId :: Natural
   , maxAuctionTime :: Natural
   , maxConfigToStartTime :: Natural
   , bidCurrency :: BidCurrency
   , auctions :: BigMap Natural Auction
+  , allowlist :: al
   }
 
 customGeneric "AuctionStorage" ligoCombLayout
-deriving anyclass instance IsoValue AuctionStorage
-deriving anyclass instance HasAnnotation AuctionStorage
+deriving anyclass instance IsoValue al => IsoValue (AuctionStorage al)
+deriving anyclass instance HasAnnotation al => HasAnnotation (AuctionStorage al)
 
-initAuctionStorage :: AdminStorage -> BidCurrency -> AuctionStorage
+initAuctionStorage :: Monoid al => AdminStorage -> BidCurrency -> AuctionStorage al
 initAuctionStorage as bc = AuctionStorage
   { pausableAdmin = as
   , currentId = 0
@@ -118,27 +121,44 @@ initAuctionStorage as bc = AuctionStorage
   , maxConfigToStartTime = 99999999999999999
   , bidCurrency = bc
   , auctions = mempty
+  , allowlist = mempty
   }
 
-data AuctionEntrypoints
+data AuctionEntrypoints al
   = Configure ConfigureParam
   | Bid BidParam
   | Cancel AuctionId
   | Resolve AuctionId
   | Admin AdminEntrypoints
+  | Update_allowed al
 
 customGeneric "AuctionEntrypoints" ligoLayout
-deriving anyclass instance IsoValue AuctionEntrypoints
-deriving anyclass instance HasAnnotation AuctionEntrypoints
+deriving anyclass instance IsoValue al => IsoValue (AuctionEntrypoints al)
+deriving anyclass instance HasAnnotation al => HasAnnotation (AuctionEntrypoints al)
 
-instance ParameterHasEntrypoints AuctionEntrypoints where
-  type ParameterEntrypointsDerivation AuctionEntrypoints = EpdRecursive
+instance
+  ( RequireAllUniqueEntrypoints (AuctionEntrypoints al), IsoValue al
+  , EntrypointsDerivation EpdDelegate (AuctionEntrypoints al)
+  ) =>
+    ParameterHasEntrypoints (AuctionEntrypoints al) where
+  type ParameterEntrypointsDerivation (AuctionEntrypoints al) = EpdDelegate
 
 -- Contract
 ----------------------------------------------------------------------------
 
-englishAuctionFA2Contract :: T.Contract (ToT AuctionEntrypoints) (ToT AuctionStorage)
-englishAuctionFA2Contract = $$(embedContractM (inBinFolder "english_auction_fa2.tz"))
+englishAuctionFA2Contract
+  :: T.Contract
+      (ToT (AuctionEntrypoints NoAllowlist.Entrypoints))
+      (ToT (AuctionStorage NoAllowlist.Allowlist))
+englishAuctionFA2Contract =
+  $$(embedContractM (inBinFolder "english_auction_fa2.tz"))
+
+auctionFA2AllowlistedContract
+  :: T.Contract
+      (ToT (AuctionEntrypoints AllowlistSimple.Entrypoints))
+      (ToT (AuctionStorage AllowlistSimple.Allowlist))
+auctionFA2AllowlistedContract =
+  $$(embedContractM (inBinFolder "english_auction_fa2_allowlisted.tz"))
 
 -- Errors
 ----------------------------------------------------------------------------

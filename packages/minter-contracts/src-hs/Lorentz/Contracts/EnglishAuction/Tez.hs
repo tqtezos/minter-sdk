@@ -3,7 +3,9 @@ module Lorentz.Contracts.EnglishAuction.Tez where
 
 import Lorentz
 
+import qualified Lorentz.Contracts.AllowlistSimple as AllowlistSimple
 import Lorentz.Contracts.MinterSdk
+import qualified Lorentz.Contracts.NoAllowlist as NoAllowlist
 import Lorentz.Contracts.PausableAdminOption
 import Lorentz.Contracts.Spec.FA2Interface
 import Michelson.Test.Import (embedContractM)
@@ -79,53 +81,78 @@ defConfigureParam = ConfigureParam
   , endTime = timestampFromSeconds 1000000000000
   }
 
-data AuctionStorage = AuctionStorage
+data AuctionStorage al = AuctionStorage
   { pausableAdmin :: AdminStorage
   , currentId :: Natural
   , maxAuctionTime :: Natural
   , maxConfigToStartTime :: Natural
   , auctions :: BigMap Natural Auction
+  , allowlist :: al
   }
 
 customGeneric "AuctionStorage" ligoCombLayout
-deriving anyclass instance IsoValue AuctionStorage
-deriving anyclass instance HasAnnotation AuctionStorage
+deriving anyclass instance IsoValue al => IsoValue (AuctionStorage al)
+deriving anyclass instance HasAnnotation al => HasAnnotation (AuctionStorage al)
 
-initAuctionStorage :: AdminStorage -> AuctionStorage
+initAuctionStorage :: Monoid al => AdminStorage -> AuctionStorage al
 initAuctionStorage as = AuctionStorage
   { pausableAdmin = as
   , currentId = 0
   , maxAuctionTime = 99999999999999999999
   , maxConfigToStartTime = 99999999999999999
   , auctions = mempty
+  , allowlist = mempty
   }
 
-data AuctionWithoutConfigureEntrypoints
+data AuctionWithoutConfigureEntrypoints al
   = Bid AuctionId
   | Cancel AuctionId
   | Resolve AuctionId
   | Admin AdminEntrypoints
+  | Update_allowed al
 
 customGeneric "AuctionWithoutConfigureEntrypoints" ligoLayout
-deriving anyclass instance IsoValue AuctionWithoutConfigureEntrypoints
-deriving anyclass instance HasAnnotation AuctionWithoutConfigureEntrypoints
+deriving anyclass instance IsoValue al => IsoValue (AuctionWithoutConfigureEntrypoints al)
+deriving anyclass instance HasAnnotation al => HasAnnotation (AuctionWithoutConfigureEntrypoints al)
 
-data AuctionEntrypoints
+instance
+  ( RequireAllUniqueEntrypoints (AuctionWithoutConfigureEntrypoints al), IsoValue al
+  , EntrypointsDerivation EpdDelegate (AuctionWithoutConfigureEntrypoints al)
+  ) =>
+    ParameterHasEntrypoints (AuctionWithoutConfigureEntrypoints al) where
+  type ParameterEntrypointsDerivation (AuctionWithoutConfigureEntrypoints al) = EpdDelegate
+
+data AuctionEntrypoints al
   = Configure ConfigureParam
-  | AdminAndInteract AuctionWithoutConfigureEntrypoints
+  | AdminAndInteract (AuctionWithoutConfigureEntrypoints al)
 
 customGeneric "AuctionEntrypoints" ligoLayout
-deriving anyclass instance IsoValue AuctionEntrypoints
-deriving anyclass instance HasAnnotation AuctionEntrypoints
+deriving anyclass instance IsoValue al => IsoValue (AuctionEntrypoints al)
+deriving anyclass instance HasAnnotation al => HasAnnotation (AuctionEntrypoints al)
 
-instance ParameterHasEntrypoints AuctionEntrypoints where
-  type ParameterEntrypointsDerivation AuctionEntrypoints = EpdRecursive
+instance
+  ( RequireAllUniqueEntrypoints (AuctionEntrypoints al), IsoValue al
+  , EntrypointsDerivation EpdDelegate (AuctionEntrypoints al)
+  ) =>
+    ParameterHasEntrypoints (AuctionEntrypoints al) where
+  type ParameterEntrypointsDerivation (AuctionEntrypoints al) = EpdDelegate
 
 -- Contract
 ----------------------------------------------------------------------------
 
-englishAuctionTezContract :: T.Contract (ToT AuctionEntrypoints) (ToT AuctionStorage)
-englishAuctionTezContract = $$(embedContractM (inBinFolder "english_auction_tez.tz"))
+auctionTezContract
+  :: T.Contract
+      (ToT (AuctionEntrypoints NoAllowlist.Entrypoints))
+      (ToT (AuctionStorage NoAllowlist.Allowlist))
+auctionTezContract =
+  $$(embedContractM (inBinFolder "english_auction_tez.tz"))
+
+auctionTezAllowlistedContract
+  :: T.Contract
+      (ToT (AuctionEntrypoints AllowlistSimple.Entrypoints))
+      (ToT (AuctionStorage AllowlistSimple.Allowlist))
+auctionTezAllowlistedContract =
+  $$(embedContractM (inBinFolder "english_auction_tez_allowlisted.tz"))
 
 -- Errors
 ----------------------------------------------------------------------------

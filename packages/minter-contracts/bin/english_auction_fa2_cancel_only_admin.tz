@@ -11,7 +11,7 @@
                                            (pair (list %asset
                                                     (pair (address %fa2_address) (list %fa2_batch (pair (nat %token_id) (nat %amount)))))
                                                  (pair (timestamp %start_time) (timestamp %end_time))))))))))
-        (nat %resolve)) ;
+        (or (nat %resolve) (never %update_allowed))) ;
   storage
     (pair (option %admin
              (pair (pair (address %admin) (bool %paused)) (option %pending_admin address)))
@@ -19,18 +19,19 @@
                 (pair (nat %max_auction_time)
                       (pair (nat %max_config_to_start_time)
                             (pair (pair %bid_currency (address %fa2_address) (nat %token_id))
-                                  (big_map %auctions
-                                     nat
-                                     (pair (address %seller)
-                                           (pair (nat %current_bid)
-                                                 (pair (timestamp %start_time)
-                                                       (pair (timestamp %last_bid_time)
-                                                             (pair (int %round_time)
-                                                                   (pair (int %extend_time)
-                                                                         (pair (list %asset
-                                                                                  (pair (address %fa2_address) (list %fa2_batch (pair (nat %token_id) (nat %amount)))))
-                                                                               (pair (nat %min_raise_percent)
-                                                                                     (pair (nat %min_raise) (pair (timestamp %end_time) (address %highest_bidder))))))))))))))))) ;
+                                  (pair (big_map %auctions
+                                           nat
+                                           (pair (address %seller)
+                                                 (pair (nat %current_bid)
+                                                       (pair (timestamp %start_time)
+                                                             (pair (timestamp %last_bid_time)
+                                                                   (pair (int %round_time)
+                                                                         (pair (int %extend_time)
+                                                                               (pair (list %asset
+                                                                                        (pair (address %fa2_address) (list %fa2_batch (pair (nat %token_id) (nat %amount)))))
+                                                                                     (pair (nat %min_raise_percent)
+                                                                                           (pair (nat %min_raise) (pair (timestamp %end_time) (address %highest_bidder))))))))))))
+                                        (unit %allowlist))))))) ;
   code { LAMBDA
            (option (pair (pair address bool) (option address)))
            unit
@@ -133,16 +134,17 @@
                              (pair nat
                                    (pair nat
                                          (pair (pair address nat)
-                                               (big_map
-                                                  nat
-                                                  (pair address
-                                                        (pair nat
-                                                              (pair timestamp
+                                               (pair (big_map
+                                                        nat
+                                                        (pair address
+                                                              (pair nat
                                                                     (pair timestamp
-                                                                          (pair int
+                                                                          (pair timestamp
                                                                                 (pair int
-                                                                                      (pair (list (pair address (list (pair nat nat))))
-                                                                                            (pair nat (pair nat (pair timestamp address)))))))))))))))))
+                                                                                      (pair int
+                                                                                            (pair (list (pair address (list (pair nat nat))))
+                                                                                                  (pair nat (pair nat (pair timestamp address)))))))))))
+                                                     unit)))))))
            (pair address
                  (pair nat
                        (pair timestamp
@@ -158,6 +160,7 @@
              CDR ;
              CDR ;
              CDR ;
+             CAR ;
              SWAP ;
              GET ;
              IF_NONE
@@ -790,10 +793,19 @@
                      CDR ;
                      CDR ;
                      CDR ;
-                     SWAP ;
+                     CDR ;
+                     DUP 5 ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CAR ;
+                     DIG 2 ;
                      SOME ;
-                     DIG 3 ;
+                     DIG 4 ;
                      UPDATE ;
+                     PAIR ;
                      DUP 3 ;
                      CDR ;
                      CDR ;
@@ -941,7 +953,15 @@
                      CDR ;
                      CDR ;
                      CDR ;
-                     DIG 2 ;
+                     CDR ;
+                     DUP 4 ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CAR ;
+                     DIG 3 ;
                      NONE (pair address
                                 (pair nat
                                       (pair timestamp
@@ -952,6 +972,7 @@
                                                                     (pair nat (pair nat (pair timestamp address)))))))))) ;
                      SWAP ;
                      UPDATE ;
+                     PAIR ;
                      DUP 3 ;
                      CDR ;
                      CDR ;
@@ -1231,12 +1252,21 @@
                      CDR ;
                      CDR ;
                      CDR ;
-                     DIG 2 ;
-                     SOME ;
+                     CDR ;
                      DUP 4 ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CAR ;
+                     DIG 3 ;
+                     SOME ;
+                     DUP 5 ;
                      CDR ;
                      CAR ;
                      UPDATE ;
+                     PAIR ;
                      DUP 3 ;
                      CDR ;
                      CDR ;
@@ -1278,139 +1308,166 @@
                      PAIR } } }
            { DIG 9 ;
              DROP ;
-             SWAP ;
-             DUP ;
-             DUG 2 ;
-             CAR ;
-             DIG 9 ;
-             SWAP ;
-             EXEC ;
-             DROP ;
-             SWAP ;
-             DUP ;
-             DUG 2 ;
-             SWAP ;
-             DUP ;
-             DUG 2 ;
-             PAIR ;
-             DIG 5 ;
-             SWAP ;
-             EXEC ;
-             PUSH string "Auction must have ended" ;
-             SWAP ;
-             DUP ;
-             DUG 2 ;
-             DIG 6 ;
-             SWAP ;
-             EXEC ;
-             PAIR ;
-             DUP 8 ;
-             SWAP ;
-             EXEC ;
-             DROP ;
-             PUSH string "Amount must be 0mutez" ;
-             PUSH mutez 0 ;
-             AMOUNT ;
-             COMPARE ;
-             EQ ;
-             PAIR ;
-             DIG 7 ;
-             SWAP ;
-             EXEC ;
-             DROP ;
-             DUP ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             SELF_ADDRESS ;
-             DUP 3 ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CAR ;
-             PAIR ;
-             PAIR ;
-             DIG 5 ;
-             SWAP ;
-             EXEC ;
-             SWAP ;
-             DUP ;
-             DUG 2 ;
-             DIG 5 ;
-             SWAP ;
-             EXEC ;
-             IF { SWAP ; DROP ; DIG 3 ; DROP }
-                { DUP 4 ;
-                  CDR ;
-                  CDR ;
-                  CDR ;
-                  CDR ;
-                  CAR ;
-                  DUP 3 ;
-                  CDR ;
-                  CAR ;
-                  PAIR ;
-                  DIG 2 ;
-                  CAR ;
-                  SELF_ADDRESS ;
-                  PAIR ;
-                  PAIR ;
-                  DIG 4 ;
-                  SWAP ;
-                  EXEC ;
-                  CONS } ;
-             DUP 3 ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             DIG 2 ;
-             NONE (pair address
-                        (pair nat
-                              (pair timestamp
-                                    (pair timestamp
-                                          (pair int
-                                                (pair int
-                                                      (pair (list (pair address (list (pair nat nat))))
-                                                            (pair nat (pair nat (pair timestamp address)))))))))) ;
-             SWAP ;
-             UPDATE ;
-             DUP 3 ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CAR ;
-             PAIR ;
-             DUP 3 ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CAR ;
-             PAIR ;
-             DUP 3 ;
-             CDR ;
-             CDR ;
-             CAR ;
-             PAIR ;
-             DUP 3 ;
-             CDR ;
-             CAR ;
-             PAIR ;
-             DIG 2 ;
-             CAR ;
-             PAIR ;
-             SWAP ;
-             PAIR } } }
+             IF_LEFT
+               { SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CAR ;
+                 DIG 9 ;
+                 SWAP ;
+                 EXEC ;
+                 DROP ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 PAIR ;
+                 DIG 5 ;
+                 SWAP ;
+                 EXEC ;
+                 PUSH string "Auction must have ended" ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 DIG 6 ;
+                 SWAP ;
+                 EXEC ;
+                 PAIR ;
+                 DUP 8 ;
+                 SWAP ;
+                 EXEC ;
+                 DROP ;
+                 PUSH string "Amount must be 0mutez" ;
+                 PUSH mutez 0 ;
+                 AMOUNT ;
+                 COMPARE ;
+                 EQ ;
+                 PAIR ;
+                 DIG 7 ;
+                 SWAP ;
+                 EXEC ;
+                 DROP ;
+                 DUP ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 SELF_ADDRESS ;
+                 DUP 3 ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CAR ;
+                 PAIR ;
+                 PAIR ;
+                 DIG 5 ;
+                 SWAP ;
+                 EXEC ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 DIG 5 ;
+                 SWAP ;
+                 EXEC ;
+                 IF { SWAP ; DROP ; DIG 3 ; DROP }
+                    { DUP 4 ;
+                      CDR ;
+                      CDR ;
+                      CDR ;
+                      CDR ;
+                      CAR ;
+                      DUP 3 ;
+                      CDR ;
+                      CAR ;
+                      PAIR ;
+                      DIG 2 ;
+                      CAR ;
+                      SELF_ADDRESS ;
+                      PAIR ;
+                      PAIR ;
+                      DIG 4 ;
+                      SWAP ;
+                      EXEC ;
+                      CONS } ;
+                 DUP 3 ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 DUP 4 ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CAR ;
+                 DIG 3 ;
+                 NONE (pair address
+                            (pair nat
+                                  (pair timestamp
+                                        (pair timestamp
+                                              (pair int
+                                                    (pair int
+                                                          (pair (list (pair address (list (pair nat nat))))
+                                                                (pair nat (pair nat (pair timestamp address)))))))))) ;
+                 SWAP ;
+                 UPDATE ;
+                 PAIR ;
+                 DUP 3 ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CAR ;
+                 PAIR ;
+                 DUP 3 ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CAR ;
+                 PAIR ;
+                 DUP 3 ;
+                 CDR ;
+                 CDR ;
+                 CAR ;
+                 PAIR ;
+                 DUP 3 ;
+                 CDR ;
+                 CAR ;
+                 PAIR ;
+                 DIG 2 ;
+                 CAR ;
+                 PAIR ;
+                 SWAP ;
+                 PAIR }
+               { DIG 2 ;
+                 DROP ;
+                 DIG 2 ;
+                 DROP ;
+                 DIG 2 ;
+                 DROP ;
+                 DIG 2 ;
+                 DROP ;
+                 DIG 2 ;
+                 DROP ;
+                 DIG 2 ;
+                 DROP ;
+                 DIG 2 ;
+                 DROP ;
+                 SWAP ;
+                 DROP ;
+                 NEVER } } } }
 

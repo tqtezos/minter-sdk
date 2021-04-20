@@ -80,7 +80,7 @@ data AllowlistChecksSetup =
     -- are checked in contract code.
   , allowlistRestrictionsCases :: NonEmpty (AllowlistRestrictionCase setup contractParam)
 
-    -- | Addresses that must be always included into whitelist.
+    -- | Addresses that must be always included into allowlist.
     -- In most cases should be just empty.
   , allowlistAlwaysIncluded :: setup -> [TAddress FA2.FA2SampleParameter]
   }

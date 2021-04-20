@@ -24,33 +24,39 @@ import qualified Michelson.Typed as T
 
 import qualified Lorentz.Contracts.Marketplace.FA2FixedFee as MarketFA2FixedFee
 import qualified Lorentz.Contracts.Marketplace.Tez as MarketTez
+import qualified Lorentz.Contracts.NoAllowlist as NoAllowlist
 
 -- Types
 ----------------------------------------------------------------------------
 
-data MarketplaceTezStorage = MarketplaceTezStorage
-  { admin :: AdminStorage
-  , sales :: BigMap MarketTez.SaleId MarketTez.SaleParamTez
+data MarketplaceTezStorage al = MarketplaceTezStorage
+  { sales :: BigMap MarketTez.SaleId MarketTez.SaleParamTez
+  , admin :: AdminStorage
   , nextSaleId :: MarketTez.SaleId
+  , allowlist :: al
   , fee :: MarketFA2FixedFee.FeeData
   }
 
 customGeneric "MarketplaceTezStorage" ligoCombLayout
-deriving anyclass instance IsoValue MarketplaceTezStorage
-deriving anyclass instance HasAnnotation MarketplaceTezStorage
-instance Buildable MarketplaceTezStorage where build = genericF
+deriving anyclass instance IsoValue al => IsoValue (MarketplaceTezStorage al)
+deriving anyclass instance HasAnnotation al => HasAnnotation (MarketplaceTezStorage al)
+instance Buildable al => Buildable (MarketplaceTezStorage al) where build = genericF
 
-initMarketplaceTezStorage :: MarketFA2FixedFee.FeeData -> AdminStorage -> MarketplaceTezStorage
+initMarketplaceTezStorage :: Monoid al => MarketFA2FixedFee.FeeData -> AdminStorage -> MarketplaceTezStorage al
 initMarketplaceTezStorage feeData as =
   MarketplaceTezStorage
     { admin = as
     , sales = mempty
     , nextSaleId = MarketTez.SaleId 0
+    , allowlist = mempty
     , fee = feeData
     }
 
 -- Contract
 ----------------------------------------------------------------------------
 
-marketplaceTezFixedFeeContract :: T.Contract (ToT MarketTez.MarketplaceTezEntrypoints) (ToT MarketplaceTezStorage)
+marketplaceTezFixedFeeContract
+  :: T.Contract
+      (ToT (MarketTez.MarketplaceTezEntrypoints NoAllowlist.Entrypoints))
+      (ToT (MarketplaceTezStorage NoAllowlist.Allowlist))
 marketplaceTezFixedFeeContract = $$(embedContractM (inBinFolder "fixed_price_sale_tez_fixed_fee.tz"))

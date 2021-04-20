@@ -1,6 +1,7 @@
 #include "../../fa2/fa2_interface.mligo"
 #include "../../fa2_modules/pauseable_admin_option.mligo"
 #include "../common.mligo"
+#include "../../fa2_modules/fa2_allowlist/allowlist_base.mligo"
 
 type bid_currency = global_token_id
 
@@ -33,7 +34,7 @@ type configure_param =
     end_time : timestamp;
   }
 
-type bid_param = 
+type bid_param =
   [@layout:comb]
   {
     asset_id : nat;
@@ -46,6 +47,7 @@ type auction_entrypoints =
   | Cancel of nat
   | Resolve of nat
   | Admin of pauseable_admin
+  | Update_allowed of allowlist_entrypoints
 
 #if !FEE
 
@@ -57,10 +59,11 @@ type storage =
     max_auction_time : nat;
     max_config_to_start_time : nat;
     bid_currency : bid_currency;
-    auctions : (nat, auction) big_map
+    auctions : (nat, auction) big_map;
+    allowlist : allowlist;
   }
 
-#else 
+#else
 
 type storage =
   [@layout:comb]
@@ -71,6 +74,7 @@ type storage =
     max_config_to_start_time : nat;
     bid_currency : bid_currency;
     auctions : (nat, auction) big_map;
+    allowlist : allowlist;
     fee : fee_data;
   }
 
@@ -78,21 +82,21 @@ type storage =
 
 type return = operation list * storage
 
-let transfer_tokens_in_single_contract (transfer_param, fa2: (transfer list) * address) : operation = 
+let transfer_tokens_in_single_contract (transfer_param, fa2: (transfer list) * address) : operation =
   let c = address_to_contract_transfer_entrypoint(fa2) in
-  (Tezos.transaction transfer_param 0mutez c) 
+  (Tezos.transaction transfer_param 0mutez c)
 
-let transfer_tokens_in_single_contract_to_address (from_ : address) (to_ : address) (tokens : tokens) : operation = 
+let transfer_tokens_in_single_contract_to_address (from_ : address) (to_ : address) (tokens : tokens) : operation =
   let to_tx (fa2_tokens : fa2_tokens) : transfer_destination = {
       to_ = to_;
       token_id = fa2_tokens.token_id;
       amount = fa2_tokens.amount;
    } in
-   let txs = List.map to_tx tokens.fa2_batch in 
+   let txs = List.map to_tx tokens.fa2_batch in
    let transfer_list : transfer list = [{from_ = from_; txs = txs}] in
    (transfer_tokens_in_single_contract (transfer_list, tokens.fa2_address))
 
-let single_fa2_transfer (from_, to_, qty, fa2 : address * address * nat * bid_currency) : operation = 
+let single_fa2_transfer (from_, to_, qty, fa2 : address * address * nat * bid_currency) : operation =
   let single_transfer_tx : transfer = {
     from_ = from_;
     txs = [{
@@ -132,11 +136,26 @@ let valid_bid_amount (auction, token_amount : auction * nat) : bool =
   (token_amount >= auction.current_bid + auction.min_raise)                                            ||
   ((token_amount >= auction.current_bid) && first_bid(auction))
 
+let check_allowlisted (configure_param, allowlist : configure_param * allowlist) : unit = begin
+#if ALLOWLIST_ENABLED
+#if ALLOWLIST_SIMPLE
+  List.iter
+    (fun (token : tokens) ->
+      check_address_allowed (token.fa2_address, allowlist, "ASSET_ADDRESS_NOT_ALLOWED")
+    )
+    configure_param.asset;
+#else
+  <check_allowlisted not implemented>
+#endif
+#endif
+  unit end
+
 let configure_auction(configure_param, storage : configure_param * storage) : return = begin
 #if !CANCEL_ONLY_ADMIN
     (fail_if_not_admin storage.admin);
 #endif
     (fail_if_paused storage.admin);
+    check_allowlisted(configure_param, storage.allowlist);
 #if FEE
     assert_msg (storage.fee.fee_percent <= 100n, "Fee_percent must be less than 100%. Please originate another contract.");
 #endif
@@ -177,22 +196,22 @@ let resolve_auction(asset_id, storage : nat * storage) : return = begin
     let asset_transfers : operation list = transfer_tokens(auction.asset, Tezos.self_address, auction.highest_bidder) in
 
 #if !FEE
-    let op_list : operation list = if first_bid(auction) then 
-      asset_transfers else  
+    let op_list : operation list = if first_bid(auction) then
+      asset_transfers else
       let send_final_bid : operation = single_fa2_transfer(Tezos.self_address, auction.seller, auction.current_bid, storage.bid_currency) in
       (send_final_bid :: asset_transfers) in
-#else 
-    
-    let op_list : operation list = if first_bid(auction) then 
-      asset_transfers else  
+#else
+
+    let op_list : operation list = if first_bid(auction) then
+      asset_transfers else
       let fee : nat = percent_of_bid_nat (storage.fee.fee_percent, auction.current_bid) in
-      let final_price_minus_fee : nat =  (match (is_nat (auction.current_bid - fee)) with 
-        | Some adjusted_price -> adjusted_price 
+      let final_price_minus_fee : nat =  (match (is_nat (auction.current_bid - fee)) with
+        | Some adjusted_price -> adjusted_price
         | None -> (failwith "fee is larger than winning bid" : nat)) in
-      let pay_fee_tx : transfer_destination = { 
+      let pay_fee_tx : transfer_destination = {
           to_ = storage.fee.fee_address;
           token_id = storage.bid_currency.token_id;
-          amount = fee; 
+          amount = fee;
         } in
       let send_final_bid_minus_fee_tx : transfer_destination = {
           to_ = auction.seller;
@@ -200,12 +219,12 @@ let resolve_auction(asset_id, storage : nat * storage) : return = begin
           amount = final_price_minus_fee;
       } in
       let txs : transfer list = [{
-        from_ = Tezos.self_address; 
+        from_ = Tezos.self_address;
         txs = [pay_fee_tx; send_final_bid_minus_fee_tx];
       }] in
       let payments : operation = transfer_tokens_in_single_contract (txs, storage.bid_currency.fa2_address) in
       (payments :: asset_transfers) in
-#endif 
+#endif
     let updated_auctions = Big_map.remove asset_id storage.auctions in
     (op_list, {storage with auctions = updated_auctions})
   end
@@ -213,16 +232,16 @@ let resolve_auction(asset_id, storage : nat * storage) : return = begin
 let cancel_auction(asset_id, storage : nat * storage) : return = begin
     (fail_if_paused storage.admin);
     let auction : auction = get_auction_data(asset_id, storage) in
-    let is_seller : bool = Tezos.sender = auction.seller in 
+    let is_seller : bool = Tezos.sender = auction.seller in
     let v : unit = if is_seller then ()
           else fail_if_not_admin_ext (storage.admin, "OR_A_SELLER") in
     assert_msg (not auction_ended(auction), "Auction must not have ended");
     assert_msg (Tezos.amount = 0mutez, "Amount must be 0mutez");
 
     let asset_transfers : operation list = transfer_tokens(auction.asset, Tezos.self_address, auction.seller) in
-    let op_list : operation list = if first_bid(auction) then 
-      asset_transfers else  
-      let return_bid : operation = single_fa2_transfer(Tezos.self_address, auction.highest_bidder, auction.current_bid, storage.bid_currency) in 
+    let op_list : operation list = if first_bid(auction) then
+      asset_transfers else
+      let return_bid : operation = single_fa2_transfer(Tezos.self_address, auction.highest_bidder, auction.current_bid, storage.bid_currency) in
       (return_bid :: asset_transfers) in
     let updated_auctions = Big_map.remove asset_id storage.auctions in
     (op_list, {storage with auctions = updated_auctions})
@@ -234,13 +253,13 @@ let place_bid(asset_id, token_amount, storage : nat * nat * storage) : return = 
     (fail_if_paused storage.admin);
     assert_msg (auction_in_progress(auction), "Auction must be in progress");
     assert_msg(Tezos.sender <> auction.seller, "Seller cannot place a bid");
-    (if not valid_bid_amount(auction, token_amount) 
+    (if not valid_bid_amount(auction, token_amount)
       then ([%Michelson ({| { FAILWITH } |} : string * (nat * nat * address * timestamp * timestamp) -> unit)] ("Invalid Bid amount", (auction.current_bid, token_amount, auction.highest_bidder, auction.last_bid_time, Tezos.now)) : unit)
       else ());
-    
+
     let bid_self_transfer : operation = single_fa2_transfer(Tezos.sender, Tezos.self_address, token_amount, storage.bid_currency) in
-    let op_list : operation list = if first_bid(auction) then 
-      [bid_self_transfer] else  
+    let op_list : operation list = if first_bid(auction) then
+      [bid_self_transfer] else
       let return_previous_bid : operation = single_fa2_transfer(Tezos.self_address, auction.highest_bidder, auction.current_bid, storage.bid_currency) in
       [return_previous_bid; bid_self_transfer] in
     let new_end_time = if auction.end_time - Tezos.now <= auction.extend_time then
@@ -256,9 +275,23 @@ let admin(admin_param, storage : pauseable_admin * storage) : return =
     let new_storage = { storage with admin = admin; } in
     ops, new_storage
 
+let update_allowed(allowlist_param, storage : allowlist_entrypoints * storage) : return =
+#if !ALLOWLIST_ENABLED
+    [%Michelson ({| { NEVER } |} : never -> return)] allowlist_param
+#else
+    let u : unit = fail_if_not_admin(storage.admin) in
+
+#if ALLOWLIST_SIMPLE
+    let allowlist_storage = allowlist_param in
+#endif
+
+    ([] : operation list), { storage with allowlist = allowlist_storage }
+#endif !ALLOWLIST_ENABLED
+
 let english_auction_fa2_main (p,storage : auction_entrypoints * storage) : return = match p with
     | Configure config -> configure_auction(config, storage)
     | Bid bid_param -> place_bid(bid_param.asset_id, bid_param.bid_amount, storage)
     | Cancel asset_id -> cancel_auction(asset_id, storage)
     | Resolve asset_id -> resolve_auction(asset_id, storage)
     | Admin a -> admin(a, storage)
+    | Update_allowed a -> update_allowed(a, storage)
