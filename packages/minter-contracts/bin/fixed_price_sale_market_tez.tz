@@ -1,12 +1,12 @@
 { parameter
     (or (or (or %admin (or (unit %confirm_admin) (bool %pause)) (address %set_admin))
             (pair %buy
-               (address %sale_seller)
+               (address %seller)
                (pair %sale_token
                   (address %token_for_sale_address)
                   (nat %token_for_sale_token_id))))
         (or (pair %cancel
-               (address %sale_seller)
+               (address %seller)
                (pair %sale_token
                   (address %token_for_sale_address)
                   (nat %token_for_sale_token_id)))
@@ -19,7 +19,7 @@
     (pair (option %admin
              (pair (pair (address %admin) (bool %paused)) (option %pending_admin address)))
           (big_map %sales
-             (pair (address %sale_seller)
+             (pair (address %seller)
                    (pair %sale_token
                       (address %token_for_sale_address)
                       (nat %token_for_sale_token_id)))
@@ -35,12 +35,6 @@
                  COMPARE ;
                  NEQ ;
                  IF { PUSH string "NOT_AN_ADMIN" ; FAILWITH } { UNIT } } } ;
-         LAMBDA
-           (option (pair (pair address bool) (option address)))
-           unit
-           { IF_NONE
-               { UNIT }
-               { CAR ; CDR ; IF { PUSH string "PAUSED" ; FAILWITH } { UNIT } } } ;
          LAMBDA
            (pair (pair address nat) (pair address address))
            operation
@@ -75,15 +69,13 @@
              CONCAT ;
              PUSH string "DON'T TRANSFER TEZ TO THIS ENTRYPOINT (" ;
              CONCAT } ;
-         DIG 4 ;
+         DIG 3 ;
          UNPAIR ;
          IF_LEFT
            { DIG 2 ;
              DROP ;
              IF_LEFT
                { DIG 2 ;
-                 DROP ;
-                 DIG 2 ;
                  DROP ;
                  SWAP ;
                  DUP ;
@@ -141,15 +133,15 @@
                  PAIR ;
                  SWAP ;
                  PAIR }
-               { DIG 4 ;
+               { DIG 3 ;
                  DROP ;
                  SWAP ;
                  DUP ;
                  DUG 2 ;
                  CAR ;
-                 DIG 4 ;
-                 SWAP ;
-                 EXEC ;
+                 IF_NONE
+                   { UNIT }
+                   { CAR ; CDR ; IF { PUSH string "PAUSED" ; FAILWITH } { UNIT } } ;
                  DROP ;
                  SWAP ;
                  DUP ;
@@ -207,7 +199,7 @@
                  CONS ;
                  PAIR } }
            { IF_LEFT
-               { DIG 5 ;
+               { DIG 4 ;
                  DROP ;
                  DUP ;
                  CAR ;
@@ -227,14 +219,6 @@
                           NEQ ;
                           IF { PUSH string " " ; CONCAT ; PUSH string "NOT_AN_ADMIN" ; CONCAT ; FAILWITH }
                              { DROP ; UNIT } } } ;
-                 DROP ;
-                 SWAP ;
-                 DUP ;
-                 DUG 2 ;
-                 CAR ;
-                 DIG 5 ;
-                 SWAP ;
-                 EXEC ;
                  DROP ;
                  PUSH mutez 0 ;
                  AMOUNT ;
@@ -291,14 +275,6 @@
                           PAIR }
                         { DROP 3 ; PUSH string "NOT_OWNER" ; FAILWITH } } }
                { SWAP ;
-                 DUP ;
-                 DUG 2 ;
-                 CAR ;
-                 DIG 5 ;
-                 SWAP ;
-                 EXEC ;
-                 DROP ;
-                 SWAP ;
                  DUP ;
                  DUG 2 ;
                  CAR ;

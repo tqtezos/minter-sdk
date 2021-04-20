@@ -8,7 +8,7 @@ type Storage = {
         pending_admin?: address;
     };
     sales: BigMap<{
-        sale_seller: address;
+        seller: address;
         sale_token: {
             token_for_sale_address: address;
             token_for_sale_token_id: nat;
@@ -21,12 +21,12 @@ type Methods = {
     pause: (param: boolean) => Promise<void>;
     set_admin: (param: address) => Promise<void>;
     buy: (
-        sale_seller: address,
+        seller: address,
         token_for_sale_address: address,
         token_for_sale_token_id: nat,
     ) => Promise<void>;
     cancel: (
-        sale_seller: address,
+        seller: address,
         token_for_sale_address: address,
         token_for_sale_token_id: nat,
     ) => Promise<void>;
