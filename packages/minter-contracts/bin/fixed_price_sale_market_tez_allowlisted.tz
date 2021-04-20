@@ -40,6 +40,12 @@
                  NEQ ;
                  IF { PUSH string "NOT_AN_ADMIN" ; FAILWITH } { UNIT } } } ;
          LAMBDA
+           (option (pair (pair address bool) (option address)))
+           unit
+           { IF_NONE
+               { UNIT }
+               { CAR ; CDR ; IF { PUSH string "PAUSED" ; FAILWITH } { UNIT } } } ;
+         LAMBDA
            (pair (pair address nat) (pair address address))
            operation
            { UNPAIR ;
@@ -73,7 +79,7 @@
              CONCAT ;
              PUSH string "DON'T TRANSFER TEZ TO THIS ENTRYPOINT (" ;
              CONCAT } ;
-         DIG 3 ;
+         DIG 4 ;
          UNPAIR ;
          IF_LEFT
            { SWAP ;
@@ -105,6 +111,8 @@
                  DROP ;
                  IF_LEFT
                    { DIG 3 ;
+                     DROP ;
+                     DIG 3 ;
                      DROP ;
                      SWAP ;
                      DUP ;
@@ -162,15 +170,15 @@
                      PAIR ;
                      SWAP ;
                      PAIR }
-                   { DIG 4 ;
+                   { DIG 5 ;
                      DROP ;
                      SWAP ;
                      DUP ;
                      DUG 2 ;
                      CAR ;
-                     IF_NONE
-                       { UNIT }
-                       { CAR ; CDR ; IF { PUSH string "PAUSED" ; FAILWITH } { UNIT } } ;
+                     DIG 5 ;
+                     SWAP ;
+                     EXEC ;
                      DROP ;
                      SWAP ;
                      DUP ;
@@ -233,7 +241,15 @@
                      CONS ;
                      PAIR } }
                { IF_LEFT
-                   { DIG 5 ;
+                   { DIG 6 ;
+                     DROP ;
+                     SWAP ;
+                     DUP ;
+                     DUG 2 ;
+                     CAR ;
+                     DIG 6 ;
+                     SWAP ;
+                     EXEC ;
                      DROP ;
                      DUP ;
                      CAR ;
@@ -316,6 +332,14 @@
                      SWAP ;
                      EXEC ;
                      DROP ;
+                     SWAP ;
+                     DUP ;
+                     DUG 2 ;
+                     CAR ;
+                     DIG 6 ;
+                     SWAP ;
+                     EXEC ;
+                     DROP ;
                      DUP ;
                      DUG 2 ;
                      CAR ;
@@ -362,6 +386,8 @@
              SWAP ;
              PAIR }
            { DIG 2 ;
+             DROP ;
+             DIG 2 ;
              DROP ;
              DIG 2 ;
              DROP ;

@@ -37,6 +37,12 @@
                  NEQ ;
                  IF { PUSH string "NOT_AN_ADMIN" ; FAILWITH } { UNIT } } } ;
          LAMBDA
+           (option (pair (pair address bool) (option address)))
+           unit
+           { IF_NONE
+               { UNIT }
+               { CAR ; CDR ; IF { PUSH string "PAUSED" ; FAILWITH } { UNIT } } } ;
+         LAMBDA
            (pair (pair address nat) (pair address address))
            operation
            { UNPAIR ;
@@ -80,13 +86,15 @@
              CONCAT ;
              PUSH string "DON'T TRANSFER TEZ TO THIS ENTRYPOINT (" ;
              CONCAT } ;
-         DIG 4 ;
+         DIG 5 ;
          UNPAIR ;
          IF_LEFT
            { DIG 2 ;
              DROP ;
              IF_LEFT
                { DIG 2 ;
+                 DROP ;
+                 DIG 2 ;
                  DROP ;
                  DIG 2 ;
                  DROP ;
@@ -146,15 +154,15 @@
                  PAIR ;
                  SWAP ;
                  PAIR }
-               { DIG 4 ;
+               { DIG 5 ;
                  DROP ;
                  SWAP ;
                  DUP ;
                  DUG 2 ;
                  CAR ;
-                 IF_NONE
-                   { UNIT }
-                   { CAR ; CDR ; IF { PUSH string "PAUSED" ; FAILWITH } { UNIT } } ;
+                 DIG 5 ;
+                 SWAP ;
+                 EXEC ;
                  DROP ;
                  SWAP ;
                  DUP ;
@@ -257,7 +265,15 @@
            { DIG 3 ;
              DROP ;
              IF_LEFT
-               { DIG 4 ;
+               { DIG 5 ;
+                 DROP ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CAR ;
+                 DIG 5 ;
+                 SWAP ;
+                 EXEC ;
                  DROP ;
                  DUP ;
                  CAR ;
@@ -338,7 +354,15 @@
                           CONS ;
                           PAIR }
                         { DROP 3 ; PUSH string "NOT_OWNER" ; FAILWITH } } }
-               { PUSH string "FEE_PERCENT_TOO_HIGH" ;
+               { SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CAR ;
+                 DIG 5 ;
+                 SWAP ;
+                 EXEC ;
+                 DROP ;
+                 PUSH string "FEE_PERCENT_TOO_HIGH" ;
                  PUSH nat 100 ;
                  DUP 4 ;
                  CDR ;
