@@ -1,10 +1,7 @@
 # Fixed Price Sale
 
 The contracts titled `fixed_price_sale_market.mligo` and
-`fixed_price_sale_market_tez.mligo` both contain implementations of a sale of a
-non-fungible token (NFT) at a fixed price. The former contract allows a seller
-to sell an NFT for some fixed price of FA2 tokens. The latter instead allows a
-seller to sell an NFT for some fixed price of tez. 
+`fixed_price_sale_market_tez.mligo` allow NFT sales for a fixed price in FA2 tokens or tez respectively.
 
 ## <a name="storage-section"></a> Storage
 
