@@ -149,8 +149,7 @@ Besides, the following restriction takes place:
 
 ## Future work
 
-1. Whitelisting: Only allow certain addresses to configure auctions.
-2. Full front running protection. 
+1. Full front running protection.
 
 # English Auction w/ FA2 bids
 
