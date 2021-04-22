@@ -35,7 +35,7 @@ editions_metadata :=
 
 **Collection** - A set of N `token_id`s that when minted to, will share the same `token_metadata`. A given `Collection` will be represented by a unique `edition_id` and is created upon a call to `mint_editions.`
 
-**Edition** - An NFT with a `token_id` belonging to some `Edition run.` An edition is minted to Alice upon a call to `distribute_editions` that includes Alice's address in the distribution list for that edition's `edition_id`. 
+**Edition** - An NFT with a `token_id` belonging to some `Collection.` An edition is minted to Alice upon a call to `distribute_editions` that includes Alice's address in the distribution list for that edition's `edition_id`. 
 
 ## Entrypoints
 
@@ -86,5 +86,4 @@ Although the contract has not been heavily testsed, brief benchmarking suggests 
 See https://better-call.dev/edo2net/KT1Fry79rxQwXm77sCCaGiExoo6d12Brkb6S/operations for an example of an originated version of https://github.com/tqtezos/minter-sdk/blob/aacb8fa5753aa33638e9da98cce60a86dff29b04/packages/minter-contracts/bin/fa2_multi_nft_token_editions.tz on edonet. 
 
 In that contract a call to `mint_editions` for a 100 edition edition collection cost ~0.03tz and a call to `distribute_editions` for the distribution of a single one of those editions cost ~0.05tz. 
-
 
