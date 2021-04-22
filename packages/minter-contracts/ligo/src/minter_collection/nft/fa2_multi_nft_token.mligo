@@ -14,12 +14,24 @@ type ledger = (token_id, address) big_map
 
 #if !OWNER_HOOKS
 
+#if !EDITIONS
+
 type nft_token_storage = {
   ledger : ledger;
   token_metadata : nft_meta;
   next_token_id : token_id;
   operators : operator_storage;
 }
+
+#else 
+
+type nft_token_storage = {
+  ledger : ledger;
+  operators : operator_storage;
+}
+
+#endif
+
 
 let get_owner_hook_ops (tx_descriptors, storage
     : (transfer_descriptor list) * nft_token_storage) : operation list =

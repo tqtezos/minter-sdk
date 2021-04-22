@@ -322,10 +322,6 @@
              DUP ;
              DUG 2 ;
              CAR ;
-             SWAP ;
-             PUSH bool False ;
-             DUG 2 ;
-             SWAP ;
              NIL (pair (option address) (pair nat nat)) ;
              PAIR ;
              SWAP ;
@@ -344,9 +340,11 @@
                     DUG 2 ;
                     MEM ;
                     IF { DROP 3 ; PUSH string "FA2_INVALID_TOKEN_ID" ; FAILWITH }
-                       { DUP 4 ;
-                         IF { SWAP ; DUP ; DUG 2 ; CDR ; CAR ; CDR }
-                            { PUSH nat 1 ; SWAP ; DUP ; DUG 2 ; ADD } ;
+                       { PUSH nat 1 ;
+                         SWAP ;
+                         DUP ;
+                         DUG 2 ;
+                         ADD ;
                          DUP 3 ;
                          CDR ;
                          DUP 4 ;
@@ -387,8 +385,6 @@
                          PAIR ;
                          CONS ;
                          PAIR } } ;
-             SWAP ;
-             DROP ;
              DUP ;
              CDR ;
              LAMBDA
