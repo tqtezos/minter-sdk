@@ -30,6 +30,7 @@ library:
     - morley
     - morley-prelude
     - morley-ledgers
+    - fmt
 
 tests:
   minter-sdk-tests:
