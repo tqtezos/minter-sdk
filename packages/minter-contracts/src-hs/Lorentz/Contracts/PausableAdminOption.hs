@@ -40,10 +40,6 @@ initAdminStorage admin = Just AdminStorage
 noAdminStorage :: AdminStorage
 noAdminStorage = Nothing
 
--- This empty slice is a workaround, so that all the declarations above and
--- their instances may be in the type environment in the TH splice below.
-$(pure [])
-
 -- Errors
 ----------------------------------------------------------------------------
 
