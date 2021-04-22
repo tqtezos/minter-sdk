@@ -20,7 +20,7 @@ extra-deps:
 - git:
     https://gitlab.com/morley-framework/morley.git
   commit:
-    121bf833899d3bcdce63daa3c917f575cf3476ea  # master
+    5fe2d892b64ac22aa29b6c2c07d19bd4c475c210  # master
   subdirs:
     - code/morley
     - code/lorentz
@@ -30,12 +30,12 @@ extra-deps:
 - git:
     https://gitlab.com/morley-framework/indigo.git
   commit:
-    a7c93b410683ec6d86dfcda157f6d7ab9eeda778  # master
+    1177ddb1390610c76b8a735c1fda2eacb2cbef6b  # master
   subdirs:
     - .
 
 - git: https://gitlab.com/morley-framework/morley-ledgers.git
-  commit: c6a5b84cf15ed494f0a711ba4f1b646bbc6ef3d7  # master
+  commit: 8e1ec4c161ee9c22e03c74dccb579634ced6165c  # master
   subdirs:
     - code/morley-ledgers
 
@@ -51,7 +51,7 @@ extra-deps:
   commit: c5d61837eb358989b581ed82b1e79158c4823b1b
 
 - hex-text-0.1.0.2@sha256:154df2b81c1dd38b055fa6a90cb6964f60c5cf4a0ba633ea929d8a79af89519a,1301
-- morley-prelude-0.3.0@sha256:9e9473ac14cfa206adf0a3700764c0251de05042f1fe45daf9cb8556079ae663,2085
+- morley-prelude-0.4.0
 - named-0.3.0.1@sha256:2975d50c9c5d88095026ffc1303d2d9be52e5f588a8f8bcb7003a04b79f10a06,2312
 - show-type-0.1.1@sha256:24f681a3481b3f9630e619d816054804ba1bd6cc05b5978ddd2cece8499ff2fa,1154
 - base16-bytestring-1.0.1.0@sha256:33b9d57afa334d06485033e930c6b13fc760baf88fd8f715ae2f9a4b46e19a54

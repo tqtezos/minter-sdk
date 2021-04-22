@@ -42,7 +42,7 @@ test_AllowlistChecks = allowlistChecks
         { allowlistError = assetAddressNotAllowed
         , allowlistRunRestrictedAction = \(admin, tokenId) contract fa2 -> do
             now <- getNow
-            withSender (AddressResolved admin) $
+            withSender admin $
               call contract (Call @"Permit_configure") $ one $
                 PermitConfigParam
                 { config = defConfigureParam
@@ -68,21 +68,21 @@ test_Integrational = testGroup "Integrational"
       auction <- originateAuctionTezPermitAllowlisted alice
       fa2 <- originateFA2 "fa2" setup [auction]
 
-      withSender (AddressResolved alice) $
+      withSender alice $
         call auction (Call @"Update_allowed") (mkAllowlistParam [fa2])
 
       now <- getNow
 
-      withSender (AddressResolved alice) $
+      withSender alice $
         call auction (Call @"Permit_configure") $ one PermitConfigParam
           { config = (defConfigureParam :: ConfigureParam)
               { startTime = now }
           , optionalPermit = Nothing
           }
 
-      withSender (AddressResolved bob) $
+      withSender bob $
         transfer TransferData
-          { tdTo = addressResolved auction
+          { tdTo = auction
           , tdAmount = toMutez 3
           , tdEntrypoint = ep "bid"
           , tdParameter = AuctionId 0

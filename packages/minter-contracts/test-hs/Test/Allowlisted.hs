@@ -38,16 +38,16 @@ allowlistUpdateAuthorizationChecks originateFromAdminFn =
   [ nettestScenarioCaps "Can be updated by admin" $ do
       (contract, swapAdmin) <- originateWithAdmin originateFromAdminFn
 
-      withSender (AddressResolved swapAdmin) $
+      withSender swapAdmin $
         call contract (Call @"Update_allowed") mempty
 
   , nettestScenarioCaps "Cannot be updated by non-admins" $ do
       (contract, _swapAdmin) <- originateWithAdmin originateFromAdminFn
       user <- newAddress "user"
 
-      withSender (AddressResolved user) $
+      withSender user $
         call contract (Call @"Update_allowed") mempty
-        & expectError errNotAdmin
+        & expectError contract errNotAdmin
   ]
 
 -- | Single type of allowlist restriction, usually corresponds to one error.
@@ -98,7 +98,7 @@ allowlistChecks AllowlistChecksSetup{..} =
       case allowlistRestrictionsCases of
         AllowlistRestrictionCase{..} :| _ ->
           allowlistRunRestrictedAction setup contract fa2
-            & expectError allowlistError
+            & expectError contract allowlistError
 
   , nettestScenarioCaps "Only FA2s that has been allowed work" $ do
       fa2Setup <- doFA2Setup
@@ -106,14 +106,14 @@ allowlistChecks AllowlistChecksSetup{..} =
       fa2_1 <- originateFA2 "fa2-1" fa2Setup [contract]
       fa2_2 <- originateFA2 "fa2-2" fa2Setup [contract]
 
-      withSender (AddressResolved admin) $
+      withSender admin $
         call contract (Call @"Update_allowed") $ mkFullAllowlist setup [fa2_2]
 
       comment "Check that not yet allowed FA2 does not work"
       case allowlistRestrictionsCases of
         AllowlistRestrictionCase{..} :| _ -> do
           allowlistRunRestrictedAction setup contract fa2_1
-            & expectError allowlistError
+            & expectError contract allowlistError
 
       comment "Allowed FA2 works"
       for_ allowlistRestrictionsCases $ \AllowlistRestrictionCase{..} ->
@@ -125,14 +125,14 @@ allowlistChecks AllowlistChecksSetup{..} =
       fa2 <- originateFA2 "fa2" fa2Setup [contract]
       fa2_another <- originateFA2 "fa2" fa2Setup [contract]
 
-      withSender (AddressResolved admin) $
+      withSender admin $
         call contract (Call @"Update_allowed") $ mkFullAllowlist setup [fa2]
-      withSender (AddressResolved admin) $
+      withSender admin $
         call contract (Call @"Update_allowed") $ mkFullAllowlist setup [fa2_another]
 
       case allowlistRestrictionsCases of
         AllowlistRestrictionCase{..} :| _ -> do
           allowlistRunRestrictedAction setup contract fa2
-            & expectError allowlistError
+            & expectError contract allowlistError
 
   ]

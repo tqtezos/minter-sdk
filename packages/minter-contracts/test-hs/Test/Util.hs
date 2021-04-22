@@ -18,7 +18,6 @@ module Test.Util
 
 
 import qualified Data.Foldable as F
-import Data.Kind (Type)
 import qualified Data.Map as Map
 import Data.Sized (Sized)
 import qualified Data.Sized as Sized
@@ -155,7 +154,7 @@ assertingBalanceDeltas fa2 indicedDeltas action = do
   pullBalance consumer
 
   balancesRes <- map (map FA2.briBalance) . fromVal <$>
-    getStorage (AddressResolved $ toAddress consumer)
+    getStorage consumer
   (balancesAfter, balancesBefore) <- case balancesRes of
     [balancesAfter, balancesBefore] ->
       return (balancesAfter, balancesBefore)
