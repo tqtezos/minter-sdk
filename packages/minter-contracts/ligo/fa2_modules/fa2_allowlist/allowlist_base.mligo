@@ -16,6 +16,10 @@ type allowlist_entrypoints = never
 
 let init_allowlist : allowlist = unit
 
+let check_single_token_allowed
+    (addr, token_id, allowlist, err : address * token_id * allowlist * string) : unit =
+  unit
+
 #endif
 
 #endif !ALLOWLIST_BASE

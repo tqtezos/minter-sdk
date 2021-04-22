@@ -5,6 +5,7 @@ import Fmt (Buildable(..), genericF)
 import Lorentz
 
 import qualified Lorentz.Contracts.AllowlistSimple as AllowlistSimple
+import qualified Lorentz.Contracts.AllowlistToken as AllowlistToken
 import Lorentz.Contracts.MinterSdk
 import qualified Lorentz.Contracts.NoAllowlist as NoAllowlist
 import Lorentz.Contracts.PausableAdminOption
@@ -98,6 +99,13 @@ marketplaceTezAllowlistedContract
       (ToT (MarketplaceTezStorage AllowlistSimple.Allowlist))
 marketplaceTezAllowlistedContract =
   $$(embedContractM (inBinFolder "fixed_price_sale_market_tez_allowlisted.tz"))
+
+marketplaceTezAllowlistedTokenContract
+  :: T.Contract
+      (ToT (MarketplaceTezEntrypoints AllowlistToken.Entrypoints))
+      (ToT (MarketplaceTezStorage AllowlistToken.Allowlist))
+marketplaceTezAllowlistedTokenContract =
+  $$(embedContractM (inBinFolder "fixed_price_sale_market_tez_allowlisted_token.tz"))
 
 -- Errors
 ----------------------------------------------------------------------------

@@ -38,7 +38,7 @@ test_AllowlistChecks = allowlistChecks
 
   , allowlistRestrictionsCases = fromList
       [ AllowlistRestrictionCase
-        { allowlistError = assetAddressNotAllowed
+        { allowlistError = assetNotAllowed
         , allowlistRunRestrictedAction = \(alice, tokenId) contract fa2 -> do
             now <- getNow
             withSender alice $

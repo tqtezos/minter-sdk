@@ -109,6 +109,70 @@ signature:
       | Remove_minter of address
     ```
 
+### FA2 Allowlist modules
+
+Generic contract allowlist module with the following public signature:
+
+-   `type allowlist` - allowlist representation, what is put to storage.
+-   `type allowlist_entrypoints` - allowlist update entry points.
+    For the sake of uniformity, this has to appear under the same
+    `Update_allowed` constructor of the main contract.
+-   `update_allowed (param, storage : allowlist_entrypoints * allowlist) : allowlist` -
+    implementation for the `Update_allowed` entrypoint.
+-   various helpers.
+
+A contract that is assumed to be extended with allowlisting must itself import
+[`allowlist_base.mligo`](fa2_allowlist/allowlist_base.mligo).
+Then one of the following allowlisting implementations can be included into
+the contract:
+
+-   No extra include - no allowlist, all addresses are allowed.
+
+-   [allowlist_simple.mligo](fa2_allowlist/allowlist_simple.mligo) -
+    a simple allowlist that aims at allowing addresses from a small set.
+
+    It exposes the following entrypoint:
+
+    ```ocaml
+    type allowlist_entrypoints = (address, unit) big_map
+    ```
+
+    that overwrites the allowlist with the given one.
+
+    It accepts `(address, unit) big_map` for the sake of
+    efficiency (allowlist is kept in this form in the storage).
+
+
+-   [allowlist_token.mligo](fa2_allowlist/allowlist_simple.mligo) -
+    an allowlist implementation that aims at allowing arbitrary number
+    of addresses; additionally, for each address, it is possible
+    to allow either all `token_id`s, or a specific small set of
+    `token_id`s (keeping a large set will be inefficient).
+
+    Exposed entrypoint:
+
+    ```ocaml
+    type allowed_token_ids =
+        | All_token_ids_allowed
+        | Token_ids_allowed of token_id set
+
+    type allowed_update =
+      [@layout:comb]
+      { to_remove : address set
+      , to_add : (address, allowed_token_ids) map
+      }
+
+    type allowlist_entrypoints = allowed_update
+    ```
+
+    This entrypoint works as follows:
+    1. Addresses in `to_remove` set are removed from the allowlist.
+    2. Addresses in `to_add` map are added to the allowlist.
+    * If the address is associated with `All_token_ids_allowed`, all `token_id`s will be allowed for this address.
+    * If the address is associated with a set of `token_id`s, only these `token_id`s will be allowed for this address; the set of previously allowed `token_id`s for this address is not accounted.
+
+    Note: since this entrypoint accepts a `set` and a `map` you may need to sort the entries by addresses before passing them to the contract call.
+
 ## How to Compose Reusable Modules Into a Single Contract
 
 In general, we want our contract code to depend on some module signature and to

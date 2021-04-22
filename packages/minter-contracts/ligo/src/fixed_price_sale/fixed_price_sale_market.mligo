@@ -1,7 +1,7 @@
 #include "../../fa2/fa2_interface.mligo"
 #include "../../fa2_modules/pauseable_admin_option.mligo"
-#include "../common.mligo"
 #include "../../fa2_modules/fa2_allowlist/allowlist_base.mligo"
+#include "../common.mligo"
 
 type sale_data =
 [@layout:comb]
@@ -85,13 +85,7 @@ let buy_token(sale_id, storage: sale_id * storage) : (operation list * storage) 
   oplist, new_s
 
 let check_allowlisted (data, allowlist : sale_data * allowlist) : unit = begin
-#if ALLOWLIST_ENABLED
-#if ALLOWLIST_SIMPLE
-  check_address_allowed (data.sale_token.fa2_address, allowlist, "SALE_ADDRESS_NOT_ALLOWED");
-#else
-  <check_allowlisted not implemented>
-#endif
-#endif
+  check_single_token_allowed (data.sale_token.fa2_address, data.sale_token.token_id, allowlist, "SALE_TOKEN_NOT_ALLOWED");
   unit end
 
 let deposit_for_sale(sale_data, storage: sale_data * storage) : (operation list * storage) =
@@ -122,16 +116,12 @@ let cancel_sale(sale_id, storage: sale_id * storage) : (operation list * storage
 
 let update_allowed(allowlist_param, storage : allowlist_entrypoints * storage) : operation list * storage =
 #if !ALLOWLIST_ENABLED
-  [%Michelson ({| { NEVER } |} : never -> operation list * storage)] allowlist_param
+    [%Michelson ({| { NEVER } |} : never -> operation list * storage)] allowlist_param
 #else
-  let u : unit = fail_if_not_admin(storage.admin) in
-
-#if ALLOWLIST_SIMPLE
-  let allowlist_storage = allowlist_param in
+    let u : unit = fail_if_not_admin(storage.admin) in
+    let allowlist_storage = update_allowed (allowlist_param, storage.allowlist) in
+    ([] : operation list), { storage with allowlist = allowlist_storage }
 #endif
-
-  ([] : operation list), { storage with allowlist = allowlist_storage }
-#endif !ALLOWLIST_ENABLED
 
 let fixed_price_sale_main (p, storage : market_entry_points * storage) : operation list * storage = match p with
   | Sell sale_data ->

@@ -5,7 +5,11 @@
                 (pair %sell
                    (pair %sale_token (address %fa2_address) (nat %token_id))
                    (pair (mutez %price) (nat %amount)))))
-        (big_map %update_allowed address unit)) ;
+        (pair %update_allowed
+           (set %to_remove address)
+           (map %to_add
+              address
+              (or (unit %all_token_ids_allowed) (set %token_ids_allowed nat))))) ;
   storage
     (pair (big_map %sales
              nat
@@ -15,7 +19,10 @@
                       (pair (mutez %price) (nat %amount)))))
           (pair (option %admin
                    (pair (pair (address %admin) (bool %paused)) (option %pending_admin address)))
-                (pair (nat %next_sale_id) (big_map %allowlist address unit)))) ;
+                (pair (nat %next_sale_id)
+                      (big_map %allowlist
+                         address
+                         (or (unit %all_token_ids_allowed) (set %token_ids_allowed nat)))))) ;
   code { LAMBDA
            (option (pair (pair address bool) (option address)))
            unit
@@ -383,13 +390,16 @@
                      DIG 2 ;
                      CAR ;
                      CAR ;
-                     SWAP ;
-                     DROP ;
-                     SWAP ;
+                     DIG 2 ;
                      UNPAIR ;
                      DIG 2 ;
                      GET ;
-                     IF_NONE { FAILWITH } { DROP 2 } ;
+                     IF_NONE
+                       { SWAP ; DROP ; FAILWITH }
+                       { IF_LEFT
+                           { DROP 3 ; UNIT }
+                           { DIG 2 ; MEM ; IF { DROP ; UNIT } { FAILWITH } } ;
+                         DROP } ;
                      SELF_ADDRESS ;
                      SENDER ;
                      DUP 3 ;
@@ -465,7 +475,17 @@
              SWAP ;
              DUP ;
              DUG 2 ;
-             DROP ;
+             CDR ;
+             CDR ;
+             CDR ;
+             SWAP ;
+             DUP ;
+             DUG 2 ;
+             CAR ;
+             ITER { NONE (or unit (set nat)) ; SWAP ; UPDATE } ;
+             SWAP ;
+             CDR ;
+             ITER { UNPAIR ; SWAP ; SOME ; SWAP ; UPDATE } ;
              SWAP ;
              DUP ;
              DUG 2 ;

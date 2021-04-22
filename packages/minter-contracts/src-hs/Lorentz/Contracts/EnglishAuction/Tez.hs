@@ -4,6 +4,7 @@ module Lorentz.Contracts.EnglishAuction.Tez where
 import Lorentz
 
 import qualified Lorentz.Contracts.AllowlistSimple as AllowlistSimple
+import qualified Lorentz.Contracts.AllowlistToken as AllowlistToken
 import Lorentz.Contracts.MinterSdk
 import qualified Lorentz.Contracts.NoAllowlist as NoAllowlist
 import Lorentz.Contracts.PausableAdminOption
@@ -153,6 +154,13 @@ auctionTezAllowlistedContract
       (ToT (AuctionStorage AllowlistSimple.Allowlist))
 auctionTezAllowlistedContract =
   $$(embedContractM (inBinFolder "english_auction_tez_allowlisted.tz"))
+
+auctionTezAllowlistedTokenContract
+  :: T.Contract
+      (ToT (AuctionEntrypoints AllowlistToken.Entrypoints))
+      (ToT (AuctionStorage AllowlistToken.Allowlist))
+auctionTezAllowlistedTokenContract =
+  $$(embedContractM (inBinFolder "english_auction_tez_allowlisted_token.tz"))
 
 -- Errors
 ----------------------------------------------------------------------------

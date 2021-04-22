@@ -4,5 +4,5 @@ module Lorentz.Contracts.EnglishAuction.Allowlisted where
 
 import Lorentz
 
-assetAddressNotAllowed :: MText
-assetAddressNotAllowed = [mt|ASSET_ADDRESS_NOT_ALLOWED|]
+assetNotAllowed :: MText
+assetNotAllowed = [mt|ASSET_NOT_ALLOWED|]

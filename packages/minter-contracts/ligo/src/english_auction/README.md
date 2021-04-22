@@ -1,20 +1,20 @@
-# English Auction 
+# English Auction
 
 This contract implements a typical English auction contract, with bids to be made in tez. It has a few distinguishing features
 
 1. It handles the auctioning off of multiple assets in a single contract.
 2. An asset can include a collection of FA2 tokens (possibly across different contracts) and amounts.
-3. The contract can be configured with an admin, who has the sole power to configure auctions for the contract, as well the power to transfer admin privelages to another address. 
+3. The contract can be configured with an admin, who has the sole power to configure auctions for the contract, as well the power to transfer admin privelages to another address.
 
 ## Storage
-The structure of the storage is as follows: 
+The structure of the storage is as follows:
 
 ```sh=
 #The strictly increasing id of the next asset to be auctioned.
-nat %current_id;  
+nat %current_id;
 
-#Max time in seconds before an auction is considered ended. 
-nat %max_auction_time; 
+#Max time in seconds before an auction is considered ended.
+nat %max_auction_time;
 
 #Upper bound on how long between configuration and start time for an auction. Ensures fake auctions don't fill up big_map
 nat %max_config_to_start_time;
@@ -24,22 +24,22 @@ bigmap %auctions nat %asset_id {
   current_bid : mutez; #Upon configuration, set as opening_price
   start_time : timestamp; #When bidding can begin
   assets : list ({fa2_address : address; token_id : nat; qty : nat});
-  min_raise_percent : nat; #percentage increase of the previous bid used to determine the minimum valid subsequent bid. 
+  min_raise_percent : nat; #percentage increase of the previous bid used to determine the minimum valid subsequent bid.
   min_raise : tez; #the amount increase of previous bid in tez used to determine the minimum valid subsequent bid.
-  end_time : timestamp; 
+  end_time : timestamp;
   extend_time : int; #The amount by which to extend the auction if auction is within extend_time from end_time.
-  highest_bidder : address; #Upon config, set as SENDER. Afterwards, set to be previous bidder. 
+  highest_bidder : address; #Upon config, set as SENDER. Afterwards, set to be previous bidder.
   last_bid_time : timestamp;
-  round_time : nat; #In seconds-- the amount of time from when the last bid was placed for a bidder to place a new bid. 
+  round_time : nat; #In seconds-- the amount of time from when the last bid was placed for a bidder to place a new bid.
 }
 
 #The admin API can change an admin address using two step confirmation pattern.
-#Admin can also pause/unpause the contract. 
-#This functionality is optional. 
-pauseable_admin_storage %pauseable_admin 
+#Admin can also pause/unpause the contract.
+#This functionality is optional.
+pauseable_admin_storage %pauseable_admin
 
 ```
-These storage variables are used to determine the state of the auction as follows: 
+These storage variables are used to determine the state of the auction as follows:
 
 ```ocaml=
 let auction_ended (auction : auction) : bool =
@@ -51,10 +51,10 @@ let auction_started (auction : auction) : bool =
 
 let auction_in_progress (auction : auction) : bool =
   auction_started(auction) && (not auction_ended(auction))
-  
+
 ```
 
-And we determine whether a given bid is valid as follows: 
+And we determine whether a given bid is valid as follows:
 
 ```ocaml=
 let valid_bid_amount (auction : auction) : bool =
@@ -63,17 +63,17 @@ let valid_bid_amount (auction : auction) : bool =
   ((Tezos.amount >= auction.current_bid) && first_bid(auction))
 
 ```
-Either `current_bid`  needs to be raised by `min_raise_percent * current_bid` OR `current_bid`  needs to be raised by `min_raise`. If it is the first bid, only the `opening_price` must be met. 
+Either `current_bid`  needs to be raised by `min_raise_percent * current_bid` OR `current_bid`  needs to be raised by `min_raise`. If it is the first bid, only the `opening_price` must be met.
 
 ## Entrypoints
 
 ### %configure
 
-If admin is set and `SENDER` is an admin, or if no admin is set, `auctions[current_id]` is set with parameter values, `current_bid` is set to `opening_price` and `storage.current_id` is incremented. The `AMOUNT` sent to the entrypoint must be 0mutez additionally.  
+If admin is set and `SENDER` is an admin, or if no admin is set, `auctions[current_id]` is set with parameter values, `current_bid` is set to `opening_price` and `storage.current_id` is incremented. The `AMOUNT` sent to the entrypoint must be 0mutez additionally.
 
-The contract optimistically transfers assets from `SENDER` to itself. That means `SENDER` needed to already have approved the transfer to the auction contract of the assets that they are auctioning. The auction configuration fails if any of these transfers fail. 
+The contract optimistically transfers assets from `SENDER` to itself. That means `SENDER` needed to already have approved the transfer to the auction contract of the assets that they are auctioning. The auction configuration fails if any of these transfers fail.
 
-```bash= 
+```bash=
 %configure   {
     opening_price : tez;
     min_raise_percent : nat;
@@ -84,17 +84,17 @@ The contract optimistically transfers assets from `SENDER` to itself. That means
     start_time : timestamp;
     end_time : timestamp;
   }
-   
+
 ```
 
 
-### %bid 
+### %bid
 If auction is in progress and `AMOUNT` is a valid bid amount, a call to this entrypoint returns previous bid or seller's deposit if first bid and updates auction storage variables accordingly. If bid is placed within `extend_time` from `end_time`, extend the auction by `extend_time` to prevent front running wars at end.
 
 ```sh=
 %bid {
   asset_id : nat;
-} 
+}
 ```
 
 ### %cancel
@@ -106,7 +106,7 @@ If `SENDER` is `seller` or `admin` and auction is in progress, a call to this en
   }
 ```
 
-### %resolve 
+### %resolve
 This entrypoint checks the auction has ended and sends asset to `highest_bidder` and `current_bid` to owner. Note, if no bids were placed, the seller's deposit is simply returned. It also delete auction data from assets big_map.
 
 ```sh=
@@ -120,26 +120,17 @@ This entrypoint checks the auction has ended and sends asset to `highest_bidder`
 
 Some contract versions allow restricting the set of FA2 contracts that can participate in them.
 
-### Entrypoints
+We provide several implementations of allowlist as described in the
+[allowlist modules documentation](../../fa2_modules/README.md#fa2-allowlist-modules).
 
-#### %update_allowed
-
-```ocaml
-| Update_allowed of (address, unit) big_map
-```
-
-This entrypoint allows setting a new allowlist, overriding the current one.
-
-It accepts `(address, unit) big_map` for the sake of efficiency (allowlist is kept in this form in the storage).
-
-Can be invoked only by the admin, fails with `NOT_ADMIN` otherwise.
+`Update_allowed` entrypoint can be invoked only by the admin, failing with `NOT_ADMIN` otherwise.
 
 ### Modification of the base marketplace contract
 
 Each contract with allowlist restriction inherits the behaviour of the respected non-restricted contract.
 
 Besides, the following restriction takes place:
-* For `%configure` entrypoint and its variations: in case any of `fa2_address` in the assets list does not belong to the allowlist, `ASSET_ADDRESS_NOT_ALLOWED` error is raised.
+* For `%configure` entrypoint and its variations: in case any of `fa2_address`/`token_id` in the assets list does not belong to the allowlist, `ASSET_NOT_ALLOWED` error is raised.
 
 ## Design Choices/Cautions
 
@@ -153,16 +144,16 @@ Besides, the following restriction takes place:
 
 # English Auction w/ FA2 bids
 
-In this version of the NFT English Auction contract, bids are made in some FA2 token specified at contract origination as `bid_currency`. Bidders must add the auction contract as an operator for their bid token and then specify the amount they would like to bid in mutez as an argument to the `bid` entrypoint. The entrypoint will fail if the auction cannot transfer the indicated amount of `bid_currency` to itself from the bidder. 
+In this version of the NFT English Auction contract, bids are made in some FA2 token specified at contract origination as `bid_currency`. Bidders must add the auction contract as an operator for their bid token and then specify the amount they would like to bid in mutez as an argument to the `bid` entrypoint. The entrypoint will fail if the auction cannot transfer the indicated amount of `bid_currency` to itself from the bidder.
 
 # English Auction with permit configuration
 
-This is an implementation of the auction contract in which the standard `Configure` entrypoint is replaced by one that accepts a batch of optional permits that can be used to configure auctions for accounts different than `SENDER.` This could serve useful for applications looking to allow users without tez to auction off their assets. See [One-step Permit](https://gitlab.com/tzip/tzip/-/merge_requests/151) for reference. 
+This is an implementation of the auction contract in which the standard `Configure` entrypoint is replaced by one that accepts a batch of optional permits that can be used to configure auctions for accounts different than `SENDER.` This could serve useful for applications looking to allow users without tez to auction off their assets. See [One-step Permit](https://gitlab.com/tzip/tzip/-/merge_requests/151) for reference.
 
 # English Auction with Auction Fee
 
-This is a version of the Auction contract in which an address fixed at contract origination gets a fixed percent of any sale that takes place using the contract. 
+This is a version of the Auction contract in which an address fixed at contract origination gets a fixed percent of any sale that takes place using the contract.
 
 # Cancel only admin extension
 
-In the normal english auction contract with admin enabled, admins have sole authority over configuring and cancelling auctions. For some use-cases however it is useful for anyone to have the power to configure an auction, and admins to only have sole authority over cancelling auctions. This is accomplished when the C Macro `CANCEL_ONLY_ADMIN` is defined as in the LIGO files with `cancel_only_admin` in the title. 
+In the normal english auction contract with admin enabled, admins have sole authority over configuring and cancelling auctions. For some use-cases however it is useful for anyone to have the power to configure an auction, and admins to only have sole authority over cancelling auctions. This is accomplished when the C Macro `CANCEL_ONLY_ADMIN` is defined as in the LIGO files with `cancel_only_admin` in the title.

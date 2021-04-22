@@ -36,7 +36,7 @@ test_AllowlistChecks = allowlistChecks
 
   , allowlistRestrictionsCases = fromList
       [ AllowlistRestrictionCase
-        { allowlistError = saleAddressNotAllowed
+        { allowlistError = saleTokenNotAllowed
         , allowlistRunRestrictedAction = \(alice, tokenId, allowedFA2) market fa2 ->
             withSender alice $
               call market (Call @"Sell") SaleData
@@ -75,7 +75,7 @@ test_Integrational = testGroup "Integrational"
             , tokenId = tokenId1
             }
 
-      let moneyToken = MoneyToken  
+      let moneyToken = MoneyToken
            { fa2Address = toAddress fa2
            , tokenId = tokenId2
            }

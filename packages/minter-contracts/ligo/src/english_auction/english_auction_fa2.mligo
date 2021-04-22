@@ -1,7 +1,7 @@
 #include "../../fa2/fa2_interface.mligo"
 #include "../../fa2_modules/pauseable_admin_option.mligo"
-#include "../common.mligo"
 #include "../../fa2_modules/fa2_allowlist/allowlist_base.mligo"
+#include "../common.mligo"
 
 type bid_currency = global_token_id
 
@@ -137,17 +137,11 @@ let valid_bid_amount (auction, token_amount : auction * nat) : bool =
   ((token_amount >= auction.current_bid) && first_bid(auction))
 
 let check_allowlisted (configure_param, allowlist : configure_param * allowlist) : unit = begin
-#if ALLOWLIST_ENABLED
-#if ALLOWLIST_SIMPLE
   List.iter
     (fun (token : tokens) ->
-      check_address_allowed (token.fa2_address, allowlist, "ASSET_ADDRESS_NOT_ALLOWED")
+      check_tokens_allowed (token, allowlist, "ASSET_NOT_ALLOWED")
     )
     configure_param.asset;
-#else
-  <check_allowlisted not implemented>
-#endif
-#endif
   unit end
 
 let configure_auction(configure_param, storage : configure_param * storage) : return = begin
@@ -280,13 +274,9 @@ let update_allowed(allowlist_param, storage : allowlist_entrypoints * storage) :
     [%Michelson ({| { NEVER } |} : never -> return)] allowlist_param
 #else
     let u : unit = fail_if_not_admin(storage.admin) in
-
-#if ALLOWLIST_SIMPLE
-    let allowlist_storage = allowlist_param in
-#endif
-
+    let allowlist_storage = update_allowed (allowlist_param, storage.allowlist) in
     ([] : operation list), { storage with allowlist = allowlist_storage }
-#endif !ALLOWLIST_ENABLED
+#endif
 
 let english_auction_fa2_main (p,storage : auction_entrypoints * storage) : return = match p with
     | Configure config -> configure_auction(config, storage)

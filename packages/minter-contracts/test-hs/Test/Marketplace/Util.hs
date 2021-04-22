@@ -17,7 +17,7 @@ import qualified Lorentz.Contracts.PausableAdminOption as PausableAdminOption
 originateMarketplaceAllowlisted
   :: MonadNettest caps base m
   => Address
-  -> m (TAddress $ MarketplaceEntrypoints AllowlistSimple.Allowlist)
+  -> m (TAddress $ MarketplaceEntrypoints AllowlistSimple.Entrypoints)
 originateMarketplaceAllowlisted admin = do
   TAddress <$> originateUntypedSimple "marketplace"
     (T.untypeValue $ T.toVal $
@@ -28,7 +28,7 @@ originateMarketplaceAllowlisted admin = do
 originateMarketplaceTezAllowlisted
   :: MonadNettest caps base m
   => Address
-  -> m (TAddress $ MarketplaceTezEntrypoints AllowlistSimple.Allowlist)
+  -> m (TAddress $ MarketplaceTezEntrypoints AllowlistSimple.Entrypoints)
 originateMarketplaceTezAllowlisted admin = do
   TAddress <$> originateUntypedSimple "marketplace-tez"
     (T.untypeValue $ T.toVal $

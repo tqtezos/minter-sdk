@@ -1079,6 +1079,10 @@
                  SWAP ;
                  DUP ;
                  DUG 2 ;
+                 DROP ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
                  CDR ;
                  CDR ;
                  CDR ;
@@ -1261,7 +1265,7 @@
                      CDR ;
                      CDR ;
                      CAR ;
-                     ITER { PUSH string "ASSET_ADDRESS_NOT_ALLOWED" ;
+                     ITER { PUSH string "ASSET_NOT_ALLOWED" ;
                             DUP 3 ;
                             DIG 2 ;
                             CAR ;

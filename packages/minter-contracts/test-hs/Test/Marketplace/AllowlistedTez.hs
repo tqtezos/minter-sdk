@@ -35,7 +35,7 @@ test_AllowlistChecks = allowlistChecks
 
   , allowlistRestrictionsCases = fromList
       [ AllowlistRestrictionCase
-        { allowlistError = saleAddressNotAllowed
+        { allowlistError = saleTokenNotAllowed
         , allowlistRunRestrictedAction = \(alice, tokenId) contract fa2 ->
             withSender alice $
               call contract (Call @"Sell") SaleDataTez

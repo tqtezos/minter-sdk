@@ -7,8 +7,8 @@ import Lorentz
 -- Errors
 ----------------------------------------------------------------------------
 
-saleAddressNotAllowed :: MText
-saleAddressNotAllowed = [mt|SALE_ADDRESS_NOT_ALLOWED|]
+saleTokenNotAllowed :: MText
+saleTokenNotAllowed = [mt|SALE_TOKEN_NOT_ALLOWED|]
 
-moneyAddressNotAllowed :: MText
-moneyAddressNotAllowed = [mt|MONEY_ADDRESS_NOT_ALLOWED|]
+moneyTokenNotAllowed :: MText
+moneyTokenNotAllowed = [mt|MONEY_TOKEN_NOT_ALLOWED|]

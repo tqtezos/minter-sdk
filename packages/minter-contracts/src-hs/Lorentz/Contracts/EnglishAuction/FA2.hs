@@ -4,6 +4,7 @@ module Lorentz.Contracts.EnglishAuction.FA2 where
 import Lorentz
 
 import qualified Lorentz.Contracts.AllowlistSimple as AllowlistSimple
+import qualified Lorentz.Contracts.AllowlistToken as AllowlistToken
 import Lorentz.Contracts.MinterSdk
 import qualified Lorentz.Contracts.NoAllowlist as NoAllowlist
 import Lorentz.Contracts.PausableAdminOption
@@ -159,6 +160,13 @@ auctionFA2AllowlistedContract
       (ToT (AuctionStorage AllowlistSimple.Allowlist))
 auctionFA2AllowlistedContract =
   $$(embedContractM (inBinFolder "english_auction_fa2_allowlisted.tz"))
+
+auctionFA2AllowlistedTokenContract
+  :: T.Contract
+      (ToT (AuctionEntrypoints AllowlistToken.Entrypoints))
+      (ToT (AuctionStorage AllowlistToken.Allowlist))
+auctionFA2AllowlistedTokenContract =
+  $$(embedContractM (inBinFolder "english_auction_fa2_allowlisted_token.tz"))
 
 -- Errors
 ----------------------------------------------------------------------------
