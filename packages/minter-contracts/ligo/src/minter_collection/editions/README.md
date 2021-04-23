@@ -58,7 +58,7 @@ editions_metadata :=
   + A creator can distribute editions for multiple edition runs that they created, in a single call to `distribute_editions`. 
 
   For each "distribution":
-    * `mint_edition` reserves `max_number_of_editions_per_collection` `token_id`s beginning at `next_edition_id * max_number_of_editions_per_collection` , and `distribute_edition` uses them sequentially.
+    * `mint_edition` reserves `max_editions_per_collection` `token_id`s beginning at `next_edition_id * max_editions_per_collection` , and `distribute_edition` uses them sequentially.
     * We fail if more editions are distributed than were initially allocated by `mint_editions`
 
 ## Errors 
@@ -86,4 +86,3 @@ Although the contract has not been heavily testsed, brief benchmarking suggests 
 See https://better-call.dev/edo2net/KT1Fry79rxQwXm77sCCaGiExoo6d12Brkb6S/operations for an example of an originated version of https://github.com/tqtezos/minter-sdk/blob/aacb8fa5753aa33638e9da98cce60a86dff29b04/packages/minter-contracts/bin/fa2_multi_nft_token_editions.tz on edonet. 
 
 In that contract a call to `mint_editions` for a 100 edition edition collection cost ~0.03tz and a call to `distribute_editions` for the distribution of a single one of those editions cost ~0.05tz. 
-
