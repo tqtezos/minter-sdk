@@ -228,7 +228,7 @@ export async function originateEditionsNftContract(
     views : [{
       name: 'token_metadata',
       description: 'Get the metadata for the tokens minted using this contract',
-      pure: false,
+      pure: true,
       implementations: [
         { michelsonStorageView :
            {
