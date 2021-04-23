@@ -250,9 +250,9 @@ export async function originateEditionsNftContract(
   };
 
   const editions_meta_encoded = char2Bytes(JSON.stringify(editions_metadata, null, 2));
-  const max_editions_per_collection = 10000;
+  const max_editions_per_run = 10000;
 
-  const storage = `(Pair (Pair {} ${max_editions_per_collection}) (Pair 0 (Pair (Pair (Pair (Pair "${adminAddress}" False) None) (Pair {} {})) { Elt "" 0x${meta_uri} ; Elt "content" 0x${editions_meta_encoded} }))) `;
+  const storage = `(Pair (Pair {} ${max_editions_per_run}) (Pair 0 (Pair (Pair (Pair (Pair "${adminAddress}" False) None) (Pair {} {})) { Elt "" 0x${meta_uri} ; Elt "content" 0x${editions_meta_encoded} }))) `;
   return originateContract(tz, code, storage, 'editions');
 }
 

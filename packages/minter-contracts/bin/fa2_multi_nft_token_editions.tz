@@ -21,7 +21,7 @@
                    (pair (address %creator)
                          (pair (map %edition_info string bytes)
                                (pair (nat %number_of_editions) (nat %number_of_editions_to_distribute)))))
-                (nat %max_editions_per_collection))
+                (nat %max_editions_per_run))
           (pair (nat %next_edition_id)
                 (pair %nft_asset_storage
                    (pair (pair %admin (pair (address %admin) (bool %paused)) (option %pending_admin address))
@@ -645,7 +645,7 @@
              EXEC ;
              DROP ;
              ITER { SWAP ;
-                    PUSH string "COLLECTION_TOO_LARGE" ;
+                    PUSH string "EDITION_SET_TOO_LARGE" ;
                     SWAP ;
                     DUP ;
                     DUG 2 ;

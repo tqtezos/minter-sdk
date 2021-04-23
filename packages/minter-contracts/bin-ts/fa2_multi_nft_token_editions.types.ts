@@ -8,7 +8,7 @@ type Storage = {
         number_of_editions: nat;
         number_of_editions_to_distribute: nat;
     }>;
-    max_editions_per_collection: nat;
+    max_editions_per_run: nat;
     next_edition_id: nat;
     nft_asset_storage: {
         admin: {
