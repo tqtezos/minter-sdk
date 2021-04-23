@@ -84,6 +84,6 @@ Given a valid `token-id` the offchain view will return the edition metadata of t
 ## Performance 
 Although the contract has not been heavily testsed, brief benchmarking suggests that it is possible to mint upwards of 10 trillion copies of some edition set (as we are only limited by constraints on the `nat` type in Michelson) and then distribute ~394 copies of some edition in a single call to `distribute_edition`. 
 
-See https://better-call.dev/edo2net/KT1Fry79rxQwXm77sCCaGiExoo6d12Brkb6S/operations for an example of an originated version of https://github.com/tqtezos/minter-sdk/blob/aacb8fa5753aa33638e9da98cce60a86dff29b04/packages/minter-contracts/bin/fa2_multi_nft_token_editions.tz on edonet. 
+See https://better-call.dev/edo2net/KT1S6CShPP79LWrHyLxkJ8prL7hRuQ8u6193/operations for an example of an originated version of https://github.com/tqtezos/minter-sdk/blob/950c32fa02c32a27c0e11849671b1135656b4c07/packages/minter-contracts/bin/fa2_multi_nft_token_editions.tz on edonet. 
 
-In that contract a call to `mint_editions` for a 100 edition `Edition set` cost ~0.03tz and a call to `distribute_editions` for the distribution of a single one of those editions cost ~0.05tz. 
+In that contract a call to `mint_editions` for a 100 edition `Edition set` cost ~0.045tz and a call to `distribute_editions` for the distribution of 20 editions cost ~0.46tz. 
