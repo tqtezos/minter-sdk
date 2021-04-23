@@ -11,6 +11,7 @@ module Test.Util
   , assertingBalanceDeltas
   , mkAllowlistParam
   , originateWithAdmin
+  , clevelandProp
 
     -- Re-exports
   , Sized
@@ -26,6 +27,7 @@ import Data.Type.Ordinal (ordToNatural)
 import Fmt ((+|), (|+))
 import GHC.TypeLits (Symbol)
 import GHC.TypeNats (Nat, type (+))
+import Hedgehog (MonadTest)
 
 import Lorentz.Test.Consumer
 import Lorentz.Value
@@ -33,6 +35,7 @@ import Lorentz.Value
 import qualified Indigo.Contracts.FA2Sample as FA2
 import qualified Lorentz.Contracts.Spec.FA2Interface as FA2
 import Morley.Nettest
+import Morley.Nettest.Pure (PureM, runEmulated)
 
 -- | An alias for pair constructor.
 infix 0 -:
@@ -192,3 +195,7 @@ originateWithAdmin originateFn = do
   admin <- newAddress "admin"
   swaps <- originateFn admin
   return (swaps, admin)
+
+-- | Create a hedgehog property-based test from a cleveland scenario.
+clevelandProp :: (MonadIO m, MonadTest m) => EmulatedT PureM () -> m ()
+clevelandProp = nettestTestProp . runEmulated . uncapsNettestEmulated

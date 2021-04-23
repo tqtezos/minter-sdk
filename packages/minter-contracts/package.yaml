@@ -41,7 +41,6 @@ tests:
       - containers
       - cleveland
       - fmt
-      - lens
       - lorentz
       - named
       - morley
@@ -51,3 +50,5 @@ tests:
       - sized
       - tasty
       - type-natural
+      - hedgehog
+      - tasty-hedgehog
