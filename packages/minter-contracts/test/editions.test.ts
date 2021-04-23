@@ -30,6 +30,7 @@ export interface distribute_edition {
 }
 
 describe('test NFT auction', () => {
+  let maxEditions : nat;
   let tezos: TestTz;
   let nftEditions : Contract;
   let nft1 : MintEditionParam;
@@ -41,6 +42,7 @@ describe('test NFT auction', () => {
   let queryBalances: QueryBalances;
 
   beforeAll(async () => {
+    maxEditions = new BigNumber(10000);
     tezos = await bootstrap();
     edition_1_metadata = new MichelsonMap();
     edition_1_metadata.setType({ prim :"map", args :[{ prim:"string" }, { prim:"bytes" }] });
@@ -90,8 +92,8 @@ describe('test NFT auction', () => {
     ], queryBalances, nftEditions);
 
     const [aliceHasEdition1, bobHasEdition1] = await hasTokens([
-      { owner: aliceAddress, token_id: new BigNumber(1000) },
-      { owner: bobAddress, token_id: new BigNumber(1001) },
+      { owner: aliceAddress, token_id: maxEditions },
+      { owner: bobAddress, token_id: maxEditions.plus(1) },
     ], queryBalances, nftEditions);
 
     expect(aliceHasEdition0).toBe(true);
