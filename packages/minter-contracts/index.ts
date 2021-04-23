@@ -1,3 +1,5 @@
+import { EditionsTokenMetadataViewCode } from './bin-ts/editions_token_metadata_view.code';
+import { EditionsTokenMetadataViewContractType } from './bin-ts/editions_token_metadata_view.types';
 import { EnglishAuctionFa2Code } from './bin-ts/english_auction_fa2.code';
 import { EnglishAuctionFa2ContractType } from './bin-ts/english_auction_fa2.types';
 import { EnglishAuctionFa2AllowlistedCode } from './bin-ts/english_auction_fa2_allowlisted.code';
@@ -50,6 +52,8 @@ import { TicketWalletCode } from './bin-ts/ticket_wallet.code';
 import { TicketWalletContractType } from './bin-ts/ticket_wallet.types';
 
 export {
+  EditionsTokenMetadataViewContractType,
+  EditionsTokenMetadataViewCode,
   EnglishAuctionFa2ContractType,
   EnglishAuctionFa2Code,
   EnglishAuctionFa2AllowlistedContractType,
