@@ -41,9 +41,9 @@ editions_metadata :=
 
 ## Entrypoints
 
-- `mint_editions : list mint_edition`
+- `mint_editions : list mint_edition_run`
   + **GUARDS USED:** `fail_if_not_admin` 
-  + `mint_edition := (edition_info', number_of_editions' : ((string, bytes) map) * nat )`
+  + `mint_edition_run := (edition_info', number_of_editions' : ((string, bytes) map) * nat )`
   + For each entry in the list, an entry is created in `editions_metadata`for key `current_edition_id`
     with:
     * `number_of_editions = number_of_editions_to_distribute = number_of_editions'`
