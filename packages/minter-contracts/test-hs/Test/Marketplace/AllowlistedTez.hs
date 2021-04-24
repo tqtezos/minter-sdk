@@ -25,23 +25,23 @@ test_AllowlistUpdateAuthorization =
   allowlistUpdateAuthorizationChecks originateMarketplaceTezAllowlisted
 
 test_AllowlistChecks :: [TestTree]
-test_AllowlistChecks = allowlistChecks
+test_AllowlistChecks = allowlistSimpleChecks
   AllowlistChecksSetup
   { allowlistCheckSetup = \fa2Setup -> do
-      let alice ::< SNil = sAddresses fa2Setup
-      let tokenId ::< SNil = sTokens fa2Setup
+      let alice ::< _ = sAddresses fa2Setup
       contract <- originateMarketplaceTezAllowlisted alice
-      return (alice, contract, (alice, tokenId))
+      return (alice, contract, alice)
 
   , allowlistRestrictionsCases = fromList
       [ AllowlistRestrictionCase
         { allowlistError = saleTokenNotAllowed
-        , allowlistRunRestrictedAction = \(alice, tokenId) contract fa2 ->
+        , allowlistRunRestrictedAction =
+          \alice contract (fa2, tokenId) ->
             withSender alice $
               call contract (Call @"Sell") SaleDataTez
                 { salePricePerToken = toMutez 1
-                , saleToken = SaleToken(toAddress fa2) tokenId
-                , tokenAmount = 1 
+                , saleToken = SaleToken (toAddress fa2) tokenId
+                , tokenAmount = 1
                 }
         }
       ]
@@ -60,7 +60,7 @@ test_Integrational = testGroup "Integrational"
       fa2 <- originateFA2 "fa2" setup [market]
 
       withSender alice $
-        call market (Call @"Update_allowed") (mkAllowlistParam [fa2])
+        call market (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
 
       let saleToken = SaleToken
             { fa2Address = toAddress fa2
@@ -83,7 +83,7 @@ test_Integrational = testGroup "Integrational"
               { tdTo = market
               , tdAmount = toMutez 1
               , tdEntrypoint = ep "buy"
-              , tdParameter = SaleId 0 
+              , tdParameter = SaleId 0
               }
 
   ]

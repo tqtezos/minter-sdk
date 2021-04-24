@@ -9,6 +9,3 @@ import Lorentz
 
 saleTokenNotAllowed :: MText
 saleTokenNotAllowed = [mt|SALE_TOKEN_NOT_ALLOWED|]
-
-moneyTokenNotAllowed :: MText
-moneyTokenNotAllowed = [mt|MONEY_TOKEN_NOT_ALLOWED|]

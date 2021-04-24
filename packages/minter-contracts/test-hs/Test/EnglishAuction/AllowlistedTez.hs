@@ -27,19 +27,19 @@ test_AllowlistUpdateAuthorization =
   allowlistUpdateAuthorizationChecks originateAuctionTezAllowlisted
 
 test_AllowlistChecks :: [TestTree]
-test_AllowlistChecks = allowlistChecks
+test_AllowlistChecks = allowlistSimpleChecks
   AllowlistChecksSetup
   { allowlistCheckSetup = \fa2Setup -> do
       -- In this contract only alice can create auctions
-      let alice ::< SNil = sAddresses fa2Setup
-      let tokenId ::< SNil = sTokens fa2Setup
+      let alice ::< _ = sAddresses fa2Setup
       contract <- originateAuctionTezAllowlisted alice
-      return (alice, contract, (alice, tokenId))
+      return (alice, contract, alice)
 
   , allowlistRestrictionsCases = fromList
       [ AllowlistRestrictionCase
         { allowlistError = assetNotAllowed
-        , allowlistRunRestrictedAction = \(alice, tokenId) contract fa2 -> do
+        , allowlistRunRestrictedAction =
+          \alice contract (fa2, tokenId) -> do
             now <- getNow
             withSender alice $
               call contract (Call @"Configure") $ (defConfigureParam :: ConfigureParam)
@@ -63,7 +63,7 @@ test_Integrational = testGroup "Integrational"
       fa2 <- originateFA2 "fa2" setup [auction]
 
       withSender alice $
-        call auction (Call @"Update_allowed") (mkAllowlistParam [fa2])
+        call auction (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
 
       now <- getNow
 
