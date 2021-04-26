@@ -2,3 +2,6 @@ jsout
 node_modules
 *.cabal
 .stack-work
+index.ts
+bin-ts/**
+!bin-ts/**/.gitkeep 
