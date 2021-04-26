@@ -62,7 +62,7 @@ editions_metadata :=
     * We fail if more editions are distributed than were initially allocated by `mint_editions`
 
 ## Errors 
-- If a non-admin attempts to call `Mint`, `Mint_editions`, `Set_admin`, or `Pause` fail with `NOT_AN_ADMIN`.
+- If a non-admin attempts to call `Mint_editions`, `Set_admin`, or `Pause` fail with `NOT_AN_ADMIN`.
 - If the contract is paused and a user attempts to call any FA2 entrypoint or `Distribute_editions`,failwith `PAUSED`. 
 - If a user attempts to mint an `Edition_run` larger than `max_editions_per_run` fail with `EDITION_RUN_TOO_LARGE`. 
 - If a user attempts to distribute more editions than were created, the call fails with error `NO_EDITIONS_TO_DISTRIBUTE`. 
