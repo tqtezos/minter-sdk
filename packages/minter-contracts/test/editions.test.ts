@@ -60,7 +60,7 @@ describe('test NFT auction', () => {
     const contractStorage : any = await nftEditionsBob.storage();
     maxEditions = await contractStorage.max_editions_per_run;
   });
-  
+
   test('change admin by non admin should fail', async () => {
     const opSetAdmin = nftEditionsAlice.methods.set_admin(aliceAddress).send();
     return expect(opSetAdmin).rejects.toHaveProperty('message', 'NOT_AN_ADMIN');
@@ -92,7 +92,7 @@ describe('test NFT auction', () => {
     expect(finalAdmin).toEqual(bobAddress);
     $log.info("Admin changed back successfully");
   });
-  
+
   test('minting by non admin should fail', async () => {
     const nft = {
       edition_info: edition_1_metadata,
@@ -136,7 +136,8 @@ describe('test NFT auction', () => {
       edition_id: new BigNumber(1),
       receivers: [aliceAddress, bobAddress],
     };
-    const opDistribute = await nftEditionsBob.methods.distribute_editions([distributeEdition0, distributeEdition1]).send();
+    const opDistribute = await nftEditionsBob.methods
+      .distribute_editions([distributeEdition0, distributeEdition1]).send();
     await opDistribute.confirmation();
     $log.info(`Distributed editions. Consumed gas: ${opDistribute.consumedGas}`);
 
@@ -225,5 +226,5 @@ describe('test NFT auction', () => {
     const opDistribute = nftEditionsBob.methods.distribute_editions([distributeEdition0]).send();
     return expect(opDistribute).rejects.toHaveProperty('message', 'PAUSED');
   });
-  
+
 });
