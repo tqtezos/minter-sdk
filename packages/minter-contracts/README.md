@@ -25,27 +25,27 @@ The `@tqtezos/minter-contracts` package provides a collection of NFT and marketp
 
 ## Provided Contracts
 
-### [Minter Collection](ligo/src/minter_collection)
+### [Minter Collection](/packages/minter-contracts/ligo/src/minter_collection)
 
 Customizable smart contracts for minting FA2 NFTs as collections.
 
-### [Editions FA2](ligo/src/minter_collection/editions)
+### [Editions FA2](/packages/minter-contracts/ligo/src/minter_collection/editions)
 The _Editions_ variant of FA2 allows for the minting and distribution of many editions of an NFT that share the same metadata, but with unique identifiers (`token_id`s). The design of this contract also allows for the minting of many editions runs in O(n) (where n is the number of editions runs minted) and concurrent distribution of editions across multiple creators.
 
-### [English Auction](ligo/src/english_auction)
+### [English Auction](/packages/minter-contracts/ligo/src/english_auction)
 
 An implementation of an English auction marketplace that allows users to initiate auctions of NFTs in either tez or FA2 tokens.
 
-### [Fixed Price Sale](ligo/src/fixed_price_sale)
+### [Fixed Price Sale](/packages/minter-contracts/ligo/src/fixed_price_sale)
 
 An implementation of an NFT marketplace that allows users to initiate NFT sales at a fixed price in tez or FA2. These contracts can be configured based on a range of administrative options.
 
-### [FA2-FA2 swaps](ligo/src/swaps)
+### [FA2-FA2 swaps](/packages/minter-contracts/ligo/src/swaps)
 
 An implementation of a swaps contract that allows two participants to safely exchange their FA2 tokens.
 There is an extension with allowlist that allows specifying the permitted set of FA2 contracts involved.
 
-### [Ticket-based NFTs](ligo/src/tickets)
+### [Ticket-based NFTs](/packages/minter-contracts/ligo/src/tickets)
 
 **EXPERIMENTAL** An implementation of NFTs using tickets and a dutch auction example, along with wallet contracts for the NFTs. _Please note: tickets are a new Tezos feature and care should be taken when using them as they have not been heavily tested in production._
 
@@ -65,9 +65,8 @@ There is an extension with allowlist that allows specifying the permitted set of
 You'll need these.
 
 - [`docker`](https://www.docker.com/products/docker-desktop)
-
-- [`tezos-client`](https://assets.tqtezos.com/docs/setup/1-tezos-client/)
-
+- [`yarn`](https://yarnpkg.com/getting-started/install)
+  
 ## Package Scripts
 
 Package scripts are managed and invoked by `yarn`.
