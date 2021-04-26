@@ -43,5 +43,10 @@ spawn('yarn', ['jest', '--runInBand', ...workerTarget], {
   stdio: 'inherit',
   env: process.env,
   cwd: process.cwd(),
-});
-
+})
+  .on('error', err => {
+    throw err;
+  })
+  .on('exit', code => {
+    process.exit(code ?? 0);
+  });
