@@ -24,6 +24,7 @@
     "bootstrap-testnet": "env TZ_NETWORK=testnet ts-node src/bootstrap-contracts-config.ts",
     "bootstrap-mainnet": "env TZ_NETWORK=mainnet ts-node src/bootstrap-contracts-config.ts",
     "compile-ligo": "ts-node src/compile-ligo.ts",
+    "prepare": "yarn compile-ligo && yarn generate-types",
     "generate-types": "rimraf ./bin-ts && contract-type-generator --types file --g ./bin ./bin-ts && ts-node src/generate-index.ts",
     "spawn-jest-worker": "ts-node spawn-jest-worker.ts"
   },
