@@ -64,9 +64,20 @@ jobs:
       working-directory: packages/minter-contracts
       run: yarn run generate-types
 
+    # Compress generated TypeScript types
+    - run: tar -czf bin-ts.tar.gz bin-ts
+      working-directory: packages/minter-contracts
+    # Upload generated TypeScript to be shared by other jobs
+    - uses: actions/upload-artifact@v2
+      with:
+        name: bin-ts
+        path: packages/minter-contracts/bin-ts.tar.gz
+        retention-days: 1
+
   test-jest:
     name: Jest tests
     runs-on: ubuntu-latest
+    needs: generate-types
     strategy:
       matrix:
         worker: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
@@ -83,6 +94,16 @@ jobs:
 
     - run: ./flextesa/start-sandbox.sh
       name: Start sandbox
+
+    - uses: actions/download-artifact@v2
+      name: Download generated TypeScript types
+      with:
+        name: bin-ts
+        path: packages/minter-contracts
+    
+    - run: tar -xzf bin-ts.tar.gz
+      name: Unpack generated TypeScript types
+      working-directory: packages/minter-contracts
 
     - run: yarn spawn-jest-worker -w 12 -i ${{ matrix.worker }}
       working-directory: packages/minter-contracts
