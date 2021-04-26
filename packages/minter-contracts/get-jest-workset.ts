@@ -1,7 +1,6 @@
 import yargs from 'yargs';
 import path from 'path';
 import glob from 'glob';
-import spawn from 'cross-spawn';
 
 const args = yargs
   .option('w', {
@@ -39,14 +38,4 @@ if (start >= files.length) {
 
 const workerTarget = files.slice(start, start + filesPerWorker);
 
-spawn('yarn', ['jest', '--runInBand', ...workerTarget], {
-  stdio: 'inherit',
-  env: process.env,
-  cwd: process.cwd(),
-})
-  .on('error', err => {
-    throw err;
-  })
-  .on('exit', code => {
-    process.exit(code ?? 0);
-  });
+process.stdout.write(workerTarget.join(' '));

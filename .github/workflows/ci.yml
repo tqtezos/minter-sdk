@@ -84,7 +84,7 @@ jobs:
     - run: ./flextesa/start-sandbox.sh
       name: Start sandbox
 
-    - run: yarn spawn-jest-worker -w 12 -i ${{ matrix.worker }}
+    - run: ./node_modules/.bin/ts-node get-jest-workset -w 12 -i ${{ matrix.worker }} | xargs yarn jest --runInBand
       working-directory: packages/minter-contracts
 
   # Test LIGO contracts (whose that are covered with cleveland)
