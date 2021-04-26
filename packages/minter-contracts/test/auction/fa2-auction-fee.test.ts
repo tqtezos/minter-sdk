@@ -117,7 +117,7 @@ describe('test NFT auction', () => {
     };
 
     startTime = moment.utc().add(7, 'seconds').toDate();
-    endTime = moment(startTime).add(5, 'seconds').toDate();
+    endTime = moment(startTime).add(30, 'seconds').toDate();
     $log.info(`Configuring auction`);
     const opAuction = await nftAuctionBob.methods.configure(
       //opening price = 1
@@ -147,7 +147,7 @@ describe('test NFT auction', () => {
     const opBid = await nftAuctionAlice.methods.bid(0, bidAmount).send();
     await opBid.confirmation();
     $log.info(`Bid placed. Amount sent: ${opBid.amount} mutez`);
-    await sleep(6000); //6 seconds
+    await sleep(30000); //30 seconds
 
     const [eveBalanceBefore, bobBalanceBefore] = await getBalances([
       { owner: eveAddress, token_id: tokenIdBidToken },

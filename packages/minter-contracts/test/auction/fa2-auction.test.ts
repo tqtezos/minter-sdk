@@ -16,7 +16,7 @@ import { addOperator } from '../../src/fa2-interface';
 import { Fa2_token, Tokens } from '../../src/auction-interface';
 import { queryBalancesWithLambdaView, getBalances, QueryBalances } from '../../test/fa2-balance-inspector';
 
-jest.setTimeout(240000); // 4 minutes
+jest.setTimeout(300000); // 5 minutes
 
 describe('test NFT auction', () => {
   let tezos: TestTz;
