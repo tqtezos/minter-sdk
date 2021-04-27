@@ -65,7 +65,7 @@ jobs:
       run: yarn run generate-types
 
     # Compress generated TypeScript types
-    - run: tar -czf bin-ts.tar.gz index.ts bin-ts
+    - run: tar -czf bin-ts.tar.gz bin-ts
       working-directory: packages/minter-contracts
     # Upload generated TypeScript to be shared by other jobs
     - uses: actions/upload-artifact@v2

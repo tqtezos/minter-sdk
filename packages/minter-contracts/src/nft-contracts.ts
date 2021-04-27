@@ -19,7 +19,7 @@ import {
   EnglishAuctionTezPermitCode,
   EnglishAuctionTezFixedFeeCode,
   EnglishAuctionFa2FixedFeeCode,
-} from '../';
+} from '../bin-ts';
 
 export interface MintNftParam {
     token_metadata: TokenMetadata;
