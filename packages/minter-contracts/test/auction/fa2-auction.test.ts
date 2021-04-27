@@ -241,7 +241,7 @@ describe('test NFT auction', () => {
     expect(auctionHasNft).toBe(false);
     $log.info(`NFT returned as expected`);
   });
-  test('resolved auction should send asset and return highest bid', async () => {
+  test('resolved auction should send asset to buyer and highest bid to seller', async () => {
     const [aliceBalanceBefore, bobBalanceBefore] = await getBalances([
       { owner: aliceAddress, token_id: tokenIdBidToken },
       { owner: bobAddress, token_id: tokenIdBidToken },
@@ -264,7 +264,7 @@ describe('test NFT auction', () => {
       { owner: bobAddress, token_id: tokenIdBidToken },
     ], queryBalances, ftContract);
     $log.info(`Bob's balance is ${bobBalanceAfter.toNumber()} and Alice's is ${aliceBalanceAfter.toNumber()}`);
-    if (aliceBalanceBefore.eq(aliceBalanceAfter) && bobBalanceBefore.eq(bobBalanceAfter)) $log.info("Bids returned as expected");
+    if (aliceBalanceBefore.eq(aliceBalanceAfter.plus(alicesBid)) && bobBalanceBefore.eq(bobBalanceAfter.minus(alicesBid))) $log.info("Bids returned as expected");
     else throw new Error(`Bids returned incorrectly`);
 
     const [sellerHasNft, auctionHasNft, buyerHasNft] = await hasTokens([
