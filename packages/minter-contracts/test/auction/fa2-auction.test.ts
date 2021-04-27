@@ -126,8 +126,8 @@ describe('test NFT auction', () => {
       new BigNumber(10),
       //round_time = 1 hr
       new BigNumber(3600),
-      //extend_time = 5 mins
-      new BigNumber(300),
+      //extend_time = 0 seconds
+      new BigNumber(0),
       //asset
       [tokens],
       //start_time = now + 7seconds
@@ -252,7 +252,7 @@ describe('test NFT auction', () => {
     const opBid = await nftAuctionAlice.methods.bid(0, alicesBid.toNumber()).send({ amount : 0 });
     await opBid.confirmation();
     $log.info(`Bid placed`);
-    await sleep(130000); //130 seconds
+    await sleep(90000); //90 seconds
 
     $log.info("Resolving auction");
     const opResolve = await nftAuctionBob.methods.resolve(0).send({ amount : 0 });
