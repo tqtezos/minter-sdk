@@ -76,7 +76,7 @@ describe('test NFT auction', () => {
     };
 
     startTime = moment.utc().add(7, 'seconds').toDate();
-    endTime = moment(startTime).add(1, 'minute').toDate();
+    endTime = moment(startTime).add(2, 'minutes').toDate();
     const opAuction = await nftAuctionBob.methods.configure(
       //opening price = 10 tz
       new BigNumber(10000000),
@@ -174,7 +174,7 @@ describe('test NFT auction', () => {
     const opBid = await nftAuctionAlice.methods.bid(0).send({ amount : bidMutez, mutez : true });
     await opBid.confirmation();
     $log.info(`Bid placed. Amount sent: ${opBid.amount} mutez`);
-    await sleep(70000); //70 seconds
+    await sleep(130000); //130 seconds
 
     $log.info("Resolving auction");
     const opResolve = await nftAuctionBob.methods.resolve(0).send({ amount : 0 });

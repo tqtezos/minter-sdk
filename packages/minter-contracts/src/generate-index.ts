@@ -30,8 +30,8 @@ const generateIndex = (codeFiles: string[]) => {
 
   const codeImports = fileNames
     .map(fileName =>
-      `import { ${fileNameToCodeObject(fileName)} } from './${path.relative(process.cwd(), typesPath)}/${fileName}.code';\n` +
-      `import { ${fileNameToContractType(fileName)} } from './${path.relative(process.cwd(), typesPath)}/${fileName}.types';`
+      `import { ${fileNameToCodeObject(fileName)} } from './${fileName}.code';\n` +
+      `import { ${fileNameToContractType(fileName)} } from './${fileName}.types';`
       ,
     )
     .join('\n');
@@ -49,7 +49,7 @@ try {
     .filter(x => x.endsWith('.code.ts'));
 
   $log.info('Writing index');
-  fs.writeFileSync('index.ts', generateIndex(codeFiles));
+  fs.writeFileSync(`${typesPath}/index.ts`, generateIndex(codeFiles));
   process.exit(0);
 } catch (e) {
   $log.error(e);
