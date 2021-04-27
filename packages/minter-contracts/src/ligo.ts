@@ -37,26 +37,6 @@ function defaultLigoEnv(): LigoEnv {
   return new LigoEnv(cwd, src, out);
 }
 
-export async function compileAndLoadContract(
-  env: LigoEnv,
-  srcFile: string,
-  main: string,
-  dstFile: string,
-): Promise<string> {
-  const src = env.srcFilePath(srcFile);
-  const out = env.outFilePath(dstFile);
-  await compileContractImpl(env.cwd, src, main, out);
-  return loadFile(out);
-}
-
-export async function loadFile(fileName: string): Promise<string> {
-  return new Promise<string>((resolve, reject) =>
-    fs.readFile(fileName, (err, buff) =>
-      err ? reject(err) : resolve(buff.toString()),
-    ),
-  );
-}
-
 export function compileContract(
   env: LigoEnv,
   srcFile: string,
@@ -120,7 +100,8 @@ export async function runCmd(cwd: string, cmd: string): Promise<void> {
 
 export async function originateContract(
   tz: TezosToolkit,
-  code: string,
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  code: string | object[],
   storage: string | Record<string, any>,
   name: string,
 ): Promise<Contract> {

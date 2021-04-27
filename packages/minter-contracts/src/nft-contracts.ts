@@ -1,10 +1,25 @@
-import { compileAndLoadContract, originateContract, defaultEnv } from './ligo';
+import { originateContract } from './ligo';
 import { Contract, address, nat } from './type-aliases';
 import { TezosToolkit } from '@taquito/taquito';
 import { char2Bytes } from '@taquito/tzip16';
 import { TokenMetadata } from './fa2-interface';
 import { BigNumber } from 'bignumber.js';
-import  { EditionsTokenMetadataViewCode } from '../bin-ts/editions_token_metadata_view.code';
+import {
+  EditionsTokenMetadataViewCode,
+  Fa2MultiNftAssetCode,
+  Fa2MultiNftFaucetCode,
+  Fa2MultiFtFaucetCode,
+  FixedPriceSaleMarketCode,
+  FixedPriceSaleMarketTezCode,
+  FixedPriceSaleMarketAllowlistedCode,
+  FixedPriceSaleMarketTezAllowlistedCode,
+  EnglishAuctionTezCode,
+  Fa2MultiNftTokenEditionsCode,
+  EnglishAuctionFa2Code,
+  EnglishAuctionTezPermitCode,
+  EnglishAuctionTezFixedFeeCode,
+  EnglishAuctionFa2FixedFeeCode,
+} from '../';
 
 export interface MintNftParam {
     token_metadata: TokenMetadata;
@@ -51,176 +66,100 @@ export async function originateNft(
   tz: TezosToolkit,
   admin: address,
 ): Promise<Contract> {
-  const code = await compileAndLoadContract(
-    defaultEnv,
-    'minter_collection/nft/fa2_multi_nft_asset_simple_admin.mligo',
-    'nft_asset_main',
-    'fa2_multi_nft_asset.tz',
-  );
-
   const meta_content = char2Bytes(JSON.stringify(sample_metadata, null, 2));
 
   const storage = `(Pair (Pair (Pair (Pair ${admin} True) None)
             (Pair (Pair {} 0) (Pair {} {})))
       { Elt "" 0x${meta_uri} ; Elt "content" 0x${meta_content} })`;
-  return originateContract(tz, code, storage, 'nft');
+  return originateContract(tz, Fa2MultiNftAssetCode.code, storage, 'nft');
 }
 
 export async function originateNftFaucet(
   tz: TezosToolkit,
 ): Promise<Contract> {
-  const code = await compileAndLoadContract(
-    defaultEnv,
-    'minter_collection/nft/fa2_multi_nft_faucet.mligo',
-    'nft_faucet_main',
-    'fa2_multi_nft_faucet.tz',
-  );
-
   const meta_content = char2Bytes(JSON.stringify(sample_metadata, null, 2));
 
   const storage = `(Pair (Pair (Pair {} 0) (Pair {} {}))
       { Elt "" 0x${meta_uri} ; Elt "content" 0x${meta_content} })`;
-  return originateContract(tz, code, storage, 'nftFaucet');
+  return originateContract(tz, Fa2MultiNftFaucetCode.code, storage, 'nftFaucet');
 }
 
 export async function originateFtFaucet(
   tz: TezosToolkit,
 ): Promise<Contract> {
-  const code = await compileAndLoadContract(
-    defaultEnv,
-    'minter_collection/ft/fa2_multi_ft_faucet.mligo',
-    'ft_faucet_main',
-    'fa2_multi_ft_faucet.tz',
-  );
-
   const meta_content = char2Bytes(JSON.stringify(sample_metadata, null, 2));
 
   const storage = `(Pair (Pair (Pair {} {}) (Pair {} {}))
         { Elt "" 0x${meta_uri} ; Elt "content" 0x${meta_content} })`;
 
-  return originateContract(tz, code, storage, 'ftFaucet');
+  return originateContract(tz, Fa2MultiFtFaucetCode.code, storage, 'ftFaucet');
 }
 
 export async function originateFixedPriceSale(
   tz: TezosToolkit,
 ): Promise<Contract> {
-  const code = await compileAndLoadContract(
-    defaultEnv,
-    'fixed_price_sale/fixed_price_sale_market.mligo',
-    'fixed_price_sale_main',
-    'fixed_price_sale_market.tz',
-  );
   const storage = `(Pair None {})`;
-  return originateContract(tz, code, storage, 'fixed-price-sale-market');
+  return originateContract(tz, FixedPriceSaleMarketCode.code, storage, 'fixed-price-sale-market');
 }
 
 export async function originateFixedPriceTezSale(
   tz: TezosToolkit,
 ): Promise<Contract> {
-  const code = await compileAndLoadContract(
-    defaultEnv,
-    'fixed_price_sale/fixed_price_sale_market_tez.mligo',
-    'fixed_price_sale_tez_main',
-    'fixed_price_sale_market_tez.tz',
-  );
   const storage = `(Pair None {})`;
-  return originateContract(tz, code, storage, 'fixed-price-sale-market-tez');
+  return originateContract(tz, FixedPriceSaleMarketTezCode.code, storage, 'fixed-price-sale-market-tez');
 }
 
 export async function originateFixedPriceAdminSale(
   tz: TezosToolkit,
   adminAddress: address,
 ): Promise<Contract> {
-  const code = await compileAndLoadContract(
-    defaultEnv,
-    'fixed_price_sale/fixed_price_sale_market.mligo',
-    'fixed_price_sale_main',
-    'fixed_price_sale_market.tz',
-  );
   const storage = `(Pair (Some (Pair (Pair "${adminAddress}" False) None)) {})`;
-  return originateContract(tz, code, storage, 'fixed-price-sale-market-with-admin');
+  return originateContract(tz, FixedPriceSaleMarketCode.code, storage, 'fixed-price-sale-market-with-admin');
 }
 
 export async function originateFixedPriceTezAdminSale(
   tz: TezosToolkit,
   adminAddress: address,
 ): Promise<Contract> {
-  const code = await compileAndLoadContract(
-    defaultEnv,
-    'fixed_price_sale/fixed_price_sale_market_tez.mligo',
-    'fixed_price_sale_tez_main',
-    'fixed_price_sale_market_tez.tz',
-  );
   const storage = `(Pair (Some (Pair (Pair "${adminAddress}" False) None)) {})`;
-  return originateContract(tz, code, storage, 'fixed-price-sale-market-tez-with-admin');
+  return originateContract(tz, FixedPriceSaleMarketTezCode.code, storage, 'fixed-price-sale-market-tez-with-admin');
 }
 
 export async function originateFixedPriceAllowlistedSale(
   tz: TezosToolkit,
   adminAddress: address,
 ): Promise<Contract> {
-  const code = await compileAndLoadContract(
-    defaultEnv,
-    'fixed_price_sale/fixed_price_sale_market_allowlisted.mligo',
-    'fixed_price_sale_allowlisted_main',
-    'fixed_price_sale_market_allowlisted.tz',
-  );
   const storage = `(Pair {} (Pair (Some (Pair (Pair "${adminAddress}" False) None)) {}))`;
-  return originateContract(tz, code, storage, 'fixed-price-sale-market-allowlisted');
+  return originateContract(tz, FixedPriceSaleMarketAllowlistedCode.code, storage, 'fixed-price-sale-market-allowlisted');
 }
 
 export async function originateFixedPriceTezAllowlistedSale(
   tz: TezosToolkit,
   adminAddress: address,
 ): Promise<Contract> {
-  const code = await compileAndLoadContract(
-    defaultEnv,
-    'fixed_price_sale/fixed_price_sale_market_tez_allowlisted.mligo',
-    'fixed_price_sale_tez_allowlisted_main',
-    'fixed_price_sale_market_tez_allowlisted.tz',
-  );
   const storage = `(Pair {} (Pair (Some (Pair (Pair "${adminAddress}" False) None)) {}))`;
-  return originateContract(tz, code, storage, 'fixed-price-sale-market-tez-allowlisted');
+  return originateContract(tz, FixedPriceSaleMarketTezAllowlistedCode.code, storage, 'fixed-price-sale-market-tez-allowlisted');
 }
 
 export async function originateEnglishAuctionTez(
   tz: TezosToolkit,
 ): Promise<Contract> {
-  const code = await compileAndLoadContract(
-    defaultEnv,
-    'english_auction/english_auction_tez.mligo',
-    'english_auction_tez_main',
-    'english_auction_tez.tz',
-  );
   const storage = `(Pair None (Pair 0 (Pair 86400 (Pair 86400 {}))))`;
-  return originateContract(tz, code, storage, 'english_auction_tez');
+  return originateContract(tz, EnglishAuctionTezCode.code, storage, 'english_auction_tez');
 }
 
 export async function originateEnglishAuctionTezAdmin(
   tz: TezosToolkit,
 ): Promise<Contract> {
-  const code = await compileAndLoadContract(
-    defaultEnv,
-    'english_auction/english_auction_tez.mligo',
-    'english_auction_tez_main',
-    'english_auction_tez.tz',
-  );
   const tzAddress = await tz.signer.publicKeyHash();
   const storage = `(Pair (Some (Pair (Pair "${tzAddress}" False) None)) (Pair 0 (Pair 86400 (Pair 86400 {}))))`;
-  return originateContract(tz, code, storage, 'english_auction_tez_admin');
+  return originateContract(tz, EnglishAuctionTezCode.code, storage, 'english_auction_tez_admin');
 }
 
 export async function originateEditionsNftContract(
   tz: TezosToolkit,
   adminAddress: address,
 ): Promise<Contract> {
-  const code = await compileAndLoadContract(
-    defaultEnv,
-    'minter_collection/editions/fa2_multi_nft_token_editions.mligo',
-    'editions_main',
-    'fa2_multi_nft_token_editions.tz',
-  );
-
   const editions_metadata = {
     name: 'editions',
     description: 'editions',
@@ -253,7 +192,7 @@ export async function originateEditionsNftContract(
   const max_editions_per_run = 10000;
 
   const storage = `(Pair (Pair {} ${max_editions_per_run}) (Pair 0 (Pair (Pair (Pair (Pair "${adminAddress}" False) None) (Pair {} {})) { Elt "" 0x${meta_uri} ; Elt "content" 0x${editions_meta_encoded} }))) `;
-  return originateContract(tz, code, storage, 'editions');
+  return originateContract(tz, Fa2MultiNftTokenEditionsCode.code, storage, 'editions');
 }
 
 export async function originateEnglishAuctionFA2(
@@ -261,42 +200,24 @@ export async function originateEnglishAuctionFA2(
   fa2_address : address,
   token_id : nat,
 ): Promise<Contract> {
-  const code = await compileAndLoadContract(
-    defaultEnv,
-    'english_auction/english_auction_fa2.mligo',
-    'english_auction_fa2_main',
-    'english_auction_fa2.tz',
-  );
   const storage = `(Pair None (Pair 0 (Pair 86400 (Pair 86400 (Pair (Pair "${fa2_address}" ${token_id}){})))))`;
-  return originateContract(tz, code, storage, 'english_auction_fa2');
+  return originateContract(tz, EnglishAuctionFa2Code.code, storage, 'english_auction_fa2');
 }
 
 export async function originateEnglishAuctionTezPermit(
   tz: TezosToolkit,
   adminAddress : address,
 ): Promise<Contract> {
-  const code = await compileAndLoadContract(
-    defaultEnv,
-    'english_auction/english_auction_tez_permit.mligo',
-    'english_auction_tez_permit_main',
-    'english_auction_tez_admin.tz',
-  );
   const storage = `(Pair (Pair (Pair "${adminAddress}" False) None) (Pair 0 (Pair 86400 (Pair 86400 (Pair {} 0)))))`;
-  return originateContract(tz, code, storage, 'english_auction_tez_permit');
+  return originateContract(tz, EnglishAuctionTezPermitCode.code, storage, 'english_auction_tez_permit');
 }
 
 export async function originateEnglishAuctionTezFixedFee(
   tz: TezosToolkit,
   feeAddress : address,
 ): Promise<Contract> {
-  const code = await compileAndLoadContract(
-    defaultEnv,
-    'english_auction/english_auction_tez_fixed_fee.mligo',
-    'english_auction_tez_main',
-    'english_auction_tez_fixed_fee.tz',
-  );
   const storage = `(Pair None (Pair 0 (Pair 86400 (Pair 86400 (Pair {} (Pair "${feeAddress}" 10))))))`;
-  return originateContract(tz, code, storage, 'english_auction_tez');
+  return originateContract(tz, EnglishAuctionTezFixedFeeCode.code, storage, 'english_auction_tez');
 }
 
 export async function originateEnglishAuctionFA2FixedFee(
@@ -305,12 +226,6 @@ export async function originateEnglishAuctionFA2FixedFee(
   fa2_address : address,
   token_id : nat,
 ): Promise<Contract> {
-  const code = await compileAndLoadContract(
-    defaultEnv,
-    'english_auction/english_auction_fa2_fixed_fee.mligo',
-    'english_auction_fa2_main',
-    'english_auction_fa2_fixed_fee.tz',
-  );
   const storage = `(Pair None (Pair 0 (Pair 86400 (Pair 86400 (Pair (Pair "${fa2_address}" ${token_id}) (Pair {} (Pair "${feeAddress}" 10)))))))`;
-  return originateContract(tz, code, storage, 'english_auction_fa2');
+  return originateContract(tz, EnglishAuctionFa2FixedFeeCode.code, storage, 'english_auction_fa2');
 }
