@@ -164,6 +164,40 @@ describe('test NFT auction', () => {
     const opDistribute = nftEditionsBob.methods.distribute_editions([distributeEdition1]).send();
     return expect(opDistribute).rejects.toHaveProperty('message', 'NO_EDITIONS_TO_DISTRIBUTE');
   });
+  test('distributing from a 0 edition set should fail', async () => {
+    const nft3 = {
+      edition_info: edition_1_metadata,
+      number_of_editions: new BigNumber(0),
+    };
+    const opMint = await nftEditionsBob.methods.mint_editions([nft3]).send();
+    await opMint.confirmation();
+    $log.info(`Minted editions. Consumed gas: ${opMint.consumedGas}`);
+    const distributeEdition3: distribute_edition = {
+      edition_id: new BigNumber(2),
+      receivers: [aliceAddress],
+    };
+    const opDistribute = nftEditionsBob.methods.distribute_editions([distributeEdition3]).send();
+    return expect(opDistribute).rejects.toHaveProperty('message', 'NO_EDITIONS_TO_DISTRIBUTE');
+  });
+
+  test('distributing exactly as many editions available should succeed with 0 editions left to distribute', async () => {
+    const nft4 = {
+      edition_info: edition_1_metadata,
+      number_of_editions: new BigNumber(3),
+    };
+    const opMint = await nftEditionsBob.methods.mint_editions([nft4]).send();
+    await opMint.confirmation();
+    $log.info(`Minted editions. Consumed gas: ${opMint.consumedGas}`);
+    const distributeEdition3: distribute_edition = {
+      edition_id: new BigNumber(3),
+      receivers: [aliceAddress, aliceAddress, aliceAddress],
+    };
+    const opDistribute = await nftEditionsBob.methods.distribute_editions([distributeEdition3]).send();
+    await opDistribute.confirmation();
+    const editions_storage : any = await nftEditionsBob.storage();
+    const editions_metadata = await editions_storage.editions_metadata.get("3");
+    expect(JSON.stringify(editions_metadata.number_of_editions_to_distribute, null, 2)).toEqual("\"0\"");
+  });
 
   test('transfer edition', async () => {
     const tokenId = new BigNumber(0);
@@ -180,6 +214,18 @@ describe('test NFT auction', () => {
     ], queryBalances, nftEditionsBob);
     expect(aliceHasATokenAfter).toBe(false);
     expect(bobHasATokenAfter).toBe(true);
+  });
+
+  test('transfer edition that does not exist should fail', async () => {
+    const tokenId = new BigNumber(1000); //this token should not exist
+    const nat1 = new BigNumber(1);
+    const opTransfer = transfer(nftEditionsBob.address, tezos.alice, [
+      {
+        from_: aliceAddress,
+        txs: [{ to_: bobAddress, token_id: tokenId, amount: nat1 }],
+      },
+    ]);
+    return expect(opTransfer).rejects.toHaveProperty('message', 'FA2_TOKEN_UNDEFINED');
   });
 
   test('test editions token-metadata with off-chain view', async () => {
