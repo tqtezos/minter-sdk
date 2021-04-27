@@ -216,6 +216,18 @@ describe('test NFT auction', () => {
     expect(bobHasATokenAfter).toBe(true);
   });
 
+  test('transfer edition that does not exist should fail', async () => {
+    const tokenId = new BigNumber(1000); //this token should not exist
+    const nat1 = new BigNumber(1);
+    const opTransfer = transfer(nftEditionsBob.address, tezos.alice, [
+      {
+        from_: aliceAddress,
+        txs: [{ to_: bobAddress, token_id: tokenId, amount: nat1 }],
+      },
+    ]);
+    return expect(opTransfer).rejects.toHaveProperty('message', 'FA2_TOKEN_UNDEFINED');
+  });
+
   test('test editions token-metadata with off-chain view', async () => {
     tezos.bob.addExtension(new Tzip16Module());
     const editionsContractMetadata = await tezos.bob.contract.at(nftEditionsBob.address, tzip16);
