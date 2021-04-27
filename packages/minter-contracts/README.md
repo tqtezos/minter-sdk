@@ -14,7 +14,15 @@ The `@tqtezos/minter-contracts` package provides a collection of NFT and marketp
       - [Meta-transaction based minting / sales (WIP)](#meta-transaction-based-minting--sales-wip)
       - [Fractional Ownership (WIP)](#fractional-ownership-wip)
       - [Royalties and Profit-splitting (WIP)](#royalties-and-profit-splitting-wip)
-- [Local Development](#local-development)
+- [JavaScript / TypeScript Package](#javascript--typescript-package)
+  - [Package Installation](#package-installation)
+  - [Architecture](#architecture)
+    - [Contract Code (for origination)](#contract-code-for-origination)
+      - [Contract import type shape](#contract-import-type-shape)
+    - [Contract Signatures](#contract-signatures)
+    - [Network Client](#network-client)
+      - [Example usage with `taquito`](#example-usage-with-taquito)
+- [Local Development (Contributing)](#local-development-contributing)
   - [Prerequisites](#prerequisites)
   - [Package Scripts](#package-scripts)
     - [`yarn compile-ligo [filter]`](#yarn-compile-ligo-filter)
@@ -57,8 +65,122 @@ There is an extension with allowlist that allows specifying the permitted set of
 
 #### Royalties and Profit-splitting ([WIP](https://github.com/tqtezos/minter-sdk/pull/40))
 
+# JavaScript / TypeScript Package
 
-# Local Development
+The contracts are packaged into TypeScript modules and published to npm for use in JavaScript / TypeScript projects.
+
+## Package Installation
+with `npm`
+```
+npm i @tqtezos/minter-contracts
+```
+
+with `yarn`
+```
+yarn add @tqtezos/minter-contracts
+```
+
+## Architecture
+
+### Contract Code (for origination)
+
+The code for each contract is exported directly from the `@tqtezos/minter-contracts` package. 
+
+The naming convention used for contract code exports is:
+```typescript
+${TitleCasedContractName}Code
+```
+Where `{TitleCasedContractName}` denotes an interpolation of the title-cased name of any particular contract.
+
+For example, to access the code for the [`fa2_swap`](/packages/minter-contracts/ligo/src/swaps) contract, one would import:
+```typescript
+import { Fa2SwapCode } from '@tqtezos/minter-contracts';
+``` 
+
+#### Contract import type shape
+Each exported contract code object is wrapped in a special unique type to make it easy to inspect at runtime or with the type system, if necessary. 
+
+This type has the following shape:
+
+```typescript
+export declare const ${TitleCasedContractName}Code: {
+  __type: ${TitleCasedContractName};
+  protocol: string;
+  code: object[];
+};
+```
+
+> Note, this isn't valid TypeScript.
+
+Inspecting the type of the imported `Fa2SwapCode` object from above, it has the following shape:
+```typescript
+export declare const Fa2SwapCode: {
+  __type: 'Fa2SwapCode';
+  protocol: string;
+  code: object[];
+};
+```
+
+The raw Michelson code is available at the `.code` property.
+
+```typescript
+import { Fa2SwapCode } from '@tqtezos/minter-contracts';
+
+// Log the contract's Michelson code
+console.log(Fa2SwapCode.code);
+```
+
+### Contract Signatures
+This package exports additional types representing the signature of any particular contract.
+
+The naming convention for these types is similar to the code import.
+
+```typescript
+${TitleCasedContractName}ContractType
+```
+
+Again, our [`fa2_swap`](/packages/minter-contracts/ligo/src/swaps) contract example:
+
+```typescript
+import type { Fa2SwapContractType } from '@tqtezos/minter-contracts'
+```
+
+This type will provide type information about the methods and storage on the contract:
+
+```typescript
+export declare type Fa2SwapContractType = {
+  methods: Methods;
+  storage: Storage;
+  code: {
+    __type: 'Fa2SwapCode';
+    protocol: string;
+    code: object[];
+  };
+};
+```
+
+Where `Methods` and `Storage` represent the unique shape of the contract's entrypoints and storage, respectively.
+
+### Network Client
+
+This particular package _solely_ exports smart contract code – it doesn't assume any particular Tezos client. As such, one will need to pick their favorite JavaScript / TypeScript Tezos client to actually interact with the contracts on the Tezos network. We recommend the [`@taquito/taquito`](https://tezostaquito.io/) package.
+
+#### Example usage with `taquito`
+
+```typescript
+import { Fa2SwapCode } from '@tqtezos/minter-contracts';
+import { TezosToolkit } from '@taquito/taquito';
+
+const tezos = new TezosToolkit('https://YOUR_PREFERRED_RPC_URL');
+tezos.contract.originate({
+  code: Fa2SwapCode.code,
+  // ...
+});
+```
+
+See the [`@taquito/taquito` package's documentation](https://tezostaquito.io/docs/quick_start) for more information on interacting with the `taquito` package. 
+
+# Local Development (Contributing)
 
 ## Prerequisites
 
