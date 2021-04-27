@@ -98,6 +98,12 @@ describe('test NFT auction', () => {
     await opAuction.confirmation();
     $log.info(`Auction configured. Consumed gas: ${opAuction.consumedGas}`);
   });
+  test('NFT is held by the auction contract after configuration', async() => {
+    const [auctionHasNft] = await hasTokens([
+      { owner: nftAuction.address, token_id: tokenId },
+    ], queryBalances, nftContract);
+    expect(auctionHasNft).toBe(true);
+  });
   test('bid of less than asking price should fail', async() => {
     $log.info(`Alice bids 9tz expecting it to fail`);
     const failedOpeningBid = nftAuctionAlice.methods.bid(0).send({ amount : 9 });
