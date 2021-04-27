@@ -15,7 +15,7 @@ import { addOperator } from '../../src/fa2-interface';
 import { Fa2_token, Tokens, sleep } from '../../src/auction-interface';
 import { queryBalancesWithLambdaView, hasTokens, QueryBalances } from '../../test/fa2-balance-inspector';
 
-jest.setTimeout(180000); // 3 minutes
+jest.setTimeout(300000); // 5 minutes
 
 describe('test NFT auction', () => {
   let tezos: TestTz;
@@ -76,7 +76,7 @@ describe('test NFT auction', () => {
     };
 
     startTime = moment.utc().add(7, 'seconds').toDate();
-    endTime = moment(startTime).add(40, 'seconds').toDate();
+    endTime = moment(startTime).add(1, 'minute').toDate();
     const opAuction = await nftAuctionBob.methods.configure(
       //opening price = 10 tz
       new BigNumber(10000000),
@@ -168,7 +168,7 @@ describe('test NFT auction', () => {
     const opBid = await nftAuctionAlice.methods.bid(0).send({ amount : bidMutez, mutez : true });
     await opBid.confirmation();
     $log.info(`Bid placed. Amount sent: ${opBid.amount} mutez`);
-    await sleep(41000); //1 seconds
+    await sleep(61000); //1 minute + 1 seconds
 
     $log.info("Resolving auction");
     const opResolve = await nftAuctionBob.methods.resolve(0).send({ amount : 0 });

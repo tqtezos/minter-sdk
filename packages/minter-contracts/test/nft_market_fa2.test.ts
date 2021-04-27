@@ -19,7 +19,7 @@ import {
 } from '../src/fa2-interface';
 import { QueryBalances, queryBalancesWithLambdaView } from './fa2-balance-inspector';
 
-jest.setTimeout(180000); // 3 minutes
+jest.setTimeout(300000); //5 minutes
 
 describe.each([originateFixedPriceSale])
 ('marketplace test', (originateMarketplace) => {
