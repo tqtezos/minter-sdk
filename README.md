@@ -25,5 +25,5 @@ Minter SDK offers a set of packages to bring creation, management, and sales of 
 | Package                                                    | Utility                                  |
 | ---------------------------------------------------------  | ---------------------------------------- |
 | [`@tqtezos/minter-contracts`](/packages/minter-contracts)   | NFT smart contract code                  |
-| [`@tqtezos/minter-sdk`](/packages/minter-sdk) (Coming Soon) | NFT smart contract TypeScript bindings   |
+| [`@tqtezos/minter-sdk`](/packages/minter-sdk)  | NFT smart contract TypeScript bindings   |
 | `@tqtezos/minter-cli` (Coming Soon)                        | NFT smart contract CLI                   |
