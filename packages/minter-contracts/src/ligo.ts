@@ -1,5 +1,4 @@
 import * as child from 'child_process';
-import * as fs from 'fs';
 import * as path from 'path';
 import { $log } from '@tsed/logger';
 

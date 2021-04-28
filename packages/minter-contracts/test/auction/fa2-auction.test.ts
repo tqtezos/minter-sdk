@@ -132,7 +132,7 @@ describe('test NFT auction', () => {
       [tokens],
       //start_time = now + 7seconds
       startTime,
-      //end_time = start_time + 1hr,
+      //end_time = start_time + 1minute,
       endTime,
     ).send({ amount : 0 });
     await opAuction.confirmation();
@@ -199,8 +199,9 @@ describe('test NFT auction', () => {
       { owner: bobAddress, token_id: tokenIdBidToken },
     ], queryBalances, ftContract);
     $log.info(`Bob's balance is ${bobBalanceAfter.toNumber()} and Alice's is ${aliceBalanceAfter.toNumber()}`);
-    if (aliceBalanceBefore.eq(aliceBalanceAfter) && bobBalanceBefore.eq(bobBalanceAfter)) $log.info("Bids returned as expected");
-    else throw new Error(`FA2 returned incorrectly`);
+    expect(aliceBalanceBefore.eq(aliceBalanceAfter)).toBe(true);
+    expect(bobBalanceBefore.eq(bobBalanceAfter)).toBe(true);
+    $log.info("Bids returned as expected");
     const [sellerHasNft, auctionHasNft] = await hasTokens([
       { owner: bobAddress, token_id: tokenIdNft },
       { owner: nftAuction.address, token_id: tokenIdNft },
@@ -231,8 +232,9 @@ describe('test NFT auction', () => {
     ], queryBalances, ftContract);
 
     $log.info(`Bob's balance is ${bobBalanceAfter.toNumber()} and Alice's is ${aliceBalanceAfter.toNumber()}`);
-    if (aliceBalanceBefore.eq(aliceBalanceAfter) && bobBalanceBefore.eq(bobBalanceAfter)) $log.info("Bids returned as expected");
-    else throw new Error(`FA2 returned incorrectly`);
+    expect(aliceBalanceBefore.eq(aliceBalanceAfter)).toBe(true);
+    expect(bobBalanceBefore.eq(bobBalanceAfter)).toBe(true);
+    $log.info("Bids returned as expected");
     const [sellerHasNft, auctionHasNft] = await hasTokens([
       { owner: bobAddress, token_id: tokenIdNft },
       { owner: nftAuction.address, token_id: tokenIdNft },
@@ -241,6 +243,53 @@ describe('test NFT auction', () => {
     expect(auctionHasNft).toBe(false);
     $log.info(`NFT returned as expected`);
   });
+
+  test('auction resolved before end time should fail', async () => {
+    $log.info(`Alice bids 200 tokens`);
+    const alicesBid = new BigNumber(200);
+    const opBid = await nftAuctionAlice.methods.bid(0, alicesBid.toNumber()).send({ amount : 0 });
+    await opBid.confirmation();
+    $log.info(`Bid placed`);
+
+    $log.info("Resolving auction");
+    const opResolve = nftAuctionBob.methods.resolve(0).send({ amount : 0 });
+    expect(opResolve).rejects.toHaveProperty('errors');
+  });
+
+  test('auction without bids that is resolved after end time should only return asset to seller', async () => {
+    const [aliceBalanceBefore, bobBalanceBefore] = await getBalances([
+      { owner: aliceAddress, token_id: tokenIdBidToken },
+      { owner: bobAddress, token_id: tokenIdBidToken },
+    ], queryBalances, ftContract);
+    await sleep(70000); //70 seconds
+    $log.info("Resolving auction");
+    const opResolve = await nftAuctionBob.methods.resolve(0).send({ amount : 0 });
+    await opResolve.confirmation();
+    const [sellerHasNft] = await hasTokens([
+      { owner: bobAddress, token_id: tokenIdNft },
+    ], queryBalances, nftContract);
+    expect(sellerHasNft).toBe(true);
+    $log.info(`NFT returned as expected`);
+    const [aliceBalanceAfter, bobBalanceAfter] = await getBalances([
+      { owner: aliceAddress, token_id: tokenIdBidToken },
+      { owner: bobAddress, token_id: tokenIdBidToken },
+    ], queryBalances, ftContract);
+    $log.info(`Bob's balance is ${bobBalanceAfter.toNumber()} and Alice's is ${aliceBalanceAfter.toNumber()}`);
+    expect(aliceBalanceBefore.eq(aliceBalanceAfter)).toBe(true);
+    expect(bobBalanceBefore.eq(bobBalanceAfter)).toBe(true);
+    $log.info("Balances are the same before and after auction as expected");
+  });
+
+  test('auction cancelled after end time should fail', async () => {
+    const alicesBid = new BigNumber(200);
+    const opBid = await nftAuctionAlice.methods.bid(0, alicesBid.toNumber()).send({ amount : 0 });
+    await opBid.confirmation();
+    $log.info(`Bid placed`);
+    await sleep(70000); //70 seconds
+    const opCancel = nftAuctionBob.methods.cancel(0).send({ amount : 0, mutez : true });
+    expect(opCancel).rejects.toHaveProperty('errors');
+  });
+
   test('resolved auction should send asset to buyer and highest bid to seller', async () => {
     const [aliceBalanceBefore, bobBalanceBefore] = await getBalances([
       { owner: aliceAddress, token_id: tokenIdBidToken },
@@ -252,7 +301,7 @@ describe('test NFT auction', () => {
     const opBid = await nftAuctionAlice.methods.bid(0, alicesBid.toNumber()).send({ amount : 0 });
     await opBid.confirmation();
     $log.info(`Bid placed`);
-    await sleep(90000); //90 seconds
+    await sleep(70000); //70 seconds
 
     $log.info("Resolving auction");
     const opResolve = await nftAuctionBob.methods.resolve(0).send({ amount : 0 });
@@ -264,8 +313,9 @@ describe('test NFT auction', () => {
       { owner: bobAddress, token_id: tokenIdBidToken },
     ], queryBalances, ftContract);
     $log.info(`Bob's balance is ${bobBalanceAfter.toNumber()} and Alice's is ${aliceBalanceAfter.toNumber()}`);
-    if (aliceBalanceBefore.eq(aliceBalanceAfter.plus(alicesBid)) && bobBalanceBefore.eq(bobBalanceAfter.minus(alicesBid))) $log.info("Bids returned as expected");
-    else throw new Error(`Bids returned incorrectly`);
+    expect(aliceBalanceBefore.eq(aliceBalanceAfter.plus(alicesBid))).toBe(true);
+    expect(bobBalanceBefore.eq(bobBalanceAfter.minus(alicesBid))).toBe(true);
+    $log.info("Bids returned as expected");
 
     const [sellerHasNft, auctionHasNft, buyerHasNft] = await hasTokens([
       { owner: bobAddress, token_id: tokenIdNft },
