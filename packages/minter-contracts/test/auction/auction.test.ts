@@ -3,6 +3,7 @@ import { BigNumber } from 'bignumber.js';
 import moment from 'moment';
 import { bootstrap, TestTz } from '../bootstrap-sandbox';
 import { Contract, bytes, address } from '../../src/type-aliases';
+import { InternalOperationResult } from '@taquito/rpc';
 import {
   originateEnglishAuctionTez,
   MintNftParam,
@@ -99,6 +100,7 @@ describe('test NFT auction', () => {
     await opAuction.confirmation();
     $log.info(`Auction configured. Consumed gas: ${opAuction.consumedGas}`);
   });
+  /*
   test('NFT is held by the auction contract after configuration', async() => {
     const [auctionHasNft] = await hasTokens([
       { owner: nftAuction.address, token_id: tokenId },
@@ -142,30 +144,36 @@ describe('test NFT auction', () => {
     const smallBidPromise = nftAuctionAlice.methods.bid(0).send({ amount : 21 });
     return expect(smallBidPromise).rejects.toHaveProperty('errors' );
   });
+  */
   test('auction without bids that is cancelled should not result in transfer of any tez', async () => {
-    const balanceBefore = await tezos.bob.tz.getBalance(bobAddress);
     $log.info("Cancelling auction");
     const opCancel = await nftAuctionBob.methods.cancel(0).send({ amount : 0, mutez : true });
     await opCancel.confirmation();
     $log.info("Auction cancelled");
-    const balanceAfter = await tezos.bob.tz.getBalance(bobAddress);
-    expect(balanceBefore.eq(balanceAfter)).toBe(true);
+    const internalOps = (opCancel.operationResults[0].metadata.internal_operation_results as InternalOperationResult[]);
+
+    expect(internalOps.length).toEqual(1);
+    expect(internalOps[0].destination).toEqual(nftContract.address);
     $log.info("No amount in tez is sent as we expect");
   });
+
   test('auction with bids that is cancelled should return last bid', async () => {
-    const bidderBalanceBefore = await tezos.alice.tz.getBalance(aliceAddress);
     $log.info(`Alice bids 200tz`);
-    const bidTez = 200;
-    const opBid = await nftAuctionAlice.methods.bid(0).send({ amount : bidTez, mutez : false });
+    const bidMutez = 200000000;
+    const opBid = await nftAuctionAlice.methods.bid(0).send({ amount : bidMutez, mutez : true });
     await opBid.confirmation();
     $log.info(`Bid placed. Amount sent: ${opBid.amount} mutez`);
     $log.info("Cancelling auction");
     const opCancel = await nftAuctionBob.methods.cancel(0).send({ amount : 0 });
     await opCancel.confirmation();
     $log.info("Auction cancelled");
-    const bidderBalanceAfter = await tezos.alice.tz.getBalance(aliceAddress);
-    expect(bidderBalanceBefore.eq(bidderBalanceAfter)).toBe(true);
-    $log.info(`${bidTez.toString()}tz returned to seller as expected`);
+    const feeOp = (opCancel.operationResults[0].metadata.internal_operation_results as InternalOperationResult[])
+      [0];
+    const amountReturned = feeOp.amount;
+    const feeDestination = feeOp.destination;
+    expect(amountReturned).toEqual(bidMutez.toString());
+    expect(feeDestination).toEqual(aliceAddress);
+    $log.info(`${bidMutez.toString()}mutez returned to seller as expected`);
   });
 
   test('auction resolved before end time should fail', async () => {
@@ -181,7 +189,6 @@ describe('test NFT auction', () => {
   });
 
   test('auction without bids that is resolved after end time should only return asset to seller', async () => {
-    const balanceBefore = await tezos.bob.tz.getBalance(bobAddress);
     await sleep(70000); //70 seconds
     $log.info("Resolving auction");
     const opResolve = await nftAuctionBob.methods.resolve(0).send({ amount : 0 });
@@ -191,8 +198,9 @@ describe('test NFT auction', () => {
     ], queryBalances, nftContract);
     expect(sellerHasNft).toBe(true);
     $log.info(`NFT returned as expected`);
-    const balanceAfter = await tezos.bob.tz.getBalance(bobAddress);
-    expect(balanceBefore.eq(balanceAfter)).toBe(true);
+    const internalOps = opResolve.operationResults[0].metadata.internal_operation_results as InternalOperationResult[];
+    expect(internalOps.length).toEqual(1);
+    expect(internalOps[0].destination).toEqual(nftContract.address);
   });
 
   test('auction cancelled after end time should fail', async () => {
@@ -206,10 +214,9 @@ describe('test NFT auction', () => {
   });
 
   test('resovled auction should send payment to seller and NFT to winning bidder', async () => {
-    const sellerBalanceBefore = await tezos.bob.tz.getBalance(bobAddress);
     $log.info(`Alice bids 200tz`);
-    const bidTez = new BigNumber(200);
-    const opBid = await nftAuctionAlice.methods.bid(0).send({ amount : bidTez.toNumber(), mutez : false });
+    const bidMutez = new BigNumber(200000000);
+    const opBid = await nftAuctionAlice.methods.bid(0).send({ amount : bidMutez.toNumber(), mutez : true });
     await opBid.confirmation();
     $log.info(`Bid placed. Amount sent: ${opBid.amount} mutez`);
     await sleep(70000); //70 seconds
@@ -218,9 +225,13 @@ describe('test NFT auction', () => {
     const opResolve = await nftAuctionBob.methods.resolve(0).send({ amount : 0 });
     await opResolve.confirmation();
     $log.info("Auction Resolve");
-    const sellerBalanceAfter = await tezos.bob.tz.getBalance(bobAddress);
-    expect(sellerBalanceAfter.eq(sellerBalanceBefore.plus(bidTez))).toBe(true);
-    $log.info(`${bidTez.toString()}tez sent to seller as expected`);
+    const feeOp = (opResolve.operationResults[0].metadata.internal_operation_results as InternalOperationResult[])
+      [0];
+    const amountReturned = feeOp.amount;
+    const feeDestination = feeOp.destination;
+    expect(amountReturned).toEqual(bidMutez.toString());
+    expect(feeDestination).toEqual(bobAddress);
+    $log.info(`${bidMutez.toString()}tez sent to seller as expected`);
     const aliceAddress = await tezos.alice.signer.publicKeyHash();
 
     const [aliceHasNft] = await hasTokens([
