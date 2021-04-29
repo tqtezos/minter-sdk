@@ -100,7 +100,7 @@ describe('test NFT auction', () => {
     await opAuction.confirmation();
     $log.info(`Auction configured. Consumed gas: ${opAuction.consumedGas}`);
   });
-  /*
+
   test('NFT is held by the auction contract after configuration', async() => {
     const [auctionHasNft] = await hasTokens([
       { owner: nftAuction.address, token_id: tokenId },
@@ -144,7 +144,7 @@ describe('test NFT auction', () => {
     const smallBidPromise = nftAuctionAlice.methods.bid(0).send({ amount : 21 });
     return expect(smallBidPromise).rejects.toHaveProperty('errors' );
   });
-  */
+
   test('auction without bids that is cancelled should not result in transfer of any tez', async () => {
     $log.info("Cancelling auction");
     const opCancel = await nftAuctionBob.methods.cancel(0).send({ amount : 0, mutez : true });
