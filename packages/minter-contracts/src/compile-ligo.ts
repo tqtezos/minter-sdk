@@ -163,25 +163,49 @@ const compileSources: CompileSourceEntry[] = [
     srcFile: 'english_auction/english_auction_tez_fixed_fee.mligo',
     mainFn: 'english_auction_tez_main',
     dstFile: 'english_auction_tez_fixed_fee.tz',
-    contract : true,
+    contract: true,
   },
   {
     srcFile: 'english_auction/english_auction_fa2_fixed_fee.mligo',
     mainFn: 'english_auction_fa2_main',
     dstFile: 'english_auction_fa2_fixed_fee.tz',
-    contract : true,
+    contract: true,
+  },
+  {
+    srcFile: 'english_auction/english_auction_tez_fixed_fee_allowlisted.mligo',
+    mainFn: 'english_auction_tez_main',
+    dstFile: 'english_auction_tez_fixed_fee_allowlisted.tz',
+    contract: true,
+  },
+  {
+    srcFile: 'english_auction/english_auction_fa2_fixed_fee_allowlisted.mligo',
+    mainFn: 'english_auction_fa2_main',
+    dstFile: 'english_auction_fa2_fixed_fee_allowlisted.tz',
+    contract: true,
   },
   {
     srcFile: 'fixed_price_sale/fixed_price_sale_market_tez_fixed_fee.mligo',
     mainFn: 'fixed_price_sale_tez_main',
     dstFile: 'fixed_price_sale_tez_fixed_fee.tz',
-    contract : true,
+    contract: true,
   },
   {
     srcFile: 'fixed_price_sale/fixed_price_sale_market_fixed_fee.mligo',
     mainFn: 'fixed_price_sale_main',
     dstFile: 'fixed_price_sale_market_fixed_fee.tz',
-    contract : true,
+    contract: true,
+  },
+  {
+    srcFile: 'fixed_price_sale/fixed_price_sale_market_tez_fixed_fee_allowlisted.mligo',
+    mainFn: 'fixed_price_sale_tez_main',
+    dstFile: 'fixed_price_sale_tez_fixed_fee_allowlisted.tz',
+    contract: true,
+  },
+  {
+    srcFile: 'fixed_price_sale/fixed_price_sale_market_fixed_fee_allowlisted.mligo',
+    mainFn: 'fixed_price_sale_main',
+    dstFile: 'fixed_price_sale_market_fixed_fee_allowlisted.tz',
+    contract: true,
   },
 ];
 
