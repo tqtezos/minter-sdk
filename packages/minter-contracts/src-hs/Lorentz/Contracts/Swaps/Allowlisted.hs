@@ -44,10 +44,6 @@ deriving anyclass instance HasAnnotation AllowlistedSwapEntrypoints
 instance ParameterHasEntrypoints AllowlistedSwapEntrypoints where
   type ParameterEntrypointsDerivation AllowlistedSwapEntrypoints = EpdDelegate
 
--- This empty slice is a workaround, so that all the declarations above and
--- their instances may be in the type environment in the TH splice below.
-$(pure [])
-
 -- Contract
 ----------------------------------------------------------------------------
 

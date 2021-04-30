@@ -40,12 +40,12 @@ simpleHappyPaths = testGroup "Simple happy paths"
         , (bob, tokenId1) -: 10
         , (bob, tokenId2) -: -5
         ] $ do
-          withSender (AddressResolved alice) $
+          withSender alice $
             call swap (Call @"Start") SwapOffer
               { assetsOffered = [mkFA2Assets fa2 [(tokenId1, 10)]]
               , assetsRequested = [mkFA2Assets fa2 [(tokenId2, 5)]]
               }
-          withSender (AddressResolved bob) $
+          withSender bob $
             call swap (Call @"Accept") (SwapId 0)
 
   , nettestScenarioCaps "Simple cancelled swap" $ do
@@ -59,12 +59,12 @@ simpleHappyPaths = testGroup "Simple happy paths"
         [ (alice, tokenId1) -: 0
         , (alice, tokenId2) -: 0
         ] $ do
-          withSender (AddressResolved alice) $
+          withSender alice $
             call swap (Call @"Start") SwapOffer
               { assetsOffered = [mkFA2Assets fa2 [(tokenId1, 10)]]
               , assetsRequested = [mkFA2Assets fa2 [(tokenId2, 5)]]
               }
-          withSender (AddressResolved alice) $
+          withSender alice $
             call swap (Call @"Cancel") (SwapId 0)
   ]
 
@@ -77,10 +77,10 @@ statusChecks = testGroup "Statuses"
       call swap (Call @"Accept") (SwapId 0)
 
       call swap (Call @"Accept") (SwapId 0)
-        & expectError errSwapFinished
+        & expectError swap errSwapFinished
 
       call swap (Call @"Cancel") (SwapId 0)
-        & expectError errSwapFinished
+        & expectError swap errSwapFinished
 
   , nettestScenarioCaps "Operations with cancelled swap fail" $ do
       swap <- originateSwap
@@ -89,10 +89,10 @@ statusChecks = testGroup "Statuses"
       call swap (Call @"Cancel") (SwapId 0)
 
       call swap (Call @"Accept") (SwapId 0)
-        & expectError errSwapCancelled
+        & expectError swap errSwapCancelled
 
       call swap (Call @"Cancel") (SwapId 0)
-        & expectError errSwapCancelled
+        & expectError swap errSwapCancelled
   ]
 
 swapIdChecks :: TestTree
@@ -104,7 +104,7 @@ swapIdChecks = testGroup "SwapIds"
       swap <- originateSwap
       fa2 <- originateFA2 "fa2" setup [swap]
 
-      withSender (AddressResolved alice) $
+      withSender alice $
         for_ [tokenId1, tokenId2, tokenId3] $ \tokenId ->
           call swap (Call @"Start") SwapOffer
             { assetsOffered = []
@@ -116,7 +116,7 @@ swapIdChecks = testGroup "SwapIds"
         , (bob, tokenId2) -: -0
         , (bob, tokenId3) -: -1
         ] $ do
-          withSender (AddressResolved bob) $ do
+          withSender bob $ do
             call swap (Call @"Accept") (SwapId 0)
             call swap (Call @"Accept") (SwapId 2)
 
@@ -124,16 +124,16 @@ swapIdChecks = testGroup "SwapIds"
       swap <- originateSwap
 
       call swap (Call @"Accept") (SwapId 0)
-        & expectError errSwapNotExist
+        & expectError swap errSwapNotExist
       call swap (Call @"Cancel") (SwapId 0)
-        & expectError errSwapNotExist
+        & expectError swap errSwapNotExist
 
       call swap (Call @"Start") $ SwapOffer [] []
 
       call swap (Call @"Accept") (SwapId 1)
-        & expectError errSwapNotExist
+        & expectError swap errSwapNotExist
       call swap (Call @"Cancel") (SwapId 1)
-        & expectError errSwapNotExist
+        & expectError swap errSwapNotExist
 
       call swap (Call @"Accept") (SwapId 0)
   ]
@@ -146,15 +146,15 @@ authorizationChecks = testGroup "Authorization checks"
       let !SNil = sTokens setup
       swap <- originateSwap
 
-      withSender (AddressResolved alice) $
+      withSender alice $
         call swap (Call @"Start") $ SwapOffer [] []
 
       call swap (Call @"Cancel") (SwapId 0)
-        & expectError errNotSwapSeller
+        & expectError swap errNotSwapSeller
 
-      withSender (AddressResolved bob) $
+      withSender bob $
         call swap (Call @"Cancel") (SwapId 0)
-        & expectError errNotSwapSeller
+        & expectError swap errNotSwapSeller
   ]
 
 invalidFA2sChecks :: TestTree
@@ -175,22 +175,22 @@ invalidFA2sChecks = testGroup "Invalid FA2s"
         swap <- originateSwap
 
         comment "Checking offered FA2"
-        withSender (AddressResolved alice) $
+        withSender alice $
           call swap (Call @"Start") SwapOffer
             { assetsOffered = [mkFA2Assets fa2 [(tokenId1, 1)]]
             , assetsRequested = []
             }
-            & expectError errSwapOfferedFA2Invalid
+            & expectError swap errSwapOfferedFA2Invalid
 
         comment "Checking requested FA2"
-        withSender (AddressResolved alice) $ do
+        withSender alice $ do
           call swap (Call @"Start") SwapOffer
             { assetsOffered = []
             , assetsRequested = [mkFA2Assets fa2 [(tokenId1, 1)]]
             }
 
           call swap (Call @"Accept") (SwapId 0)
-            & expectError errSwapRequestedFA2Invalid
+            & expectError swap errSwapRequestedFA2Invalid
   ]
 
 complexCases :: TestTree
@@ -215,7 +215,7 @@ complexCases = testGroup "Complex cases"
         [ (alice, tokenId1) -: -1000
         , (bob, tokenId1) -: 1000
         ] $ do
-          withSender (AddressResolved alice) $
+          withSender alice $
             call swap (Call @"Start") SwapOffer
               { assetsOffered =
                   [ mkFA2Assets fa2_1
@@ -232,7 +232,7 @@ complexCases = testGroup "Complex cases"
                     ]
                   ]
               }
-          withSender (AddressResolved bob) $
+          withSender bob $
             call swap (Call @"Accept") (SwapId 0)
 
   ]

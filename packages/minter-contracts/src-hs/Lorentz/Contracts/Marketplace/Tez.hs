@@ -64,10 +64,6 @@ deriving anyclass instance HasAnnotation MarketplaceTezEntrypoints
 instance ParameterHasEntrypoints MarketplaceTezEntrypoints where
   type ParameterEntrypointsDerivation MarketplaceTezEntrypoints = EpdRecursive
 
--- This empty slice is a workaround, so that all the declarations above and
--- their instances may be in the type environment in the TH splice below.
-$(pure [])
-
 -- Contract
 ----------------------------------------------------------------------------
 

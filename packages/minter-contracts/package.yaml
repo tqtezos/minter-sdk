@@ -30,6 +30,7 @@ library:
     - morley
     - morley-prelude
     - morley-ledgers
+    - fmt
 
 tests:
   minter-sdk-tests:
@@ -40,7 +41,6 @@ tests:
       - containers
       - cleveland
       - fmt
-      - lens
       - lorentz
       - named
       - morley
@@ -50,3 +50,5 @@ tests:
       - sized
       - tasty
       - type-natural
+      - hedgehog
+      - tasty-hedgehog

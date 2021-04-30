@@ -51,7 +51,7 @@ test_AllowlistChecks = allowlistChecks
         { allowlistError = assetAddressNotAllowed
         , allowlistRunRestrictedAction = \(admin, tokenId) contract fa2 -> do
             now <- getNow
-            withSender (AddressResolved admin) $
+            withSender admin $
               call contract (Call @"Configure") $ (defConfigureParam :: ConfigureParam)
                 { asset = [Tokens (toAddress fa2) [FA2Token tokenId 1]]
                 , startTime = now
@@ -74,22 +74,22 @@ test_Integrational = testGroup "Integrational"
         (BidCurrency (toAddress bidFA2) tokenId) alice
       fa2 <- originateFA2 "fa2" setup [auction]
 
-      withSender (AddressResolved bob) $
+      withSender bob $
         call bidFA2 (Call @"Update_operators") $ one $ AddOperator OperatorParam
           { opOwner = bob
           , opOperator = toAddress auction
           , opTokenId = tokenId
           }
-      withSender (AddressResolved alice) $
+      withSender alice $
         call auction (Call @"Update_allowed") (mkAllowlistParam [fa2])
 
       now <- getNow
 
-      withSender (AddressResolved alice) $
+      withSender alice $
         call auction (Call @"Configure") (defConfigureParam :: ConfigureParam)
           { startTime = now }
 
-      withSender (AddressResolved bob) $
+      withSender bob $
         call auction (Call @"Bid") (BidParam (AuctionId 0) 3)
 
   ]

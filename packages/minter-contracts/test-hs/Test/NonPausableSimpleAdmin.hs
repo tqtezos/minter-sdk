@@ -33,27 +33,27 @@ adminOwnershipTransferChecks originateFn = testGroup "Admin functionality"
       successor <- newAddress "successor"
       contract <- originateFn admin
       call contract (Call @"Set_admin") successor
-        & withSender (AddressResolved admin)
+        & withSender admin
       call contract (Call @"Confirm_admin") ()
-        & withSender (AddressResolved successor)
+        & withSender successor
 
       comment "Checking that ownership transfer really occured"
       call contract (Call @"Set_admin") admin
-        & withSender (AddressResolved successor)
+        & withSender successor
 
   , nettestScenarioCaps "Non-admin cannot set new admin" $ do
       admin <- newAddress "admin"
       successor <- newAddress "successor"
       contract <- originateFn admin
       call contract (Call @"Set_admin") successor
-        & expectError errNotAdmin
+        & expectError contract errNotAdmin
 
   , nettestScenarioCaps "Cannot accept ownership before prior transfer of it" $ do
       admin <- newAddress "admin"
       contract <- originateFn admin
 
       call contract (Call @"Confirm_admin") ()
-        & expectError noPendingAdmin
+        & expectError contract noPendingAdmin
 
   , nettestScenarioCaps "Not pending admin cannot confirm ownership" $ do
       admin <- newAddress "admin"
@@ -61,8 +61,8 @@ adminOwnershipTransferChecks originateFn = testGroup "Admin functionality"
       contract <- originateFn admin
 
       call contract (Call @"Set_admin") successor
-        & withSender (AddressResolved admin)
+        & withSender admin
       call contract (Call @"Confirm_admin") ()
-        & expectError notPendingAdmin
+        & expectError contract notPendingAdmin
 
   ]
