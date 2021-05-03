@@ -105,7 +105,7 @@ export async function originateFixedPriceSale(
 export async function originateFixedPriceTezSale(
   tz: TezosToolkit,
 ): Promise<Contract> {
-  const storage = `(Pair None {})`;
+  const storage = `(Pair None (Pair 0 {}))`;
   return originateContract(tz, FixedPriceSaleMarketTezCode.code, storage, 'fixed-price-sale-market-tez');
 }
 
@@ -121,7 +121,7 @@ export async function originateFixedPriceTezAdminSale(
   tz: TezosToolkit,
   adminAddress: address,
 ): Promise<Contract> {
-  const storage = `(Pair (Some (Pair (Pair "${adminAddress}" False) None)) {})`;
+  const storage = `(Pair (Some (Pair (Pair "${adminAddress}" False) None)) (Pair 0 {}))`;
   return originateContract(tz, FixedPriceSaleMarketTezCode.code, storage, 'fixed-price-sale-market-tez-with-admin');
 }
 
