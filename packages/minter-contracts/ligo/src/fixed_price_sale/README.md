@@ -200,7 +200,7 @@ Can be invoked only by the admin, fails with `NOT_ADMIN` otherwise.
 
 Each contract with allowlist restriction inherits the behaviour of the respected non-restricted contract.
 
-#### FA2-money version ([`fixed_price_sale_market.mligo`](fixed_price_sale_market.mligo))
+#### FA2-money version ([`fixed_price_sale_market.mligo`](fixed_price_sale_market.mligo) and its extensions)
 
 Respective allowlisted contract is [`fixed_price_sale_market_allowlisted.mligo`](fixed_price_sale_market_allowlisted.mligo).
 
@@ -210,7 +210,7 @@ Respective allowlisted contract is [`fixed_price_sale_market_allowlisted.mligo`]
 
 Other entrypoints are not modified.
 
-#### Tez version ([`fixed_price_sale_market_tez.mligo`](fixed_price_sale_market_tez.mligo))
+#### Tez version ([`fixed_price_sale_market_tez.mligo`](fixed_price_sale_market_tez.mligo) and its extensions)
 
 Respective allowlisted contract is [`fixed_price_sale_market_tez_allowlisted.mligo`](fixed_price_sale_market_tez_allowlisted.mligo).
 
