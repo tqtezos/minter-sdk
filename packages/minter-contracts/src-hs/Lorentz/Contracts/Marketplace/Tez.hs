@@ -1,6 +1,7 @@
 -- | Lorentz bindings for the fixed price sale contract (Tez version).
 module Lorentz.Contracts.Marketplace.Tez where
 
+import Fmt (Buildable(..), genericF)
 import Lorentz
 
 import Lorentz.Contracts.MinterSdk
@@ -12,12 +13,9 @@ import qualified Michelson.Typed as T
 -- Types
 ----------------------------------------------------------------------------
 
-data SaleId = SaleId Natural
-  deriving stock (Eq, Ord)
-
-customGeneric "SaleId" ligoCombLayout
-deriving anyclass instance IsoValue SaleId
-deriving anyclass instance HasAnnotation SaleId
+newtype SaleId = SaleId Natural
+  deriving stock (Generic, Eq, Ord)
+  deriving newtype (IsoValue, HasAnnotation, Buildable)
 
 data SaleToken = SaleToken
   { fa2Address :: Address
@@ -27,16 +25,18 @@ data SaleToken = SaleToken
 customGeneric "SaleToken" ligoCombLayout
 deriving anyclass instance IsoValue SaleToken
 deriving anyclass instance HasAnnotation SaleToken
+instance Buildable SaleToken where build = genericF
 
-data SaleDataTez = SaleDataTez 
-  { saleToken :: SaleToken 
-  , salePricePerToken :: Mutez 
+data SaleDataTez = SaleDataTez
+  { saleToken :: SaleToken
+  , salePricePerToken :: Mutez
   , tokenAmount :: Natural
   } deriving stock (Eq, Ord)
 
 customGeneric "SaleDataTez" ligoCombLayout
 deriving anyclass instance IsoValue SaleDataTez
 deriving anyclass instance HasAnnotation SaleDataTez
+instance Buildable SaleDataTez where build = genericF
 
 data SaleParamTez = SaleParamTez
   { seller :: Address
@@ -46,6 +46,7 @@ data SaleParamTez = SaleParamTez
 customGeneric "SaleParamTez" ligoCombLayout
 deriving anyclass instance IsoValue SaleParamTez
 deriving anyclass instance HasAnnotation SaleParamTez
+instance Buildable SaleParamTez where build = genericF
 
 data MarketplaceTezStorage = MarketplaceTezStorage
   { admin :: AdminStorage
@@ -58,7 +59,7 @@ deriving anyclass instance IsoValue MarketplaceTezStorage
 deriving anyclass instance HasAnnotation MarketplaceTezStorage
 
 initMarketplaceTezStorage :: AdminStorage -> MarketplaceTezStorage
-initMarketplaceTezStorage as = MarketplaceTezStorage as mempty (SaleId 0) 
+initMarketplaceTezStorage as = MarketplaceTezStorage as mempty (SaleId 0)
 
 data MarketplaceTezEntrypoints
   = Sell SaleDataTez
