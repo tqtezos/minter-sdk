@@ -83,7 +83,7 @@ scenario = do
   -- ↑ Here compiler figures out that exactly 2 addresses should be allocated
   -- during setup...
 
-  let tokenId :< Nil = sTokens setup
+  let tokenId ::< SNil = sTokens setup
   -- ↑ ...and only one token.
 
   ...
@@ -93,7 +93,7 @@ Another option is to explicitly annotate the 'doFA2Setup' call:
 
 @
 scenario = do
-  setup <- toSetup @("addresses" :# 2) @("tokens" :# 1)
+  setup <- doFA2Setup @("addresses" :# 2) @("tokens" :# 1)
   ...
 @
 -}
