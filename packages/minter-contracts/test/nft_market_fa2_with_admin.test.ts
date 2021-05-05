@@ -3,7 +3,7 @@ import { BigNumber } from 'bignumber.js';
 import { TezosToolkit, MichelsonMap } from '@taquito/taquito';
 
 import { bootstrap, TestTz } from './bootstrap-sandbox';
-import { Contract, address, bytes } from '../src/type-aliases';
+import { Contract, address, bytes, nat } from '../src/type-aliases';
 
 import {
   originateNftFaucet,
@@ -17,7 +17,7 @@ import {
   addOperator,
   TokenMetadata,
 } from '../src/fa2-interface';
-import { queryBalancesWithLambdaView, QueryBalances } from './fa2-balance-inspector';
+import { queryBalancesWithLambdaView, QueryBalances, hasTokens} from './fa2-balance-inspector';
 
 jest.setTimeout(240000); // 4 minutes
 
@@ -34,45 +34,29 @@ describe.each([originateFixedPriceAdminSale])
   let ftTokenId: BigNumber;
   let nftTokenId: BigNumber;
   let tokenMetadata: MichelsonMap<string, bytes>;
+  let marketplaceAlice: Contract;
+  let saleId: nat;
 
   let queryBalances: QueryBalances;
 
   beforeAll(async () => {
     tezos = await bootstrap();
     queryBalances = queryBalancesWithLambdaView(tezos.lambdaView);
+    aliceAddress = await tezos.alice.signer.publicKeyHash();
+    bobAddress = await tezos.bob.signer.publicKeyHash();
+    nftTokenId = new BigNumber(0);
+    ftTokenId = new BigNumber(5);
+    tokenMetadata = new MichelsonMap();
+    saleId = new BigNumber(0);
   });
 
   beforeEach(async () => {
-    aliceAddress = await tezos.alice.signer.publicKeyHash();
-    bobAddress = await tezos.bob.signer.publicKeyHash();
     nft = await originateNftFaucet(tezos.eve);
     ft = await originateFtFaucet(tezos.eve);
     marketplace = await originateMarketplace(tezos.bob, bobAddress);
     marketAddress = marketplace.address;
-    nftTokenId = new BigNumber(0);
-    ftTokenId = new BigNumber(5);
-    tokenMetadata = new MichelsonMap();
+    marketplaceAlice = await tezos.alice.contract.at(marketAddress);
   });
-
-  async function hasNftTokens(requests: BalanceOfRequest[]): Promise<boolean[]> {
-    const responses = await queryBalances(nft, requests);
-    const results = responses.map(r => {
-      if (r.balance.eq(1)) return true;
-      else if (r.balance.eq(0)) return false;
-      else throw new Error(`Invalid NFT balance ${r.balance}`);
-    });
-    return results;
-  }
-
-  async function hasFtTokens(requests: BalanceOfRequest[]): Promise<boolean[]> {
-    const responses = await queryBalances(ft, requests);
-    const results = responses.map(r => {
-      if (r.balance.gt(0)) return true;
-      else if (r.balance.eq(0)) return false;
-      else throw new Error(`Invalid FT balance ${r.balance}`);
-    });
-    return results;
-  }
 
   async function mintNftTokens(
     tz: TezosToolkit,
@@ -117,14 +101,6 @@ describe.each([originateFixedPriceAdminSale])
       },
     ]);
 
-    const [aliceHasFTTokenBefore, bobHasFTTokenBefore] = await hasFtTokens([
-      { owner: aliceAddress, token_id: ftTokenId },
-      { owner: bobAddress, token_id: ftTokenId },
-    ]);
-
-    expect(aliceHasFTTokenBefore).toBe(true);
-    expect(bobHasFTTokenBefore).toBe(false);
-
     await mintNftTokens(tezos.bob, [
       {
         token_metadata: {
@@ -135,10 +111,10 @@ describe.each([originateFixedPriceAdminSale])
       },
     ]);
 
-    const [aliceHasNFTTokenBefore, bobHasNFTTokenBefore] = await hasNftTokens([
+    const [aliceHasNFTTokenBefore, bobHasNFTTokenBefore] = await hasTokens([
       { owner: aliceAddress, token_id: nftTokenId },
       { owner: bobAddress, token_id: nftTokenId },
-    ]);
+    ], queryBalances, nft);
     expect(aliceHasNFTTokenBefore).toBe(false);
     expect(bobHasNFTTokenBefore).toBe(true);
 
@@ -171,16 +147,14 @@ describe.each([originateFixedPriceAdminSale])
 
     $log.info(`Creating sale`);
     const sellOp = await marketplace.methods
-      .sell(new BigNumber(20), nft.address, nftTokenId, ft.address, ftTokenId).send({ source: bobAddress, amount: 0 });
+      .sell(new BigNumber(20), nft.address, nftTokenId, ft.address, ftTokenId).send({ amount: 0 });
     $log.info(`Waiting for ${sellOp.hash} to be confirmed...`);
     const sellOpHash = await sellOp.confirmation().then(() => sellOp.hash);
     $log.info(`Operation injected at hash=${sellOpHash}`);
 
-    const aliceSaleContract = await tezos.alice.contract.at(marketplace.address);
-
     $log.info(`Alice buys non-fungible token with her fungible tokens`);
-    const buyOp = await aliceSaleContract.methods
-      .buy(bobAddress, nft.address, nftTokenId, ft.address, ftTokenId).send({ source:aliceAddress, amount: 0 });
+    const buyOp = await marketplaceAlice.methods
+      .buy(saleId).send({ amount: 0 });
     $log.info(`Waiting for ${buyOp.hash} to be confirmed...`);
     const buyOpHash = await buyOp.confirmation().then(() => buyOp.hash);
     $log.info(`Operation injected at hash=${buyOpHash}`);
@@ -226,24 +200,22 @@ describe.each([originateFixedPriceAdminSale])
 
     try {
       $log.info('alice cancels sale (not admin nor seller)');
-      await marketplace.methods
-        .cancel(aliceAddress, nft.address, nftTokenId, ft.address, ftTokenId).send({ source:aliceAddress, amount: 0 });
+      await marketplaceAlice.methods
+        .cancel(saleId).send({ amount: 0 });
     } catch (error) {
       $log.info(`Alice cannot cancel sale, since she is not admin`);
     }
 
     $log.info('bob cancels sale');
     const removeSaleOp = await marketplace.methods
-      .cancel(bobAddress, nft.address, nftTokenId, ft.address, ftTokenId).send({ source:bobAddress, amount: 0 });
+      .cancel(saleId).send({ amount: 0 });
     $log.info(`Waiting for ${removeSaleOp.hash} to be confirmed...`);
     const removeSaleOpHash = await removeSaleOp.confirmation().then(() => removeSaleOp.hash);
     $log.info(`Operation injected at hash=${removeSaleOpHash}`);
 
-    const aliceSaleContract = await tezos.alice.contract.at(marketplace.address);
-
     try {
       $log.info(`Alice buys non-fungible token with her fungible tokens`);
-      await aliceSaleContract.methods
+      await marketplaceAlice.methods
         .buy(bobAddress, nft.address, nftTokenId, ft.address, ftTokenId).send({ source:aliceAddress, amount: 0 });
     } catch (error) {
       $log.info(`alice cannot buy`);

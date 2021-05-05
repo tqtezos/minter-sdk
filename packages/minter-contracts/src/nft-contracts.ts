@@ -98,7 +98,7 @@ export async function originateFtFaucet(
 export async function originateFixedPriceSale(
   tz: TezosToolkit,
 ): Promise<Contract> {
-  const storage = `(Pair None {})`;
+  const storage = `(Pair None (Pair {} 0))`;
   return originateContract(tz, FixedPriceSaleMarketCode.code, storage, 'fixed-price-sale-market');
 }
 
@@ -113,7 +113,7 @@ export async function originateFixedPriceAdminSale(
   tz: TezosToolkit,
   adminAddress: address,
 ): Promise<Contract> {
-  const storage = `(Pair (Some (Pair (Pair "${adminAddress}" False) None)) {})`;
+  const storage = `(Pair (Some (Pair (Pair "${adminAddress}" False) None)) (Pair {} 0))`;
   return originateContract(tz, FixedPriceSaleMarketCode.code, storage, 'fixed-price-sale-market-with-admin');
 }
 
@@ -129,7 +129,7 @@ export async function originateFixedPriceAllowlistedSale(
   tz: TezosToolkit,
   adminAddress: address,
 ): Promise<Contract> {
-  const storage = `(Pair {} (Pair (Some (Pair (Pair "${adminAddress}" False) None)) {}))`;
+  const storage = `(Pair {} (Pair (Some (Pair (Pair "${adminAddress}" False) None)) (Pair {} 0)))`;
   return originateContract(tz, FixedPriceSaleMarketAllowlistedCode.code, storage, 'fixed-price-sale-market-allowlisted');
 }
 
@@ -137,7 +137,7 @@ export async function originateFixedPriceTezAllowlistedSale(
   tz: TezosToolkit,
   adminAddress: address,
 ): Promise<Contract> {
-  const storage = `(Pair {} (Pair (Some (Pair (Pair "${adminAddress}" False) None)) {}))`;
+  const storage = `(Pair {} (Pair (Some (Pair (Pair "${adminAddress}" False) None)) (Pair 0 {})))`;
   return originateContract(tz, FixedPriceSaleMarketTezAllowlistedCode.code, storage, 'fixed-price-sale-market-tez-allowlisted');
 }
 
