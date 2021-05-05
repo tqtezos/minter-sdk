@@ -1,4 +1,4 @@
-#include "fixed_price_sale_market_tez.mligo"
+#include "fixed_price_sale_market_tez_fixed_fee.mligo"
 #include "../../fa2_modules/allowlist.mligo"
 
 type allowlisted_entry_points

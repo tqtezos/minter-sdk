@@ -89,8 +89,7 @@
                      CAR ;
                      CAR ;
                      GET ;
-                     IF_NONE { FAILWITH } { DROP 2 } ;
-                     UNIT } } ;
+                     IF_NONE { FAILWITH } { SWAP ; DROP } } } ;
              DROP ;
              SWAP ;
              DUP ;
