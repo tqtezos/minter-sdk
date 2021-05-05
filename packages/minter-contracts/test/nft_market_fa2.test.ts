@@ -131,7 +131,7 @@ describe.each([originateFixedPriceSale])
 
     $log.info(`Alice buys non-fungible token with her fungible tokens`);
     const buyOp = await marketplaceAlice.methods
-      .buy(bobAddress, nft.address, nftTokenId, ft.address, ftTokenId)
+      .buy(saleId)
       .send({ amount: 0 });
     $log.info(`Waiting for ${buyOp.hash} to be confirmed...`);
     const buyOpHash = await buyOp.confirmation().then(() => buyOp.hash);
