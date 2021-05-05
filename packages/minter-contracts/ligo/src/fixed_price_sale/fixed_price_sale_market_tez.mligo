@@ -2,8 +2,6 @@
 #include "../../fa2_modules/pauseable_admin_option.mligo"
 #include "../common.mligo"
 
-type sale_id = nat
-
 type sale_param_tez =
 [@layout:comb]
 {
@@ -111,7 +109,7 @@ let cancel_sale(sale_id, storage: sale_id * storage) : (operation list * storage
     | Some sale_data -> let is_seller = Tezos.sender = sale_data.seller in
                         let v : unit = if is_seller then ()
                           else fail_if_not_admin_ext (storage.admin, "OR A SELLER") in
-                        let tx_nft_back_op = transfer_nft(sale_data.sale.sale_token.fa2_address, sale_data.sale.sale_token.token_id, Tezos.self_address, Tezos.sender) in
+                        let tx_nft_back_op = transfer_nft(sale_data.sale.sale_token.fa2_address, sale_data.sale.sale_token.token_id, Tezos.self_address, sale_data.seller) in
                         [tx_nft_back_op], {storage with sales = Big_map.remove sale_id storage.sales }
 
 let fixed_price_sale_tez_main (p, storage : market_entry_points * storage) : operation list * storage = match p with

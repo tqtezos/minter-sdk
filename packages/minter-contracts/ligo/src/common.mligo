@@ -3,6 +3,8 @@
 
 (*TYPES*)
 
+type sale_id = nat
+
 type fee_data = 
   [@layout:comb]
   {

@@ -317,7 +317,8 @@
                               IF { PUSH string " " ; CONCAT ; PUSH string "NOT_AN_ADMIN" ; CONCAT ; FAILWITH }
                                  { DROP ; UNIT } } } ;
                      DROP ;
-                     SENDER ;
+                     DUP ;
+                     CAR ;
                      SELF_ADDRESS ;
                      PAIR ;
                      SWAP ;
