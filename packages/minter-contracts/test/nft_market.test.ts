@@ -30,7 +30,7 @@ describe.each([originateFixedPriceTezSale])
   let tokenId: nat;
   let tokenMetadata: MichelsonMap<string, bytes>;
   let salePrice: nat;
-  let saleId : nat
+  let saleId : nat;
 
   beforeAll(async () => {
     tezos = await bootstrap();
@@ -88,7 +88,7 @@ describe.each([originateFixedPriceTezSale])
       const bobSaleContract = await tezos.bob.contract.at(marketplace.address);
       const sellOp = await bobSaleContract.methods
         .sell(salePrice, nft.address, tokenId)
-        .send({amount: 0 });
+        .send({ amount: 0 });
       $log.info(`Waiting for ${sellOp.hash} to be confirmed...`);
       const sellOpHash = await sellOp.confirmation(1).then(() => sellOp.hash);
       $log.info(`Operation injected at hash=${sellOpHash}`);
@@ -146,7 +146,7 @@ describe.each([originateFixedPriceTezSale])
       $log.info(`alice tries to buy`);
       await marketplaceAlice.methods
         .buy(saleId)
-        .send({amount: 1 });
+        .send({ amount: 1 });
     } catch (error) {
       $log.info(`alice couldn't buy`);
     }

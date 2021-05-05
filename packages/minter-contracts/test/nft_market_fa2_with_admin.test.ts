@@ -13,11 +13,10 @@ import {
   originateFixedPriceAdminSale,
 } from '../src/nft-contracts';
 import {
-  BalanceOfRequest,
   addOperator,
   TokenMetadata,
 } from '../src/fa2-interface';
-import { queryBalancesWithLambdaView, QueryBalances, hasTokens} from './fa2-balance-inspector';
+import { queryBalancesWithLambdaView, QueryBalances, hasTokens } from './fa2-balance-inspector';
 
 jest.setTimeout(240000); // 4 minutes
 

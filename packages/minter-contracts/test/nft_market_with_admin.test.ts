@@ -182,7 +182,7 @@ describe.each([originateFixedPriceTezAdminSale])
       const removeSaleOpHash = await removeSaleOp.confirmation(1).then(() => removeSaleOp.hash);
       $log.info(`Operation injected at hash=${removeSaleOpHash}`);
       $log.info(`alice tries to buy`);
-      await marketplaceAlice.methods.buy(saleId).send({amount: 1 });
+      await marketplaceAlice.methods.buy(saleId).send({ amount: 1 });
     } catch (error) {
       $log.info(`alice cannot buy`);
     }
