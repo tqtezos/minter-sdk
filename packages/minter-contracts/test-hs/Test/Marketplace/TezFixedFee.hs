@@ -1,4 +1,4 @@
-module Test.Marketplace.FA2FixedFee where
+module Test.Marketplace.TezFixedFee where
 
 import qualified Data.Map as Map
 import Hedgehog (Gen, Property, forAll, property)
@@ -8,9 +8,10 @@ import Morley.Nettest
 
 import Lorentz hiding (balance, contract)
 import Michelson.Typed (convertContract, untypeValue)
+import Tezos.Core (unMutez, unsafeMkMutez)
 
 import qualified Indigo.Contracts.FA2Sample as FA2
-import Lorentz.Contracts.Marketplace.FA2FixedFee
+import Lorentz.Contracts.Marketplace.TezFixedFee
 import Lorentz.Contracts.PausableAdminOption
 import Lorentz.Contracts.Spec.FA2Interface (TokenId(TokenId))
 import qualified Lorentz.Contracts.Spec.FA2Interface as FA2
@@ -21,36 +22,38 @@ hprop_Every_sale_sends_a_fee_to_the_fee_collector =
   property $ do
     testData@TestData{testSalePrice, testFeePercent} <- forAll genTestData
     clevelandProp $ do
-      setup@Setup{seller, buyer, feeCollector, moneyFA2} <- testSetup testData
+      setup@Setup{seller, buyer, feeCollector} <- testSetup testData
       contract <- originateMarketplaceContract setup
+      feeCollectorInitialBalance <- getBalance feeCollector
 
       withSender seller $
         sell testData setup contract
       withSender buyer $
-        buy contract
+        buy testData contract
 
-      let expectedFee = ceiling @Double @Natural (fromIntegral (testSalePrice * testFeePercent) / 100)
-      feeCollectorsBalance <- balanceOf moneyFA2 moneyTokenId feeCollector
-      feeCollectorsBalance @== expectedFee
+      let expectedFee = unsafeMkMutez $ ceiling @Double @Word64 ((fromIntegral (unMutez testSalePrice) * fromIntegral testFeePercent) / 100)
+      feeCollectorFinalBalance <- getBalance feeCollector
+      feeCollectorFinalBalance @== feeCollectorInitialBalance + expectedFee
 
-hprop_Tokens_are_transferred_to_seller :: Property
-hprop_Tokens_are_transferred_to_seller  =
+hprop_Tez_is_transferred_to_seller :: Property
+hprop_Tez_is_transferred_to_seller  =
   property $ do
     testData@TestData{testSalePrice, testFeePercent} <- forAll genTestData
 
     clevelandProp $ do
-      setup@Setup{seller, buyer, moneyFA2} <- testSetup testData
+      setup@Setup{seller, buyer} <- testSetup testData
       contract <- originateMarketplaceContract setup
+      sellerInitialBalance <- getBalance seller
 
       withSender seller $
         sell testData setup contract
       withSender buyer $
-        buy contract
+        buy testData contract
 
-      let expectedFee = ceiling @Double @Natural (fromIntegral (testSalePrice * testFeePercent) / 100)
-      let expectedSellerBalance = testSalePrice - expectedFee
-      sellerBalance <- balanceOf moneyFA2 moneyTokenId seller
-      sellerBalance @== expectedSellerBalance
+      let expectedFee = unsafeMkMutez $ ceiling @Double @Word64 ((fromIntegral (unMutez testSalePrice) * fromIntegral testFeePercent) / 100)
+      let expectedTransfer = testSalePrice - expectedFee
+      sellerFinalBalance <- getBalance seller
+      sellerFinalBalance @== sellerInitialBalance + expectedTransfer
 
 hprop_NFT_is_transferred_to_buyer :: Property
 hprop_NFT_is_transferred_to_buyer  =
@@ -63,7 +66,7 @@ hprop_NFT_is_transferred_to_buyer  =
       withSender seller $
         sell testData setup contract
       withSender buyer $
-        buy contract
+        buy testData contract
 
       sellerNftBalance <- balanceOf nftFA2 nftTokenId seller
       sellerNftBalance @== 0
@@ -76,18 +79,16 @@ hprop_Contracts_balance_is_zero_after_a_sale_is_concluded =
     testData <- forAll genTestData
 
     clevelandProp $ do
-      setup@Setup{seller, buyer, nftFA2, moneyFA2} <- testSetup testData
+      setup@Setup{seller, buyer, nftFA2} <- testSetup testData
       contract <- originateMarketplaceContract setup
 
       withSender seller $
         sell testData setup contract
       withSender buyer $
-        buy contract
+        buy testData contract
 
-      contractTokenBalance <- balanceOf moneyFA2 moneyTokenId contract
       contractNftBalance <- balanceOf nftFA2 nftTokenId contract
       contractTezBalance <- getBalance contract
-      contractTokenBalance @== 0
       contractNftBalance @== 0
       contractTezBalance @== 0
 
@@ -97,19 +98,19 @@ hprop_Global_balance_is_conserved =
     testData <- forAll genTestData
 
     clevelandProp $ do
-      setup@Setup{seller, buyer, moneyFA2, feeCollector} <- testSetup testData
+      setup@Setup{seller, buyer, feeCollector} <- testSetup testData
       contract <- originateMarketplaceContract setup
 
       initialGlobalBalance <- sum <$> forM [feeCollector, buyer, seller] \account ->
-        balanceOf moneyFA2 moneyTokenId account
+        getBalance account
 
       withSender seller $
         sell testData setup contract
       withSender buyer $
-        buy contract
+        buy testData contract
 
       finalGlobalBalance <- sum <$> forM [feeCollector, buyer, seller] \account ->
-        balanceOf moneyFA2 moneyTokenId account
+        getBalance account
 
       finalGlobalBalance @== initialGlobalBalance
 
@@ -142,7 +143,7 @@ hprop_Cant_sell_if_fee_is_too_high  =
       contract <- originateMarketplaceContract setup
 
       withSender seller $ do
-        sell testData setup contract `expectFailure` failedWith contract [mt|FEE_TOO_HIGH|]
+        sell testData setup contract `expectFailure` failedWith contract [mt|FEE_PERCENT_TOO_HIGH|]
 
 hprop_Cant_buy_if_fee_is_too_high :: Property
 hprop_Cant_buy_if_fee_is_too_high  =
@@ -170,27 +171,26 @@ hprop_Cant_buy_if_fee_is_too_high  =
 
       -- Attempt to buy the NFT held in the contract
       withSender buyer $ do
-        buy contract `expectFailure` failedWith contract [mt|FEE_TOO_HIGH|]
-
+        -- buy testData contract `expectFailure` failedWith contract [mt|FEE_PERCENT_TOO_HIGH|]
+        buyResult <- attempt @SomeException $ buy testData contract
+        case buyResult of
+          Left _ -> pass
+          Right _ -> failure "Expected `buy` to fail, but it succeeded."
   where
     addSaleToInitialStorage :: TestData -> Setup -> Setup
-    addSaleToInitialStorage TestData{testSalePrice} setup@Setup{storage, seller, nftFA2, moneyFA2} =
+    addSaleToInitialStorage TestData{testSalePrice} setup@Setup{storage, seller, nftFA2} =
       setup
         { storage = storage
             { sales = BigMap $ Map.fromList
-                [ ( SaleId 0
-                  , SaleParam
+                [ (SaleId 0
+                  , SaleParamTez
                     { seller = seller
-                    , saleData = SaleData
-                      { salePricePerToken = testSalePrice
-                      , saleToken = SaleToken
+                    , saleDataTez = SaleDataTez
+                      { saleToken = SaleToken
                         { fa2Address = toAddress nftFA2
                         , tokenId = nftTokenId
                         }
-                      , moneyToken = MoneyToken
-                        { fa2Address = toAddress moneyFA2
-                        , tokenId = moneyTokenId
-                        }
+                      , salePricePerToken = testSalePrice
                       , tokenAmount = 1
                       }
                     }
@@ -229,31 +229,30 @@ hprop_Cancelling_a_sale_deletes_it_from_storage =
         sell testData setup contract
         cancel contract
 
-      storage <- fromVal @MarketplaceStorage <$> getStorage' contract
+      storage <- fromVal @MarketplaceTezStorage <$> getStorage' contract
       sales storage @== mempty
 
 ----------------------------------------------------------------------------
 -- Helpers
 ----------------------------------------------------------------------------
 
-nftTokenId, moneyTokenId :: TokenId
+nftTokenId :: TokenId
 nftTokenId = TokenId 1
-moneyTokenId = TokenId 2
 
 data TestData = TestData
   { testFeePercent :: Natural
-  , testSalePrice :: Natural
-  , testBuyersBalance :: Natural
+  , testSalePrice :: Mutez
+  , testBuyersBalance :: Mutez
   }
   deriving stock (Show)
 
 genTestData :: Gen TestData
 genTestData = do
   feePercent <- Gen.integral (Range.linear 0 100)
-  salePrice <- Gen.integral (Range.linear 0 10000)
+  salePrice <- toMutez <$> Gen.integral (Range.linear 0 10000)
 
   -- Make sure the buyer has enough balance to make the purchase.
-  buyersBalance <- Gen.integral (Range.linear salePrice (2 * salePrice))
+  buyersBalance <- unsafeMkMutez <$> Gen.word64 (Range.linear (unMutez salePrice) (2 * unMutez salePrice))
 
   pure $ TestData
     { testFeePercent = feePercent
@@ -266,8 +265,7 @@ data Setup = Setup
   , buyer :: Address
   , feeCollector :: Address
   , nftFA2 :: TAddress FA2.FA2SampleParameter
-  , moneyFA2 :: TAddress FA2.FA2SampleParameter
-  , storage :: MarketplaceStorage
+  , storage :: MarketplaceTezStorage
   }
 
 testSetup :: MonadNettest caps base m => TestData -> m Setup
@@ -277,7 +275,7 @@ testSetup testData = do
   feeCollector <- newAddress "fee-collector"
 
   let storage =
-        MarketplaceStorage
+        MarketplaceTezStorage
           { admin = Just AdminStorage
               { admin = seller
               , pendingAdmin = Nothing
@@ -291,7 +289,7 @@ testSetup testData = do
             }
           }
 
-  -- Create two FA2 contracts, and give an NFT to the seller and some tokens to the buyer.
+  -- Create an FA2 contracts, and give an NFT to the seller.
   nftFA2 <- originateSimple "nft_fa2"
     FA2.Storage
     { sLedger = BigMap $ Map.fromList [((seller, nftTokenId), 1)]
@@ -299,22 +297,16 @@ testSetup testData = do
     , sTokenMetadata = mempty
     }
     (FA2.fa2Contract def { FA2.cAllowedTokenIds = [nftTokenId] })
-  moneyFA2 <- originateSimple "money_fa2"
-    FA2.Storage
-    { sLedger = BigMap $ Map.fromList [((buyer, moneyTokenId), testBuyersBalance testData)]
-    , sOperators = mempty
-    , sTokenMetadata = mempty
-    }
-    (FA2.fa2Contract def { FA2.cAllowedTokenIds = [moneyTokenId] })
+
   pure Setup {..}
 
-originateMarketplaceContract :: MonadNettest caps base m => Setup -> m (TAddress MarketplaceEntrypoints)
-originateMarketplaceContract Setup{storage, seller, buyer, nftFA2, moneyFA2} = do
-  contract <- TAddress @MarketplaceEntrypoints <$> originateUntypedSimple "marketplace-fa2-fixed-fee"
+originateMarketplaceContract :: MonadNettest caps base m => Setup -> m (TAddress MarketplaceTezEntrypoints)
+originateMarketplaceContract Setup{storage, seller, nftFA2} = do
+  contract <- TAddress @MarketplaceTezEntrypoints <$> originateUntypedSimple "marketplace-tez-fixed-fee"
     (untypeValue $ toVal storage)
-    (convertContract marketplaceFixedFeeContract)
+    (convertContract marketplaceTezFixedFeeContract)
 
-  -- Make the contract an operator for the seller and the buyer.
+  -- Make the contract an operator for the seller.
   withSender seller $ do
     call nftFA2 (Call @"Update_operators")
       [ FA2.AddOperator FA2.OperatorParam
@@ -324,40 +316,32 @@ originateMarketplaceContract Setup{storage, seller, buyer, nftFA2, moneyFA2} = d
           }
       ]
 
-  withSender buyer $ do
-    call moneyFA2 (Call @"Update_operators")
-      [ FA2.AddOperator FA2.OperatorParam
-          { opOwner = buyer
-          , opOperator = toAddress contract
-          , opTokenId = moneyTokenId
-          }
-      ]
-
   pure contract
 
 ----------------------------------------------------------------------------
 -- Call entrypoints
 ----------------------------------------------------------------------------
 
-sell :: (HasCallStack, MonadNettest caps base m) => TestData -> Setup -> TAddress MarketplaceEntrypoints -> m ()
-sell TestData{testSalePrice} Setup{nftFA2, moneyFA2} contract =
-  call contract (Call @"Sell") SaleData
-    { salePricePerToken = testSalePrice
-    , saleToken = SaleToken
-      { fa2Address = toAddress nftFA2
-      , tokenId = nftTokenId
-      }
-    , moneyToken = MoneyToken
-      { fa2Address = toAddress moneyFA2
-      , tokenId = moneyTokenId
-      }
+sell :: (HasCallStack, MonadNettest caps base m) => TestData -> Setup -> TAddress MarketplaceTezEntrypoints -> m ()
+sell TestData{testSalePrice} Setup{nftFA2} contract =
+  call contract (Call @"Sell") SaleDataTez
+    { saleToken = SaleToken
+        { fa2Address = toAddress nftFA2
+        , tokenId = nftTokenId
+        }
+    , salePricePerToken = testSalePrice
     , tokenAmount = 1
     }
 
-buy :: (HasCallStack, MonadNettest caps base m) => TAddress MarketplaceEntrypoints -> m ()
-buy contract =
-  call contract (Call @"Buy") (SaleId 0)
+buy :: (HasCallStack, MonadNettest caps base m) => TestData -> TAddress MarketplaceTezEntrypoints -> m ()
+buy TestData{testSalePrice} contract =
+  transfer TransferData
+    { tdTo = contract
+    , tdAmount = testSalePrice
+    , tdEntrypoint = ep "buy"
+    , tdParameter = SaleId 0
+    }
 
-cancel :: (HasCallStack, MonadNettest caps base m) => TAddress MarketplaceEntrypoints -> m ()
+cancel :: (HasCallStack, MonadNettest caps base m) => TAddress MarketplaceTezEntrypoints -> m ()
 cancel contract =
   call contract (Call @"Cancel") (SaleId 0)
