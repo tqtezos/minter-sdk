@@ -39,14 +39,16 @@ test_AllowlistChecks = allowlistChecks
         { allowlistError = saleAddressNotAllowed
         , allowlistRunRestrictedAction = \(alice, tokenId, allowedFA2) market fa2 ->
             withSender alice $
-              call market (Call @"Sell") InitSaleParam
+              call market (Call @"Sell") SaleData
                 { salePrice = 1
-                , saleTokensParam = SaleTokenParam
-                    { tokenForSaleAddress = toAddress fa2
-                    , tokenForSaleTokenId = tokenId
-                    , moneyTokenAddress = toAddress allowedFA2
-                    , moneyTokenTokenId = tokenId
+                , saleToken = SaleToken
+                    { fa2Address = toAddress fa2
+                    , tokenId = tokenId
                     }
+                , moneyToken = MoneyToken
+                  {   fa2Address = toAddress allowedFA2
+                    , tokenId = tokenId
+                  }
                 }
         }
 
@@ -54,14 +56,16 @@ test_AllowlistChecks = allowlistChecks
         { allowlistError = moneyAddressNotAllowed
         , allowlistRunRestrictedAction = \(alice, tokenId, allowedFA2) market fa2 ->
             withSender alice $
-              call market (Call @"Sell") InitSaleParam
+              call market (Call @"Sell") SaleData
                 { salePrice = 1
-                , saleTokensParam = SaleTokenParam
-                    { tokenForSaleAddress = toAddress allowedFA2
-                    , tokenForSaleTokenId = tokenId
-                    , moneyTokenAddress = toAddress fa2
-                    , moneyTokenTokenId = tokenId
+                , saleToken = SaleToken
+                    { fa2Address = toAddress allowedFA2
+                    , tokenId = tokenId
                     }
+                , moneyToken = MoneyToken
+                  {   fa2Address = toAddress fa2
+                    , tokenId = tokenId
+                  }
                 }
         }
       ]
@@ -82,12 +86,15 @@ test_Integrational = testGroup "Integrational"
       withSender alice $
         call market (Call @"Update_allowed") (mkAllowlistParam [fa2])
 
-      let saleTokensParam = SaleTokenParam
-            { tokenForSaleAddress = toAddress fa2
-            , tokenForSaleTokenId = tokenId1
-            , moneyTokenAddress = toAddress fa2
-            , moneyTokenTokenId = tokenId2
+      let saleToken = SaleToken
+            { fa2Address = toAddress fa2
+            , tokenId = tokenId1
             }
+
+      let moneyToken = MoneyToken  
+           { fa2Address = toAddress fa2
+           , tokenId = tokenId2
+           }
 
       assertingBalanceDeltas fa2
         [ (alice, tokenId1) -: -1
@@ -96,14 +103,12 @@ test_Integrational = testGroup "Integrational"
         , (bob, tokenId2) -: -10
         ] $ do
           withSender alice $
-            call market (Call @"Sell") InitSaleParam
+            call market (Call @"Sell") SaleData
               { salePrice = 10
-              , saleTokensParam
+              , saleToken
+              , moneyToken
               }
           withSender bob $
-            call market (Call @"Buy") SaleParam
-              { saleSeller = alice
-              , tokens = saleTokensParam
-              }
+            call market (Call @"Buy") (SaleId 0)
 
   ]
