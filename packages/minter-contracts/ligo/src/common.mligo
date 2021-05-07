@@ -67,4 +67,20 @@ let resolve_contract (add : address) : unit contract =
       None -> (failwith "Return address does not resolve to contract" : unit contract)
     | Some c -> c
 
+let transfer_fa2(fa2_address, token_id, amount_, from, to_: address * token_id * nat * address * address): operation =
+  let fa2_transfer : ((transfer list) contract) option =
+      Tezos.get_entrypoint_opt "%transfer"  fa2_address in
+  let transfer_op = match fa2_transfer with
+  | None -> (failwith "CANNOT_INVOKE_FA2_TRANSFER" : operation)
+  | Some c ->
+    let tx = {
+      from_ = from;
+      txs= [{
+        to_ = to_;
+        token_id = token_id;
+        amount = amount_;
+    }]} in
+    Tezos.transaction [tx] 0mutez c
+ in transfer_op
+
 #endif

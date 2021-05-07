@@ -8,6 +8,7 @@ type sale_data =
   sale_price: nat;
   sale_token : global_token_id;
   money_token : global_token_id;
+  amount : nat;
 }
 
 type sale =
@@ -46,22 +47,6 @@ type market_entry_points =
   | Cancel of sale_id
   | Admin of pauseable_admin
 
-let transfer_fa2(fa2_address, token_id, amount_, from, to_: address * token_id * nat * address * address): operation =
-  let fa2_transfer : ((transfer list) contract) option =
-      Tezos.get_entrypoint_opt "%transfer"  fa2_address in
-  let transfer_op = match fa2_transfer with
-  | None -> (failwith "CANNOT_INVOKE_FA2_TRANSFER" : operation)
-  | Some c ->
-    let tx = {
-      from_ = from;
-      txs= [{
-        to_ = to_;
-        token_id = token_id;
-        amount = amount_;
-    }]} in
-    Tezos.transaction [tx] 0mutez c
- in transfer_op
-
 let buy_token(sale_id, storage: sale_id * storage) : (operation list * storage) =
   let sale : sale = match Big_map.find_opt sale_id storage.sales with
     | None -> (failwith "NO_SALE": sale)
@@ -73,6 +58,7 @@ let buy_token(sale_id, storage: sale_id * storage) : (operation list * storage) 
   let money_token_address = sale.sale_data.money_token.fa2_address in 
   let money_token_id = sale.sale_data.money_token.token_id in
   let sale_price = sale.sale_data.sale_price in
+  let amount_ = sale.sale_data.amount in 
 
   let tx_nft = transfer_fa2(token_for_sale_address, token_for_sale_token_id, 1n , Tezos.self_address, Tezos.sender) in
 #if !FEE 
@@ -87,14 +73,19 @@ let buy_token(sale_id, storage: sale_id * storage) : (operation list * storage) 
   let tx_price = transfer_fa2(money_token_address, money_token_id, sale_price_minus_fee, Tezos.sender, seller) in
   let oplist : operation list = [tx_price; tx_nft; tx_fee] in
 #endif
-  let new_s = {storage with sales = Big_map.remove sale_id storage.sales } in
+  let new_sales : (sale_id, sale) big_map = 
+    if sale.sale_data.amount <= 1n 
+    then Big_map.remove sale_id storage.sales
+    else Big_map.update sale_id (Some {sale with sale_data.amount = abs (amount_ - 1n)}) storage.sales in
+  let new_s = {storage with sales = new_sales } in
   oplist, new_s
 
 let deposit_for_sale(sale_data, storage: sale_data * storage) : (operation list * storage) =
   let token_for_sale_address = sale_data.sale_token.fa2_address in 
   let token_for_sale_token_id = sale_data.sale_token.token_id in 
+  let amount_ = sale_data.amount in 
   let transfer_op =
-    transfer_fa2 (token_for_sale_address, token_for_sale_token_id, 1n, Tezos.sender, Tezos.self_address) in
+    transfer_fa2 (token_for_sale_address, token_for_sale_token_id, amount_, Tezos.sender, Tezos.self_address) in
   let sale = { seller = Tezos.sender; sale_data = sale_data; } in
   let sale_id = storage.next_sale_id in
   let new_s = { storage with sales = Big_map.add sale_id sale storage.sales;
@@ -106,12 +97,13 @@ let cancel_sale(sale_id, storage: sale_id * storage) : (operation list * storage
     | None -> (failwith "NO_SALE" : (operation list * storage))
     | Some sale ->  let token_for_sale_address = sale.sale_data.sale_token.fa2_address in
                     let token_for_sale_token_id = sale.sale_data.sale_token.token_id in
+                    let amount_ = sale.sale_data.amount in 
                     let seller = sale.seller in
                     let is_seller = Tezos.sender = seller in
                     let v : unit = if is_seller then ()
                       else fail_if_not_admin_ext (storage.admin, "OR A SELLER") in
-                    let tx_nft_back_op = transfer_fa2(token_for_sale_address, token_for_sale_token_id, 1n, Tezos.self_address, seller) in
-                    ([tx_nft_back_op]), { storage with sales = Big_map.remove sale_id storage.sales }
+                    let tx_nfts_back_op = transfer_fa2(token_for_sale_address, token_for_sale_token_id, amount_, Tezos.self_address, seller) in
+                    ([tx_nfts_back_op]), { storage with sales = Big_map.remove sale_id storage.sales }
 
 let fixed_price_sale_main (p, storage : market_entry_points * storage) : operation list * storage = match p with
   | Sell sale_data ->
@@ -131,3 +123,4 @@ let fixed_price_sale_main (p, storage : market_entry_points * storage) : operati
     let ops, admin = pauseable_admin(a, storage.admin) in
     let new_storage = { storage with admin = admin; } in
     ops, new_storage
+  
