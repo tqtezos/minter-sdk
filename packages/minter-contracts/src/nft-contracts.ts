@@ -1,3 +1,4 @@
+import { $log } from '@tsed/logger';
 import { originateContract } from './ligo';
 import { Contract, address, nat } from './type-aliases';
 import { TezosToolkit } from '@taquito/taquito';
@@ -52,6 +53,39 @@ interface AdminStorage {
     admin: string;
     pending_admin?: string;
     paused: boolean;
+}
+
+export async function mintNftTokens(
+  tz: TezosToolkit,
+  tokens: MintNftParam[],
+  nftContract: Contract,
+): Promise<void> {
+  $log.info('minting...');
+  const op = await nftContract.methods.mint(tokens).send();
+  await op.confirmation(3);
+  $log.info(`Minted non-fungible tokens. Consumed gas: ${op.consumedGas}`);
+}
+
+export async function mintFtTokens(
+  tz: TezosToolkit,
+  ftContract: Contract,
+  tokens: MintFtParam[],
+): Promise<void> {
+  $log.info('minting...');
+  const op = await ftContract.methods.mint_tokens(tokens).send();
+  await op.confirmation(3);
+  $log.info(`Minted fungible tokens. Consumed gas: ${op.consumedGas}`);
+}
+
+export async function createFtToken(
+  tz: TezosToolkit,
+  ftContract: Contract,
+  token_metadata: TokenMetadata,
+): Promise<void> {
+  $log.info('minting...');
+  const op = await ftContract.methods.create_token(token_metadata.token_id, token_metadata.token_info).send();
+  await op.confirmation(3);
+  $log.info(`Created fungible token. Consumed gas: ${op.consumedGas}`);
 }
 
 const meta_uri = char2Bytes('tezos-storage:content');

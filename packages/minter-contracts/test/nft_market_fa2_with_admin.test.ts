@@ -1,6 +1,6 @@
 import { $log } from '@tsed/logger';
 import { BigNumber } from 'bignumber.js';
-import { TezosToolkit, MichelsonMap } from '@taquito/taquito';
+import { MichelsonMap } from '@taquito/taquito';
 
 import { bootstrap, TestTz } from './bootstrap-sandbox';
 import { Contract, address, bytes, nat } from '../src/type-aliases';
@@ -8,13 +8,13 @@ import { Contract, address, bytes, nat } from '../src/type-aliases';
 import {
   originateNftFaucet,
   originateFtFaucet,
-  MintNftParam,
-  MintFtParam,
+  mintFtTokens,
+  mintNftTokens,
+  createFtToken,
   originateFixedPriceAdminSale,
 } from '../src/nft-contracts';
 import {
   addOperator,
-  TokenMetadata,
 } from '../src/fa2-interface';
 import { queryBalancesWithLambdaView, QueryBalances, hasTokens } from './fa2-balance-inspector';
 
@@ -57,41 +57,10 @@ describe.each([originateFixedPriceAdminSale])
     marketplaceAlice = await tezos.alice.contract.at(marketAddress);
   });
 
-  async function mintNftTokens(
-    tz: TezosToolkit,
-    tokens: MintNftParam[],
-  ): Promise<void> {
-    $log.info('minting...');
-    const op = await nft.methods.mint(tokens).send();
-    await op.confirmation();
-    $log.info(`Minted non-fungible tokens. Consumed gas: ${op.consumedGas}`);
-  }
-
-  async function mintFtTokens(
-    tz: TezosToolkit,
-    tokens: MintFtParam[],
-  ): Promise<void> {
-    $log.info('minting...');
-    const op = await ft.methods.mint_tokens(tokens).send();
-    await op.confirmation();
-    $log.info(`Minted fungible tokens. Consumed gas: ${op.consumedGas}`);
-  }
-
-  async function createFtToken(
-    tz: TezosToolkit,
-    token_metadata: TokenMetadata,
-  ): Promise<void> {
-    $log.info('minting...');
-    const op =
-                await ft.methods.create_token(token_metadata.token_id, token_metadata.token_info).send();
-    await op.confirmation();
-    $log.info(`Created fungible token. Consumed gas: ${op.consumedGas}`);
-  }
-
   test('bob makes sale, and alice buys nft', async () => {
     const tokenAmount = new BigNumber(1);
-    await createFtToken(tezos.alice, { token_id : ftTokenId, token_info: tokenMetadata });
-    await mintFtTokens(tezos.alice, [
+    await createFtToken(tezos.alice, ft, { token_id : ftTokenId, token_info: tokenMetadata });
+    await mintFtTokens(tezos.alice, ft, [
       {
 
         token_id: ftTokenId,
@@ -108,7 +77,7 @@ describe.each([originateFixedPriceAdminSale])
         },
         owner: bobAddress,
       },
-    ]);
+    ], nft);
 
     const [aliceHasNFTTokenBefore, bobHasNFTTokenBefore] = await hasTokens([
       { owner: aliceAddress, token_id: nftTokenId },
@@ -163,8 +132,8 @@ describe.each([originateFixedPriceAdminSale])
   test('bob makes sale, cancels it, then alice unsuccessfully tries to buy', async () => {
     const tokenAmount = new BigNumber(1);
 
-    await createFtToken(tezos.alice, { token_id : ftTokenId, token_info: tokenMetadata });
-    await mintFtTokens(tezos.alice, [
+    await createFtToken(tezos.alice, ft, { token_id : ftTokenId, token_info: tokenMetadata });
+    await mintFtTokens(tezos.alice, ft, [
       {
 
         token_id: ftTokenId,
@@ -181,7 +150,7 @@ describe.each([originateFixedPriceAdminSale])
         },
         owner: bobAddress,
       },
-    ]);
+    ], nft);
 
 
     $log.info('making marketplace an operator of bob\'s token');
@@ -193,7 +162,7 @@ describe.each([originateFixedPriceAdminSale])
     $log.info(`Creating sale`);
     const sellOp = await marketplace.methods
       .sell(new BigNumber(20), nft.address, nftTokenId, ft.address, ftTokenId, tokenAmount)
-      .send({ source: bobAddress, amount: 0 });
+      .send({ amount: 0 });
     $log.info(`Waiting for ${sellOp.hash} to be confirmed...`);
     const sellOpHash = await sellOp.confirmation().then(() => sellOp.hash);
     $log.info(`Operation injected at hash=${sellOpHash}`);
@@ -216,7 +185,7 @@ describe.each([originateFixedPriceAdminSale])
     try {
       $log.info(`Alice buys non-fungible token with her fungible tokens`);
       await marketplaceAlice.methods
-        .buy(bobAddress, nft.address, nftTokenId, ft.address, ftTokenId).send({ source:aliceAddress, amount: 0 });
+        .buy(saleId).send({ amount: 0 });
     } catch (error) {
       $log.info(`alice cannot buy`);
     }

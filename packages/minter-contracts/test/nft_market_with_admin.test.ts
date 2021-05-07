@@ -122,7 +122,7 @@ describe.each([originateFixedPriceTezAdminSale])
 
       // const aliceSaleContract = await tezos.alice.contract.at(marketplace.address);
       const buyOp = await marketplaceAlice.methods
-        .buy(bobAddress, nft.address, tokenId)
+        .buy(saleId)
         .send({ amount: 1 });
       $log.info(`Waiting for ${buyOp.hash} to be confirmed...`);
       const buyOpHash = await buyOp.confirmation().then(() => buyOp.hash);
