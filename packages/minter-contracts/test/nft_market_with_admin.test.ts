@@ -62,7 +62,7 @@ describe.each([originateFixedPriceTezAdminSale])
 
 
   test('bob makes sale, and alice buys nft', async () => {
-
+    const tokenAmount = new BigNumber(1);
     try {
 
       await mintTokens(tezos.bob, [
@@ -112,8 +112,8 @@ describe.each([originateFixedPriceTezAdminSale])
 
       $log.info(`Creating sale`);
       const sellOp = await marketplace.methods
-        .sell(salePrice, nft.address, tokenId)
-        .send({ source: bobAddress, amount: 0 });
+        .sell(salePrice, nft.address, tokenId, tokenAmount)
+        .send({ amount: 0 });
       $log.info(`Waiting for ${sellOp.hash} to be confirmed...`);
       const sellOpHash = await sellOp.confirmation(1).then(() => sellOp.hash);
       $log.info(`Operation injected at hash=${sellOpHash}`);
@@ -135,7 +135,7 @@ describe.each([originateFixedPriceTezAdminSale])
   });
 
   test('bob makes sale, cancels it, then alice unsuccessfully tries to buy', async () => {
-
+    const tokenAmount = new BigNumber(1);
     await mintTokens(tezos.bob, [
       {
         token_metadata: {
@@ -160,7 +160,7 @@ describe.each([originateFixedPriceTezAdminSale])
 
       $log.info('starting sale...');
       const sellOp = await marketplace.methods
-        .sell(salePrice, nft.address, tokenId)
+        .sell(salePrice, nft.address, tokenId, tokenAmount)
         .send({ amount: 0 });
       $log.info(`Waiting for ${sellOp.hash} to be confirmed...`);
       const sellOpHash = await sellOp.confirmation().then(() => sellOp.hash);

@@ -38,9 +38,10 @@ deriving anyclass instance IsoValue MoneyToken
 deriving anyclass instance HasAnnotation MoneyToken
 
 data SaleData = SaleData 
-  { salePrice :: Natural 
+  { salePricePerToken :: Natural 
   , saleToken :: SaleToken
   , moneyToken :: MoneyToken
+  , tokenAmount :: Natural
   } deriving stock (Eq, Ord)
 
 customGeneric "SaleData" ligoCombLayout

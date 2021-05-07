@@ -86,7 +86,7 @@ describe.each([originateFixedPriceSale])
   }
 
   test('bob makes sale, and alice buys nft', async () => {
-
+    const tokenAmount = new BigNumber(1);
     await createFtToken(tezos.alice, { token_id : ftTokenId, token_info: tokenMetadata });
     await mintFtTokens(tezos.alice, [
       {
@@ -123,7 +123,7 @@ describe.each([originateFixedPriceSale])
 
     $log.info(`Creating sale`);
     const sellOp = await marketplace.methods
-      .sell(new BigNumber(20), nft.address, nftTokenId, ft.address, ftTokenId)
+      .sell(new BigNumber(20), nft.address, nftTokenId, ft.address, ftTokenId, tokenAmount)
       .send({ amount: 0 });
     $log.info(`Waiting for ${sellOp.hash} to be confirmed...`);
     const sellOpHash = await sellOp.confirmation().then(() => sellOp.hash);
@@ -140,6 +140,7 @@ describe.each([originateFixedPriceSale])
   });
 
   test('bob makes sale, cancels it, then alice unsuccessfully tries to buy', async () => {
+    const tokenAmount = new BigNumber(1);
     await createFtToken(tezos.alice, { token_id : ftTokenId, token_info: tokenMetadata });
     await mintFtTokens(tezos.alice, [
       {
@@ -168,7 +169,7 @@ describe.each([originateFixedPriceSale])
 
     $log.info(`Creating sale`);
     const sellOp = await marketplace.methods
-      .sell(new BigNumber(20), nft.address, nftTokenId, ft.address, ftTokenId)
+      .sell(new BigNumber(20), nft.address, nftTokenId, ft.address, ftTokenId, tokenAmount)
       .send({ amount: 0 });
     $log.info(`Waiting for ${sellOp.hash} to be confirmed...`);
     const sellOpHash = await sellOp.confirmation().then(() => sellOp.hash);

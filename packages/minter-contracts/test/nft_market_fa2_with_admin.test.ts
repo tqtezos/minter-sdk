@@ -89,7 +89,7 @@ describe.each([originateFixedPriceAdminSale])
   }
 
   test('bob makes sale, and alice buys nft', async () => {
-
+    const tokenAmount = new BigNumber(1);
     await createFtToken(tezos.alice, { token_id : ftTokenId, token_info: tokenMetadata });
     await mintFtTokens(tezos.alice, [
       {
@@ -134,7 +134,7 @@ describe.each([originateFixedPriceAdminSale])
     try {
       $log.info(`Attempting to create sale while contract is paused`);
       await marketplace.methods
-        .sell(new BigNumber(20), nft.address, nftTokenId, ft.address, ftTokenId).send({ amount: 0 });
+        .sell(new BigNumber(20), nft.address, nftTokenId, ft.address, ftTokenId, tokenAmount).send({ amount: 0 });
     }
     catch (error) {$log.info(`Confirmation: Cannot create sale while contract is paused`);}
 
@@ -146,7 +146,7 @@ describe.each([originateFixedPriceAdminSale])
 
     $log.info(`Creating sale`);
     const sellOp = await marketplace.methods
-      .sell(new BigNumber(20), nft.address, nftTokenId, ft.address, ftTokenId).send({ amount: 0 });
+      .sell(new BigNumber(20), nft.address, nftTokenId, ft.address, ftTokenId, tokenAmount).send({ amount: 0 });
     $log.info(`Waiting for ${sellOp.hash} to be confirmed...`);
     const sellOpHash = await sellOp.confirmation().then(() => sellOp.hash);
     $log.info(`Operation injected at hash=${sellOpHash}`);
@@ -161,7 +161,7 @@ describe.each([originateFixedPriceAdminSale])
   });
 
   test('bob makes sale, cancels it, then alice unsuccessfully tries to buy', async () => {
-
+    const tokenAmount = new BigNumber(1);
 
     await createFtToken(tezos.alice, { token_id : ftTokenId, token_info: tokenMetadata });
     await mintFtTokens(tezos.alice, [
@@ -192,7 +192,8 @@ describe.each([originateFixedPriceAdminSale])
 
     $log.info(`Creating sale`);
     const sellOp = await marketplace.methods
-      .sell(new BigNumber(20), nft.address, nftTokenId, ft.address, ftTokenId).send({ source: bobAddress, amount: 0 });
+      .sell(new BigNumber(20), nft.address, nftTokenId, ft.address, ftTokenId, tokenAmount)
+      .send({ source: bobAddress, amount: 0 });
     $log.info(`Waiting for ${sellOp.hash} to be confirmed...`);
     const sellOpHash = await sellOp.confirmation().then(() => sellOp.hash);
     $log.info(`Operation injected at hash=${sellOpHash}`);

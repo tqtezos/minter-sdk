@@ -40,7 +40,7 @@ test_AllowlistChecks = allowlistChecks
         , allowlistRunRestrictedAction = \(alice, tokenId, allowedFA2) market fa2 ->
             withSender alice $
               call market (Call @"Sell") SaleData
-                { salePrice = 1
+                { salePricePerToken = 1
                 , saleToken = SaleToken
                     { fa2Address = toAddress fa2
                     , tokenId = tokenId
@@ -49,6 +49,7 @@ test_AllowlistChecks = allowlistChecks
                   {   fa2Address = toAddress allowedFA2
                     , tokenId = tokenId
                   }
+                , tokenAmount = 1
                 }
         }
 
@@ -57,7 +58,7 @@ test_AllowlistChecks = allowlistChecks
         , allowlistRunRestrictedAction = \(alice, tokenId, allowedFA2) market fa2 ->
             withSender alice $
               call market (Call @"Sell") SaleData
-                { salePrice = 1
+                { salePricePerToken = 1
                 , saleToken = SaleToken
                     { fa2Address = toAddress allowedFA2
                     , tokenId = tokenId
@@ -66,6 +67,7 @@ test_AllowlistChecks = allowlistChecks
                   {   fa2Address = toAddress fa2
                     , tokenId = tokenId
                   }
+                , tokenAmount = 1
                 }
         }
       ]
@@ -104,9 +106,10 @@ test_Integrational = testGroup "Integrational"
         ] $ do
           withSender alice $
             call market (Call @"Sell") SaleData
-              { salePrice = 10
+              { salePricePerToken = 10
               , saleToken
               , moneyToken
+              , tokenAmount = 1
               }
           withSender bob $
             call market (Call @"Buy") (SaleId 0)

@@ -30,7 +30,8 @@ deriving anyclass instance HasAnnotation SaleToken
 
 data SaleDataTez = SaleDataTez 
   { saleToken :: SaleToken 
-  , salePrice :: Mutez 
+  , salePricePerToken :: Mutez 
+  , tokenAmount :: Natural
   } deriving stock (Eq, Ord)
 
 customGeneric "SaleDataTez" ligoCombLayout

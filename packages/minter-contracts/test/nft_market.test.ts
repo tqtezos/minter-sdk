@@ -62,6 +62,7 @@ describe.each([originateFixedPriceTezSale])
   }
 
   test('bob makes sale, and alice buys nft', async () => {
+    const tokenAmount = new BigNumber(1);
 
     await mintTokens(tezos.bob, [
       {
@@ -87,7 +88,7 @@ describe.each([originateFixedPriceTezSale])
       $log.info('starting sale...');
       const bobSaleContract = await tezos.bob.contract.at(marketplace.address);
       const sellOp = await bobSaleContract.methods
-        .sell(salePrice, nft.address, tokenId)
+        .sell(salePrice, nft.address, tokenId, tokenAmount)
         .send({ amount: 0 });
       $log.info(`Waiting for ${sellOp.hash} to be confirmed...`);
       const sellOpHash = await sellOp.confirmation(1).then(() => sellOp.hash);
@@ -106,6 +107,7 @@ describe.each([originateFixedPriceTezSale])
   });
 
   test('bob makes sale, cancels it, then alice unsuccessfully tries to buy', async () => {
+    const tokenAmount = new BigNumber(1);
 
     await mintTokens(tezos.bob, [
       {
@@ -131,7 +133,7 @@ describe.each([originateFixedPriceTezSale])
       $log.info('starting sale...');
       const bobSaleContract = await tezos.bob.contract.at(marketplace.address);
       const sellOp = await bobSaleContract.methods
-        .sell(salePrice, nft.address, tokenId)
+        .sell(salePrice, nft.address, tokenId, tokenAmount)
         .send({ amount: 0 });
       $log.info(`Waiting for ${sellOp.hash} to be confirmed...`);
       const sellOpHash = await sellOp.confirmation(1).then(() => sellOp.hash);

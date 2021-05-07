@@ -39,8 +39,9 @@ test_AllowlistChecks = allowlistChecks
         , allowlistRunRestrictedAction = \(alice, tokenId) contract fa2 ->
             withSender alice $
               call contract (Call @"Sell") SaleDataTez
-                { salePrice = toMutez 1
+                { salePricePerToken = toMutez 1
                 , saleToken = SaleToken(toAddress fa2) tokenId
+                , tokenAmount = 1 
                 }
         }
       ]
@@ -72,8 +73,9 @@ test_Integrational = testGroup "Integrational"
         ] $ do
           withSender alice $
             call market (Call @"Sell") SaleDataTez
-              { salePrice = toMutez 1
+              { salePricePerToken = toMutez 1
               , saleToken = saleToken
+              , tokenAmount = 1
               }
 
           withSender bob $
