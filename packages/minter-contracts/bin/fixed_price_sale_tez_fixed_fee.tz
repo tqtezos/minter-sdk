@@ -33,6 +33,10 @@
                { UNIT }
                { CAR ; CDR ; IF { PUSH string "PAUSED" ; FAILWITH } { UNIT } } } ;
          LAMBDA
+           (pair bool string)
+           unit
+           { UNPAIR ; NOT ; IF { FAILWITH } { DROP ; UNIT } } ;
+         LAMBDA
            (pair (pair (pair address nat) (pair nat address)) address)
            operation
            { UNPAIR ;
@@ -77,13 +81,15 @@
              CONCAT ;
              PUSH string "DON'T TRANSFER TEZ TO THIS ENTRYPOINT (" ;
              CONCAT } ;
-         DIG 5 ;
+         DIG 6 ;
          UNPAIR ;
          IF_LEFT
            { DIG 2 ;
              DROP ;
              IF_LEFT
                { DIG 2 ;
+                 DROP ;
+                 DIG 2 ;
                  DROP ;
                  DIG 2 ;
                  DROP ;
@@ -145,13 +151,13 @@
                  PAIR ;
                  SWAP ;
                  PAIR }
-               { DIG 5 ;
+               { DIG 6 ;
                  DROP ;
                  SWAP ;
                  DUP ;
                  DUG 2 ;
                  CAR ;
-                 DIG 5 ;
+                 DIG 6 ;
                  SWAP ;
                  EXEC ;
                  DROP ;
@@ -224,6 +230,18 @@
                      COMPARE ;
                      GT ;
                      IF { PUSH mutez 1 ; ADD } {} } ;
+                 PUSH string "FEE_TO_HIGH" ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 DUP 5 ;
+                 COMPARE ;
+                 GE ;
+                 PAIR ;
+                 DIG 8 ;
+                 SWAP ;
+                 EXEC ;
+                 DROP ;
                  DUP ;
                  DIG 3 ;
                  SUB ;
@@ -305,7 +323,9 @@
            { DIG 3 ;
              DROP ;
              IF_LEFT
-               { DIG 5 ;
+               { DIG 4 ;
+                 DROP ;
+                 DIG 5 ;
                  DROP ;
                  SWAP ;
                  DUP ;
@@ -394,11 +414,11 @@
                  DUP ;
                  DUG 2 ;
                  CAR ;
-                 DIG 5 ;
+                 DIG 6 ;
                  SWAP ;
                  EXEC ;
                  DROP ;
-                 PUSH string "FEE_PERCENT_TOO_HIGH" ;
+                 PUSH string "FEE_TOO_HIGH" ;
                  PUSH nat 100 ;
                  DUP 4 ;
                  CDR ;
@@ -407,8 +427,11 @@
                  CDR ;
                  COMPARE ;
                  LE ;
-                 NOT ;
-                 IF { FAILWITH } { DROP } ;
+                 PAIR ;
+                 DIG 5 ;
+                 SWAP ;
+                 EXEC ;
+                 DROP ;
                  SWAP ;
                  DUP ;
                  DUG 2 ;

@@ -76,6 +76,7 @@ let buy_token(sale_id, storage: sale_id * storage) : (operation list * storage) 
      else oplist) in 
 #else 
   let fee : tez = percent_of_bid_tez (storage.fee.fee_percent, sale_price) in
+  let u : unit = assert_msg(sale_price >= fee, "FEE_TO_HIGH") in
   let sale_price_minus_fee : tez = sale_price - fee in
   let oplist = 
     (if fee <> 0mutez 
@@ -131,7 +132,7 @@ let fixed_price_sale_tez_main (p, storage : market_entry_points * storage) : ope
   | Sell sale ->
      let u : unit = fail_if_paused(storage.admin) in
 #if FEE
-     let v : unit = assert_msg (storage.fee.fee_percent <= 100n, "FEE_PERCENT_TOO_HIGH") in
+     let v : unit = assert_msg (storage.fee.fee_percent <= 100n, "FEE_TOO_HIGH") in
 #endif
      let w : unit = fail_if_not_admin(storage.admin) in
      deposit_for_sale(sale, storage)
