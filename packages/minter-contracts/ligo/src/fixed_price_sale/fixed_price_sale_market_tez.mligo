@@ -66,15 +66,29 @@ let buy_token(sale_id, storage: sale_id * storage) : (operation list * storage) 
     then ([%Michelson ({| { FAILWITH } |} : string * tez * tez -> unit)] ("WRONG_TEZ_PRICE", sale_price, Tezos.amount) : unit)
     else () in
   let tx_nft = transfer_fa2(sale_token_address, sale_token_id, 1n, Tezos.self_address, Tezos.sender) in
+  let oplist : operation list = [tx_nft] in 
 #if !FEE 
-  let tx_price = transfer_tez(sale_price, seller) in
-  let oplist : operation list = [tx_nft; tx_price] in 
+  let oplist = 
+    (if sale_price <> 0mutez 
+     then 
+       let tx_price = transfer_tez(sale_price, seller) in
+       tx_price :: oplist 
+     else oplist) in 
 #else 
   let fee : tez = percent_of_bid_tez (storage.fee.fee_percent, sale_price) in
   let sale_price_minus_fee : tez = sale_price - fee in
-  let tx_fee : operation = transfer_tez(fee, storage.fee.fee_address) in
-  let tx_price = transfer_tez(sale_price_minus_fee, seller) in
-  let oplist : operation list = [tx_price; tx_nft; tx_fee] in
+  let oplist = 
+    (if fee <> 0mutez 
+     then 
+       let tx_fee : operation = transfer_tez(fee, storage.fee.fee_address) in
+       tx_fee :: oplist 
+     else oplist) in 
+  let oplist = 
+    (if sale_price_minus_fee <> 0mutez  
+     then 
+       let tx_price = transfer_tez(sale_price_minus_fee, seller) in
+       tx_price :: oplist  
+     else oplist) in
 #endif 
   let new_sales : (sale_id, sale_tez) big_map = 
     if sale.sale_data.amount <= 1n 
