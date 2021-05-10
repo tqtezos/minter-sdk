@@ -168,7 +168,7 @@ describe('test NFT auction', () => {
     const opBid = await nftAuctionAlice.methods.bid(0).send({ amount : bidMutez, mutez : true });
     await opBid.confirmation();
     $log.info(`Bid placed. Amount sent: ${opBid.amount} mutez`);
-    await sleep(41000); //1 seconds
+    await sleep(50000); //50 seconds
 
     $log.info("Resolving auction");
     const opResolve = await nftAuctionBob.methods.resolve(0).send({ amount : 0 });
