@@ -18,7 +18,7 @@ import {
 } from '../src/fa2-interface';
 import { queryBalancesWithLambdaView, QueryBalances, hasTokens } from './fa2-balance-inspector';
 
-jest.setTimeout(240000); // 4 minutes
+jest.setTimeout(360000); // 6 minutes
 
 
 describe.each([originateFixedPriceAdminSale])
@@ -100,12 +100,10 @@ describe.each([originateFixedPriceAdminSale])
     const pauseOpHash = await pauseOp.confirmation().then(() => pauseOp.hash);
     $log.info(`Operation injected at hash=${pauseOpHash}`);
 
-    try {
-      $log.info(`Attempting to create sale while contract is paused`);
-      await marketplace.methods
-        .sell(new BigNumber(20), nft.address, nftTokenId, ft.address, ftTokenId, tokenAmount).send({ amount: 0 });
-    }
-    catch (error) {$log.info(`Confirmation: Cannot create sale while contract is paused`);}
+    $log.info(`Attempting to create sale while contract is paused`);
+    const pausedSellOp = marketplace.methods
+      .sell(new BigNumber(20), nft.address, nftTokenId, ft.address, ftTokenId, tokenAmount).send({ amount: 0 });
+    expect(pausedSellOp).rejects.toHaveProperty('message', 'PAUSED');
 
     $log.info('unpause marketplace');
     const unpauseOp = await marketplace.methods.pause(false).send({ amount: 0 });
@@ -167,13 +165,10 @@ describe.each([originateFixedPriceAdminSale])
     const sellOpHash = await sellOp.confirmation().then(() => sellOp.hash);
     $log.info(`Operation injected at hash=${sellOpHash}`);
 
-    try {
-      $log.info('alice cancels sale (not admin nor seller)');
-      await marketplaceAlice.methods
-        .cancel(saleId).send({ amount: 0 });
-    } catch (error) {
-      $log.info(`Alice cannot cancel sale, since she is not admin`);
-    }
+    $log.info('alice cancels sale (not admin nor seller)');
+    const cancelOp = marketplaceAlice.methods
+      .cancel(saleId).send({ amount: 0 });
+    expect(cancelOp).rejects.toHaveProperty('message', 'NOT_AN_ADMIN OR A SELLER');
 
     $log.info('bob cancels sale');
     const removeSaleOp = await marketplace.methods
@@ -182,13 +177,11 @@ describe.each([originateFixedPriceAdminSale])
     const removeSaleOpHash = await removeSaleOp.confirmation().then(() => removeSaleOp.hash);
     $log.info(`Operation injected at hash=${removeSaleOpHash}`);
 
-    try {
-      $log.info(`Alice buys non-fungible token with her fungible tokens`);
-      await marketplaceAlice.methods
-        .buy(saleId).send({ amount: 0 });
-    } catch (error) {
-      $log.info(`alice cannot buy`);
-    }
+    $log.info(`Alice buys non-fungible token with her fungible tokens`);
+    const buyOp = marketplaceAlice.methods
+      .buy(saleId).send({ amount: 0 });
+    expect(buyOp).rejects.toHaveProperty('message', 'NO_SALE');
+    $log.info(`alice cannot buy`);
 
   });
 

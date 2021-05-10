@@ -18,7 +18,7 @@ import {
 } from '../src/fa2-interface';
 import { QueryBalances, queryBalancesWithLambdaView, hasTokens, getBalances } from './fa2-balance-inspector';
 
-jest.setTimeout(300000); // 5 minutes
+jest.setTimeout(360000); // 6 minutes
 
 describe.each([originateFixedPriceSale])
 ('marketplace test', (originateMarketplace) => {
@@ -155,14 +155,13 @@ describe.each([originateFixedPriceSale])
     const removeSaleOpHash = await removeSaleOp.confirmation().then(() => removeSaleOp.hash);
     $log.info(`Operation injected at hash=${removeSaleOpHash}`);
 
-    try {
-      $log.info(`Alice buys non-fungible token with her fungible tokens`);
-      await marketplaceAlice.methods
-        .buy(saleId)
-        .send({ amount: 0 });
-    } catch (error) {
-      $log.info(`alice cannot buy`);
-    }
+    $log.info(`Alice buys non-fungible token with her fungible tokens`);
+    const buyOp = marketplaceAlice.methods
+      .buy(saleId)
+      .send({ amount: 0 });
+    expect(buyOp).rejects.toHaveProperty('message', 'NO_SALE');
+    $log.info(`alice cannot buy`);
+
   });
 
   test('bob makes sale of two fts, and alice buys one', async () => {

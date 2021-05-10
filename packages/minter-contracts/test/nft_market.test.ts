@@ -80,26 +80,21 @@ describe.each([originateFixedPriceTezSale])
     $log.info('making marketplace an operator of bob\'s token');
     await addOperator(nft.address, tezos.bob, marketAddress, tokenId);
 
-    try {
-      $log.info('starting sale...');
-      const bobSaleContract = await tezos.bob.contract.at(marketplace.address);
-      const sellOp = await bobSaleContract.methods
-        .sell(nft.address, tokenId, salePrice, tokenAmount)
-        .send({ amount: 0 });
-      $log.info(`Waiting for ${sellOp.hash} to be confirmed...`);
-      const sellOpHash = await sellOp.confirmation(1).then(() => sellOp.hash);
-      $log.info(`Operation injected at hash=${sellOpHash}`);
-      $log.info('alice buys nft...');
-
-      const buyOp = await marketplaceAlice.methods
-        .buy(saleId)
-        .send({ amount: 1 });
-      $log.info(`Waiting for ${buyOp.hash} to be confirmed...`);
-      const buyOpHash = await buyOp.confirmation().then(() => buyOp.hash);
-      $log.info(`Operation injected at hash=${buyOpHash}`);
-    } catch (error) {
-      $log.info(`Error: ${JSON.stringify(error, null, 2)}`);
-    }
+    $log.info('starting sale...');
+    const bobSaleContract = await tezos.bob.contract.at(marketplace.address);
+    const sellOp = await bobSaleContract.methods
+      .sell(nft.address, tokenId, salePrice, tokenAmount)
+      .send({ amount: 0 });
+    $log.info(`Waiting for ${sellOp.hash} to be confirmed...`);
+    const sellOpHash = await sellOp.confirmation(1).then(() => sellOp.hash);
+    $log.info(`Operation injected at hash=${sellOpHash}`);
+    $log.info('alice buys nft...');
+    const buyOp = await marketplaceAlice.methods
+      .buy(saleId)
+      .send({ amount: 1 });
+    $log.info(`Waiting for ${buyOp.hash} to be confirmed...`);
+    const buyOpHash = await buyOp.confirmation().then(() => buyOp.hash);
+    $log.info(`Operation injected at hash=${buyOpHash}`);
   });
 
   test('bob makes sale, cancels it, then alice unsuccessfully tries to buy', async () => {
@@ -125,29 +120,27 @@ describe.each([originateFixedPriceTezSale])
     $log.info('making marketplace an operator of bob\'s token');
     await addOperator(nft.address, tezos.bob, marketAddress, tokenId);
 
-    try {
-      $log.info('starting sale...');
-      const bobSaleContract = await tezos.bob.contract.at(marketplace.address);
-      const sellOp = await bobSaleContract.methods
-        .sell(nft.address, tokenId, salePrice, tokenAmount)
-        .send({ amount: 0 });
-      $log.info(`Waiting for ${sellOp.hash} to be confirmed...`);
-      const sellOpHash = await sellOp.confirmation(1).then(() => sellOp.hash);
-      $log.info(`Operation injected at hash=${sellOpHash}`);
-      $log.info('bob cancels sale');
-      const removeSaleOp = await bobSaleContract.methods
-        .cancel(saleId)
-        .send({ amount: 0 });
-      $log.info(`Waiting for ${removeSaleOp.hash} to be confirmed...`);
-      const removeSaleOpHash = await removeSaleOp.confirmation(1).then(() => removeSaleOp.hash);
-      $log.info(`Operation injected at hash=${removeSaleOpHash}`);
-      $log.info(`alice tries to buy`);
-      await marketplaceAlice.methods
-        .buy(saleId)
-        .send({ amount: 1 });
-    } catch (error) {
-      $log.info(`alice couldn't buy`);
-    }
+    $log.info('starting sale...');
+    const bobSaleContract = await tezos.bob.contract.at(marketplace.address);
+    const sellOp = await bobSaleContract.methods
+      .sell(nft.address, tokenId, salePrice, tokenAmount)
+      .send({ amount: 0 });
+    $log.info(`Waiting for ${sellOp.hash} to be confirmed...`);
+    const sellOpHash = await sellOp.confirmation(1).then(() => sellOp.hash);
+    $log.info(`Operation injected at hash=${sellOpHash}`);
+    $log.info('bob cancels sale');
+    const removeSaleOp = await bobSaleContract.methods
+      .cancel(saleId)
+      .send({ amount: 0 });
+    $log.info(`Waiting for ${removeSaleOp.hash} to be confirmed...`);
+    const removeSaleOpHash = await removeSaleOp.confirmation(1).then(() => removeSaleOp.hash);
+    $log.info(`Operation injected at hash=${removeSaleOpHash}`);
+    $log.info(`alice tries to buy`);
+    const buyOp = marketplaceAlice.methods
+      .buy(saleId)
+      .send({ amount: 1 });
+    expect(buyOp).rejects.toHaveProperty('message', 'NO_SALE');
+
   });
 
   test('bob makes sale of two fts, and alice buys one', async () => {

@@ -63,74 +63,56 @@ describe.each([originateFixedPriceTezAdminSale])
 
   test('bob makes sale, and alice buys nft', async () => {
     const tokenAmount = new BigNumber(1);
-    try {
 
-      await mintTokens(tezos.bob, [
-        {
-          token_metadata: {
-            token_id: tokenId,
-            token_info: tokenMetadata,
-          },
-          owner: bobAddress,
-        },
-      ]);
-
-      const [aliceHasATokenBefore, bobHasATokenBefore] = await hasTokens([
-        { owner: aliceAddress, token_id: tokenId },
-        { owner: bobAddress, token_id: tokenId },
-      ], queryBalances, nft);
-      expect(aliceHasATokenBefore).toBe(false);
-      expect(bobHasATokenBefore).toBe(true);
-
-      $log.info('making marketplace an operator of bob\'s token');
-      await addOperator(nft.address, tezos.bob, marketAddress, tokenId);
-
-      const storage:any = await nft.storage();
-      const assets:any = await storage.assets;
-      const operators:any = await assets.operators;
-      $log.info(`operators ${JSON.stringify(operators, null, 2)}`);
-
-      $log.info('starting sale...');
-
-      $log.info('pause marketplace');
-      const pauseOp = await marketplace.methods.pause(true).send({ amount: 0 });
-      $log.info(`Waiting for ${pauseOp.hash} to be confirmed...`);
-      const pauseOpHash = await pauseOp.confirmation(1).then(() => pauseOp.hash);
-      $log.info(`Operation injected at hash=${pauseOpHash}`);
-
-      try
+    await mintTokens(tezos.bob, [
       {
-        $log.info(`Attempting to create sale while contract is paused`);
-        await marketplace.methods.sell(salePrice, nft.address, tokenId).send({ amount: 0 });
-      } catch (error) {$log.info(`Confirmation: Cannot create sale while contract is paused`);}
-
-      $log.info('unpause marketplace');
-      const unpauseOp = await marketplace.methods.pause(false).send({ amount: 0 });
-      $log.info(`Waiting for ${unpauseOp.hash} to be confirmed...`);
-      const unpauseOpHash = await unpauseOp.confirmation(1).then(() => unpauseOp.hash);
-      $log.info(`Operation injected at hash=${unpauseOpHash}`);
-
-      $log.info(`Creating sale`);
-      const sellOp = await marketplace.methods
-        .sell(salePrice, nft.address, tokenId, tokenAmount)
-        .send({ amount: 0 });
-      $log.info(`Waiting for ${sellOp.hash} to be confirmed...`);
-      const sellOpHash = await sellOp.confirmation(1).then(() => sellOp.hash);
-      $log.info(`Operation injected at hash=${sellOpHash}`);
-      $log.info('alice buys nft...');
-
-
-      // const aliceSaleContract = await tezos.alice.contract.at(marketplace.address);
-      const buyOp = await marketplaceAlice.methods
-        .buy(saleId)
-        .send({ amount: 1 });
-      $log.info(`Waiting for ${buyOp.hash} to be confirmed...`);
-      const buyOpHash = await buyOp.confirmation().then(() => buyOp.hash);
-      $log.info(`Operation injected at hash=${buyOpHash}`);
-
-    } catch (error) {
-      $log.info(`Error: ${JSON.stringify(error, null, 2)}`);
-    }
+        token_metadata: {
+          token_id: tokenId,
+          token_info: tokenMetadata,
+        },
+        owner: bobAddress,
+      },
+    ]);
+    const [aliceHasATokenBefore, bobHasATokenBefore] = await hasTokens([
+      { owner: aliceAddress, token_id: tokenId },
+      { owner: bobAddress, token_id: tokenId },
+    ], queryBalances, nft);
+    expect(aliceHasATokenBefore).toBe(false);
+    expect(bobHasATokenBefore).toBe(true);
+    $log.info('making marketplace an operator of bob\'s token');
+    await addOperator(nft.address, tezos.bob, marketAddress, tokenId);
+    const storage:any = await nft.storage();
+    const assets:any = await storage.assets;
+    const operators:any = await assets.operators;
+    $log.info(`operators ${JSON.stringify(operators, null, 2)}`);
+    $log.info('starting sale...');
+    $log.info('pause marketplace');
+    const pauseOp = await marketplace.methods.pause(true).send({ amount: 0 });
+    $log.info(`Waiting for ${pauseOp.hash} to be confirmed...`);
+    const pauseOpHash = await pauseOp.confirmation(1).then(() => pauseOp.hash);
+    $log.info(`Operation injected at hash=${pauseOpHash}`);
+    $log.info(`Attempting to create sale while contract is paused`);
+    const pausedSellOp = marketplace.methods.sell(nft.address, tokenId, salePrice, tokenAmount).send({ amount: 0 });
+    expect(pausedSellOp).rejects.toHaveProperty('message', 'PAUSED');
+    $log.info('unpause marketplace');
+    const unpauseOp = await marketplace.methods.pause(false).send({ amount: 0 });
+    $log.info(`Waiting for ${unpauseOp.hash} to be confirmed...`);
+    const unpauseOpHash = await unpauseOp.confirmation(1).then(() => unpauseOp.hash);
+    $log.info(`Operation injected at hash=${unpauseOpHash}`);
+    $log.info(`Creating sale`);
+    const sellOp = await marketplace.methods
+      .sell(nft.address, tokenId, salePrice, tokenAmount)
+      .send({ amount: 0 });
+    $log.info(`Waiting for ${sellOp.hash} to be confirmed...`);
+    const sellOpHash = await sellOp.confirmation(1).then(() => sellOp.hash);
+    $log.info(`Operation injected at hash=${sellOpHash}`);
+    $log.info('alice buys nft...');
+    const buyOp = await marketplaceAlice.methods
+      .buy(saleId)
+      .send({ amount: 1 });
+    $log.info(`Waiting for ${buyOp.hash} to be confirmed...`);
+    const buyOpHash = await buyOp.confirmation().then(() => buyOp.hash);
+    $log.info(`Operation injected at hash=${buyOpHash}`);
 
   });
 
@@ -156,37 +138,29 @@ describe.each([originateFixedPriceTezAdminSale])
     $log.info('making marketplace an operator of bob\'s token');
     await addOperator(nft.address, tezos.bob, marketAddress, tokenId);
 
-    try {
+    $log.info('starting sale...');
+    const sellOp = await marketplace.methods
+      .sell(nft.address, tokenId, salePrice, tokenAmount)
+      .send({ amount: 0 });
+    $log.info(`Waiting for ${sellOp.hash} to be confirmed...`);
+    const sellOpHash = await sellOp.confirmation().then(() => sellOp.hash);
+    $log.info(`Operation injected at hash=${sellOpHash}`);
 
-      $log.info('starting sale...');
-      const sellOp = await marketplace.methods
-        .sell(salePrice, nft.address, tokenId, tokenAmount)
-        .send({ amount: 0 });
-      $log.info(`Waiting for ${sellOp.hash} to be confirmed...`);
-      const sellOpHash = await sellOp.confirmation().then(() => sellOp.hash);
-      $log.info(`Operation injected at hash=${sellOpHash}`);
+    $log.info('alice cancels sale (not admin nor seller)');
+    const nonAdminCancelOp = marketplaceAlice.methods.cancel(saleId).send({ amount: 0 });
+    expect(nonAdminCancelOp).rejects.toHaveProperty('message', 'NOT_AN_ADMIN OR A SELLER');
 
-      try
-      {
-        $log.info('alice cancels sale (not admin nor seller)');
-        await marketplaceAlice.methods.cancel(saleId).send({ amount: 0 });
-      } catch (error) {
-        $log.info(`Alice cannot cancel sale, since she is not an admin`);
-      }
-
-      $log.info('bob cancels sale');
-      const removeSaleOp = await marketplace.methods
-        .cancel(saleId)
-        .send({ amount: 0 });
-      $log.info(`Waiting for ${removeSaleOp.hash} to be confirmed...`);
-      const removeSaleOpHash = await removeSaleOp.confirmation(1).then(() => removeSaleOp.hash);
-      $log.info(`Operation injected at hash=${removeSaleOpHash}`);
-      $log.info(`alice tries to buy`);
-      await marketplaceAlice.methods.buy(saleId).send({ amount: 1 });
-    } catch (error) {
-      $log.info(`alice cannot buy`);
-    }
-
+    $log.info('bob cancels sale');
+    const removeSaleOp = await marketplace.methods
+      .cancel(saleId)
+      .send({ amount: 0 });
+    $log.info(`Waiting for ${removeSaleOp.hash} to be confirmed...`);
+    const removeSaleOpHash = await removeSaleOp.confirmation(1).then(() => removeSaleOp.hash);
+    $log.info(`Operation injected at hash=${removeSaleOpHash}`);
+    $log.info(`alice tries to buy`);
+    const buyOp = marketplaceAlice.methods.buy(saleId).send({ amount: 1 });
+    expect(buyOp).rejects.toHaveProperty('message', 'NO_SALE');
+    $log.info(`Alice is unable to buy cancelled sale`);
   });
 
 });
