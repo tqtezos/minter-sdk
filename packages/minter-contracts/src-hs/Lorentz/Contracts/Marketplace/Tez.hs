@@ -49,8 +49,8 @@ deriving anyclass instance HasAnnotation SaleParamTez
 
 data MarketplaceTezStorage = MarketplaceTezStorage
   { admin :: AdminStorage
-  , nextSaleId :: SaleId
   , sales :: BigMap SaleId SaleParamTez
+  , nextSaleId :: SaleId
   }
 
 customGeneric "MarketplaceTezStorage" ligoCombLayout
@@ -58,7 +58,7 @@ deriving anyclass instance IsoValue MarketplaceTezStorage
 deriving anyclass instance HasAnnotation MarketplaceTezStorage
 
 initMarketplaceTezStorage :: AdminStorage -> MarketplaceTezStorage
-initMarketplaceTezStorage as = MarketplaceTezStorage as (SaleId 0) mempty
+initMarketplaceTezStorage as = MarketplaceTezStorage as mempty (SaleId 0) 
 
 data MarketplaceTezEntrypoints
   = Sell SaleDataTez

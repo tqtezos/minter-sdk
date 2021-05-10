@@ -8,13 +8,13 @@
   storage
     (pair (option %admin
              (pair (pair (address %admin) (bool %paused)) (option %pending_admin address)))
-          (pair (nat %next_sale_id)
-                (big_map %sales
+          (pair (big_map %sales
                    nat
                    (pair (address %seller)
                          (pair %sale_data
                             (pair %sale_token (address %fa2_address) (nat %token_id))
-                            (pair (mutez %price) (nat %amount))))))) ;
+                            (pair (mutez %price) (nat %amount)))))
+                (nat %next_sale_id))) ;
   code { LAMBDA
            (option (pair (pair address bool) (option address)))
            unit
@@ -147,7 +147,7 @@
                  DUP ;
                  DUG 2 ;
                  CDR ;
-                 CDR ;
+                 CAR ;
                  SWAP ;
                  DUP ;
                  DUG 2 ;
@@ -217,14 +217,14 @@
                       DROP ;
                       DUP 3 ;
                       CDR ;
-                      CDR ;
+                      CAR ;
                       DIG 2 ;
                       NONE (pair address (pair (pair address nat) (pair mutez nat))) ;
                       SWAP ;
                       UPDATE }
                     { DUP 4 ;
                       CDR ;
-                      CDR ;
+                      CAR ;
                       PUSH nat 1 ;
                       DUP 4 ;
                       CDR ;
@@ -249,7 +249,8 @@
                       UPDATE } ;
                  DUP 3 ;
                  CDR ;
-                 CAR ;
+                 CDR ;
+                 SWAP ;
                  PAIR ;
                  DIG 2 ;
                  CAR ;
@@ -277,7 +278,7 @@
                  DUP ;
                  DUG 2 ;
                  CDR ;
-                 CDR ;
+                 CAR ;
                  SWAP ;
                  DUP ;
                  DUG 2 ;
@@ -327,13 +328,13 @@
                      DUP 3 ;
                      CDR ;
                      CDR ;
-                     DIG 2 ;
+                     DUP 4 ;
+                     CDR ;
+                     CAR ;
+                     DIG 3 ;
                      NONE (pair address (pair (pair address nat) (pair mutez nat))) ;
                      SWAP ;
                      UPDATE ;
-                     DUP 3 ;
-                     CDR ;
-                     CAR ;
                      PAIR ;
                      DIG 2 ;
                      CAR ;
@@ -386,30 +387,31 @@
                  PAIR ;
                  DUP 3 ;
                  CDR ;
-                 CAR ;
+                 CDR ;
                  DUP 4 ;
                  CDR ;
                  CDR ;
-                 DUG 2 ;
-                 DUP ;
-                 DUG 3 ;
+                 DUP 5 ;
+                 CDR ;
+                 CAR ;
+                 DIG 3 ;
+                 DUP 4 ;
                  SWAP ;
                  SOME ;
                  SWAP ;
                  UPDATE ;
-                 DUP 4 ;
-                 CDR ;
-                 CAR ;
                  PAIR ;
                  DIG 3 ;
                  CAR ;
                  PAIR ;
-                 DUP ;
-                 CDR ;
-                 CDR ;
                  PUSH nat 1 ;
-                 DIG 3 ;
+                 DIG 2 ;
                  ADD ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CDR ;
+                 CAR ;
                  PAIR ;
                  SWAP ;
                  CAR ;

@@ -23,8 +23,8 @@ type storage =
 [@layout:comb]
 {
   admin: pauseable_admin_storage;
-  next_sale_id : sale_id;
   sales: (sale_id, sale_tez) big_map;
+  next_sale_id : sale_id;
 }
 
 #else 
@@ -33,8 +33,8 @@ type storage =
 [@layout:comb]
 {
   admin: pauseable_admin_storage;
-  next_sale_id : sale_id;
   sales: (sale_id, sale_tez) big_map;
+  next_sale_id : sale_id;
   fee : fee_data;
 }
 
