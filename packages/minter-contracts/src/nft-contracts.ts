@@ -139,7 +139,7 @@ export async function originateFixedPriceSale(
 export async function originateFixedPriceTezSale(
   tz: TezosToolkit,
 ): Promise<Contract> {
-  const storage = `(Pair None (Pair 0 {}))`;
+  const storage = `(Pair None (Pair {} 0))`;
   return originateContract(tz, FixedPriceSaleMarketTezCode.code, storage, 'fixed-price-sale-market-tez');
 }
 
