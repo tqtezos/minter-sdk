@@ -65,11 +65,7 @@
                  PAIR ;
                  CONS ;
                  TRANSFER_TOKENS } } ;
-         LAMBDA
-           (pair (pair address (big_map address unit)) string)
-           unit
-           { UNPAIR ; UNPAIR ; GET ; IF_NONE { FAILWITH } { SWAP ; DROP } } ;
-         DIG 4 ;
+         DIG 3 ;
          UNPAIR ;
          IF_LEFT
            { SWAP ;
@@ -80,37 +76,16 @@
              DUP ;
              DUG 2 ;
              IF_LEFT
-               { SWAP ;
-                 DROP ;
-                 DIG 3 ;
-                 DROP ;
-                 IF_LEFT { DROP ; UNIT } { DROP ; UNIT } }
+               { SWAP ; DROP ; IF_LEFT { DROP ; UNIT } { DROP ; UNIT } }
                { IF_LEFT
-                   { DROP 2 ; DIG 2 ; DROP ; UNIT }
+                   { DROP 2 ; UNIT }
                    { PUSH string "SALE_ADDRESS_NOT_ALLOWED" ;
-                     DUP 3 ;
-                     DUP 3 ;
-                     CDR ;
-                     CAR ;
-                     CAR ;
-                     PAIR ;
-                     PAIR ;
-                     DUP 6 ;
-                     SWAP ;
-                     EXEC ;
-                     DROP ;
-                     PUSH string "MONEY_ADDRESS_NOT_ALLOWED" ;
                      DUG 2 ;
                      CDR ;
-                     CDR ;
                      CAR ;
                      CAR ;
-                     PAIR ;
-                     PAIR ;
-                     DIG 3 ;
-                     SWAP ;
-                     EXEC ;
-                     DROP ;
+                     GET ;
+                     IF_NONE { FAILWITH } { DROP 2 } ;
                      UNIT } } ;
              DROP ;
              SWAP ;
@@ -476,8 +451,6 @@
              SWAP ;
              PAIR }
            { DIG 2 ;
-             DROP ;
-             DIG 2 ;
              DROP ;
              DIG 2 ;
              DROP ;

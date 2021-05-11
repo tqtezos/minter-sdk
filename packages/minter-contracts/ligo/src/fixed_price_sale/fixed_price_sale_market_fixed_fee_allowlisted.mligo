@@ -14,7 +14,6 @@ let check_allowed_param (param, allowlist : market_entry_points * allowlist) : u
   match param with
   | Sell p -> begin
       check_address_allowed (p.sale_token.fa2_address, allowlist, "SALE_ADDRESS_NOT_ALLOWED");
-      check_address_allowed (p.money_token.fa2_address, allowlist, "MONEY_ADDRESS_NOT_ALLOWED");
       unit
       end
   | Buy p -> unit
