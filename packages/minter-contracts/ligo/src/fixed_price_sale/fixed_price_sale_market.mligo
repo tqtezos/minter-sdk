@@ -126,4 +126,15 @@ let fixed_price_sale_main (p, storage : market_entry_points * storage) : operati
     let ops, admin = pauseable_admin(a, storage.admin) in
     let new_storage = { storage with admin = admin; } in
     ops, new_storage
-  
+
+(*VIEWS*)
+let rec activeSalesHelper (active_sales, sale_id, s : (sale list) * sale_id * storage) 
+  : (sale list) = 
+  (if sale_id > s.next_sale_id 
+  then active_sales
+  else ( match (Big_map.find_opt sale_id s.sales) with 
+    | Some sale -> activeSalesHelper((sale :: active_sales), sale_id + 1n, s)
+    | None -> activeSalesHelper(active_sales, sale_id + 1n, s)))
+
+let getActiveSales (initial_sale_id , s : sale_id * storage) : (sale list) = 
+  (activeSalesHelper (([] : sale list), initial_sale_id,  s))
