@@ -1,8 +1,7 @@
 -- | Lorentz bindings for the fixed price sale contract (FA2 version).
 module Lorentz.Contracts.Marketplace.FA2FixedFee
   ( -- * Types
-    FeeData(..)
-  , MarketFA2.SaleId(..)
+    MarketFA2.SaleId(..)
   , MarketFA2.SaleToken(..)
   , MarketFA2.MoneyToken(..)
   , MarketFA2.SaleData(..)
@@ -28,16 +27,6 @@ import qualified Lorentz.Contracts.NoAllowlist as NoAllowlist
 
 -- Types
 ----------------------------------------------------------------------------
-
-data FeeData = FeeData
-  { feeAddress :: Address
-  , feePercent :: Natural
-  }
-
-customGeneric "FeeData" rightComb
-deriving anyclass instance IsoValue FeeData
-deriving anyclass instance HasAnnotation FeeData
-instance Buildable FeeData where build = genericF
 
 data MarketplaceStorage al = MarketplaceStorage
   { sales :: BigMap MarketFA2.SaleId MarketFA2.SaleParam

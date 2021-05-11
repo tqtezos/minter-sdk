@@ -3,6 +3,7 @@ module Lorentz.Contracts.EnglishAuction.FA2 where
 
 import Lorentz
 
+import Fmt (Buildable(..), genericF)
 import qualified Lorentz.Contracts.AllowlistSimple as AllowlistSimple
 import qualified Lorentz.Contracts.AllowlistToken as AllowlistToken
 import Lorentz.Contracts.MinterSdk
@@ -16,17 +17,19 @@ import qualified Michelson.Typed as T
 ----------------------------------------------------------------------------
 
 newtype AuctionId = AuctionId Natural
-  deriving stock (Generic, Eq, Ord)
-  deriving newtype (IsoValue, HasAnnotation)
+  deriving stock (Generic, Eq, Ord, Show)
+  deriving newtype (IsoValue, HasAnnotation, Buildable)
 
 data FA2Token = FA2Token
   { tokenId :: TokenId
   , amount :: Natural
   }
+  deriving stock (Eq, Show)
 
 customGeneric "FA2Token" ligoCombLayout
 deriving anyclass instance IsoValue FA2Token
 deriving anyclass instance HasAnnotation FA2Token
+instance Buildable FA2Token where build = genericF
 
 data Tokens = Tokens
   { fa2Address :: Address
@@ -36,6 +39,7 @@ data Tokens = Tokens
 customGeneric "Tokens" ligoCombLayout
 deriving anyclass instance IsoValue Tokens
 deriving anyclass instance HasAnnotation Tokens
+instance Buildable Tokens where build = genericF
 
 data BidCurrency = BidCurrency
   { fa2Address :: Address
@@ -45,6 +49,7 @@ data BidCurrency = BidCurrency
 customGeneric "BidCurrency" ligoCombLayout
 deriving anyclass instance IsoValue BidCurrency
 deriving anyclass instance HasAnnotation BidCurrency
+instance Buildable BidCurrency where build = genericF
 
 data Auction = Auction
   { seller :: Address
@@ -63,6 +68,7 @@ data Auction = Auction
 customGeneric "Auction" ligoCombLayout
 deriving anyclass instance IsoValue Auction
 deriving anyclass instance HasAnnotation Auction
+instance Buildable Auction where build = genericF
 
 data ConfigureParam = ConfigureParam
   { openingPrice :: Natural
@@ -106,7 +112,7 @@ data AuctionStorage al = AuctionStorage
   , maxAuctionTime :: Natural
   , maxConfigToStartTime :: Natural
   , bidCurrency :: BidCurrency
-  , auctions :: BigMap Natural Auction
+  , auctions :: BigMap AuctionId Auction
   , allowlist :: al
   }
 
