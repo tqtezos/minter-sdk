@@ -148,7 +148,7 @@ describe.each([originateFixedPriceTezAdminSale])
 
     $log.info('alice cancels sale (not admin nor seller)');
     const nonAdminCancelOp = marketplaceAlice.methods.cancel(saleId).send({ amount: 0 });
-    expect(nonAdminCancelOp).rejects.toHaveProperty('message', 'NOT_AN_ADMIN OR A SELLER');
+    expect(nonAdminCancelOp).rejects.toHaveProperty('message', 'NOT_AN_ADMIN_OR_A_SELLER');
 
     $log.info('bob cancels sale');
     const removeSaleOp = await marketplace.methods

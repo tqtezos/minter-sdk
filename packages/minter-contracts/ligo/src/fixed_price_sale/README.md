@@ -1,7 +1,9 @@
 # Fixed Price Sale
 
 The contracts titled `fixed_price_sale_market.mligo` and
-`fixed_price_sale_market_tez.mligo` allow NFT sales for a fixed price in FA2 tokens or tez respectively.
+`fixed_price_sale_market_tez.mligo` allow NFT and Fungible Edition Set sales for a fixed price in FA2 tokens or tez respectively. 
+
+If the contract is used for the sale of a Fungible Edition set, the seller will specify a set of N fungible editions (sharing the same FA2 `token id`) and the contract will sell each edition at the same specified price until all are sold out. 
 
 ## <a name="storage-section"></a> Storage
 
@@ -15,9 +17,12 @@ contract. We will refer to the contract
 The contract's storage is:
 
 ``` ocaml
-type storage = {
+type storage = 
+[@layout:comb]
+{
     admin: pauseable_admin_storage;
-    sales: (sale_param, nat) big_map;
+    sales: (sale_id, sale) big_map;
+    next_sale_id : sale_id;
 }
 ```
 
@@ -38,37 +43,44 @@ The `admin` storage fields are used by the [admin entrypoints](#admin-entrypoint
 The second field of this record`sales`is a big_map
 of currently active sales that the fixed price sale contract is hosting. A sale
 is "currently active" after a seller has initiated it up until  the point 
-that it is bought by some user for its asking price. The key of this big_map is a record
-type uniquely specifying an active sale (excluding its sale price). Its definition
-is:
+that it is bought by some user for its asking price. The key of this big_map is a unique `sale_id` of type `nat` that identifies a given sale. Storage variable `next_sale_id` is used as the `sale_id` each time a sale is initiated, and then incremented by 1. The value in the `sales` bigmap for a given `sale_id` is some record of type
 
 ``` ocaml
-type sale_tokens_param =
-[@layout:comb]
-{
- token_for_sale_address: address;
- token_for_sale_token_id: token_id;
- money_token_address: address;
- money_token_token_id: token_id;
-}
-
-type sale_param =
+type sale =
 [@layout:comb]
 {
   seller: address;
-  tokens: sale_tokens_param;
+  sale_data: sale_data;
+}
+```
+where 
+
+``` ocaml
+type sale_data =
+[@layout:comb]
+{
+  sale_price: nat;
+  sale_token : global_token_id;
+  money_token : global_token_id;
+  amount : nat;
 }
 ```
 
-The record `sale_param` contains the address of the sale's seller and the sale's
-parameters (which has type `sale_token_param`). The sale's parameters correspond
-to the address and token identifier of the NFT for sale and the address and
-token identifier of the FA2 token used as the sale's trade currency. The
-corresponding fields are respectively, `token_for_sale_address`,
-`token_for_sale_token_id`, `money_token_address` and `money_token_token_id`.
+and 
 
-The value of each entry in the big_map (`sales`) is the number of FA2 tokens that the seller
-requests for the NFT. 
+``` ocaml
+type global_token_id =
+  [@layout:comb]
+  {
+      fa2_address : address;
+      token_id : token_id;
+  }
+```
+
+The record `sale` contains the address of the sale's seller and the sale's
+parameters (which has type `sale_data`). The sale's parameters correspond
+to the sale_price represented by some `nat` amount of an FA2, the address and token identifier of the NFT for sale (`sale_token`), the address and token identifier of the FA2 token used as the sale's trade currency (`money_token`), and the number of tokens available for the given price (`amount`). 
+
 
 ### <a name="sale-tez-section"></a>`SALE_TEZ` Storage
 
@@ -79,29 +91,30 @@ type storage =
 [@layout:comb]
 {
   admin: pauseable_admin_storage;
-  sales: (sale_param_tez, tez) big_map;
+  sales: (sale_id, sale_tez) big_map;
+  next_sale_id : sale_id;
 }
 ```
-Like before, we keep a "record" of currently active sales. Unlike before, the
-value of each entry in the big_map is an NFT's price, but specified in tez
-instead of FA2 tokens. The key (type = `sale_param_tez`) is the sale's parameters, but now we do not have to include an FA2 address and Token_id pair to specify the token for which bidding will take place in:
+The storage is almost the same as in the `FA2` version but now we do not have to include an FA2 address and token_id pair to specify the token for which bidding will take place in:
 
 ``` ocaml
-type sale_token_param_tez =
-[@layout:comb]
-{
- token_for_sale_address: address;
- token_for_sale_token_id: token_id;
-}
-
-type sale_param_tez =
+type sale_tez =
 [@layout:comb]
 {
   seller: address;
-  sale_token: sale_token_param_tez;
+  sale_data: sale_data;
 }
-
 ```
+where 
+
+``` ocaml
+type sale_data_tez =
+[@layout:comb]
+{
+  sale_price: nat;
+  sale_token : global_token_id;
+  amount : nat;
+}
 
 ## <a name="entrypoints-section"></a> Entrypoints
 
@@ -112,9 +125,9 @@ The entrypoints for [`SALE_FA2`](#sale_fa2-storage) are:
 
 ``` ocaml
 type market_entry_points =
-  | Sell of init_sale_param
-  | Buy of sale_param
-  | Cancel of sale_param
+  | Sell of sale_data
+  | Buy of sale_id
+  | Cancel of sale_id
   | Admin of pauseable_admin
 
 ```
@@ -123,49 +136,43 @@ and the entrypoints for [`SALE_TEZ`](#sale_tez-storage) are:
 
 ``` ocaml
 type market_entry_points =
-  | Sell of init_sale_param_tez
-  | Buy of sale_param_tez
-  | Cancel of sale_param_tez
+  | Sell of sale_data_tez
+  | Buy of sale_id
+  | Cancel of sale_id
   | Admin of pauseable_admin
 
 ```
 
 ### %sell
 
-An admin can call the `sell` entrypoint in order to sell an NFT that they own. They specify the NFT they would like to sell with the fields `token_for_sale_address` and `token_for_sale_token_id.` In the FA2 version of the contract, they also specify th FA2 token for which they would like the NFT to be purchased with using the fields `money_token_address` and `money_token_token_id`. They also specify the amount of the FA2 they would like to receive in exchange for their NFT using the `sale_price` field. 
+If an admin is enabled, the admin can call the `sell` entrypoint in order to sell an NFT/FT Edition set that they own. If a non admin calls the entrypoint and admin capabilites are configured, the call will fail with `NOT_AN_ADMIN,` Otherwise, when admin capabilites are not configured any address can call the entrypoint. They specify the token(s) they would like to sell with the `sale_token`. In the FA2 version of the contract, they also specify th FA2 token for which they would like the NFT to be purchased with using `money_token`. 
 
-``` ocaml
-type init_sale_param =
-[@layout:comb]
-{
-  sale_price: nat;
-  sale_tokens_param: sale_tokens_param;
-}
-```
+They also specify the amount of the FA2 they would like to receive in exchange for each token using the `sale_price` field and the number of tokens (which share the same FA2 `token-id`) using `amount`. In this way, the contract can be used to sell a set of fungible tokens which are used to represent an Edition set. Each token is listed for the same price, and they are bought individually. As these tokens share the same `token-id` they are not an NFT Edition set, but rather a set of the same fungible tokens being used to represent an Edition set.  
 
 Before making the call to `sell`, the seller must first add the Fixed price contract as an operator for their NFT, by calling the `Update_operators` entrypoint of the FA2 contract for which the NFT is defined in, and passing the NFT token_id. 
 
-The call to `sell` will fail if the caller is not an `admin`, if the Fixed price contract was not correctly added as an operator for the NFT, or if the seller does not in fact own the NFT they specify.
+The call to `sell` will fail if the caller is not an `admin` (in the case that admin functionality is enabled), if the fixed price contract was not correctly added as an operator for the NFT, or if the seller does not in fact own the NFT they specify.
 
 If the call to `sell` succeeds, the Fixed price contract will have transferred the NFT to itself and will hold it in escrow until it is either purchased or the seller cancels the sale. It will also keep in storage a record of the sale until the sale is over.
 
 ### %buy
 
-A user calls this entrypoint in order to buy an item for sale in the contract. A buyer will specify the NFT they would like to purchase as well as provide the required funds. In the tez version of the contract, they will attach the required amount in tez to the call to `buy.` In the FA2 version of the contract, they will instead add the Fixed price sale contract as an opperator for the token they would like to place bids in and only then call the `buy` entrypoint. 
+A user calls this entrypoint in order to buy an item for sale in the contract. A buyer will specify the token they would like to purchase as well as provide the required funds. In the tez version of the contract, they will attach the required amount in tez to the call to `buy.` In the FA2 version of the contract, they will instead add the Fixed price sale contract as an opperator for the token they would like to place bids in and only then call the `buy` entrypoint. 
 
 The call will fail if the caller does not have the required funds or if they did not correctly add the Fixed price sale contract as an operator. If the contract is paused, the call to `buy` will fail as well. 
 
-If the call to `buy` succeeds, the Fixed price contract will have first initiated a transfer of the funds from buyer to seller. In the Tez version of the contract, this amounts to sending the buying price in tez to the seller. In the FA2 version, the Fixed Price contract will call the FA2 `transfer` entrypoint and transfer the correct number of tokens from buyer to seller. Next, the Fixed price contract will have transferred the NFT from itself to the buyer by calling the FA2 transfer entrypoint. It will also delete the big map record of the sale. If any of these steps failed, the call to `buy` necessarily failed as well.
+If the call to `buy` succeeds, the Fixed price contract will have first initiated a transfer of the funds from buyer to seller. In the Tez version of the contract, this amounts to sending the buying price in tez to the seller. In the FA2 version, the Fixed Price contract will call the FA2 `transfer` entrypoint and transfer the correct number of tokens from buyer to seller. Next, the Fixed price contract will have transferred the token from itself to the buyer by calling the FA2 transfer entrypoint. 
+
+The contract will decrement the `amount` by 1 if the sale was advertising a FT edition set. If `amount == 0` at the end of the purchase (in the case of an NFT sale, or when all the tokens in the FT Edition set have been sold), the contract will also delete the big map record of the sale. If any of these steps failed, the call to `buy` necessarily failed as well.
 
 ### %cancel
 
 If the contract is not paused, a seller or an administrator can
 cancel an active sale (initiated by the seller). They simply specify the sale they
-would like to cancel. Their call will fail if they are not the seller or admin, 
-if the sale they specify does not exist. 
+would like to cancel. Their call will fail if they are not the seller or admin with `NOT_AN_ADMIN_OR_A_SELLER`, or if the sale they specify does not exist with `NO_SALE`. If no admin is configured, only the seller can cancel their active sale. A `cancel` attempt by a non-seller will fail with `NOT_AN_ADMIN_OR_A_SELLER` as well. 
 
 Upon a sale's successful cancellation, the fixed price
-sale contract transfers the NFT back to the seller and
+sale contract transfers the token(s) back to the seller and
 deletes the record of the cancelled sale.
 
 ### %admin entrypoints
@@ -175,6 +182,8 @@ An `admin` can pause/unpause the contract, guard other operations to be invoked 
    some specified address.
 *  `confirm_admin` - If set_admin entrypoint was successfully run, the `pending_admin` set by the admin in that step calls this entrypoint to confirm themself as admin. 
 *  `pause` - pause/unpause the contract. When the contract is paused any entrypoint other than these 3 admin entrypoints will fail with `PAUSED`.
+
+Any call to these entrypoints will fail with `NOT_AN_ADMIN` if admin capabilites are enabled, and will fail with `NO_ADMIN_CAPABILITIES_CONFIGURED` if the contract was not originated with admin capabilites. 
 
 <a name="allowlisted-extension"></a>
 ## Allowlisted extension
@@ -217,3 +226,19 @@ Respective allowlisted contract is [`fixed_price_sale_market_tez_allowlisted.mli
 * `Sell` entrypoint fails with `SALE_ADDRESS_NOT_ALLOWED` in case any `token_for_sale_address` is not from the allowed list.
 
 Other entrypoints are not modified.
+
+<a name="Fixed-fee-extension"></a>
+## Fixed Fee extension
+
+The `fixed_fee` contract versions allow for the configuration of a fixed perecent of any sale to be paid to a fixed address. 
+
+``` ocaml
+type fee_data = 
+  [@layout:comb]
+  {
+    fee_address : address;
+    fee_percent : nat;
+  }
+```
+
+`fee_percent` is a nat between 0 and 100 representing the percent of the sale to be paid to the `fee_address`. If `fee_percent > 100`, the `sell` and `buy` entrypoints will both fail with `FEE_TOO_HIGH`.  
