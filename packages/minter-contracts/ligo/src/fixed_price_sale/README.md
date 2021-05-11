@@ -241,4 +241,4 @@ type fee_data =
   }
 ```
 
-`fee_percent` is a nat between 0 and 100 representing the percent of the sale to be paid to the `fee_address`. If `fee_percent > 100`, the `sell` and `buy` entrypoints will both fail with `FEE_TOO_HIGH`.  
+`fee_percent` is a nat between 0 and 100 representing the percent of the sale to be paid to the `fee_address`. If `fee_percent > 100`, the `sell` and `buy` entrypoints will both fail with `FEE_TOO_HIGH`.  Fee is calculated as `((fee_percent * price) / 100)`. 

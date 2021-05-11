@@ -75,7 +75,7 @@ let buy_token(sale_id, storage: sale_id * storage) : (operation list * storage) 
        tx_price :: oplist 
      else oplist) in 
 #else 
-  let fee : tez = percent_of_bid_tez (storage.fee.fee_percent, sale_price) in
+  let fee : tez = percent_of_price_tez (storage.fee.fee_percent, sale_price) in
   let u : unit = assert_msg(sale_price >= fee, "FEE_TO_HIGH") in
   let sale_price_minus_fee : tez = sale_price - fee in
   let oplist = 

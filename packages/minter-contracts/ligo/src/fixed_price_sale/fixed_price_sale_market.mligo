@@ -65,7 +65,7 @@ let buy_token(sale_id, storage: sale_id * storage) : (operation list * storage) 
   let tx_price = transfer_fa2(money_token_address, money_token_id, sale_price, Tezos.sender, seller) in
   let oplist : operation list = [tx_price; tx_nft] in 
 #else 
-  let fee : nat = percent_of_bid_nat (storage.fee.fee_percent, sale_price) in
+  let fee : nat = percent_of_price_nat (storage.fee.fee_percent, sale_price) in
   let sale_price_minus_fee : nat =  (match (is_nat (sale_price - fee)) with 
     | Some adjusted_price -> adjusted_price 
     | None -> (failwith "FEE_TOO_HIGH" : nat)) in

@@ -320,7 +320,7 @@
                          COMPARE ;
                          EQ ;
                          IF { PUSH unit Unit }
-                            { PUSH string "OR A SELLER" ;
+                            { PUSH string "OR_A_SELLER" ;
                               DUP 5 ;
                               CAR ;
                               IF_NONE
@@ -330,7 +330,7 @@
                                   SENDER ;
                                   COMPARE ;
                                   NEQ ;
-                                  IF { PUSH string " " ; CONCAT ; PUSH string "NOT_AN_ADMIN" ; CONCAT ; FAILWITH }
+                                  IF { PUSH string "_" ; CONCAT ; PUSH string "NOT_AN_ADMIN" ; CONCAT ; FAILWITH }
                                      { DROP ; UNIT } } } ;
                          DROP ;
                          SELF_ADDRESS ;

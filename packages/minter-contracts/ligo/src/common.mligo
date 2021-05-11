@@ -34,6 +34,7 @@ type global_token_id =
 
 (*MATH*) 
 
+(*In English auction it is necessary to use ceiling so that bid is guaranteed to be raised*)
 let ceil_div_nat (numerator, denominator : nat * nat) : nat = abs ((- numerator) / (int denominator))
 
 let percent_of_bid_nat (percent, bid : nat * nat) : nat = 
@@ -50,6 +51,13 @@ let ceil_div_tez (tz_qty, nat_qty : tez * nat) : tez =
 let percent_of_bid_tez (percent, bid : nat * tez) : tez = 
   (ceil_div_tez (bid *  percent, 100n))
 
+(*In Fixed Price sale normal division is used to calculate fee*)
+
+let percent_of_price_tez (percent, price : nat * tez) : tez = 
+  ((price * percent)/ 100n) 
+
+let percent_of_price_nat (percent, price : nat * nat) : nat = 
+  ((price * percent)/ 100n) 
 
 (*HELPERS*)
 
