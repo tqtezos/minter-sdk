@@ -183,7 +183,7 @@ let sample_storage : storage =
 (*VIEWS*)
 let rec activeSalesHelper (active_sales, sale_id, s : (sale_tez list) * sale_id * storage) 
   : (sale_tez list) = 
-  (if sale_id > s.next_sale_id 
+  (if sale_id >= s.next_sale_id 
   then active_sales
   else ( match (Big_map.find_opt sale_id s.sales) with 
     | Some sale -> activeSalesHelper((sale :: active_sales), sale_id + 1n, s)

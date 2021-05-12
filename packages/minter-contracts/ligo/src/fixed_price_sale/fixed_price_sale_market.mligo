@@ -130,7 +130,7 @@ let fixed_price_sale_main (p, storage : market_entry_points * storage) : operati
 (*VIEWS*)
 let rec activeSalesHelper (active_sales, sale_id, s : (sale list) * sale_id * storage) 
   : (sale list) = 
-  (if sale_id > s.next_sale_id 
+  (if sale_id >= s.next_sale_id 
   then active_sales
   else ( match (Big_map.find_opt sale_id s.sales) with 
     | Some sale -> activeSalesHelper((sale :: active_sales), sale_id + 1n, s)
