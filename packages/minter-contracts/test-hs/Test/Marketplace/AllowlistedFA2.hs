@@ -52,24 +52,6 @@ test_AllowlistChecks = allowlistChecks
                 , tokenAmount = 1
                 }
         }
-
-      , AllowlistRestrictionCase
-        { allowlistError = moneyAddressNotAllowed
-        , allowlistRunRestrictedAction = \(alice, tokenId, allowedFA2) market fa2 ->
-            withSender alice $
-              call market (Call @"Sell") SaleData
-                { salePricePerToken = 1
-                , saleToken = SaleToken
-                    { fa2Address = toAddress allowedFA2
-                    , tokenId = tokenId
-                    }
-                , moneyToken = MoneyToken
-                  {   fa2Address = toAddress fa2
-                    , tokenId = tokenId
-                  }
-                , tokenAmount = 1
-                }
-        }
       ]
 
   , allowlistAlwaysIncluded = \(_, _, allowedFA2) -> [allowedFA2]

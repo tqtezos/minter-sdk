@@ -188,7 +188,7 @@ Any call to these entrypoints will fail with `NOT_AN_ADMIN` if admin capabilites
 <a name="allowlisted-extension"></a>
 ## Allowlisted extension
 
-Some contract versions allow restricting the set of FA2 contracts that can participate in them.
+Some contract versions allow restricting the set of FA2 contracts that can be used for `Sale_tokens`. Only tokens from specifically defined contracts can be sold in these versions of the contract. 
 
 <a name="allowlist-entrypoints"></a>
 ### Entrypoints
@@ -215,7 +215,6 @@ Respective allowlisted contract is [`fixed_price_sale_market_allowlisted.mligo`]
 
 * `Sell` entrypoint fails
   + with `SALE_ADDRESS_NOT_ALLOWED` in case any `token_for_sale_address` is not from the allowed list;
-  + with `MONEY_ADDRESS_NOT_ALLOWED` in case any `money_token_address` is not from the allowed list;
 
 Other entrypoints are not modified.
 
@@ -241,4 +240,4 @@ type fee_data =
   }
 ```
 
-`fee_percent` is a nat between 0 and 100 representing the percent of the sale to be paid to the `fee_address`. If `fee_percent > 100`, the `sell` and `buy` entrypoints will both fail with `FEE_TOO_HIGH`.  Fee is calculated as `((fee_percent * price) / 100)`. 
+`fee_percent` is a nat between 0 and 100 representing the percent of the sale to be paid to the `fee_address`. If `fee_percent > 100`, the `sell` and `buy` entrypoints will both fail with `FEE_TOO_HIGH`.  Fee is subtracted from the buying price and is calculated as `((fee_percent * price) / 100)`. For example, if an NFT is listed for 100tz, and `fee_percent := 30` then 70tz will be sent to the seller and 30tz will be sent to the `fee_address`.
