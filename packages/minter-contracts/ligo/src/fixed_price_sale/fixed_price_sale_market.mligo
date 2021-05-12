@@ -112,12 +112,12 @@ let fixed_price_sale_main (p, storage : market_entry_points * storage) : operati
      let v : unit = assert_msg (storage.fee.fee_percent <= 100n, "FEE_TOO_HIGH") in
 #endif
      let w : unit = fail_if_not_admin(storage.admin) in
-#if FEE
-     let v : unit = assert_msg (storage.fee.fee_percent <= 100n, "FEE_TOO_HIGH") in
-#endif
      deposit_for_sale(sale_data, storage)
   | Buy sale_id ->
      let u : unit = fail_if_paused(storage.admin) in
+#if FEE
+     let v : unit = assert_msg (storage.fee.fee_percent <= 100n, "FEE_TOO_HIGH") in
+#endif
      buy_token(sale_id, storage)
   | Cancel sale_id ->
      let u : unit = fail_if_paused(storage.admin) in

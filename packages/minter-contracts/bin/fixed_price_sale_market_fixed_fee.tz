@@ -68,10 +68,10 @@
          DIG 4 ;
          UNPAIR ;
          IF_LEFT
-           { DIG 3 ;
-             DROP ;
-             IF_LEFT
+           { IF_LEFT
                { DIG 2 ;
+                 DROP ;
+                 DIG 2 ;
                  DROP ;
                  DIG 2 ;
                  DROP ;
@@ -131,12 +131,26 @@
                  PAIR ;
                  SWAP ;
                  PAIR }
-               { DIG 4 ;
+               { DIG 5 ;
                  DROP ;
                  SWAP ;
                  DUP ;
                  DUG 2 ;
                  CAR ;
+                 DIG 5 ;
+                 SWAP ;
+                 EXEC ;
+                 DROP ;
+                 PUSH string "FEE_TOO_HIGH" ;
+                 PUSH nat 100 ;
+                 DUP 4 ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 COMPARE ;
+                 LE ;
+                 PAIR ;
                  DIG 4 ;
                  SWAP ;
                  EXEC ;
@@ -405,7 +419,7 @@
                  COMPARE ;
                  LE ;
                  PAIR ;
-                 DUP 5 ;
+                 DIG 4 ;
                  SWAP ;
                  EXEC ;
                  DROP ;
@@ -413,20 +427,6 @@
                  DUP ;
                  DUG 2 ;
                  CAR ;
-                 DIG 5 ;
-                 SWAP ;
-                 EXEC ;
-                 DROP ;
-                 PUSH string "FEE_TOO_HIGH" ;
-                 PUSH nat 100 ;
-                 DUP 4 ;
-                 CDR ;
-                 CDR ;
-                 CDR ;
-                 CDR ;
-                 COMPARE ;
-                 LE ;
-                 PAIR ;
                  DIG 4 ;
                  SWAP ;
                  EXEC ;
