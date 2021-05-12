@@ -31,7 +31,7 @@ hprop_Every_sale_sends_a_fee_to_the_fee_collector =
       withSender buyer $
         buy testData contract
 
-      let expectedFee = unsafeMkMutez $ ceiling @Double @Word64 ((fromIntegral (unMutez testSalePrice) * fromIntegral testFeePercent) / 100)
+      let expectedFee = unsafeMkMutez $ (unMutez testSalePrice * fromIntegral testFeePercent) `div` 100
       feeCollectorFinalBalance <- getBalance feeCollector
       feeCollectorFinalBalance @== feeCollectorInitialBalance + expectedFee
 
@@ -50,7 +50,7 @@ hprop_Tez_is_transferred_to_seller  =
       withSender buyer $
         buy testData contract
 
-      let expectedFee = unsafeMkMutez $ ceiling @Double @Word64 ((fromIntegral (unMutez testSalePrice) * fromIntegral testFeePercent) / 100)
+      let expectedFee = unsafeMkMutez $ (unMutez testSalePrice * fromIntegral testFeePercent) `div` 100
       let expectedTransfer = testSalePrice - expectedFee
       sellerFinalBalance <- getBalance seller
       sellerFinalBalance @== sellerInitialBalance + expectedTransfer
@@ -143,7 +143,7 @@ hprop_Cant_sell_if_fee_is_too_high  =
       contract <- originateMarketplaceContract setup
 
       withSender seller $ do
-        sell testData setup contract `expectFailure` failedWith contract [mt|FEE_PERCENT_TOO_HIGH|]
+        sell testData setup contract `expectFailure` failedWith contract [mt|FEE_TOO_HIGH|]
 
 hprop_Cant_buy_if_fee_is_too_high :: Property
 hprop_Cant_buy_if_fee_is_too_high  =
@@ -171,11 +171,7 @@ hprop_Cant_buy_if_fee_is_too_high  =
 
       -- Attempt to buy the NFT held in the contract
       withSender buyer $ do
-        -- buy testData contract `expectFailure` failedWith contract [mt|FEE_PERCENT_TOO_HIGH|]
-        buyResult <- attempt @SomeException $ buy testData contract
-        case buyResult of
-          Left _ -> pass
-          Right _ -> failure "Expected `buy` to fail, but it succeeded."
+        buy testData contract `expectFailure` failedWith contract [mt|FEE_TOO_HIGH|]
   where
     addSaleToInitialStorage :: TestData -> Setup -> Setup
     addSaleToInitialStorage TestData{testSalePrice} setup@Setup{storage, seller, nftFA2} =

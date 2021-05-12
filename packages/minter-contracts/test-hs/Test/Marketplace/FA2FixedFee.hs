@@ -29,7 +29,7 @@ hprop_Every_sale_sends_a_fee_to_the_fee_collector =
       withSender buyer $
         buy contract
 
-      let expectedFee = ceiling @Double @Natural (fromIntegral (testSalePrice * testFeePercent) / 100)
+      let expectedFee = testSalePrice * testFeePercent `div` 100
       feeCollectorsBalance <- balanceOf moneyFA2 moneyTokenId feeCollector
       feeCollectorsBalance @== expectedFee
 
@@ -47,7 +47,7 @@ hprop_Tokens_are_transferred_to_seller  =
       withSender buyer $
         buy contract
 
-      let expectedFee = ceiling @Double @Natural (fromIntegral (testSalePrice * testFeePercent) / 100)
+      let expectedFee = testSalePrice * testFeePercent `div` 100
       let expectedSellerBalance = testSalePrice - expectedFee
       sellerBalance <- balanceOf moneyFA2 moneyTokenId seller
       sellerBalance @== expectedSellerBalance
