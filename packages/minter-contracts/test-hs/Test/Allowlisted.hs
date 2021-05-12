@@ -126,10 +126,9 @@ allowlistSimpleChecks AllowlistChecksSetup{..} =
         call contract (Call @"Update_allowed") $ mkFullAllowlist setup [fa2_2]
 
       comment "Check that not yet allowed FA2 does not work"
-      case allowlistRestrictionsCases of
-        AllowlistRestrictionCase{..} :| _ -> do
-          allowlistRunRestrictedAction setup contract (fa2_1, tokenId)
-            & expectError contract allowlistError
+      for_ allowlistRestrictionsCases $ \AllowlistRestrictionCase{..} ->
+        allowlistRunRestrictedAction setup contract (fa2_1, tokenId)
+          & expectError contract allowlistError
 
       comment "Allowed FA2 works"
       for_ allowlistRestrictionsCases $ \AllowlistRestrictionCase{..} ->
