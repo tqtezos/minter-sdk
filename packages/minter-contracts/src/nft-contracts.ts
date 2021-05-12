@@ -238,6 +238,16 @@ export async function originateEnglishAuctionFA2(
   return originateContract(tz, EnglishAuctionFa2Code.code, storage, 'english_auction_fa2');
 }
 
+export async function originateEnglishAuctionFA2Admin(
+  tz: TezosToolkit,
+  adminAddress: address,
+  fa2_address : address,
+  token_id : nat,
+): Promise<Contract> {
+  const storage = `(Pair (Some (Pair (Pair "${adminAddress}" False) None)) (Pair 0 (Pair 86400 (Pair 86400 (Pair (Pair "${fa2_address}" ${token_id}){})))))`;
+  return originateContract(tz, EnglishAuctionFa2Code.code, storage, 'english_auction_fa2');
+}
+
 export async function originateEnglishAuctionTezPermit(
   tz: TezosToolkit,
   adminAddress : address,
