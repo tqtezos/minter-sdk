@@ -1,6 +1,7 @@
 -- | Lorentz bindings for the pausable admin contract.
 module Lorentz.Contracts.PausableAdminOption where
 
+import Fmt (Buildable(..), genericF)
 import Lorentz
 
 -- Types
@@ -11,10 +12,12 @@ data AdminStorageRecord = AdminStorage
   , pendingAdmin :: Maybe Address
   , paused :: Bool
   }
+  deriving stock (Show, Eq)
 
 customGeneric "AdminStorageRecord" ligoLayout
 deriving anyclass instance IsoValue AdminStorageRecord
 deriving anyclass instance HasAnnotation AdminStorageRecord
+instance Buildable AdminStorageRecord where build = genericF
 
 type AdminStorage = Maybe AdminStorageRecord
 
@@ -22,6 +25,7 @@ data AdminEntrypoints
   = Set_admin Address
   | Confirm_admin
   | Pause Bool
+  deriving stock (Show, Eq)
 
 customGeneric "AdminEntrypoints" ligoLayout
 deriving anyclass instance IsoValue AdminEntrypoints
@@ -39,10 +43,6 @@ initAdminStorage admin = Just AdminStorage
 
 noAdminStorage :: AdminStorage
 noAdminStorage = Nothing
-
--- This empty slice is a workaround, so that all the declarations above and
--- their instances may be in the type environment in the TH splice below.
-$(pure [])
 
 -- Errors
 ----------------------------------------------------------------------------

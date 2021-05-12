@@ -38,7 +38,7 @@ test_AllowlistChecks = allowlistChecks
       [ AllowlistRestrictionCase
         { allowlistError = errSwapOfferedNotAllowlisted
         , allowlistRunRestrictedAction = \(alice, tokenId) swap fa2 ->
-            withSender (AddressResolved alice) $
+            withSender alice $
               call swap (Call @"Start") SwapOffer
                 { assetsOffered = [mkFA2Assets fa2 [(tokenId, 1)]]
                 , assetsRequested = []
@@ -47,7 +47,7 @@ test_AllowlistChecks = allowlistChecks
       , AllowlistRestrictionCase
         { allowlistError = errSwapRequestedNotAllowlisted
         , allowlistRunRestrictedAction = \(alice, tokenId) swap fa2 ->
-            withSender (AddressResolved alice) $
+            withSender alice $
               call swap (Call @"Start") SwapOffer
                 { assetsOffered = []
                 , assetsRequested = [mkFA2Assets fa2 [(tokenId, 1)]]
@@ -68,19 +68,19 @@ test_Integrational = testGroup "Integrational"
       (swap, admin) <- originateWithAdmin originateAllowlistedSwap
       fa2 <- originateFA2 "fa2" setup [swap]
 
-      withSender (AddressResolved admin) $
+      withSender admin $
         call swap (Call @"Update_allowed") (mkAllowlistParam [fa2])
 
       assertingBalanceDeltas fa2
         [ (alice, tokenId) -: -3
         , (bob, tokenId) -: 3
         ] $ do
-          withSender (AddressResolved alice) $
+          withSender alice $
             call swap (Call @"Start") SwapOffer
               { assetsOffered = [mkFA2Assets fa2 [(tokenId, 10)]]
               , assetsRequested = [mkFA2Assets fa2 [(tokenId, 7)]]
               }
-          withSender (AddressResolved bob) $
+          withSender bob $
             call swap (Call @"Accept") (SwapId 0)
 
   ]

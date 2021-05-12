@@ -37,7 +37,7 @@ test_AllowlistChecks = allowlistChecks
       [ AllowlistRestrictionCase
         { allowlistError = saleAddressNotAllowed
         , allowlistRunRestrictedAction = \(alice, tokenId) contract fa2 ->
-            withSender (AddressResolved alice) $
+            withSender alice $
               call contract (Call @"Sell") InitSaleParamTez
                 { salePrice = toMutez 1
                 , saleTokensParam = SaleTokenParamTez (toAddress fa2) tokenId
@@ -58,7 +58,7 @@ test_Integrational = testGroup "Integrational"
       market <- originateMarketplaceTezAllowlisted alice
       fa2 <- originateFA2 "fa2" setup [market]
 
-      withSender (AddressResolved alice) $
+      withSender alice $
         call market (Call @"Update_allowed") (mkAllowlistParam [fa2])
 
       let saleTokensParam = SaleTokenParamTez
@@ -70,15 +70,15 @@ test_Integrational = testGroup "Integrational"
         [ (alice, tokenId1) -: -1
         , (bob, tokenId1) -: 1
         ] $ do
-          withSender (AddressResolved alice) $
+          withSender alice $
             call market (Call @"Sell") InitSaleParamTez
               { salePrice = toMutez 1
               , saleTokensParam = saleTokensParam
               }
 
-          withSender (AddressResolved bob) $
+          withSender bob $
             transfer TransferData
-              { tdTo = addressResolved market
+              { tdTo = market
               , tdAmount = toMutez 1
               , tdEntrypoint = ep "buy"
               , tdParameter = SaleParamTez

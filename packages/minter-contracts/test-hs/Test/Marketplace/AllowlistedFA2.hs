@@ -38,7 +38,7 @@ test_AllowlistChecks = allowlistChecks
       [ AllowlistRestrictionCase
         { allowlistError = saleAddressNotAllowed
         , allowlistRunRestrictedAction = \(alice, tokenId, allowedFA2) market fa2 ->
-            withSender (AddressResolved alice) $
+            withSender alice $
               call market (Call @"Sell") InitSaleParam
                 { salePrice = 1
                 , saleTokensParam = SaleTokenParam
@@ -53,7 +53,7 @@ test_AllowlistChecks = allowlistChecks
       , AllowlistRestrictionCase
         { allowlistError = moneyAddressNotAllowed
         , allowlistRunRestrictedAction = \(alice, tokenId, allowedFA2) market fa2 ->
-            withSender (AddressResolved alice) $
+            withSender alice $
               call market (Call @"Sell") InitSaleParam
                 { salePrice = 1
                 , saleTokensParam = SaleTokenParam
@@ -79,7 +79,7 @@ test_Integrational = testGroup "Integrational"
       market <- originateMarketplaceAllowlisted alice
       fa2 <- originateFA2 "fa2" setup [market]
 
-      withSender (AddressResolved alice) $
+      withSender alice $
         call market (Call @"Update_allowed") (mkAllowlistParam [fa2])
 
       let saleTokensParam = SaleTokenParam
@@ -95,12 +95,12 @@ test_Integrational = testGroup "Integrational"
         , (bob, tokenId1) -: 1
         , (bob, tokenId2) -: -10
         ] $ do
-          withSender (AddressResolved alice) $
+          withSender alice $
             call market (Call @"Sell") InitSaleParam
               { salePrice = 10
               , saleTokensParam
               }
-          withSender (AddressResolved bob) $
+          withSender bob $
             call market (Call @"Buy") SaleParam
               { saleSeller = alice
               , tokens = saleTokensParam
