@@ -11,17 +11,16 @@
 *)
 
 #include "fa2_multi_ft_token_manager.mligo"
-#include "../../../fa2_modules/pauseable_admin_option.mligo"
 
 type multi_ft_asset_storage = {
-  admin : pauseable_admin_storage;
+  admin : admin_storage;
   assets : multi_ft_token_storage;
   metadata : (string, bytes) big_map; (* contract metadata *)
 }
 
 type multi_ft_asset_param =
   | Assets of fa2_entry_points
-  | Admin of pauseable_admin
+  | Admin of admin_entrypoints
   | Tokens of token_manager
 
 let multi_ft_asset_main
@@ -29,7 +28,7 @@ let multi_ft_asset_main
     : (operation list) * multi_ft_asset_storage =
   match param with
   | Admin p ->
-      let ops, admin = pauseable_admin (p, s.admin) in
+      let ops, admin = admin_main (p, s.admin) in
       let new_s = { s with admin = admin; } in
       (ops, new_s)
 
