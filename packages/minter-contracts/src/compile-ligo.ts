@@ -34,7 +34,7 @@ type CompileSourceEntry = {
   srcFile: string;
   mainFn: string;
   dstFile: string;
-  contract: boolean;
+  contract?: boolean;
 }
 
 // add contracts here
@@ -43,121 +43,101 @@ const compileSources: CompileSourceEntry[] = [
     srcFile: 'minter_collection/nft/fa2_multi_nft_asset_no_admin.mligo',
     mainFn: 'nft_asset_main',
     dstFile: 'fa2_multi_nft_asset_no_admin.tz',
-    contract: true,
   },
   {
     srcFile: 'minter_collection/nft/fa2_multi_nft_asset_simple_admin.mligo',
     mainFn: 'nft_asset_main',
     dstFile: 'fa2_multi_nft_asset_simple_admin.tz',
-    contract: true,
   },
   {
     srcFile: 'minter_collection/nft/fa2_multi_nft_asset_multi_admin.mligo',
     mainFn: 'nft_asset_main',
     dstFile: 'fa2_multi_nft_asset_multi_admin.tz',
-    contract: true,
   },
   {
     srcFile: 'minter_collection/nft/fa2_multi_nft_asset_non_pausable_simple_admin.mligo',
     mainFn: 'nft_asset_main',
     dstFile: 'fa2_multi_nft_asset_non_pausable_simple_admin.tz',
-    contract: true,
   },
   {
     srcFile: 'fixed_price_sale/fixed_price_sale_market.mligo',
     mainFn: 'fixed_price_sale_main',
     dstFile: 'fixed_price_sale_market.tz',
-    contract: true,
   },
   {
     srcFile: 'fixed_price_sale/fixed_price_sale_market_tez.mligo',
     mainFn: 'fixed_price_sale_tez_main',
     dstFile: 'fixed_price_sale_market_tez.tz',
-    contract: true,
   },
   {
     srcFile: 'fixed_price_sale/fixed_price_sale_market_allowlisted.mligo',
     mainFn: 'fixed_price_sale_allowlisted_main',
     dstFile: 'fixed_price_sale_market_allowlisted.tz',
-    contract: true,
   },
   {
     srcFile: 'fixed_price_sale/fixed_price_sale_market_tez_allowlisted.mligo',
     mainFn: 'fixed_price_sale_tez_allowlisted_main',
     dstFile: 'fixed_price_sale_market_tez_allowlisted.tz',
-    contract: true,
   },
   {
     srcFile: 'english_auction/english_auction_tez.mligo',
     mainFn: 'english_auction_tez_main',
     dstFile: 'english_auction_tez.tz',
-    contract: true,
   },
   {
     srcFile: 'minter_collection/ft/fa2_multi_ft_asset_no_admin.mligo',
     mainFn: 'multi_ft_asset_main',
     dstFile: 'fa2_multi_ft_asset_no_admin.tz',
-    contract: true,
   },
   {
     srcFile: 'minter_collection/ft/fa2_multi_ft_asset_simple_admin.mligo',
     mainFn: 'multi_ft_asset_main',
     dstFile: 'fa2_multi_ft_asset_simple_admin.tz',
-    contract: true,
   },
   {
     srcFile: 'minter_collection/ft/fa2_multi_ft_asset_multi_admin.mligo',
     mainFn: 'multi_ft_asset_main',
     dstFile: 'fa2_multi_ft_asset_multi_admin.tz',
-    contract: true,
   },
   {
     srcFile: 'minter_collection/ft/fa2_multi_ft_asset_non_pausable_simple_admin.mligo',
     mainFn: 'multi_ft_asset_main',
     dstFile: 'fa2_multi_ft_asset_non_pausable_simple_admin.tz',
-    contract: true,
   },
   {
     srcFile: 'tickets/nft_auction.mligo',
     mainFn: 'ticket_auction_main',
     dstFile: 'ticket_auction.tz',
-    contract: true,
   },
   {
     srcFile: 'tickets/nft_wallet.mligo',
     mainFn: 'ticket_wallet_main',
     dstFile: 'ticket_wallet.tz',
-    contract: true,
   },
   {
     srcFile: 'english_auction/english_auction_tez_permit.mligo',
     mainFn: 'english_auction_tez_permit_main',
     dstFile: 'english_auction_tez_permit.tz',
-    contract: true,
   },
   {
     srcFile: 'minter_collection/editions/fa2_multi_nft_token_editions.mligo',
     mainFn: 'editions_main',
     dstFile: 'fa2_multi_nft_token_editions.tz',
-    contract: true,
   },
   {
     srcFile: 'swaps/fa2_swap.mligo',
     mainFn: 'swaps_main',
     dstFile: 'fa2_swap.tz',
-    contract: true,
   },
   {
     srcFile: 'swaps/fa2_allowlisted_swap.mligo',
     mainFn: 'allowlisted_swaps_main',
     dstFile: 'fa2_allowlisted_swap.tz',
-    contract: true,
   },
   {
     srcFile: 'english_auction/english_auction_fa2.mligo',
     mainFn: 'english_auction_fa2_main',
     dstFile: 'english_auction_fa2.tz',
-    contract: true,
   },
   {
     srcFile: 'minter_collection/editions/views.mligo',
@@ -169,67 +149,56 @@ const compileSources: CompileSourceEntry[] = [
     srcFile: 'english_auction/english_auction_fa2_allowlisted.mligo',
     mainFn: 'english_auction_fa2_allowlisted_main',
     dstFile: 'english_auction_fa2_allowlisted.tz',
-    contract: true,
   },
   {
     srcFile: 'english_auction/english_auction_tez_allowlisted.mligo',
     mainFn: 'english_auction_tez_allowlisted_main',
     dstFile: 'english_auction_tez_allowlisted.tz',
-    contract: true,
   },
   {
     srcFile: 'english_auction/english_auction_tez_permit_allowlisted.mligo',
     mainFn: 'english_auction_tez_permit_allowlisted_main',
     dstFile: 'english_auction_tez_permit_allowlisted.tz',
-    contract: true,
   },
   {
     srcFile: 'english_auction/english_auction_tez_fixed_fee.mligo',
     mainFn: 'english_auction_tez_main',
     dstFile: 'english_auction_tez_fixed_fee.tz',
-    contract: true,
   },
   {
     srcFile: 'english_auction/english_auction_fa2_fixed_fee.mligo',
     mainFn: 'english_auction_fa2_main',
     dstFile: 'english_auction_fa2_fixed_fee.tz',
-    contract: true,
   },
   {
     srcFile: 'english_auction/english_auction_tez_fixed_fee_allowlisted.mligo',
     mainFn: 'english_auction_tez_main',
     dstFile: 'english_auction_tez_fixed_fee_allowlisted.tz',
-    contract: true,
   },
   {
     srcFile: 'english_auction/english_auction_fa2_fixed_fee_allowlisted.mligo',
     mainFn: 'english_auction_fa2_main',
     dstFile: 'english_auction_fa2_fixed_fee_allowlisted.tz',
-    contract: true,
   },
   {
     srcFile: 'fixed_price_sale/fixed_price_sale_market_tez_fixed_fee.mligo',
     mainFn: 'fixed_price_sale_tez_main',
     dstFile: 'fixed_price_sale_tez_fixed_fee.tz',
-    contract: true,
   },
   {
     srcFile: 'fixed_price_sale/fixed_price_sale_market_fixed_fee.mligo',
     mainFn: 'fixed_price_sale_main',
     dstFile: 'fixed_price_sale_market_fixed_fee.tz',
-    contract: true,
   },
   {
     srcFile: 'fixed_price_sale/fixed_price_sale_market_tez_fixed_fee_allowlisted.mligo',
     mainFn: 'fixed_price_sale_tez_main',
     dstFile: 'fixed_price_sale_tez_fixed_fee_allowlisted.tz',
-    contract: true,
   },
   {
     srcFile: 'fixed_price_sale/fixed_price_sale_market_fixed_fee_allowlisted.mligo',
     mainFn: 'fixed_price_sale_main',
     dstFile: 'fixed_price_sale_market_fixed_fee_allowlisted.tz',
-    contract: true,
   },
   {
     srcFile: 'fixed_price_sale/fixed_price_sale_market_tez.mligo',
@@ -265,14 +234,9 @@ async function main(env = defaultEnv): Promise<void> {
   try {
     await Promise.all(
       filterSources(compileSources)
-        .map(async ({ srcFile, mainFn, dstFile, contract }) => {
+        .map(async ({ srcFile, mainFn, dstFile, contract = true }) => {
           $log.info(`compiling ${dstFile}`);
-          if (contract) {
-            await compileContract(env, srcFile, mainFn, dstFile);
-          }
-          else {
-            await compileLigoExpression(env, srcFile, mainFn, dstFile);
-          }
+          await (contract ? compileContract : compileLigoExpression)(env, srcFile, mainFn, dstFile);
           $log.info(`compiled ${dstFile}`);
         }),
     );
