@@ -7,9 +7,9 @@ import { TokenMetadata } from './fa2-interface';
 import { BigNumber } from 'bignumber.js';
 import {
   EditionsTokenMetadataViewCode,
-  Fa2MultiNftAssetCode,
-  Fa2MultiNftFaucetCode,
-  Fa2MultiFtFaucetCode,
+  Fa2MultiNftAssetSimpleAdminCode,
+  Fa2MultiNftAssetNoAdminCode,
+  Fa2MultiFtAssetNoAdminCode,
   FixedPriceSaleMarketCode,
   FixedPriceSaleMarketTezCode,
   FixedPriceSaleMarketAllowlistedCode,
@@ -102,10 +102,8 @@ export async function originateNft(
 ): Promise<Contract> {
   const meta_content = char2Bytes(JSON.stringify(sample_metadata, null, 2));
 
-  const storage = `(Pair (Pair (Pair (Pair ${admin} True) None)
-            (Pair (Pair {} 0) (Pair {} {})))
-      { Elt "" 0x${meta_uri} ; Elt "content" 0x${meta_content} })`;
-  return originateContract(tz, Fa2MultiNftAssetCode.code, storage, 'nft');
+  const storage = `(Pair (Pair (Pair (Pair ${admin} True) None) (Pair (Pair {} 0) (Pair {} {}))) { Elt "" 0x${meta_uri} ; Elt "content" 0x${meta_content} })`;
+  return originateContract(tz, Fa2MultiNftAssetSimpleAdminCode.code, storage, 'nft');
 }
 
 export async function originateNftFaucet(
@@ -113,9 +111,9 @@ export async function originateNftFaucet(
 ): Promise<Contract> {
   const meta_content = char2Bytes(JSON.stringify(sample_metadata, null, 2));
 
-  const storage = `(Pair (Pair (Pair {} 0) (Pair {} {}))
+  const storage = `(Pair (Pair Unit (Pair (Pair {} 0) (Pair {} {})))
       { Elt "" 0x${meta_uri} ; Elt "content" 0x${meta_content} })`;
-  return originateContract(tz, Fa2MultiNftFaucetCode.code, storage, 'nftFaucet');
+  return originateContract(tz, Fa2MultiNftAssetNoAdminCode.code, storage, 'nftFaucet');
 }
 
 export async function originateFtFaucet(
@@ -123,10 +121,10 @@ export async function originateFtFaucet(
 ): Promise<Contract> {
   const meta_content = char2Bytes(JSON.stringify(sample_metadata, null, 2));
 
-  const storage = `(Pair (Pair (Pair {} {}) (Pair {} {}))
+  const storage = `(Pair (Pair Unit (Pair (Pair {} {}) (Pair {} {})))
         { Elt "" 0x${meta_uri} ; Elt "content" 0x${meta_content} })`;
 
-  return originateContract(tz, Fa2MultiFtFaucetCode.code, storage, 'ftFaucet');
+  return originateContract(tz, Fa2MultiFtAssetNoAdminCode.code, storage, 'ftFaucet');
 }
 
 export async function originateFixedPriceSale(
