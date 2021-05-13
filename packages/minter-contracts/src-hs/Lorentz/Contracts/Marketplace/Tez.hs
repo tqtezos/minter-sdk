@@ -12,49 +12,58 @@ import qualified Michelson.Typed as T
 -- Types
 ----------------------------------------------------------------------------
 
-data SaleTokenParamTez = SaleTokenParamTez
-  { tokenForSaleAddress :: Address
-  , tokenForSaleTokenId :: TokenId
+data SaleId = SaleId Natural
+  deriving stock (Eq, Ord)
+
+customGeneric "SaleId" ligoCombLayout
+deriving anyclass instance IsoValue SaleId
+deriving anyclass instance HasAnnotation SaleId
+
+data SaleToken = SaleToken
+  { fa2Address :: Address
+  , tokenId :: TokenId
   } deriving stock (Eq, Ord)
 
-customGeneric "SaleTokenParamTez" ligoCombLayout
-deriving anyclass instance IsoValue SaleTokenParamTez
-deriving anyclass instance HasAnnotation SaleTokenParamTez
+customGeneric "SaleToken" ligoCombLayout
+deriving anyclass instance IsoValue SaleToken
+deriving anyclass instance HasAnnotation SaleToken
+
+data SaleDataTez = SaleDataTez 
+  { saleToken :: SaleToken 
+  , salePricePerToken :: Mutez 
+  , tokenAmount :: Natural
+  } deriving stock (Eq, Ord)
+
+customGeneric "SaleDataTez" ligoCombLayout
+deriving anyclass instance IsoValue SaleDataTez
+deriving anyclass instance HasAnnotation SaleDataTez
 
 data SaleParamTez = SaleParamTez
-  { saleSeller :: Address
-  , tokens :: SaleTokenParamTez
+  { seller :: Address
+  , saleDataTez :: SaleDataTez
   } deriving stock (Eq, Ord)
 
 customGeneric "SaleParamTez" ligoCombLayout
 deriving anyclass instance IsoValue SaleParamTez
 deriving anyclass instance HasAnnotation SaleParamTez
 
-data InitSaleParamTez = InitSaleParamTez
-  { salePrice :: Mutez
-  , saleTokensParam :: SaleTokenParamTez
-  }
-
-customGeneric "InitSaleParamTez" ligoCombLayout
-deriving anyclass instance IsoValue InitSaleParamTez
-deriving anyclass instance HasAnnotation InitSaleParamTez
-
 data MarketplaceTezStorage = MarketplaceTezStorage
   { admin :: AdminStorage
-  , sales :: BigMap SaleParamTez Mutez
+  , sales :: BigMap SaleId SaleParamTez
+  , nextSaleId :: SaleId
   }
 
-customGeneric "MarketplaceTezStorage" ligoLayout
+customGeneric "MarketplaceTezStorage" ligoCombLayout
 deriving anyclass instance IsoValue MarketplaceTezStorage
 deriving anyclass instance HasAnnotation MarketplaceTezStorage
 
 initMarketplaceTezStorage :: AdminStorage -> MarketplaceTezStorage
-initMarketplaceTezStorage as = MarketplaceTezStorage as mempty
+initMarketplaceTezStorage as = MarketplaceTezStorage as mempty (SaleId 0) 
 
 data MarketplaceTezEntrypoints
-  = Sell InitSaleParamTez
-  | Buy SaleParamTez
-  | Cancel SaleParamTez
+  = Sell SaleDataTez
+  | Buy SaleId
+  | Cancel SaleId
   | Admin AdminEntrypoints
 
 customGeneric "MarketplaceTezEntrypoints" ligoLayout

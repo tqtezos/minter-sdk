@@ -3,6 +3,8 @@
 
 (*TYPES*)
 
+type sale_id = nat
+
 type fee_data = 
   [@layout:comb]
   {
@@ -32,6 +34,7 @@ type global_token_id =
 
 (*MATH*) 
 
+(*In English auction it is necessary to use ceiling so that bid is guaranteed to be raised*)
 let ceil_div_nat (numerator, denominator : nat * nat) : nat = abs ((- numerator) / (int denominator))
 
 let percent_of_bid_nat (percent, bid : nat * nat) : nat = 
@@ -48,6 +51,13 @@ let ceil_div_tez (tz_qty, nat_qty : tez * nat) : tez =
 let percent_of_bid_tez (percent, bid : nat * tez) : tez = 
   (ceil_div_tez (bid *  percent, 100n))
 
+(*In Fixed Price sale normal division is used to calculate fee*)
+
+let percent_of_price_tez (percent, price : nat * tez) : tez = 
+  ((price * percent)/ 100n) 
+
+let percent_of_price_nat (percent, price : nat * nat) : nat = 
+  ((price * percent)/ 100n) 
 
 (*HELPERS*)
 
@@ -64,5 +74,21 @@ let resolve_contract (add : address) : unit contract =
   match ((Tezos.get_contract_opt add) : (unit contract) option) with
       None -> (failwith "Return address does not resolve to contract" : unit contract)
     | Some c -> c
+
+let transfer_fa2(fa2_address, token_id, amount_, from, to_: address * token_id * nat * address * address): operation =
+  let fa2_transfer : ((transfer list) contract) option =
+      Tezos.get_entrypoint_opt "%transfer"  fa2_address in
+  let transfer_op = match fa2_transfer with
+  | None -> (failwith "CANNOT_INVOKE_FA2_TRANSFER" : operation)
+  | Some c ->
+    let tx = {
+      from_ = from;
+      txs= [{
+        to_ = to_;
+        token_id = token_id;
+        amount = amount_;
+    }]} in
+    Tezos.transaction [tx] 0mutez c
+ in transfer_op
 
 #endif

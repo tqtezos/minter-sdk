@@ -38,9 +38,10 @@ test_AllowlistChecks = allowlistChecks
         { allowlistError = saleAddressNotAllowed
         , allowlistRunRestrictedAction = \(alice, tokenId) contract fa2 ->
             withSender alice $
-              call contract (Call @"Sell") InitSaleParamTez
-                { salePrice = toMutez 1
-                , saleTokensParam = SaleTokenParamTez (toAddress fa2) tokenId
+              call contract (Call @"Sell") SaleDataTez
+                { salePricePerToken = toMutez 1
+                , saleToken = SaleToken(toAddress fa2) tokenId
+                , tokenAmount = 1 
                 }
         }
       ]
@@ -61,9 +62,9 @@ test_Integrational = testGroup "Integrational"
       withSender alice $
         call market (Call @"Update_allowed") (mkAllowlistParam [fa2])
 
-      let saleTokensParam = SaleTokenParamTez
-            { tokenForSaleAddress = toAddress fa2
-            , tokenForSaleTokenId = tokenId1
+      let saleToken = SaleToken
+            { fa2Address = toAddress fa2
+            , tokenId = tokenId1
             }
 
       assertingBalanceDeltas fa2
@@ -71,9 +72,10 @@ test_Integrational = testGroup "Integrational"
         , (bob, tokenId1) -: 1
         ] $ do
           withSender alice $
-            call market (Call @"Sell") InitSaleParamTez
-              { salePrice = toMutez 1
-              , saleTokensParam = saleTokensParam
+            call market (Call @"Sell") SaleDataTez
+              { salePricePerToken = toMutez 1
+              , saleToken = saleToken
+              , tokenAmount = 1
               }
 
           withSender bob $
@@ -81,10 +83,7 @@ test_Integrational = testGroup "Integrational"
               { tdTo = market
               , tdAmount = toMutez 1
               , tdEntrypoint = ep "buy"
-              , tdParameter = SaleParamTez
-                { saleSeller = alice
-                , tokens = saleTokensParam
-                }
+              , tdParameter = SaleId 0 
               }
 
   ]

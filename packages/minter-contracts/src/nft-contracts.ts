@@ -1,3 +1,4 @@
+import { $log } from '@tsed/logger';
 import { originateContract } from './ligo';
 import { Contract, address, nat } from './type-aliases';
 import { TezosToolkit } from '@taquito/taquito';
@@ -54,6 +55,39 @@ interface AdminStorage {
     paused: boolean;
 }
 
+export async function mintNftTokens(
+  tz: TezosToolkit,
+  tokens: MintNftParam[],
+  nftContract: Contract,
+): Promise<void> {
+  $log.info('minting...');
+  const op = await nftContract.methods.mint(tokens).send();
+  await op.confirmation(3);
+  $log.info(`Minted non-fungible tokens. Consumed gas: ${op.consumedGas}`);
+}
+
+export async function mintFtTokens(
+  tz: TezosToolkit,
+  ftContract: Contract,
+  tokens: MintFtParam[],
+): Promise<void> {
+  $log.info('minting...');
+  const op = await ftContract.methods.mint_tokens(tokens).send();
+  await op.confirmation(3);
+  $log.info(`Minted fungible tokens. Consumed gas: ${op.consumedGas}`);
+}
+
+export async function createFtToken(
+  tz: TezosToolkit,
+  ftContract: Contract,
+  token_metadata: TokenMetadata,
+): Promise<void> {
+  $log.info('minting...');
+  const op = await ftContract.methods.create_token(token_metadata.token_id, token_metadata.token_info).send();
+  await op.confirmation(3);
+  $log.info(`Created fungible token. Consumed gas: ${op.consumedGas}`);
+}
+
 const meta_uri = char2Bytes('tezos-storage:content');
 
 const sample_metadata = {
@@ -98,14 +132,14 @@ export async function originateFtFaucet(
 export async function originateFixedPriceSale(
   tz: TezosToolkit,
 ): Promise<Contract> {
-  const storage = `(Pair None {})`;
+  const storage = `(Pair None (Pair {} 0))`;
   return originateContract(tz, FixedPriceSaleMarketCode.code, storage, 'fixed-price-sale-market');
 }
 
 export async function originateFixedPriceTezSale(
   tz: TezosToolkit,
 ): Promise<Contract> {
-  const storage = `(Pair None {})`;
+  const storage = `(Pair None (Pair {} 0))`;
   return originateContract(tz, FixedPriceSaleMarketTezCode.code, storage, 'fixed-price-sale-market-tez');
 }
 
@@ -113,7 +147,7 @@ export async function originateFixedPriceAdminSale(
   tz: TezosToolkit,
   adminAddress: address,
 ): Promise<Contract> {
-  const storage = `(Pair (Some (Pair (Pair "${adminAddress}" False) None)) {})`;
+  const storage = `(Pair (Some (Pair (Pair "${adminAddress}" False) None)) (Pair {} 0))`;
   return originateContract(tz, FixedPriceSaleMarketCode.code, storage, 'fixed-price-sale-market-with-admin');
 }
 
@@ -121,7 +155,7 @@ export async function originateFixedPriceTezAdminSale(
   tz: TezosToolkit,
   adminAddress: address,
 ): Promise<Contract> {
-  const storage = `(Pair (Some (Pair (Pair "${adminAddress}" False) None)) {})`;
+  const storage = `(Pair (Some (Pair (Pair "${adminAddress}" False) None)) (Pair {} 0))`;
   return originateContract(tz, FixedPriceSaleMarketTezCode.code, storage, 'fixed-price-sale-market-tez-with-admin');
 }
 
@@ -129,7 +163,7 @@ export async function originateFixedPriceAllowlistedSale(
   tz: TezosToolkit,
   adminAddress: address,
 ): Promise<Contract> {
-  const storage = `(Pair {} (Pair (Some (Pair (Pair "${adminAddress}" False) None)) {}))`;
+  const storage = `(Pair {} (Pair (Some (Pair (Pair "${adminAddress}" False) None)) (Pair {} 0)))`;
   return originateContract(tz, FixedPriceSaleMarketAllowlistedCode.code, storage, 'fixed-price-sale-market-allowlisted');
 }
 
@@ -137,7 +171,7 @@ export async function originateFixedPriceTezAllowlistedSale(
   tz: TezosToolkit,
   adminAddress: address,
 ): Promise<Contract> {
-  const storage = `(Pair {} (Pair (Some (Pair (Pair "${adminAddress}" False) None)) {}))`;
+  const storage = `(Pair {} (Pair (Some (Pair (Pair "${adminAddress}" False) None)) (Pair {} 0)))`;
   return originateContract(tz, FixedPriceSaleMarketTezAllowlistedCode.code, storage, 'fixed-price-sale-market-tez-allowlisted');
 }
 

@@ -53,7 +53,7 @@ let fail_if_not_admin_ext (storage, extra_msg : pauseable_admin_storage * string
   match storage with
     | Some a ->
         if Tezos.sender <> a.admin
-        then failwith ("NOT_AN_ADMIN" ^  " "  ^ extra_msg)
+        then failwith ("NOT_AN_ADMIN" ^  "_"  ^ extra_msg)
         else unit
     | None -> unit
 

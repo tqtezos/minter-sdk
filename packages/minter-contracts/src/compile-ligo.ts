@@ -207,6 +207,18 @@ const compileSources: CompileSourceEntry[] = [
     dstFile: 'fixed_price_sale_market_fixed_fee_allowlisted.tz',
     contract: true,
   },
+  {
+    srcFile: 'fixed_price_sale/fixed_price_sale_market_tez.mligo',
+    mainFn: 'getActiveSales',
+    dstFile: 'fixed_price_tez_sales_view.tz',
+    contract: false,
+  },
+  {
+    srcFile: 'fixed_price_sale/fixed_price_sale_market.mligo',
+    mainFn: 'getActiveSales',
+    dstFile: 'fixed_price_fa2_sales_view.tz',
+    contract: false,
+  },
 ];
 
 const filterSources = (sources: CompileSourceEntry[]): CompileSourceEntry[] => {
