@@ -12,7 +12,7 @@ Editions-FA2 allows editions creators to easily mint an "unlimited" (limited onl
 ## Storage
 
 - FA2 w/ single-admin + TZIP-16 storage without `Token_metadata` big_map or `next_token_id`
-  + [Michelson](../../../../bin/fa2_multi_nft_asset.tz)
+  + [Michelson](../../../../bin/fa2_multi_nft_asset_simple_admin.tz)
   + [Ligo](../nft/fa2_multi_nft_asset_simple_admin.mligo)
 
 - Editions-specific storage
