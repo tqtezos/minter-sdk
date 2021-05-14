@@ -186,6 +186,7 @@ describe('test NFT auction', () => {
     $log.info("Resolving auction");
     const opResolve = nftAuctionBob.methods.resolve(0).send({ amount : 0 });
     expect(opResolve).rejects.toHaveProperty('errors');
+    $log.info('Resolve operation failed as expected when called before end time');
   });
 
   test('auction without bids that is resolved after end time should only return asset to seller', async () => {
@@ -211,6 +212,7 @@ describe('test NFT auction', () => {
     await sleep(70000); //70 seconds
     const opCancel = nftAuctionBob.methods.cancel(0).send({ amount : 0, mutez : true });
     expect(opCancel).rejects.toHaveProperty('errors');
+    $log.info("Cancel after end time fails as expected");
   });
 
   test('resovled auction should send payment to seller and NFT to winning bidder', async () => {
