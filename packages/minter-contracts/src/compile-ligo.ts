@@ -40,6 +40,12 @@ type CompileSourceEntry = {
 // add contracts here
 const compileSources: CompileSourceEntry[] = [
   {
+    srcFile: 'minter_collection/nft/fa2_multi_nft_faucet.mligo',
+    mainFn: 'nft_faucet_main',
+    dstFile: 'fa2_multi_nft_faucet.tz',
+    contract: true,
+  },
+  {
     srcFile: 'minter_collection/nft/fa2_multi_nft_asset_no_admin.mligo',
     mainFn: 'nft_asset_main',
     dstFile: 'fa2_multi_nft_asset_no_admin.tz',
@@ -48,7 +54,7 @@ const compileSources: CompileSourceEntry[] = [
   {
     srcFile: 'minter_collection/nft/fa2_multi_nft_asset_simple_admin.mligo',
     mainFn: 'nft_asset_main',
-    dstFile: 'fa2_multi_nft_asset_simple_admin.tz',
+    dstFile: 'fa2_multi_nft_asset.tz',
     contract: true,
   },
   {
@@ -94,6 +100,12 @@ const compileSources: CompileSourceEntry[] = [
     contract: true,
   },
   {
+    srcFile: 'minter_collection/ft/fa2_multi_ft_faucet.mligo',
+    mainFn: 'ft_faucet_main',
+    dstFile: 'fa2_multi_ft_faucet.tz',
+    contract: true,
+  },
+  {
     srcFile: 'minter_collection/ft/fa2_multi_ft_asset_no_admin.mligo',
     mainFn: 'multi_ft_asset_main',
     dstFile: 'fa2_multi_ft_asset_no_admin.tz',
@@ -102,7 +114,7 @@ const compileSources: CompileSourceEntry[] = [
   {
     srcFile: 'minter_collection/ft/fa2_multi_ft_asset_simple_admin.mligo',
     mainFn: 'multi_ft_asset_main',
-    dstFile: 'fa2_multi_ft_asset_simple_admin.tz',
+    dstFile: 'fa2_multi_ft_asset.tz',
     contract: true,
   },
   {
