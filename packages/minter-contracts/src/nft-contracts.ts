@@ -7,7 +7,7 @@ import { TokenMetadata } from './fa2-interface';
 import { BigNumber } from 'bignumber.js';
 import {
   EditionsTokenMetadataViewCode,
-  Fa2MultiNftAssetSimpleAdminCode,
+  Fa2MultiNftAssetCode,
   Fa2MultiNftAssetNoAdminCode,
   Fa2MultiFtAssetNoAdminCode,
   FixedPriceSaleMarketCode,
@@ -103,7 +103,7 @@ export async function originateNft(
   const meta_content = char2Bytes(JSON.stringify(sample_metadata, null, 2));
 
   const storage = `(Pair (Pair (Pair (Pair ${admin} True) None) (Pair (Pair {} 0) (Pair {} {}))) { Elt "" 0x${meta_uri} ; Elt "content" 0x${meta_content} })`;
-  return originateContract(tz, Fa2MultiNftAssetSimpleAdminCode.code, storage, 'nft');
+  return originateContract(tz, Fa2MultiNftAssetCode.code, storage, 'nft');
 }
 
 export async function originateNftFaucet(
