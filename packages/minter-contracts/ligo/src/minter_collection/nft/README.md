@@ -6,17 +6,7 @@ This directory contains various flavors of a Multi-Asset Non-Fungible Token vari
 
  The code is written with a high degree of modularity with seperate components seperated into different Ligo files to ease future extension. This document will focous on these different components. 
 
-
- ```mermaid
- graph 
-   TOKEN --> FAUCET;
-   TOKEN --> ASSET;
-   ASSET --> SIMPLE_ADMIN;
-   ASSET --> MULTI_ADMIN;
-   ASSET --> NO_ADMIN;
-   ASSET --> NON_PAUSABLE_SIMPLE_ADMIN;
-
- ```
+![Mermaid NFT Code Flowchart](../../../../../../docs/mermaid-diagram-nft.png)
 
  ## [FA2 Multi NFT Token](fa2_multi_nft_token.mligo) (TOKEN)
 
