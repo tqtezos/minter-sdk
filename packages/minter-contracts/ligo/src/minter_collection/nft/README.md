@@ -10,14 +10,26 @@ This directory contains various flavors of a Multi-Asset Non-Fungible Token vari
 
  ## [FA2 Multi NFT Token](fa2_multi_nft_token.mligo) (TOKEN)
 
-The code in this file manages the aspects of the contract described by the [FA2 Token Standard](https://gitlab.com/tzip/tzip/-/blob/master/proposals/tzip-12/tzip-12.md). These include the entrypoints `transfer`, `balance_of`, `update_operators`.  Refer to this standard for more details.
+The code in this file manages the aspects of the contract described by the [FA2 Token Standard](https://gitlab.com/tzip/tzip/-/blob/master/proposals/tzip-12/tzip-12.md). These include the entrypoints `transfer`, `balance_of`, `update_operators`.  Refer to this standard for more details. Note that `Mint_tokens` is not included in this file as TZIP-12 does not provide a specification for that entrypoint. 
 
 It also contains the optional implementation of a more complex FA2 transfer policy as per the specification provided in [TZIP-12](https://gitlab.com/tzip/tzip/-/blob/master/proposals/tzip-12/permissions-policy.md). This functionality can be enabled by defining the C Macro OWNER_HOOKS in contracts that extend TOKEN. 
 
-## [FA2 Multi FT Faucet](fa2_multi_ft_faucet.mligo) (FAUCET)
+## [FA2 Multi NFT Faucet](fa2_multi_nft_faucet.mligo) (FAUCET)
 
 FAUCET simply combines the functionality provided by TOKEN with the ability to mint an NFT. Unlike the [Fungible-Token FA2 Faucet](../ft/fa2_multi_ft_faucet.mligo), it is only possible to mint a single token for a given `token-id` (hence the name Non-Fungible). FAUCET does not provide any admin-capabilities so it is impossible to set a new admin or pause the contract. Additionally, anyone can mint new NFTs using this contract as there is no admin check. 
 
-## [FA2 Multi FT Asset](fa2_multi_ft_asset.mligo) (ASSET)
+Minting N tokens in batch is accomplished through a call to the entrypoint
 
-ASSET, like FAUCET, extends MANAGER and TOKEN. However, it also adds an interface for providing admin capabilites as well as admin checks to the entrypoints added in MANAGER. "Admin capabilities" means the type of functionality provided by the [Admin modules](../../../fa2_modules/README.md): possibly including but not limited to the ability to add new admins, remove admins, pause the contract, and confirm an added admin (in a two-step approval pattern). ASSET will not compile on its own, but will need to be implemented by specifying which admin module ought to apply for the contract. [SIMPLE_ADMIN](fa2_multi_nft_asset_simple_admin.mligo), [MULTI_ADMIN](fa2_multi_nft_asset_multi_admin.mligo), [NO_ADMIN](fa2_multi_nft_asset_no_admin.mligo), and [NON_PAUSABLE_SIMPLE_ADMIN](fa2_multi_nft_asset_non_pausable_simple_admin.mligo) are simply ASSET implemented with different admin modules of the same name. Their respective functionalities can be read about in [Admin modules README](../../../fa2_modules/README.md). 
+```
+Mint : (list %mint
+           (pair (pair %token_metadata (nat %token_id) (map %token_info string bytes))
+                 (address %owner)))
+```
+
+and passing a list of length N. 
+
+Whereas "creating" and "minting" is a two step process in the FT contracts, it is accomplished in a single entrypoint call in this contract. Also, it is not possible to "burn" an NFT at the moment using this contract, whereas that can be accomplished with the FT contract. 
+
+## [FA2 Multi NFT Asset](fa2_multi_nft_asset.mligo) (ASSET)
+
+ASSET, like FAUCET, extends TOKEN to add a `Mint` entrypoint. However, it also adds an interface for providing admin capabilites as well as admin checks to the entrypoints added in MANAGER. "Admin capabilities" means the type of functionality provided by the [Admin modules](../../../fa2_modules/README.md): possibly including but not limited to the ability to add new admins, remove admins, pause the contract, and confirm an added admin (in a two-step approval pattern). ASSET will not compile on its own, but will need to be implemented by specifying which admin module ought to apply for the contract. [SIMPLE_ADMIN](fa2_multi_nft_asset_simple_admin.mligo), [MULTI_ADMIN](fa2_multi_nft_asset_multi_admin.mligo), [NO_ADMIN](fa2_multi_nft_asset_no_admin.mligo), and [NON_PAUSABLE_SIMPLE_ADMIN](fa2_multi_nft_asset_non_pausable_simple_admin.mligo) are simply ASSET implemented with different admin modules of the same name. Their respective functionalities can be read about in [Admin modules README](../../../fa2_modules/README.md). 
