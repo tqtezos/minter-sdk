@@ -9,6 +9,7 @@ module Test.Util
   , doFA2Setup
   , originateFA2
   , assertingBalanceDeltas
+  , balanceOf
   , mkAllowlistParam
   , originateWithAdmin
   , clevelandProp
@@ -24,7 +25,7 @@ import Data.Sized (Sized)
 import qualified Data.Sized as Sized
 import Data.Type.Natural.Lemma.Order (type (<))
 import Data.Type.Ordinal (ordToNatural)
-import Fmt ((+|), (|+))
+import Fmt (build, indentF, unlinesF, (+|), (|+))
 import GHC.TypeLits (Symbol)
 import GHC.TypeNats (Nat, type (+))
 import Hedgehog (MonadTest)
@@ -83,7 +84,7 @@ scenario = do
   -- ↑ Here compiler figures out that exactly 2 addresses should be allocated
   -- during setup...
 
-  let tokenId :< Nil = sTokens setup
+  let tokenId ::< SNil = sTokens setup
   -- ↑ ...and only one token.
 
   ...
@@ -93,7 +94,7 @@ Another option is to explicitly annotate the 'doFA2Setup' call:
 
 @
 scenario = do
-  setup <- toSetup @("addresses" :# 2) @("tokens" :# 1)
+  setup <- doFA2Setup @("addresses" :# 2) @("tokens" :# 1)
   ...
 @
 -}
@@ -181,6 +182,23 @@ assertingBalanceDeltas fa2 indicedDeltas action = do
           FA2.mkFA2View
             (uncurry FA2.BalanceRequestItem <$> tokenRefs)
             consumer
+
+-- | Retrieve the FA2 balance for a given account.
+balanceOf
+  :: (HasCallStack, MonadNettest caps base m, ToAddress addr)
+  => TAddress FA2.FA2SampleParameter -> FA2.TokenId -> addr -> m Natural
+balanceOf fa2 tokenId account = do
+  consumer <- originateSimple "balance-response-consumer" [] (contractConsumer @[FA2.BalanceResponseItem])
+  call fa2 (Call @"Balance_of") (FA2.mkFA2View [FA2.BalanceRequestItem (toAddress account) tokenId] consumer)
+  consumerStorage <- fromVal @[[FA2.BalanceResponseItem]] <$> getStorage consumer
+
+  case consumerStorage of
+    [[balanceResponseItem]] -> pure $ FA2.briBalance balanceResponseItem
+    _ -> failure $ unlinesF
+          [ "Expected consumer storage to have exactly 1 balance response, with exactly 1 item."
+          , "Consumer storage:"
+          , indentF 2 $ build consumerStorage
+          ]
 
 -- | Construct allowlist for passing to allowlist overriding entrypoint.
 mkAllowlistParam :: [TAddress p] -> BigMap Address ()

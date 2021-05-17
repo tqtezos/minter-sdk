@@ -1,6 +1,7 @@
 -- | Lorentz bindings for the fixed price sale contract (FA2 version).
 module Lorentz.Contracts.Marketplace.FA2 where
 
+import Fmt (Buildable(..), genericF)
 import Lorentz
 
 import Lorentz.Contracts.MinterSdk
@@ -12,12 +13,9 @@ import qualified Michelson.Typed as T
 -- Types
 ----------------------------------------------------------------------------
 
-data SaleId = SaleId Natural
-  deriving stock (Eq, Ord)
-
-customGeneric "SaleId" ligoCombLayout
-deriving anyclass instance IsoValue SaleId
-deriving anyclass instance HasAnnotation SaleId
+newtype SaleId = SaleId Natural
+  deriving stock (Generic, Eq, Ord)
+  deriving newtype (IsoValue, HasAnnotation, Buildable)
 
 data SaleToken = SaleToken
   { fa2Address :: Address
@@ -27,6 +25,7 @@ data SaleToken = SaleToken
 customGeneric "SaleToken" ligoCombLayout
 deriving anyclass instance IsoValue SaleToken
 deriving anyclass instance HasAnnotation SaleToken
+instance Buildable SaleToken where build = genericF
 
 data MoneyToken = MoneyToken
   { fa2Address :: Address
@@ -36,9 +35,10 @@ data MoneyToken = MoneyToken
 customGeneric "MoneyToken" ligoCombLayout
 deriving anyclass instance IsoValue MoneyToken
 deriving anyclass instance HasAnnotation MoneyToken
+instance Buildable MoneyToken where build = genericF
 
-data SaleData = SaleData 
-  { salePricePerToken :: Natural 
+data SaleData = SaleData
+  { salePricePerToken :: Natural
   , saleToken :: SaleToken
   , moneyToken :: MoneyToken
   , tokenAmount :: Natural
@@ -47,6 +47,7 @@ data SaleData = SaleData
 customGeneric "SaleData" ligoCombLayout
 deriving anyclass instance IsoValue SaleData
 deriving anyclass instance HasAnnotation SaleData
+instance Buildable SaleData where build = genericF
 
 data SaleParam = SaleParam
   { seller :: Address
@@ -56,6 +57,7 @@ data SaleParam = SaleParam
 customGeneric "SaleParam" ligoCombLayout
 deriving anyclass instance IsoValue SaleParam
 deriving anyclass instance HasAnnotation SaleParam
+instance Buildable SaleParam where build = genericF
 
 data MarketplaceStorage = MarketplaceStorage
   { admin :: AdminStorage
@@ -73,7 +75,7 @@ initMarketplaceStorage as = MarketplaceStorage as mempty (SaleId 0)
 data MarketplaceEntrypoints
   = Sell SaleData
   | Buy SaleId
-  | Cancel SaleId 
+  | Cancel SaleId
   | Admin AdminEntrypoints
 
 customGeneric "MarketplaceEntrypoints" ligoLayout
