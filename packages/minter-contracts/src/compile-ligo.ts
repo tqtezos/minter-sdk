@@ -255,6 +255,18 @@ const compileSources: CompileSourceEntry[] = [
     dstFile: 'fixed_price_fa2_sales_view.tz',
     contract: false,
   },
+  {
+    srcFile: 'fixed_price_sale/fixed_price_sale_market_cancel_only_admin.mligo',
+    mainFn: 'fixed_price_sale_main',
+    dstFile: 'fixed_price_sale_market_cancel_only_admin.tz',
+    contract: true,
+  },
+  {
+    srcFile: 'fixed_price_sale/fixed_price_sale_market_tez_cancel_only_admin.mligo',
+    mainFn: 'fixed_price_sale_tez_main',
+    dstFile: 'fixed_price_sale_market_tez_cancel_only_admin.tz',
+    contract: true,
+  },
 ];
 
 const filterSources = (sources: CompileSourceEntry[]): CompileSourceEntry[] => {
