@@ -4,7 +4,7 @@ This directory contains various flavors of a Multi-Asset Non-Fungible Token vari
 
  The multi-asset contract manages multiple token types. A new token can be created and configured without redeploying the contract. This design enables new functionality, such as the transfer of multiple token types at once, saving on transaction costs. 
 
- The code is written with a high degree of modularity with seperate components seperated into different Ligo files to ease future extension. This document will focous on these different components. 
+ The code is written with a high degree of modularity with seperate components seperated into different LIGO files to ease future extension. This document will focous on these different components. 
 
 ![Mermaid NFT Code Flowchart](../../../../../../docs/mermaid-diagram-nft.png)
 
