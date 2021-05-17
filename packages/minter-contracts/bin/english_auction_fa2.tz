@@ -13,7 +13,7 @@
                                                  (pair (timestamp %start_time) (timestamp %end_time))))))))))
         (nat %resolve)) ;
   storage
-    (pair (option %pauseable_admin
+    (pair (option %admin
              (pair (pair (address %admin) (bool %paused)) (option %pending_admin address)))
           (pair (nat %current_id)
                 (pair (nat %max_auction_time)
@@ -842,18 +842,24 @@
                      DIG 5 ;
                      SWAP ;
                      EXEC ;
-                     PUSH string "Only seller can cancel auction" ;
-                     SWAP ;
                      DUP ;
-                     DUG 2 ;
                      CAR ;
                      SENDER ;
                      COMPARE ;
                      EQ ;
-                     PAIR ;
-                     DUP 9 ;
-                     SWAP ;
-                     EXEC ;
+                     IF { PUSH unit Unit }
+                        { PUSH string "OR_A_SELLER" ;
+                          DUP 4 ;
+                          CAR ;
+                          IF_NONE
+                            { DROP ; UNIT }
+                            { CAR ;
+                              CAR ;
+                              SENDER ;
+                              COMPARE ;
+                              NEQ ;
+                              IF { PUSH string "_" ; CONCAT ; PUSH string "NOT_AN_ADMIN" ; CONCAT ; FAILWITH }
+                                 { DROP ; UNIT } } } ;
                      DROP ;
                      PUSH string "Auction must not have ended" ;
                      SWAP ;

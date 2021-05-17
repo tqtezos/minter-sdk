@@ -31,7 +31,7 @@ let english_auction_tez_permit_allowlisted_main (param, storage : allowlisted_en
       let ops, permit_auction_storage = english_auction_tez_permit_main(auction_param, storage.permit_auction_storage) in
       ops, { storage with permit_auction_storage = permit_auction_storage }
   | Update_allowed new_allowlist -> begin
-      fail_if_not_admin(storage.permit_auction_storage.auction_storage.pauseable_admin);
+      fail_if_not_admin(storage.permit_auction_storage.auction_storage.admin);
       ( ([] : operation list)
       , { storage with allowlist = new_allowlist }
       )
