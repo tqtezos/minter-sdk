@@ -108,10 +108,15 @@ let cancel_sale(sale_id, storage: sale_id * storage) : (operation list * storage
 let fixed_price_sale_main (p, storage : market_entry_points * storage) : operation list * storage = match p with
   | Sell sale_data ->
      let u : unit = fail_if_paused(storage.admin) in
+
 #if FEE
      let v : unit = assert_msg (storage.fee.fee_percent <= 100n, "FEE_TOO_HIGH") in
 #endif
+
+#if !CANCEL_ONLY_ADMIN
      let w : unit = fail_if_not_admin(storage.admin) in
+#endif 
+
      deposit_for_sale(sale_data, storage)
   | Buy sale_id ->
      let u : unit = fail_if_paused(storage.admin) in

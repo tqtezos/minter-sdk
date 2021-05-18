@@ -145,7 +145,7 @@ type market_entry_points =
 
 ### %sell
 
-If an admin is enabled, the admin can call the `sell` entrypoint in order to sell an NFT/FT Edition set that they own. If a non admin calls the entrypoint and admin capabilites are configured, the call will fail with `NOT_AN_ADMIN,` Otherwise, when admin capabilites are not configured any address can call the entrypoint. They specify the token(s) they would like to sell with the `sale_token`. In the FA2 version of the contract, they also specify th FA2 token for which they would like the NFT to be purchased with using `money_token`. 
+If an admin is enabled, the admin can call the `sell` entrypoint in order to sell an NFT/FT Edition set that they own. If a non admin calls the entrypoint and admin capabilites are configured, the call will fail with `NOT_AN_ADMIN,` Otherwise, when admin capabilites are not configured or in the `cancel_only_admin` contract version, any address can call the entrypoint. They specify the token(s) they would like to sell with the `sale_token`. In the FA2 version of the contract, they also specify th FA2 token for which they would like the NFT to be purchased with using `money_token`. 
 
 They also specify the amount of the FA2 they would like to receive in exchange for each token using the `sale_price` field and the number of tokens (which share the same FA2 `token-id`) using `amount`. In this way, the contract can be used to sell a set of fungible tokens which are used to represent an Edition set. Each token is listed for the same price, and they are bought individually. As these tokens share the same `token-id` they are not an NFT Edition set, but rather a set of the same fungible tokens being used to represent an Edition set.  
 
@@ -241,3 +241,8 @@ type fee_data =
 ```
 
 `fee_percent` is a nat between 0 and 100 representing the percent of the sale to be paid to the `fee_address`. If `fee_percent > 100`, the `sell` and `buy` entrypoints will both fail with `FEE_TOO_HIGH`.  Fee is subtracted from the buying price and is calculated as `((fee_percent * price) / 100)`. For example, if an NFT is listed for 100tz, and `fee_percent := 30` then 70tz will be sent to the seller and 30tz will be sent to the `fee_address`.
+
+<a name="Cancel-only-admin-extension"></a>
+## Cancel only admin extension
+
+In the normal fixed price sale with admin enabled, admins have sole authority over configuring and cancelling sales. For some use-cases however it is useful for anyone to have the power to configure a sale, and admins to only have sole authority over cancelling sales. This is accomplished when the C Macro `CANCEL_ONLY_ADMIN` is defined as in the LIGO files with `cancel_only_admin` in the title. 

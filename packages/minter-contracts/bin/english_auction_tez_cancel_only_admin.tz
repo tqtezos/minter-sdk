@@ -1002,15 +1002,11 @@
              DROP ;
              DIG 3 ;
              DROP ;
+             DIG 5 ;
+             DROP ;
              SWAP ;
              SENDER ;
              DUP 3 ;
-             DUP 3 ;
-             CAR ;
-             DIG 8 ;
-             SWAP ;
-             EXEC ;
-             DROP ;
              DUP 3 ;
              CAR ;
              DIG 7 ;

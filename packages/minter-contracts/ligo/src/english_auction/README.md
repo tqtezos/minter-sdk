@@ -98,7 +98,7 @@ If auction is in progress and `AMOUNT` is a valid bid amount, a call to this ent
 ```
 
 ### %cancel
-If `SENDER` is `seller` and auction is in progress, a call to this entrypoint will return `assets` to `owner`and return `current_bid` to `highest_bidder`. Note, if no bids were placed, the seller's deposit is simply returned. It will also delete auction data from assets big_map
+If `SENDER` is `seller` or `admin` and auction is in progress, a call to this entrypoint will return `assets` to `owner`and return `current_bid` to `highest_bidder`. Note, if no bids were placed, the seller's deposit is simply returned. It will also delete auction data from assets big_map
 
 ```sh=
   %cancel {
@@ -164,3 +164,6 @@ This is an implementation of the auction contract in which the standard `Configu
 
 This is a version of the Auction contract in which an address fixed at contract origination gets a fixed percent of any sale that takes place using the contract. 
 
+# Cancel only admin extension
+
+In the normal english auction contract with admin enabled, admins have sole authority over configuring and cancelling auctions. For some use-cases however it is useful for anyone to have the power to configure an auction, and admins to only have sole authority over cancelling auctions. This is accomplished when the C Macro `CANCEL_ONLY_ADMIN` is defined as in the LIGO files with `cancel_only_admin` in the title. 
