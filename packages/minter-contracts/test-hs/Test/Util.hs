@@ -17,6 +17,7 @@ module Test.Util
   -- * Property-based tests
   , clevelandProp
   , genMutez'
+  , iterateM
 
     -- Re-exports
   , Sized
@@ -238,3 +239,12 @@ instance Integral Mutez where
 -- TODO: We can delete this the next time we update morley; see: https://gitlab.com/morley-framework/morley/-/merge_requests/847
 genMutez' :: Range Mutez -> Gen Mutez
 genMutez' range = unsafeMkMutez <$> Gen.word64 (unMutez <$> range)
+
+-- | Given a generator of values of type @a@ and an initial value,
+-- repeatedly uses the generator to create a list of the given length,
+-- feeding it the previously generated value at each iteration.
+iterateM :: forall a. Int -> (a -> Gen a) -> a -> Gen [a]
+iterateM 0 _ _ = pure []
+iterateM len gen previous = do
+  current <- gen previous
+  (current :) <$> iterateM (len - 1) gen current
