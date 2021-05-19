@@ -35,6 +35,18 @@
                                                                                   (pair (mutez %min_raise) (pair (timestamp %end_time) (address %highest_bidder))))))))))))))))
           (nat %counter)) ;
   code { LAMBDA
+           (pair bool string)
+           unit
+           { UNPAIR ; NOT ; IF { FAILWITH } { DROP ; UNIT } } ;
+         LAMBDA
+           address
+           (contract unit)
+           { CONTRACT unit ;
+             IF_NONE
+               { PUSH string "Return address does not resolve to contract" ; FAILWITH }
+               {} } ;
+         LAMBDA key address { HASH_KEY ; IMPLICIT_ACCOUNT ; ADDRESS } ;
+         LAMBDA
            (option (pair (pair address bool) (option address)))
            unit
            { IF_NONE
@@ -51,17 +63,6 @@
            { IF_NONE
                { UNIT }
                { CAR ; CDR ; IF { PUSH string "PAUSED" ; FAILWITH } { UNIT } } } ;
-         LAMBDA
-           (pair bool string)
-           unit
-           { UNPAIR ; NOT ; IF { FAILWITH } { DROP ; UNIT } } ;
-         LAMBDA
-           address
-           (contract unit)
-           { CONTRACT unit ;
-             IF_NONE
-               { PUSH string "Return address does not resolve to contract" ; FAILWITH }
-               {} } ;
          LAMBDA
            (pair address (pair address (pair address (list (pair nat nat)))))
            operation
@@ -206,13 +207,12 @@
              CDR ;
              COMPARE ;
              EQ } ;
-         LAMBDA key address { HASH_KEY ; IMPLICIT_ACCOUNT ; ADDRESS } ;
          DIG 10 ;
          UNPAIR ;
          IF_LEFT
-           { DIG 2 ;
+           { DIG 6 ;
              DROP ;
-             DIG 6 ;
+             DIG 8 ;
              DROP ;
              SWAP ;
              DUP ;
@@ -239,7 +239,7 @@
                      COMPARE ;
                      EQ ;
                      PAIR ;
-                     DIG 4 ;
+                     DIG 5 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
@@ -299,7 +299,7 @@
                      PAIR ;
                      SWAP ;
                      PAIR }
-                   { DIG 9 ;
+                   { DIG 7 ;
                      DROP ;
                      SWAP ;
                      DUP ;
@@ -317,13 +317,13 @@
                      COMPARE ;
                      EQ ;
                      PAIR ;
-                     DUP 9 ;
+                     DUP 10 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
                      DUP 3 ;
                      CAR ;
-                     DIG 9 ;
+                     DIG 7 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
@@ -774,14 +774,14 @@
                      PAIR ;
                      SWAP ;
                      PAIR } }
-               { DIG 10 ;
+               { DIG 8 ;
                  DROP ;
                  IF_LEFT
                    { SWAP ;
                      DUP ;
                      DUG 2 ;
                      CAR ;
-                     DIG 10 ;
+                     DIG 8 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
@@ -909,7 +909,7 @@
                      DUP ;
                      DUG 2 ;
                      CAR ;
-                     DIG 10 ;
+                     DIG 8 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
@@ -1026,15 +1026,15 @@
              PAIR ;
              SWAP ;
              PAIR }
-           { DIG 3 ;
+           { DIG 2 ;
              DROP ;
-             DIG 3 ;
+             DIG 2 ;
              DROP ;
-             DIG 3 ;
+             DIG 2 ;
              DROP ;
-             DIG 3 ;
+             DIG 2 ;
              DROP ;
-             DIG 4 ;
+             DIG 6 ;
              DROP ;
              NIL operation ;
              DUG 2 ;
@@ -1127,12 +1127,12 @@
                          CAR ;
                          CHECK_SIGNATURE ;
                          PAIR ;
-                         DUP 10 ;
+                         DUP 12 ;
                          SWAP ;
                          EXEC ;
                          DROP ;
                          CAR ;
-                         DUP 7 ;
+                         DUP 10 ;
                          SWAP ;
                          EXEC } ;
                      DUP 3 ;
@@ -1142,13 +1142,13 @@
                      CAR ;
                      DUP 3 ;
                      CAR ;
-                     DUP 13 ;
+                     DUP 11 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
                      DUP 3 ;
                      CAR ;
-                     DUP 12 ;
+                     DUP 10 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
@@ -1174,7 +1174,7 @@
                      COMPARE ;
                      GT ;
                      PAIR ;
-                     DUP 11 ;
+                     DUP 13 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
@@ -1204,7 +1204,7 @@
                      COMPARE ;
                      LE ;
                      PAIR ;
-                     DUP 11 ;
+                     DUP 13 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
@@ -1221,7 +1221,7 @@
                      COMPARE ;
                      GE ;
                      PAIR ;
-                     DUP 11 ;
+                     DUP 13 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
@@ -1246,7 +1246,7 @@
                      COMPARE ;
                      LE ;
                      PAIR ;
-                     DUP 11 ;
+                     DUP 13 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
@@ -1257,7 +1257,7 @@
                      COMPARE ;
                      GT ;
                      PAIR ;
-                     DUP 11 ;
+                     DUP 13 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
@@ -1267,7 +1267,7 @@
                      COMPARE ;
                      EQ ;
                      PAIR ;
-                     DUP 11 ;
+                     DUP 13 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
@@ -1281,7 +1281,7 @@
                      COMPARE ;
                      GT ;
                      PAIR ;
-                     DUP 11 ;
+                     DUP 13 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
@@ -1408,7 +1408,7 @@
                      DUP ;
                      DUG 2 ;
                      CDR ;
-                     IF_NONE { SENDER } { CAR ; DUP 6 ; SWAP ; EXEC } ;
+                     IF_NONE { SENDER } { CAR ; DUP 9 ; SWAP ; EXEC } ;
                      DIG 4 ;
                      DIG 3 ;
                      CAR ;
@@ -1444,7 +1444,7 @@
                              PAIR ;
                              DUP 4 ;
                              PAIR ;
-                             DUP 9 ;
+                             DUP 8 ;
                              SWAP ;
                              EXEC ;
                              SWAP ;

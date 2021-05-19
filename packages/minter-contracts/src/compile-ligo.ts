@@ -255,6 +255,12 @@ const compileSources: CompileSourceEntry[] = [
     dstFile: 'fixed_price_fa2_sales_view.tz',
     contract: false,
   },
+  {
+    srcFile: 'fixed_price_sale/fixed_price_sale_market_offline.mligo',
+    mainFn: 'fixed_price_sale_permit_main',
+    dstFile: 'fixed_price_sale_fa2_permit.tz',
+    contract: true,
+  },
 ];
 
 const filterSources = (sources: CompileSourceEntry[]): CompileSourceEntry[] => {

@@ -1,6 +1,8 @@
 #if !COMMON
 #define COMMON
 
+#include "../fa2/fa2_interface.mligo"
+
 (*TYPES*)
 
 type sale_id = nat

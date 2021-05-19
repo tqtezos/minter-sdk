@@ -7,7 +7,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import retry from 'async-retry';
 import Configstore from 'configstore';
-import { defaultEnv, loadFile } from './ligo';
+import { defaultEnv } from './ligo';
 import { MichelsonMap, TezosToolkit } from '@taquito/taquito';
 import { InMemorySigner } from '@taquito/signer';
 import { Contract } from './type-aliases';

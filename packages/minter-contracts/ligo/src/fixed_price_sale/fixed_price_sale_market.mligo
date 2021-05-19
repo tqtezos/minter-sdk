@@ -11,12 +11,22 @@ type sale_data =
   amount : nat;
 }
 
+#if !PERMIT_MARKET 
 type sale =
 [@layout:comb]
 {
   seller: address;
   sale_data: sale_data;
 }
+#else 
+type sale =
+[@layout:comb]
+{
+  seller: address;
+  sale_data: sale_data;
+  pending_purchasers : address set;
+}
+#endif
 
 #if !FEE 
 
@@ -41,11 +51,14 @@ type storage =
 
 #endif
 
-type market_entry_points =
+type market_entry_points_without_buy =
   | Sell of sale_data
-  | Buy of sale_id
   | Cancel of sale_id
   | Admin of pauseable_admin
+
+type market_entry_points = 
+  | Buy of sale_id 
+  | ManageSale of market_entry_points_without_buy
 
 let buy_token(sale_id, storage: sale_id * storage) : (operation list * storage) =
   let sale : sale = match Big_map.find_opt sale_id storage.sales with
@@ -86,7 +99,11 @@ let deposit_for_sale(sale_data, storage: sale_data * storage) : (operation list 
   let amount_ = sale_data.amount in 
   let transfer_op =
     transfer_fa2 (token_for_sale_address, token_for_sale_token_id, amount_, Tezos.sender, Tezos.self_address) in
+#if !PERMIT_MARKET 
   let sale = { seller = Tezos.sender; sale_data = sale_data; } in
+#else 
+  let sale = { seller = Tezos.sender; sale_data = sale_data; pending_purchasers = (Set.empty : address set)} in
+#endif
   let sale_id = storage.next_sale_id in
   let new_s = { storage with sales = Big_map.add sale_id sale storage.sales;
                 next_sale_id = sale_id + 1n} in
@@ -105,7 +122,8 @@ let cancel_sale(sale_id, storage: sale_id * storage) : (operation list * storage
                     let tx_nfts_back_op = transfer_fa2(token_for_sale_address, token_for_sale_token_id, amount_, Tezos.self_address, seller) in
                     ([tx_nfts_back_op]), { storage with sales = Big_map.remove sale_id storage.sales }
 
-let fixed_price_sale_main (p, storage : market_entry_points * storage) : operation list * storage = match p with
+let fixed_price_sale_without_buy (p, storage : market_entry_points_without_buy * storage) : operation list * storage =
+  match p with 
   | Sell sale_data ->
      let u : unit = fail_if_paused(storage.admin) in
 #if FEE
@@ -113,19 +131,24 @@ let fixed_price_sale_main (p, storage : market_entry_points * storage) : operati
 #endif
      let w : unit = fail_if_not_admin(storage.admin) in
      deposit_for_sale(sale_data, storage)
+  | Cancel sale_id ->
+     let u : unit = fail_if_paused(storage.admin) in
+     cancel_sale(sale_id,storage)
+  | Admin a ->
+     let ops, admin = pauseable_admin(a, storage.admin) in
+     let new_storage = { storage with admin = admin; } in
+     ops, new_storage
+
+
+let fixed_price_sale_main (p, storage : market_entry_points * storage) : operation list * storage = match p with
+  | ManageSale entrypoints -> 
+      fixed_price_sale_without_buy(entrypoints, storage)
   | Buy sale_id ->
      let u : unit = fail_if_paused(storage.admin) in
 #if FEE
      let v : unit = assert_msg (storage.fee.fee_percent <= 100n, "FEE_TOO_HIGH") in
 #endif
      buy_token(sale_id, storage)
-  | Cancel sale_id ->
-     let u : unit = fail_if_paused(storage.admin) in
-     cancel_sale(sale_id,storage)
-  | Admin a ->
-    let ops, admin = pauseable_admin(a, storage.admin) in
-    let new_storage = { storage with admin = admin; } in
-    ops, new_storage
 
 (*VIEWS*)
 let rec activeSalesHelper (active_sales, sale_id, s : (sale list) * sale_id * storage) 
