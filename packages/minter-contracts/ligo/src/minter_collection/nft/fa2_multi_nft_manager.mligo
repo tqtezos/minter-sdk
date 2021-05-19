@@ -16,7 +16,7 @@ type mint_token_param =
 {
   token_metadata: token_metadata;
   owner : address;
-  amount: nat option
+  amount: nat option;
 }
 
 type mint_tokens_param = mint_token_param list
