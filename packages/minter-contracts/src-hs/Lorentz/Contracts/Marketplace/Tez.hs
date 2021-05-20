@@ -61,11 +61,17 @@ deriving anyclass instance HasAnnotation MarketplaceTezStorage
 initMarketplaceTezStorage :: AdminStorage -> MarketplaceTezStorage
 initMarketplaceTezStorage as = MarketplaceTezStorage as mempty (SaleId 0)
 
-data MarketplaceTezEntrypoints
-  = Sell SaleDataTez
-  | Buy SaleId
-  | Cancel SaleId
+data ManageSaleEntrypoints = Cancel SaleId
   | Admin AdminEntrypoints
+  | Sell SaleDataTez
+
+customGeneric "ManageSaleEntrypoints" ligoLayout
+deriving anyclass instance IsoValue ManageSaleEntrypoints
+deriving anyclass instance HasAnnotation ManageSaleEntrypoints
+
+data MarketplaceTezEntrypoints
+  = Buy SaleId
+  | ManageSale ManageSaleEntrypoints 
 
 customGeneric "MarketplaceTezEntrypoints" ligoLayout
 deriving anyclass instance IsoValue MarketplaceTezEntrypoints
