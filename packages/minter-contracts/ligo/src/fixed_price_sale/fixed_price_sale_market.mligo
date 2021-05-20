@@ -60,11 +60,13 @@ type market_entry_points =
   | Buy of sale_id 
   | ManageSale of market_entry_points_without_buy
 
-let buy_token(sale_id, storage: sale_id * storage) : (operation list * storage) =
-  let sale : sale = match Big_map.find_opt sale_id storage.sales with
+let get_sale(sale_id, storage: sale_id * storage) : sale = 
+   (match Big_map.find_opt sale_id storage.sales with
     | None -> (failwith "NO_SALE": sale)
-    | Some s -> s
-  in
+    | Some s -> s)
+
+let buy_token(sale_id, storage: sale_id * storage) : (operation list * storage) =
+  let sale : sale = get_sale(sale_id, storage) in 
   let seller = sale.seller in 
   let token_for_sale_address = sale.sale_data.sale_token.fa2_address in 
   let token_for_sale_token_id = sale.sale_data.sale_token.token_id in 
@@ -110,17 +112,16 @@ let deposit_for_sale(sale_data, storage: sale_data * storage) : (operation list 
   ([transfer_op]), new_s
 
 let cancel_sale(sale_id, storage: sale_id * storage) : (operation list * storage) = 
-  match Big_map.find_opt sale_id storage.sales with
-    | None -> (failwith "NO_SALE" : (operation list * storage))
-    | Some sale ->  let token_for_sale_address = sale.sale_data.sale_token.fa2_address in
-                    let token_for_sale_token_id = sale.sale_data.sale_token.token_id in
-                    let amount_ = sale.sale_data.amount in 
-                    let seller = sale.seller in
-                    let is_seller = Tezos.sender = seller in
-                    let v : unit = if is_seller then ()
-                      else fail_if_not_admin_ext (storage.admin, "OR_A_SELLER") in
-                    let tx_nfts_back_op = transfer_fa2(token_for_sale_address, token_for_sale_token_id, amount_, Tezos.self_address, seller) in
-                    ([tx_nfts_back_op]), { storage with sales = Big_map.remove sale_id storage.sales }
+    let sale : sale = get_sale(sale_id, storage) in 
+    let token_for_sale_address = sale.sale_data.sale_token.fa2_address in
+    let token_for_sale_token_id = sale.sale_data.sale_token.token_id in
+    let amount_ = sale.sale_data.amount in 
+    let seller = sale.seller in
+    let is_seller = Tezos.sender = seller in
+    let v : unit = if is_seller then ()
+      else fail_if_not_admin_ext (storage.admin, "OR_A_SELLER") in
+    let tx_nfts_back_op = transfer_fa2(token_for_sale_address, token_for_sale_token_id, amount_, Tezos.self_address, seller) in
+    ([tx_nfts_back_op]), { storage with sales = Big_map.remove sale_id storage.sales }
 
 let fixed_price_sale_without_buy (p, storage : market_entry_points_without_buy * storage) : operation list * storage =
   match p with 

@@ -11,22 +11,6 @@ type permit_storage =
     counter : nat;
   }
 
-type permit_buy_param =
-  [@layout:comb]
-  {
-    sale_id : sale_id;
-    optional_permit : permit option;
-  } 
-
-type pending_purchase = 
-  [@layout:comb]
-  {
-    sale_id : sale_id;
-    purchaser : address;
-  }
-
-type pending_purchases = pending_purchase list 
-
 type permit_return = (operation list) * permit_storage
 
 type offline_market_entry_points =
@@ -40,10 +24,7 @@ let execute_pending_purchase (acc, pending_purchase: permit_return * pending_pur
   let storage = permit_storage.market_storage in 
   let { sale_id = sale_id; 
         purchaser = purchaser; } = pending_purchase in  
-  let sale : sale = match Big_map.find_opt sale_id storage.sales with
-    | None -> (failwith "NO_SALE": sale)
-    | Some s -> s
-  in
+  let sale : sale = get_sale(sale_id, storage) in
   let { seller = seller;
         pending_purchasers = pending_purchasers;
         sale_data = {
@@ -92,10 +73,7 @@ let revoke_pending_purchase (acc, pending_purchase: permit_return * pending_purc
   let storage = permit_storage.market_storage in 
   let { sale_id = sale_id; 
         purchaser = purchaser; } = pending_purchase in  
-  let sale : sale = match Big_map.find_opt sale_id storage.sales with
-    | None -> (failwith "NO_SALE": sale)
-    | Some s -> s
-  in
+  let sale : sale = get_sale(sale_id, storage) in
   let { seller = seller;
         pending_purchasers = pending_purchasers;
         sale_data = {
@@ -128,15 +106,20 @@ let revoke_purchases (pending_purchases, permit_storage : pending_purchase list 
   (List.fold revoke_pending_purchase pending_purchases acc)
 
 let buy_token_pending_confirmation (sale_id, purchaser, storage: sale_id * address * storage) : (operation * storage) = begin 
-    let sale : sale = match Big_map.find_opt sale_id storage.sales with
-      | None -> (failwith "NO_SALE": sale)
-      | Some s -> s
-    in
-    let money_token_address = sale.sale_data.money_token.fa2_address in 
-    let money_token_id = sale.sale_data.money_token.token_id in
-    let sale_price = sale.sale_data.sale_price in
-    let amount_ = sale.sale_data.amount in 
-    let pending_purchasers = sale.pending_purchasers in 
+    let sale : sale = get_sale(sale_id, storage) in
+    let { seller = _;
+          pending_purchasers = pending_purchasers;
+          sale_data = {
+              money_token = {
+                  token_id = money_token_id;
+                  fa2_address = money_token_address;
+              };
+              sale_token = _;
+              sale_price = sale_price;
+              amount = amount_;
+          }
+  
+    } = sale in 
     assert_msg(amount_ >= 1n, "NO_SALE");
   
     let tx_price = transfer_fa2(money_token_address, money_token_id, sale_price, Tezos.sender, Tezos.self_address) in
