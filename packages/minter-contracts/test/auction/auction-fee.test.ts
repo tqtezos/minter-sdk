@@ -96,6 +96,7 @@ describe('test NFT auction', () => {
     ).send({ amount: 0 });
     await opAuction.confirmation();
     $log.info(`Auction configured. Consumed gas: ${opAuction.consumedGas}`);
+    await sleep(7000); //7 seconds
   });
   test('resolved auction should send contract fee', async () => {
     $log.info(`Alice bids 200tz`);

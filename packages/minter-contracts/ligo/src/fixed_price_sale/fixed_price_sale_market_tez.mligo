@@ -148,7 +148,10 @@ let fixed_price_sale_tez_without_buy (p, storage : market_entry_points_without_b
 #if FEE
      let v : unit = assert_msg (storage.fee.fee_percent <= 100n, "FEE_TOO_HIGH") in
 #endif
+
+#if !CANCEL_ONLY_ADMIN
      let w : unit = fail_if_not_admin(storage.admin) in
+#endif 
      deposit_for_sale(sale_data, storage)
   | Cancel sale_id ->
      let u : unit = fail_if_paused(storage.admin) in

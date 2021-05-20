@@ -143,7 +143,7 @@ describe('test NFT auction', () => {
     const opConfirmAdmin = await nftAuctionAlice.methods.confirm_admin(["unit"]).send();
     await opConfirmAdmin.confirmation();
     const contractStorage1 : any = await nftAuction.storage();
-    const admin = await contractStorage1.pauseable_admin.admin;
+    const admin = await contractStorage1.admin.admin;
     expect(admin).toEqual(aliceAddress);
     $log.info("Admin changed successfully");
 
@@ -153,7 +153,7 @@ describe('test NFT auction', () => {
     const opConfirmAdminBob = await nftAuction.methods.confirm_admin(["unit"]).send();
     await opConfirmAdminBob.confirmation();
     const contractStorage2 : any = await nftAuction.storage();
-    const finalAdmin = await contractStorage2.pauseable_admin.admin;
+    const finalAdmin = await contractStorage2.admin.admin;
     expect(finalAdmin).toEqual(bobAddress);
     $log.info("Admin changed back successfully");
   });

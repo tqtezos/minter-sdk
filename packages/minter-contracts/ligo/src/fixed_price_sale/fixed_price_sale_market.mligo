@@ -127,10 +127,15 @@ let fixed_price_sale_without_buy (p, storage : market_entry_points_without_buy *
   match p with 
   | Sell sale_data ->
      let u : unit = fail_if_paused(storage.admin) in
+
 #if FEE
      let v : unit = assert_msg (storage.fee.fee_percent <= 100n, "FEE_TOO_HIGH") in
 #endif
+
+#if !CANCEL_ONLY_ADMIN
      let w : unit = fail_if_not_admin(storage.admin) in
+#endif 
+
      deposit_for_sale(sale_data, storage)
   | Cancel sale_id ->
      let u : unit = fail_if_paused(storage.admin) in

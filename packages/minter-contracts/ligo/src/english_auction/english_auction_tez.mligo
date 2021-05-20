@@ -46,7 +46,7 @@ type auction_entrypoints =
 type storage =
   [@layout:comb]
   {
-    pauseable_admin : pauseable_admin_storage;
+    admin : pauseable_admin_storage;
     current_id : nat;
     max_auction_time : nat;
     max_config_to_start_time : nat;
@@ -58,7 +58,7 @@ type storage =
 type storage =
   [@layout:comb]
   {
-    pauseable_admin : pauseable_admin_storage;
+    admin : pauseable_admin_storage;
     current_id : nat;
     max_auction_time : nat;
     max_config_to_start_time : nat;
@@ -122,8 +122,10 @@ let valid_bid_amount (auction : auction) : bool =
   ((Tezos.amount >= auction.current_bid) && first_bid(auction))
 
 let configure_auction_storage(configure_param, seller, storage : configure_param * address * storage ) : storage = begin
-    (fail_if_not_admin storage.pauseable_admin);
-    (fail_if_paused storage.pauseable_admin);
+#if !CANCEL_ONLY_ADMIN
+    (fail_if_not_admin storage.admin);
+#endif
+    (fail_if_paused storage.admin);
 
     assert_msg (configure_param.end_time > configure_param.start_time, "end_time must be after start_time");
     assert_msg (abs(configure_param.end_time - configure_param.start_time) <= storage.max_auction_time, "Auction time must be less than max_auction_time");
@@ -162,7 +164,7 @@ let configure_auction(configure_param, storage : configure_param * storage) : re
  
 
 let resolve_auction(asset_id, storage : nat * storage) : return = begin
-    (fail_if_paused storage.pauseable_admin);
+    (fail_if_paused storage.admin);
     let auction : auction = get_auction_data(asset_id, storage) in
     assert_msg (auction_ended(auction) , "Auction must have ended");
     assert_msg (Tezos.amount = 0mutez, "Amount must be 0mutez");
@@ -193,9 +195,11 @@ let resolve_auction(asset_id, storage : nat * storage) : return = begin
   end
 
 let cancel_auction(asset_id, storage : nat * storage) : return = begin
-    (fail_if_paused storage.pauseable_admin);
+    (fail_if_paused storage.admin);
     let auction : auction = get_auction_data(asset_id, storage) in
-    assert_msg (Tezos.sender = auction.seller, "Only seller can cancel auction");
+    let is_seller : bool = Tezos.sender = auction.seller in 
+    let v : unit = if is_seller then ()
+          else fail_if_not_admin_ext (storage.admin, "OR_A_SELLER") in
     assert_msg (not auction_ended(auction), "Auction must not have ended");
     assert_msg (Tezos.amount = 0mutez, "Amount must be 0mutez");
 
@@ -212,7 +216,7 @@ let cancel_auction(asset_id, storage : nat * storage) : return = begin
 let place_bid(asset_id, storage : nat * storage) : return = begin
     let auction : auction = get_auction_data(asset_id, storage) in
     assert_msg (Tezos.sender = Tezos.source, "Bidder must be an implicit account");
-    (fail_if_paused storage.pauseable_admin);
+    (fail_if_paused storage.admin);
     assert_msg (auction_in_progress(auction), "Auction must be in progress");
     assert_msg(Tezos.sender <> auction.seller, "Seller cannot place a bid");
     (if not valid_bid_amount(auction) 
@@ -233,8 +237,8 @@ let place_bid(asset_id, storage : nat * storage) : return = begin
 
 let admin(admin_param, storage : pauseable_admin * storage) : return =
     let u = assert_msg (Tezos.amount = 0mutez, "Amount must be 0mutez") in
-    let ops, pauseable_admin = pauseable_admin(admin_param, storage.pauseable_admin) in
-    let new_storage = { storage with pauseable_admin = pauseable_admin; } in
+    let ops, admin = pauseable_admin(admin_param, storage.admin) in
+    let new_storage = { storage with admin = admin; } in
     ops, new_storage
 
 let english_auction_tez_no_configure (p,storage : auction_without_configure_entrypoints * storage) : return = 

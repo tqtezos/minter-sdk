@@ -30,7 +30,7 @@ let english_auction_fa2_allowlisted_main (param, storage : allowlisted_entry_poi
       let ops, auction_storage = english_auction_fa2_main(auction_param, storage.auction_storage) in
       ops, { storage with auction_storage = auction_storage }
   | Update_allowed new_allowlist -> begin
-      fail_if_not_admin(storage.auction_storage.pauseable_admin);
+      fail_if_not_admin(storage.auction_storage.admin);
       ( ([] : operation list)
       , { storage with allowlist = new_allowlist }
       )
