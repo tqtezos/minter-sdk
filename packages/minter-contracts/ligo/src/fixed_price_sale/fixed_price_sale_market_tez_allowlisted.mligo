@@ -12,11 +12,15 @@ type allowlisted_storage =
 
 let check_allowed_param (param, allowlist : market_entry_points * allowlist) : unit =
   match param with
-  | Sell p ->
-      check_address_allowed (p.sale_token.fa2_address, allowlist, "SALE_ADDRESS_NOT_ALLOWED")
+  | ManageSale p -> ( match p with 
+      | Sell p -> begin
+          check_address_allowed (p.sale_token.fa2_address, allowlist, "SALE_ADDRESS_NOT_ALLOWED");
+          unit
+          end
+      | Cancel p -> unit
+      | Admin p -> unit )
   | Buy p -> unit
-  | Cancel p -> unit
-  | Admin p -> unit
+
 
 let fixed_price_sale_tez_allowlisted_main (param, storage : allowlisted_entry_points * allowlisted_storage)
     : operation list * allowlisted_storage = match param with

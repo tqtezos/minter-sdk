@@ -93,4 +93,10 @@ let transfer_fa2(fa2_address, token_id, amount_, from, to_: address * token_id *
     Tezos.transaction [tx] 0mutez c
  in transfer_op
 
+let transfer_tez (qty, to_ : tez * address) : operation =
+  let destination = (match (Tezos.get_contract_opt to_ : unit contract option) with
+    | None -> (failwith "ADDRESS_DOES_NOT_RESOLVE" : unit contract)
+    | Some acc -> acc) in 
+  Tezos.transaction () qty destination
+
 #endif
