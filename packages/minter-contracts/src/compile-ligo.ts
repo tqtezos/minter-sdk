@@ -258,13 +258,13 @@ const compileSources: CompileSourceEntry[] = [
   {
     srcFile: 'fixed_price_sale/fixed_price_sale_market_offline.mligo',
     mainFn: 'fixed_price_sale_permit_main',
-    dstFile: 'fixed_price_sale_fa2_permit.tz',
+    dstFile: 'fixed_price_sale_market_offline.tz',
     contract: true,
   },
   {
     srcFile: 'fixed_price_sale/fixed_price_sale_market_tez_offline.mligo',
     mainFn: 'fixed_price_sale_permit_main',
-    dstFile: 'fixed_price_sale_tez_permit.tz',
+    dstFile: 'fixed_price_sale_market_tez_offline.tz',
     contract: true,
   },
   {
