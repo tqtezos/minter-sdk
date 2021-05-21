@@ -34,6 +34,23 @@ type global_token_id =
       token_id : token_id;
   }
 
+type buy_data = 
+  [@layout:comb]
+  {
+      purchaser : address;
+      payment_relayer : address;
+  }
+
+type pending_purchase = 
+  [@layout:comb]
+  {
+    sale_id : sale_id;
+    buy_data : buy_data;
+  }
+
+
+type pending_purchases = pending_purchase list 
+
 (*MATH*) 
 
 (*In English auction it is necessary to use ceiling so that bid is guaranteed to be raised*)

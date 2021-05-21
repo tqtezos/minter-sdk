@@ -262,8 +262,9 @@ Permit_buy : (list %permit_buy
                      (option %optional_permit (pair (key %signerKey) (signature %signature)))))
 ```
 
-
-In contrast to the normal Fixed price contract, after the `Permit_buy` entrypoint is called the token purchase is marked as pending. When the purchase is pending, no one else can purchase the token. However, the fixed price contract holds the payment and purchased token in escrow until the purchase is either approved or denied by the admin. Typically, admin will wait until the offline credit card payment is either approved or rejected. 
+Only an admin can call this entrypoint with a permit, but any user can call the entrypoint directly (setting `optional_permit` to None). 
+ 
+In contrast to the normal Fixed price contract, after the `Permit_buy` entrypoint is called (either with a permit or without one), the token purchase is marked as pending. When the purchase is pending, no one else can purchase the token. However, the fixed price contract holds the payment and purchased token in escrow until the purchase is either approved or denied by the admin. Typically, admin will wait until the offline credit card payment is either approved or rejected. 
 
 The admin can approve purchases in batch by calling:
 
@@ -273,9 +274,13 @@ and reject purchases in batch by calling:
 
 `Revoke_purchases : (list %revoke_purchases (pair (nat %sale_id) (address %purchaser)))`.
 
-After a purchase attempt is confirmed the contract sends out payments to the seller (and possibly the fee to the fee-address) and sends the token to the purchaser. After a purchase attempt is revoked, the contract sends the payment back to the Admin who revoked the payment. Afterwards, the token remains up for sale and a new user can attempt to purchase it.
+After a purchase attempt is confirmed the contract sends out payments to the seller (and possibly the fee to the fee-address) and sends the token to the purchaser. After a purchase attempt is revoked, the contract sends the payment back to the `payment_relayer` who originally sent the payment. Afterwards, the token remains up for sale and a new user can attempt to purchase it.
 
-This extension also defines the Macro `PERMIT_MARKET` which makes changes to the base fixed price sale contracts. 
+This extension also defines the Macro `PERMIT_MARKET` which makes optional changes to the base fixed price sale contracts to allow for the offline extension. It changes the storage structure by adding the `pending_purchases` set to the sale record (the value in the `sales` big_map). 
+
+```
+Pending_purchases : (set %pending_purchases (pair (address %purchaser) (address %payment_relayer)))
+```
 
 - Ligo Contracts : [Tez Version](fixed_price_sale_market_tez_offline.mligo), [FA2 Version](fixed_price_sale_market_offline.mligo)
 

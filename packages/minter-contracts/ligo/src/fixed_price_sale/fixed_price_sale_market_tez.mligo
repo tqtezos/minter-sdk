@@ -23,7 +23,7 @@ type sale_tez =
 {
   seller: address;
   sale_data: sale_data_tez;
-  pending_purchasers : address set;
+  pending_purchases : buy_data set;
 }
 #endif
 
@@ -121,7 +121,7 @@ let deposit_for_sale(sale_data, storage: sale_data_tez * storage) : (operation l
 #if !PERMIT_MARKET 
     let sale = { seller = Tezos.sender; sale_data = sale_data; } in
 #else 
-    let sale = { seller = Tezos.sender; sale_data = sale_data; pending_purchasers = (Set.empty : address set)} in
+    let sale = { seller = Tezos.sender; sale_data = sale_data; pending_purchases = (Set.empty : buy_data set)} in
 #endif
     let sale_id : sale_id = storage.next_sale_id in 
     let new_s = { storage with sales = Big_map.add sale_id sale storage.sales; 

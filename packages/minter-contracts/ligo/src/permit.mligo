@@ -17,15 +17,6 @@ type permit_buy_param =
     optional_permit : permit option;
   } 
 
-type pending_purchase = 
-  [@layout:comb]
-  {
-    sale_id : sale_id;
-    purchaser : address;
-  }
-
-type pending_purchases = pending_purchase list 
-
 let address_from_key (key : key) : address =
   let a = Tezos.address (Tezos.implicit_account (Crypto.hash_key key)) in
   a
