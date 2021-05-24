@@ -105,11 +105,11 @@
          SWAP ;
          IF_LEFT
            { IF_LEFT
-               { DIG 5 ;
-                 DROP ;
-                 IF_LEFT
+               { IF_LEFT
                    { IF_LEFT
                        { DIG 3 ;
+                         DROP ;
+                         DIG 3 ;
                          DROP ;
                          DIG 3 ;
                          DROP ;
@@ -171,13 +171,13 @@
                          PAIR ;
                          SWAP ;
                          PAIR }
-                       { DIG 6 ;
+                       { DIG 7 ;
                          DROP ;
                          SWAP ;
                          DUP ;
                          DUG 2 ;
                          CAR ;
-                         DIG 6 ;
+                         DIG 7 ;
                          SWAP ;
                          EXEC ;
                          DROP ;
@@ -188,7 +188,7 @@
                          DUP ;
                          DUG 2 ;
                          PAIR ;
-                         DIG 4 ;
+                         DUP 5 ;
                          SWAP ;
                          EXEC ;
                          DUP ;
@@ -210,6 +210,25 @@
                                   NEQ ;
                                   IF { PUSH string "_" ; CONCAT ; PUSH string "NOT_AN_ADMIN" ; CONCAT ; FAILWITH }
                                      { DROP ; UNIT } } } ;
+                         DROP ;
+                         DUP 4 ;
+                         DUP 4 ;
+                         PAIR ;
+                         DIG 6 ;
+                         SWAP ;
+                         EXEC ;
+                         PUSH string "PENDING_PURCHASES_PRESENT" ;
+                         PUSH nat 0 ;
+                         DIG 2 ;
+                         CDR ;
+                         CDR ;
+                         SIZE ;
+                         COMPARE ;
+                         EQ ;
+                         PAIR ;
+                         DIG 7 ;
+                         SWAP ;
+                         EXEC ;
                          DROP ;
                          SELF_ADDRESS ;
                          DUP 3 ;
@@ -258,6 +277,8 @@
                          CONS ;
                          PAIR } }
                    { DIG 3 ;
+                     DROP ;
+                     DIG 4 ;
                      DROP ;
                      SWAP ;
                      DUP ;

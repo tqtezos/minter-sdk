@@ -276,7 +276,7 @@ and reject purchases in batch by calling:
 
 After a purchase attempt is confirmed the contract sends out payments to the seller (and possibly the fee to the fee-address) and sends the token to the purchaser. After a purchase attempt is revoked, the contract sends the payment back to the `payment_relayer` who originally sent the payment. Afterwards, the token remains up for sale and a new user can attempt to purchase it.
 
-This extension also defines the Macro `PERMIT_MARKET` which makes optional changes to the base fixed price sale contracts to allow for the offline extension. It changes the storage structure by adding the `pending_purchases` set to the sale record (the value in the `sales` big_map). 
+This extension also defines the Macro `PERMIT_MARKET` which makes optional changes to the base fixed price sale contracts to allow for the offline extension. It changes the storage structure by adding the `pending_purchases` set to the sale record (the value in the `sales` big_map). `pending_purchases` is automatically configured to the empty set upon a sale creation. Furthermore, upon an attempted sale `Cancel`, `pending_purchases` must be empty or the operation will fail with error `PENDING_PURCHASES_PRESENT`, upon which `Revoke_purchases` ought to be called to return the pending purchases. 
 
 ```
 Pending_purchases : (set %pending_purchases (pair (address %purchaser) (address %payment_relayer)))

@@ -138,6 +138,10 @@ let cancel_sale(sale_id, storage: sale_id * storage) : (operation list * storage
   let is_seller = Tezos.sender = seller in
   let v : unit = if is_seller then ()
     else fail_if_not_admin_ext (storage.admin, "OR_A_SELLER") in
+#if PERMIT_MARKET
+    let sale : sale_tez = get_sale(sale_id, storage) in 
+    let u : unit = assert_msg(Set.size sale.pending_purchases = 0n, "PENDING_PURCHASES_PRESENT") in
+#endif
   let tx_nft_back_op = transfer_fa2(sale_token_address, sale_token_id, amount_, Tezos.self_address, seller) in
   [tx_nft_back_op], {storage with sales = Big_map.remove sale_id storage.sales }
 

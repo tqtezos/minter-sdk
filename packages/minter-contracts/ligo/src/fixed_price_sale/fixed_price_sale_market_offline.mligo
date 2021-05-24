@@ -91,7 +91,6 @@ let revoke_pending_purchase (acc, pending_purchase: permit_return * pending_purc
 
   } = sale in 
   let u : unit = assert_msg(Set.mem buy_data pending_purchases, "PURCHASE_NOT_FOUND") in 
-  (*Multi-Admin case??*)
   let tx_price = transfer_fa2(money_token_address, money_token_id, sale_price, Tezos.self_address, buy_data.payment_relayer) in
   let oplist : operation list = tx_price :: oplist in 
 
