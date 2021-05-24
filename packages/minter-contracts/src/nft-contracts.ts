@@ -14,6 +14,8 @@ import {
   FixedPriceSaleMarketTezCode,
   FixedPriceSaleMarketAllowlistedCode,
   FixedPriceSaleMarketTezAllowlistedCode,
+  FixedPriceSaleMarketTezOffchainCode,
+  FixedPriceSaleMarketOffchainCode,
   EnglishAuctionTezCode,
   Fa2MultiNftTokenEditionsCode,
   EnglishAuctionFa2Code,
@@ -270,4 +272,20 @@ export async function originateEnglishAuctionFA2FixedFee(
 ): Promise<Contract> {
   const storage = `(Pair None (Pair 0 (Pair 86400 (Pair 86400 (Pair (Pair "${fa2_address}" ${token_id}) (Pair {} (Pair "${feeAddress}" 10)))))))`;
   return originateContract(tz, EnglishAuctionFa2FixedFeeCode.code, storage, 'english_auction_fa2');
+}
+
+export async function originateFixedPriceOffchainSale(
+  tz: TezosToolkit,
+  adminAddress: address,
+): Promise<Contract> {
+  const storage = `(Pair (Pair (Some (Pair (Pair "${adminAddress}" False) None)) (Pair {} 0)) 0)`;
+  return originateContract(tz, FixedPriceSaleMarketOffchainCode.code, storage, 'fixed-price-sale-market-offchain');
+}
+
+export async function originateFixedPriceTezOffchainSale(
+  tz: TezosToolkit,
+  adminAddress: address,
+): Promise<Contract> {
+  const storage = `(Pair (Pair (Some (Pair (Pair "${adminAddress}" False) None)) (Pair {} 0)) 0)`;
+  return originateContract(tz, FixedPriceSaleMarketTezOffchainCode.code, storage, 'fixed-price-sale-market-tez-offchain');
 }
