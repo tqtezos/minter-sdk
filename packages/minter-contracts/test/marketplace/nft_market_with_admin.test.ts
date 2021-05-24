@@ -2,18 +2,18 @@ import { $log } from '@tsed/logger';
 import { BigNumber } from 'bignumber.js';
 import { TezosToolkit, MichelsonMap } from '@taquito/taquito';
 
-import { bootstrap, TestTz } from './bootstrap-sandbox';
-import { Contract, address, bytes, nat } from '../src/type-aliases';
+import { bootstrap, TestTz } from '../bootstrap-sandbox';
+import { Contract, address, bytes, nat } from '../../src/type-aliases';
 
 import {
   originateNftFaucet,
   MintNftParam,
   originateFixedPriceTezAdminSale,
-} from '../src/nft-contracts';
+} from '../../src/nft-contracts';
 import {
   addOperator,
-} from '../src/fa2-interface';
-import { QueryBalances, queryBalancesWithLambdaView, hasTokens } from './fa2-balance-inspector';
+} from '../../src/fa2-interface';
+import { QueryBalances, queryBalancesWithLambdaView, hasTokens } from '../fa2-balance-inspector';
 
 jest.setTimeout(180000); // 3 minutes
 

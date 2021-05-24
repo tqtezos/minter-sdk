@@ -282,6 +282,6 @@ This extension also defines the Macro `PERMIT_MARKET` which makes optional chang
 Pending_purchases : (set %pending_purchases (pair (address %purchaser) (address %payment_relayer)))
 ```
 
-- Ligo Contracts : [Tez Version](fixed_price_sale_market_tez_offline.mligo), [FA2 Version](fixed_price_sale_market_offline.mligo)
+- Ligo Contracts : [Tez Version](fixed_price_sale_market_tez_offchain.mligo), [FA2 Version](fixed_price_sale_market_offchain.mligo)
 
 
