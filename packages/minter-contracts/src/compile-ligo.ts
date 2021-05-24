@@ -256,13 +256,13 @@ const compileSources: CompileSourceEntry[] = [
     contract: false,
   },
   {
-    srcFile: 'fixed_price_sale/fixed_price_sale_market_offline.mligo',
+    srcFile: 'fixed_price_sale/fixed_price_sale_market_offchain.mligo',
     mainFn: 'fixed_price_sale_permit_main',
     dstFile: 'fixed_price_sale_market_offline.tz',
     contract: true,
   },
   {
-    srcFile: 'fixed_price_sale/fixed_price_sale_market_tez_offline.mligo',
+    srcFile: 'fixed_price_sale/fixed_price_sale_market_tez_offchain.mligo',
     mainFn: 'fixed_price_sale_permit_main',
     dstFile: 'fixed_price_sale_market_tez_offline.tz',
     contract: true,
