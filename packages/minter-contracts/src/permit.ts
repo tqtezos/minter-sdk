@@ -11,6 +11,8 @@ export interface Permit {
   signature : signature;
 }
 
+export const dummy_sig = "edsigu5scrvoY2AB7cnHzUd7x7ZvXEMYkArKeehN5ZXNkmfUSkyApHcW5vPcjbuTrnHUMt8mJkWmo8WScNgKL3vu9akFLAXvHxm";
+
 export const errors_to_missigned_bytes = (errors : any) => {
   const errors_with = errors.map( (x : any) => x.with).filter((x : any) => x !== undefined);
   if (errors_with.length != 1){
