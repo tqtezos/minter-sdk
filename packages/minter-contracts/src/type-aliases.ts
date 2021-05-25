@@ -9,3 +9,5 @@ export type nat = BigNumber;
 export type timestamp = string;
 export type mutez = nat;
 export type bytes = string;
+export type key = string;
+export type signature = string;

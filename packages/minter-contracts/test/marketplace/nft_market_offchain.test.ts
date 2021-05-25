@@ -7,19 +7,26 @@ import { Contract, address, bytes, nat } from '../../src/type-aliases';
 
 import {
   originateNftFaucet,
-  originateFixedPriceTezSale,
-  createFtToken,
-  mintFtTokens,
-  mintNftTokens,
-  originateFtFaucet,
   originateFixedPriceTezOffchainSale,
+  mintNftTokens,
 } from '../../src/nft-contracts';
+
+import {
+  errors_to_missigned_bytes,
+  Permit,
+} from '../../src/permit';
+
 import {
   addOperator,
 } from '../../src/fa2-interface';
-import { QueryBalances, queryBalancesWithLambdaView, hasTokens, getBalances } from '../fa2-balance-inspector';
+import { QueryBalances, queryBalancesWithLambdaView, hasTokens } from '../fa2-balance-inspector';
 
-jest.setTimeout(300000); // 5 minutes
+jest.setTimeout(360000); // 6 minutes
+
+interface PermitBuyParam {
+    sale_id : nat;
+    optional_permit? : Permit;
+}
 
 describe.each([originateFixedPriceTezOffchainSale])
 ('marketplace test', (originateMarketplace) => {
@@ -27,7 +34,6 @@ describe.each([originateFixedPriceTezOffchainSale])
   let nft: Contract;
   let queryBalances: QueryBalances;
   let marketplace: Contract;
-  let marketplaceAlice : Contract;
   let marketAddress: address;
   let bobAddress: address;
   let aliceAddress: address;
@@ -35,8 +41,6 @@ describe.each([originateFixedPriceTezOffchainSale])
   let tokenMetadata: MichelsonMap<string, bytes>;
   let salePrice: nat;
   let saleId : nat;
-  let saleFtTokenId: nat;
-  let saleFt: Contract;
 
   beforeAll(async () => {
     tezos = await bootstrap();
@@ -49,15 +53,10 @@ describe.each([originateFixedPriceTezOffchainSale])
     nft = await originateNftFaucet(tezos.bob);
     marketplace = await originateMarketplace(tezos.bob, bobAddress);
     marketAddress = marketplace.address;
-    marketplaceAlice = await tezos.alice.contract.at(marketAddress);
     tokenId = new BigNumber(0);
     tokenMetadata = new MichelsonMap();
-    salePrice = new BigNumber(1000000);
+    salePrice = new BigNumber(1000000); //1tz
     saleId = new BigNumber(0);
-    saleFtTokenId = new BigNumber(0);
-  });
-
-  test('bob makes sale, and alice buys nft', async () => {
     const tokenAmount = new BigNumber(1);
 
     await mintNftTokens(tezos.bob, [
@@ -88,5 +87,48 @@ describe.each([originateFixedPriceTezOffchainSale])
     $log.info(`Waiting for ${sellOp.hash} to be confirmed...`);
     const sellOpHash = await sellOp.confirmation(1).then(() => sellOp.hash);
     $log.info(`Operation injected at hash=${sellOpHash}`);
+  });
+
+  test('bob makes sale, and alice buys nft', async () => {
+    const aliceKey = await tezos.alice.signer.publicKey();
+    const dummy_sig = "edsigu5scrvoY2AB7cnHzUd7x7ZvXEMYkArKeehN5ZXNkmfUSkyApHcW5vPcjbuTrnHUMt8mJkWmo8WScNgKL3vu9akFLAXvHxm";
+
+    const fake_permit : Permit = {
+      signerKey : aliceKey,
+      signature : dummy_sig,
+    };
+
+    const fake_permit_buy_param : PermitBuyParam = {
+      sale_id : saleId,
+      optional_permit : fake_permit,
+    };
+
+    // Bob preapplies a transfer with the dummy_sig to extract the bytes_to_sign
+    const transfer_params = marketplace.methods.permit_buy([fake_permit_buy_param])
+      .toTransferParams({ amount : 1 });
+    const bytes_to_sign = await tezos.bob.estimate.transfer(transfer_params)
+      .catch((e) => errors_to_missigned_bytes(e.errors));
+    $log.info('bytes_to_sign:', bytes_to_sign);
+
+    // Alice sign the parameter
+    const param_sig = await tezos.alice.signer.sign(bytes_to_sign).then(s => s.prefixSig);
+
+    const one_step_permit : Permit = {
+      signerKey : aliceKey,
+      signature : param_sig,
+    };
+
+    const permit_buy_param : PermitBuyParam = {
+      sale_id : saleId,
+      optional_permit : one_step_permit,
+    };
+
+    // This is what a relayer needs to submit the parameter on the signer's behalf
+    $log.info('permit package:', permit_buy_param);
+
+
+    // Bob submits the permit to the contract along with price in tez
+    const permit_op = await marketplace.methods.permit_buy([permit_buy_param]).send({ amount: 1 });
+    await permit_op.confirmation().then(() => $log.info('permit_op hash:', permit_op.hash));
   });
 });
