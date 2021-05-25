@@ -1,3 +1,0 @@
-(Pair (Pair {} 1000) (Pair 0 (Pair (Pair (Pair (Pair \"tz1gaNyGbaTVYFZ9VDNeDsqDot9nWPsgeEJZ\" False) None) (Pair {} {})) { Elt "" 0x0x697066733a2f2f516d587a336544514a4c7176486553345a63574748447375676b66444e7261334d7133787a5a7859736a48594365 })))
-
-tezos-client transfer 0 from taco-drop to editions-taco --arg "{Pair {Elt \"\" 0x697066733a2f2f516d5939754b514d475076475248724a6469327264504d765477657354525a59766e563241345738616e4364644e} 127}" --burn-cap 2 --entrypoint "mint_editions"
