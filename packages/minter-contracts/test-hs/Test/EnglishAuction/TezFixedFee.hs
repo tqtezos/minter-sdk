@@ -10,8 +10,10 @@ import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import qualified Indigo.Contracts.FA2Sample as FA2
 import Lorentz hiding (amount, contract, now)
+import Lorentz.Contracts.EnglishAuction.Common
 import Lorentz.Contracts.EnglishAuction.TezFixedFee
 import Lorentz.Contracts.MinterSdk
+import qualified Lorentz.Contracts.NoAllowlist as NoAllowlist
 import Lorentz.Contracts.Spec.FA2Interface (TokenId(..))
 import Michelson.Typed (convertContract, untypeValue)
 import Morley.Nettest
@@ -566,7 +568,7 @@ genBid testData@TestData{testMinRaise} previousBid = do
 ----------------------------------------------------------------------------
 
 data Setup = Setup
-  { contract :: TAddress AuctionEntrypoints
+  { contract :: TAddress (AuctionEntrypoints NoAllowlist.Entrypoints)
   , fa2Contracts :: [TAddress FA2.FA2SampleParameter]
   , feeCollector :: Address
   , seller :: Address
@@ -586,6 +588,7 @@ testSetup testData = do
       , maxAuctionTime = testMaxAuctionTime testData
       , maxConfigToStartTime = testMaxConfigToStartTime testData
       , auctions = mempty
+      , allowlist = ()
       , fee = FeeData feeCollector (testFeePercent testData)
       }
 
@@ -614,9 +617,9 @@ waitForAuctionToStart :: (HasCallStack, MonadNettest caps base m) => TestData ->
 waitForAuctionToStart TestData{testTimeToStart} =
   advanceTime (sec $ fromIntegral testTimeToStart)
 
-originateAuctionContract :: MonadNettest caps base m => AuctionStorage -> m (TAddress AuctionEntrypoints)
+originateAuctionContract :: MonadNettest caps base m => AuctionStorage -> m (TAddress (AuctionEntrypoints NoAllowlist.Entrypoints))
 originateAuctionContract storage = do
-  TAddress @AuctionEntrypoints <$> originateUntypedSimple "auction-tez-fixed-fee"
+  TAddress @(AuctionEntrypoints NoAllowlist.Entrypoints) <$> originateUntypedSimple "auction-tez-fixed-fee"
     (untypeValue $ toVal storage)
     (convertContract englishAuctionTezFixedFeeContract)
 
@@ -664,7 +667,7 @@ configureAuction testData Setup{fa2Contracts, contract, startTime, endTime}  = d
     , endTime = endTime
     }
 
-placeBid :: (HasCallStack, MonadNettest caps base m) => TAddress AuctionEntrypoints -> Mutez -> m ()
+placeBid :: (HasCallStack, MonadNettest caps base m) => TAddress (AuctionEntrypoints NoAllowlist.Entrypoints) -> Mutez -> m ()
 placeBid contract bidAmount =
   transfer TransferData
     { tdTo = contract
@@ -673,10 +676,10 @@ placeBid contract bidAmount =
     , tdParameter = AuctionId 0
     }
 
-cancelAuction :: (HasCallStack, MonadNettest caps base m) => TAddress AuctionEntrypoints -> m ()
+cancelAuction :: (HasCallStack, MonadNettest caps base m) => TAddress (AuctionEntrypoints NoAllowlist.Entrypoints) -> m ()
 cancelAuction contract =
   call contract (Call @"Cancel") (AuctionId 0)
 
-resolveAuction :: (HasCallStack, MonadNettest caps base m) => TAddress AuctionEntrypoints -> m ()
+resolveAuction :: (HasCallStack, MonadNettest caps base m) => TAddress (AuctionEntrypoints NoAllowlist.Entrypoints) -> m ()
 resolveAuction contract =
   call contract (Call @"Resolve") (AuctionId 0)

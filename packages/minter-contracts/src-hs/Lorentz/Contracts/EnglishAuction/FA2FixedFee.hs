@@ -1,10 +1,7 @@
 -- | Lorentz bindings for the english auction (FA2 + Fixed Fee version).
 module Lorentz.Contracts.EnglishAuction.FA2FixedFee
   ( -- * Types
-    AuctionFA2.AuctionId(..)
-  , AuctionFA2.FA2Token(..)
-  , AuctionFA2.Tokens(..)
-  , AuctionFA2.BidCurrency(..)
+    AuctionFA2.BidCurrency(..)
   , AuctionFA2.Auction(..)
   , AuctionFA2.ConfigureParam(..)
   , AuctionFA2.BidParam(..)
@@ -20,6 +17,7 @@ module Lorentz.Contracts.EnglishAuction.FA2FixedFee
 import Lorentz
 
 import Fmt (Buildable(..), genericF)
+import Lorentz.Contracts.EnglishAuction.Common
 import qualified Lorentz.Contracts.EnglishAuction.FA2 as AuctionFA2
 import Lorentz.Contracts.MinterSdk
 import qualified Lorentz.Contracts.NoAllowlist as NoAllowlist
@@ -36,7 +34,7 @@ data AuctionStorage = AuctionStorage
   , maxAuctionTime :: Natural
   , maxConfigToStartTime :: Natural
   , bidCurrency :: AuctionFA2.BidCurrency
-  , auctions :: BigMap AuctionFA2.AuctionId AuctionFA2.Auction
+  , auctions :: BigMap AuctionId AuctionFA2.Auction
   , allowlist :: ()
   , fee :: FeeData
   }

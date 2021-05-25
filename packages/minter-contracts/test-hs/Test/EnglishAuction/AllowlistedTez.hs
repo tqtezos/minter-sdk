@@ -11,6 +11,7 @@ import Morley.Nettest
 import Morley.Nettest.Tasty
 
 import Lorentz.Contracts.EnglishAuction.Allowlisted
+import Lorentz.Contracts.EnglishAuction.Common
 import Lorentz.Contracts.EnglishAuction.Tez
 import Test.EnglishAuction.Util
 import Test.Util

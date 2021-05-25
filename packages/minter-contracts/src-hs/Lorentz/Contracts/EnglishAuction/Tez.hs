@@ -6,41 +6,15 @@ import Lorentz
 import Fmt (Buildable(..), genericF)
 import qualified Lorentz.Contracts.AllowlistSimple as AllowlistSimple
 import qualified Lorentz.Contracts.AllowlistToken as AllowlistToken
+import Lorentz.Contracts.EnglishAuction.Common
 import Lorentz.Contracts.MinterSdk
 import qualified Lorentz.Contracts.NoAllowlist as NoAllowlist
 import Lorentz.Contracts.PausableAdminOption
-import Lorentz.Contracts.Spec.FA2Interface
 import Michelson.Test.Import (embedContractM)
 import qualified Michelson.Typed as T
 
 -- Types
 ----------------------------------------------------------------------------
-
-newtype AuctionId = AuctionId Natural
-  deriving stock (Generic, Eq, Ord, Show)
-  deriving newtype (IsoValue, HasAnnotation, Buildable)
-
-data FA2Token = FA2Token
-  { tokenId :: TokenId
-  , amount :: Natural
-  }
-  deriving stock (Eq, Show)
-
-customGeneric "FA2Token" ligoCombLayout
-deriving anyclass instance IsoValue FA2Token
-deriving anyclass instance HasAnnotation FA2Token
-instance Buildable FA2Token where build = genericF
-
-data Tokens = Tokens
-  { fa2Address :: Address
-  , fa2Batch :: [FA2Token]
-  }
-  deriving stock (Eq, Show)
-
-customGeneric "Tokens" ligoCombLayout
-deriving anyclass instance IsoValue Tokens
-deriving anyclass instance HasAnnotation Tokens
-instance Buildable Tokens where build = genericF
 
 data Auction = Auction
   { seller :: Address

@@ -1,10 +1,7 @@
 -- | Lorentz bindings for the english auction (Tez + Fixed Fee version).
 module Lorentz.Contracts.EnglishAuction.TezFixedFee
   ( -- * Types
-    AuctionTez.AuctionId(..)
-  , AuctionTez.FA2Token(..)
-  , AuctionTez.Tokens(..)
-  , AuctionTez.Auction(..)
+    AuctionTez.Auction(..)
   , AuctionTez.ConfigureParam(..)
   , AuctionTez.defConfigureParam
   , AuctionStorage(..)
@@ -19,6 +16,7 @@ module Lorentz.Contracts.EnglishAuction.TezFixedFee
 import Lorentz
 
 import Fmt (Buildable(..), genericF)
+import Lorentz.Contracts.EnglishAuction.Common
 import qualified Lorentz.Contracts.EnglishAuction.Tez as AuctionTez
 import Lorentz.Contracts.MinterSdk
 import qualified Lorentz.Contracts.NoAllowlist as NoAllowlist
@@ -34,7 +32,7 @@ data AuctionStorage = AuctionStorage
   , currentId :: Natural
   , maxAuctionTime :: Natural
   , maxConfigToStartTime :: Natural
-  , auctions :: BigMap AuctionTez.AuctionId AuctionTez.Auction
+  , auctions :: BigMap AuctionId AuctionTez.Auction
   , allowlist :: ()
   , fee :: FeeData
   }
