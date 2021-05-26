@@ -1,4 +1,4 @@
-#import "../../fa2/fa2_interface.mligo" "FA2"
+#include "../../fa2/fa2_interface.mligo"
 
 (* ==== Types ==== *)
 
@@ -6,7 +6,7 @@ type swap_id = nat
 
 type fa2_token =
   [@layout:comb]
-  { token_id : FA2.token_id
+  { token_id : token_id
   ; amount : nat
   }
 
@@ -61,15 +61,15 @@ let forbid_xtz_transfer : unit =
   else failwith "XTZ_TRANSFER"
 
 let fa2_transfer_entrypoint(fa2, on_invalid_fa2 : address * string)
-    : ((FA2.transfer list) contract) =
-  match (Tezos.get_entrypoint_opt "%transfer" fa2 : (FA2.transfer list) contract option) with
-  | None -> (failwith on_invalid_fa2 : (FA2.transfer list) contract)
+    : ((transfer list) contract) =
+  match (Tezos.get_entrypoint_opt "%transfer" fa2 : (transfer list) contract option) with
+  | None -> (failwith on_invalid_fa2 : (transfer list) contract)
   | Some c ->  c
 
 let transfer_asset(from_, to_, on_invalid_fa2 : address * address * string)(asset : fa2_assets)
     : operation =
   let transfer_ep = fa2_transfer_entrypoint(asset.fa2_address, on_invalid_fa2) in
-  let token_to_tx_dest(token : fa2_token) : FA2.transfer_destination =
+  let token_to_tx_dest(token : fa2_token) : transfer_destination =
         { to_ = to_
         ; token_id = token.token_id
         ; amount = token.amount

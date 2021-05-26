@@ -25,19 +25,20 @@ test_AllowlistUpdateAuthorization =
   allowlistUpdateAuthorizationChecks originateMarketplaceAllowlisted
 
 test_AllowlistChecks :: [TestTree]
-test_AllowlistChecks = allowlistChecks
+test_AllowlistChecks = allowlistSimpleChecks
   AllowlistChecksSetup
   { allowlistCheckSetup = \fa2Setup -> do
-      let alice ::< SNil = sAddresses fa2Setup
-      let tokenId ::< SNil = sTokens fa2Setup
+      let alice ::< _ = sAddresses fa2Setup
+      let tokenId ::< _ = sTokens fa2Setup
       market <- originateMarketplaceAllowlisted alice
       allowedFA2 <- originateFA2 "allowed-fa2" fa2Setup [market]
       return (alice, market, (alice, tokenId, allowedFA2))
 
   , allowlistRestrictionsCases = fromList
       [ AllowlistRestrictionCase
-        { allowlistError = saleAddressNotAllowed
-        , allowlistRunRestrictedAction = \(alice, tokenId, allowedFA2) market fa2 ->
+        { allowlistError = saleTokenNotAllowed
+        , allowlistRunRestrictedAction =
+          \(alice, tokenId, allowedFA2) market (fa2, _) ->
             withSender alice $
               call market (Call @"Sell") SaleData
                 { salePricePerToken = 1
@@ -54,7 +55,7 @@ test_AllowlistChecks = allowlistChecks
         }
       ]
 
-  , allowlistAlwaysIncluded = \(_, _, allowedFA2) -> [allowedFA2]
+  , allowlistAlwaysIncluded = \(_, tokenId, allowedFA2) -> [(allowedFA2, tokenId)]
   }
 
 test_Integrational :: TestTree
@@ -68,14 +69,14 @@ test_Integrational = testGroup "Integrational"
       fa2 <- originateFA2 "fa2" setup [market]
 
       withSender alice $
-        call market (Call @"Update_allowed") (mkAllowlistParam [fa2])
+        call market (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
 
       let saleToken = SaleToken
             { fa2Address = toAddress fa2
             , tokenId = tokenId1
             }
 
-      let moneyToken = MoneyToken  
+      let moneyToken = MoneyToken
            { fa2Address = toAddress fa2
            , tokenId = tokenId2
            }

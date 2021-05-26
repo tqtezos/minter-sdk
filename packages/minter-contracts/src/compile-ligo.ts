@@ -83,14 +83,26 @@ const compileSources: CompileSourceEntry[] = [
   },
   {
     srcFile: 'fixed_price_sale/fixed_price_sale_market_allowlisted.mligo',
-    mainFn: 'fixed_price_sale_allowlisted_main',
+    mainFn: 'fixed_price_sale_main',
     dstFile: 'fixed_price_sale_market_allowlisted.tz',
     contract: true,
   },
   {
     srcFile: 'fixed_price_sale/fixed_price_sale_market_tez_allowlisted.mligo',
-    mainFn: 'fixed_price_sale_tez_allowlisted_main',
+    mainFn: 'fixed_price_sale_tez_main',
     dstFile: 'fixed_price_sale_market_tez_allowlisted.tz',
+    contract: true,
+  },
+  {
+    srcFile: 'fixed_price_sale/fixed_price_sale_market_allowlisted_token.mligo',
+    mainFn: 'fixed_price_sale_main',
+    dstFile: 'fixed_price_sale_market_allowlisted_token.tz',
+    contract: true,
+  },
+  {
+    srcFile: 'fixed_price_sale/fixed_price_sale_market_tez_allowlisted_token.mligo',
+    mainFn: 'fixed_price_sale_tez_main',
+    dstFile: 'fixed_price_sale_market_tez_allowlisted_token.tz',
     contract: true,
   },
   {
@@ -179,20 +191,38 @@ const compileSources: CompileSourceEntry[] = [
   },
   {
     srcFile: 'english_auction/english_auction_fa2_allowlisted.mligo',
-    mainFn: 'english_auction_fa2_allowlisted_main',
+    mainFn: 'english_auction_fa2_main',
     dstFile: 'english_auction_fa2_allowlisted.tz',
     contract: true,
   },
   {
     srcFile: 'english_auction/english_auction_tez_allowlisted.mligo',
-    mainFn: 'english_auction_tez_allowlisted_main',
+    mainFn: 'english_auction_tez_main',
     dstFile: 'english_auction_tez_allowlisted.tz',
     contract: true,
   },
   {
     srcFile: 'english_auction/english_auction_tez_permit_allowlisted.mligo',
-    mainFn: 'english_auction_tez_permit_allowlisted_main',
+    mainFn: 'english_auction_tez_permit_main',
     dstFile: 'english_auction_tez_permit_allowlisted.tz',
+    contract: true,
+  },
+  {
+    srcFile: 'english_auction/english_auction_fa2_allowlisted_token.mligo',
+    mainFn: 'english_auction_fa2_main',
+    dstFile: 'english_auction_fa2_allowlisted_token.tz',
+    contract: true,
+  },
+  {
+    srcFile: 'english_auction/english_auction_tez_allowlisted_token.mligo',
+    mainFn: 'english_auction_tez_main',
+    dstFile: 'english_auction_tez_allowlisted_token.tz',
+    contract: true,
+  },
+  {
+    srcFile: 'english_auction/english_auction_tez_permit_allowlisted_token.mligo',
+    mainFn: 'english_auction_tez_permit_main',
+    dstFile: 'english_auction_tez_permit_allowlisted_token.tz',
     contract: true,
   },
   {
@@ -217,6 +247,18 @@ const compileSources: CompileSourceEntry[] = [
     srcFile: 'english_auction/english_auction_fa2_fixed_fee_allowlisted.mligo',
     mainFn: 'english_auction_fa2_main',
     dstFile: 'english_auction_fa2_fixed_fee_allowlisted.tz',
+    contract: true,
+  },
+  {
+    srcFile: 'english_auction/english_auction_tez_fixed_fee_allowlisted_token.mligo',
+    mainFn: 'english_auction_tez_main',
+    dstFile: 'english_auction_tez_fixed_fee_allowlisted_token.tz',
+    contract: true,
+  },
+  {
+    srcFile: 'english_auction/english_auction_fa2_fixed_fee_allowlisted_token.mligo',
+    mainFn: 'english_auction_fa2_main',
+    dstFile: 'english_auction_fa2_fixed_fee_allowlisted_token.tz',
     contract: true,
   },
   {
@@ -289,6 +331,29 @@ const compileSources: CompileSourceEntry[] = [
     srcFile: 'fixed_price_sale/fixed_price_sale_market_tez_fixed_fee_cancel_only_admin.mligo',
     mainFn: 'fixed_price_sale_tez_main',
     dstFile: 'fixed_price_sale_market_tez_fixed_fee_cancel_only_admin.tz',
+    contract: true,
+  },
+  {
+    srcFile: 'fixed_price_sale/fixed_price_sale_market_tez_fixed_fee_allowlisted.mligo',
+    mainFn: 'fixed_price_sale_tez_main',
+    dstFile: 'fixed_price_sale_tez_fixed_fee_allowlisted.tz',
+    contract: true,
+  },
+  {
+    srcFile: 'fixed_price_sale/fixed_price_sale_market_fixed_fee_allowlisted.mligo',
+    mainFn: 'fixed_price_sale_main',
+    dstFile: 'fixed_price_sale_market_fixed_fee_allowlisted.tz',
+    contract: true,
+  }, {
+    srcFile: 'fixed_price_sale/fixed_price_sale_market_tez_fixed_fee_allowlisted_token.mligo',
+    mainFn: 'fixed_price_sale_tez_main',
+    dstFile: 'fixed_price_sale_tez_fixed_fee_allowlisted_token.tz',
+    contract: true,
+  },
+  {
+    srcFile: 'fixed_price_sale/fixed_price_sale_market_fixed_fee_allowlisted_token.mligo',
+    mainFn: 'fixed_price_sale_main',
+    dstFile: 'fixed_price_sale_market_fixed_fee_allowlisted_token.tz',
     contract: true,
   },
 ];

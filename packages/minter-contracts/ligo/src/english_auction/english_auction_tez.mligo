@@ -1,5 +1,6 @@
 #include "../../fa2/fa2_interface.mligo"
 #include "../../fa2_modules/pauseable_admin_option.mligo"
+#include "../../fa2_modules/fa2_allowlist/allowlist_base.mligo"
 #include "../common.mligo"
 
 type auction =
@@ -36,6 +37,7 @@ type auction_without_configure_entrypoints =
   | Cancel of nat
   | Resolve of nat
   | Admin of pauseable_admin
+  | Update_allowed of allowlist_entrypoints
 
 type auction_entrypoints =
   | Configure of configure_param
@@ -50,10 +52,11 @@ type storage =
     current_id : nat;
     max_auction_time : nat;
     max_config_to_start_time : nat;
-    auctions : (nat, auction) big_map
+    auctions : (nat, auction) big_map;
+    allowlist : allowlist;
   }
 
-#else 
+#else
 
 type storage =
   [@layout:comb]
@@ -63,6 +66,7 @@ type storage =
     max_auction_time : nat;
     max_config_to_start_time : nat;
     auctions : (nat, auction) big_map;
+    allowlist : allowlist;
     fee : fee_data;
   }
 
@@ -70,7 +74,7 @@ type storage =
 
 type return = operation list * storage
 
-let transfer_tokens_in_single_contract (from_ : address) (to_ : address) (tokens : tokens) : operation = 
+let transfer_tokens_in_single_contract (from_ : address) (to_ : address) (tokens : tokens) : operation =
   let to_tx (fa2_tokens : fa2_tokens) : transfer_destination = {
       to_ = to_;
       token_id = fa2_tokens.token_id;
@@ -79,20 +83,20 @@ let transfer_tokens_in_single_contract (from_ : address) (to_ : address) (tokens
    let txs = List.map to_tx tokens.fa2_batch in
    let transfer_param = [{from_ = from_; txs = txs}] in
    let c = address_to_contract_transfer_entrypoint(tokens.fa2_address) in
-   (Tezos.transaction transfer_param 0mutez c) 
+   (Tezos.transaction transfer_param 0mutez c)
 
 (*Handles transfers of tokens across FA2 Contracts*)
 let transfer_tokens(tokens_list, from_, to_ : tokens list * address * address) : (operation list) =
    (List.map (transfer_tokens_in_single_contract from_ to_) tokens_list)
 
 let rec tokens_list_to_operation_list_append (from_, to_, tokens_list, op_list : address * address * tokens list * (operation list)) :  (operation list) =
-  let tokens = List.head_opt tokens_list in 
-  let new_tokens_list = List.tail_opt tokens_list in 
-  match tokens with 
-    | Some t -> 
-        let op = (transfer_tokens_in_single_contract from_ to_ t) in 
+  let tokens = List.head_opt tokens_list in
+  let new_tokens_list = List.tail_opt tokens_list in
+  match tokens with
+    | Some t ->
+        let op = (transfer_tokens_in_single_contract from_ to_ t) in
         let new_op_list : operation list = (op :: op_list) in
-        (match new_tokens_list with 
+        (match new_tokens_list with
           | Some tl -> tokens_list_to_operation_list_append(from_, to_, tl, new_op_list)
           | None -> (failwith "INTERNAL_ERROR" : operation list))
     | None -> op_list
@@ -121,18 +125,28 @@ let valid_bid_amount (auction : auction) : bool =
   (Tezos.amount >= auction.current_bid + auction.min_raise)                                            ||
   ((Tezos.amount >= auction.current_bid) && first_bid(auction))
 
+
+let check_allowlisted (configure_param, allowlist : configure_param * allowlist) : unit = begin
+  List.iter
+    (fun (token : tokens) ->
+      check_tokens_allowed (token, allowlist, "ASSET_NOT_ALLOWED")
+    )
+    configure_param.asset;
+  unit end
+
 let configure_auction_storage(configure_param, seller, storage : configure_param * address * storage ) : storage = begin
 #if !CANCEL_ONLY_ADMIN
     (fail_if_not_admin storage.admin);
 #endif
     (fail_if_paused storage.admin);
+    check_allowlisted(configure_param, storage.allowlist);
 
     assert_msg (configure_param.end_time > configure_param.start_time, "end_time must be after start_time");
     assert_msg (abs(configure_param.end_time - configure_param.start_time) <= storage.max_auction_time, "Auction time must be less than max_auction_time");
-    
+
     assert_msg (configure_param.start_time >= Tezos.now, "Start_time must not have already passed");
     assert_msg (abs(configure_param.start_time - Tezos.now) <= storage.max_config_to_start_time, "start_time must not be greater than the sum of current time and max_config_to_start_time");
-    
+
     assert_msg (configure_param.opening_price > 0mutez, "Opening price must be greater than 0mutez");
     assert_msg (Tezos.amount = 0mutez, "Amount sent must be 0mutez");
     assert_msg (configure_param.round_time > 0n, "Round_time must be greater than 0 seconds");
@@ -148,20 +162,20 @@ let configure_auction_storage(configure_param, seller, storage : configure_param
       min_raise = configure_param.min_raise;
       end_time = configure_param.end_time;
       highest_bidder = seller;
-      last_bid_time = configure_param.start_time; 
+      last_bid_time = configure_param.start_time;
     } in
     let updated_auctions : (nat, auction) big_map = Big_map.update storage.current_id (Some auction_data) storage.auctions in
     {storage with auctions = updated_auctions; current_id = storage.current_id + 1n}
   end
 
-let configure_auction(configure_param, storage : configure_param * storage) : return = 
+let configure_auction(configure_param, storage : configure_param * storage) : return =
 #if FEE
   let u : unit = assert_msg (storage.fee.fee_percent <= 100n, "Fee_percent must be less than 100%. Please originate another contract.") in
 #endif
   let new_storage = configure_auction_storage(configure_param, Tezos.sender, storage) in
   let fa2_transfers : operation list = transfer_tokens(configure_param.asset, Tezos.sender, Tezos.self_address) in
   (fa2_transfers, new_storage)
- 
+
 
 let resolve_auction(asset_id, storage : nat * storage) : return = begin
     (fail_if_paused storage.admin);
@@ -171,20 +185,20 @@ let resolve_auction(asset_id, storage : nat * storage) : return = begin
 
     let fa2_transfers : operation list = transfer_tokens(auction.asset, Tezos.self_address, auction.highest_bidder) in
     let seller_contract : unit contract = resolve_contract(auction.seller) in
-    
-#if !FEE 
 
-    let op_list = if first_bid(auction) then 
-      fa2_transfers else 
+#if !FEE
+
+    let op_list = if first_bid(auction) then
+      fa2_transfers else
       let send_final_bid : operation = Tezos.transaction unit auction.current_bid seller_contract in
       (send_final_bid :: fa2_transfers) in
 
-#else 
+#else
     let fee_contract : unit contract = resolve_contract(storage.fee.fee_address) in
-    let op_list = if first_bid(auction) then 
-      fa2_transfers else 
-      let fee : tez = percent_of_bid_tez (storage.fee.fee_percent, auction.current_bid) in 
-      let pay_fee : operation = Tezos.transaction unit fee fee_contract in 
+    let op_list = if first_bid(auction) then
+      fa2_transfers else
+      let fee : tez = percent_of_bid_tez (storage.fee.fee_percent, auction.current_bid) in
+      let pay_fee : operation = Tezos.transaction unit fee fee_contract in
       let send_final_bid_minus_fee : operation = Tezos.transaction unit (auction.current_bid - fee) seller_contract in
       (pay_fee :: send_final_bid_minus_fee :: fa2_transfers) in
 
@@ -197,7 +211,7 @@ let resolve_auction(asset_id, storage : nat * storage) : return = begin
 let cancel_auction(asset_id, storage : nat * storage) : return = begin
     (fail_if_paused storage.admin);
     let auction : auction = get_auction_data(asset_id, storage) in
-    let is_seller : bool = Tezos.sender = auction.seller in 
+    let is_seller : bool = Tezos.sender = auction.seller in
     let v : unit = if is_seller then ()
           else fail_if_not_admin_ext (storage.admin, "OR_A_SELLER") in
     assert_msg (not auction_ended(auction), "Auction must not have ended");
@@ -205,9 +219,9 @@ let cancel_auction(asset_id, storage : nat * storage) : return = begin
 
     let fa2_transfers : operation list = transfer_tokens(auction.asset, Tezos.self_address, auction.seller) in
     let highest_bidder_contract : unit contract = resolve_contract(auction.highest_bidder) in
-    let op_list : operation list = if first_bid(auction) then 
-      fa2_transfers else  
-      let return_bid : operation = Tezos.transaction unit auction.current_bid highest_bidder_contract in 
+    let op_list : operation list = if first_bid(auction) then
+      fa2_transfers else
+      let return_bid : operation = Tezos.transaction unit auction.current_bid highest_bidder_contract in
       (return_bid :: fa2_transfers) in
     let updated_auctions = Big_map.remove asset_id storage.auctions in
     (op_list, {storage with auctions = updated_auctions})
@@ -219,13 +233,13 @@ let place_bid(asset_id, storage : nat * storage) : return = begin
     (fail_if_paused storage.admin);
     assert_msg (auction_in_progress(auction), "Auction must be in progress");
     assert_msg(Tezos.sender <> auction.seller, "Seller cannot place a bid");
-    (if not valid_bid_amount(auction) 
+    (if not valid_bid_amount(auction)
       then ([%Michelson ({| { FAILWITH } |} : string * (tez * tez * address * timestamp * timestamp) -> unit)] ("Invalid Bid amount", (auction.current_bid, Tezos.amount, auction.highest_bidder, auction.last_bid_time, Tezos.now)) : unit)
       else ());
 
     let highest_bidder_contract : unit contract = resolve_contract(auction.highest_bidder) in
-    let op_list : operation list = if first_bid(auction) then 
-      ([] : operation list) else 
+    let op_list : operation list = if first_bid(auction) then
+      ([] : operation list) else
       let return_bid : operation = Tezos.transaction unit auction.current_bid highest_bidder_contract in
       [return_bid] in
     let new_end_time = if auction.end_time - Tezos.now <= auction.extend_time then
@@ -241,12 +255,22 @@ let admin(admin_param, storage : pauseable_admin * storage) : return =
     let new_storage = { storage with admin = admin; } in
     ops, new_storage
 
-let english_auction_tez_no_configure (p,storage : auction_without_configure_entrypoints * storage) : return = 
+let update_allowed(allowlist_param, storage : allowlist_entrypoints * storage) : return =
+#if !ALLOWLIST_ENABLED
+    [%Michelson ({| { NEVER } |} : never -> return)] allowlist_param
+#else
+    let u : unit = fail_if_not_admin(storage.admin) in
+    let allowlist_storage = update_allowed (allowlist_param, storage.allowlist) in
+    ([] : operation list), { storage with allowlist = allowlist_storage }
+#endif
+
+let english_auction_tez_no_configure (p,storage : auction_without_configure_entrypoints * storage) : return =
   match p with
     | Bid asset_id -> place_bid(asset_id, storage)
     | Cancel asset_id -> cancel_auction(asset_id, storage)
     | Resolve asset_id -> resolve_auction(asset_id, storage)
     | Admin a -> admin(a, storage)
+    | Update_allowed a -> update_allowed(a, storage)
 
 let english_auction_tez_main (p,storage : auction_entrypoints * storage) : return = match p with
     | Configure config -> configure_auction(config, storage)

@@ -1,11 +1,13 @@
 #if !COMMON
 #define COMMON
 
+#include "../fa2/fa2_interface.mligo"
+
 (*TYPES*)
 
 type sale_id = nat
 
-type fee_data = 
+type fee_data =
   [@layout:comb]
   {
     fee_address : address;
@@ -32,32 +34,32 @@ type global_token_id =
       token_id : token_id;
   }
 
-(*MATH*) 
+(*MATH*)
 
 (*In English auction it is necessary to use ceiling so that bid is guaranteed to be raised*)
 let ceil_div_nat (numerator, denominator : nat * nat) : nat = abs ((- numerator) / (int denominator))
 
-let percent_of_bid_nat (percent, bid : nat * nat) : nat = 
+let percent_of_bid_nat (percent, bid : nat * nat) : nat =
   (ceil_div_nat (bid *  percent, 100n))
 
-let ceil_div_tez (tz_qty, nat_qty : tez * nat) : tez = 
-  let ediv1 : (tez * tez) option = ediv tz_qty nat_qty in 
-  match ediv1 with 
-    | None -> (failwith "DIVISION_BY_ZERO"  : tez) 
-    | Some e -> 
+let ceil_div_tez (tz_qty, nat_qty : tez * nat) : tez =
+  let ediv1 : (tez * tez) option = ediv tz_qty nat_qty in
+  match ediv1 with
+    | None -> (failwith "DIVISION_BY_ZERO"  : tez)
+    | Some e ->
        let (quotient, remainder) = e in
        if remainder > 0mutez then (quotient + 1mutez) else quotient
 
-let percent_of_bid_tez (percent, bid : nat * tez) : tez = 
+let percent_of_bid_tez (percent, bid : nat * tez) : tez =
   (ceil_div_tez (bid *  percent, 100n))
 
 (*In Fixed Price sale normal division is used to calculate fee*)
 
-let percent_of_price_tez (percent, price : nat * tez) : tez = 
-  ((price * percent)/ 100n) 
+let percent_of_price_tez (percent, price : nat * tez) : tez =
+  ((price * percent)/ 100n)
 
-let percent_of_price_nat (percent, price : nat * nat) : nat = 
-  ((price * percent)/ 100n) 
+let percent_of_price_nat (percent, price : nat * nat) : nat =
+  ((price * percent)/ 100n)
 
 (*HELPERS*)
 
@@ -90,5 +92,35 @@ let transfer_fa2(fa2_address, token_id, amount_, from, to_: address * token_id *
     }]} in
     Tezos.transaction [tx] 0mutez c
  in transfer_op
+
+
+let check_tokens_allowed
+    (tokens, allowlist, err : tokens * allowlist * string) : unit =
+
+#if !ALLOWLIST_ENABLED
+  unit
+
+#elif ALLOWLIST_SIMPLE
+  check_address_allowed(tokens.fa2_address, allowlist, err)
+
+#elif ALLOWLIST_TOKEN
+  begin match Big_map.find_opt tokens.fa2_address allowlist with
+  | None -> failwith err
+  | Some m_tokens_allowlist -> begin match m_tokens_allowlist with
+    | All_token_ids_allowed -> unit
+    | Token_ids_allowed token_ids_allowlist ->
+        List.iter
+          (fun (token : fa2_tokens) ->
+            if Set.mem token.token_id token_ids_allowlist
+              then unit
+              else failwith err
+          )
+          tokens.fa2_batch
+    end
+  end
+
+#else
+<No check_tokens_allowed implementation>
+#endif
 
 #endif
