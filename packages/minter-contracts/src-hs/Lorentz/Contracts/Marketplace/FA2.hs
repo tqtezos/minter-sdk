@@ -85,6 +85,13 @@ customGeneric "ManageSaleEntrypoints" ligoLayout
 deriving anyclass instance IsoValue al => IsoValue (ManageSaleEntrypoints al)
 deriving anyclass instance HasAnnotation al => HasAnnotation (ManageSaleEntrypoints al)
 
+instance
+  ( RequireAllUniqueEntrypoints (ManageSaleEntrypoints al), IsoValue al
+  , EntrypointsDerivation EpdDelegate (ManageSaleEntrypoints al)
+  ) =>
+    ParameterHasEntrypoints (ManageSaleEntrypoints al) where
+  type ParameterEntrypointsDerivation (ManageSaleEntrypoints al) = EpdDelegate
+
 data MarketplaceEntrypoints al 
   = Buy SaleId
   | ManageSale (ManageSaleEntrypoints al)
