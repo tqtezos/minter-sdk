@@ -261,7 +261,7 @@ hprop_Cancelling_a_sale_deletes_it_from_storage =
         sell testData setup contract
         cancel contract
 
-      storage <- fromVal @MarketplaceStorage <$> getStorage' contract
+      storage <- fromVal @(MarketplaceStorage ()) <$> getStorage' contract
       sales storage @== mempty
 
 hprop_Cant_buy_more_assets_than_are_available :: Property
@@ -329,7 +329,7 @@ data Setup = Setup
   , feeCollector :: Address
   , assetFA2 :: TAddress FA2.FA2SampleParameter
   , moneyFA2 :: TAddress FA2.FA2SampleParameter
-  , storage :: MarketplaceStorage
+  , storage :: MarketplaceStorage ()
   }
 
 testSetup :: MonadNettest caps base m => TestData -> m Setup
@@ -347,6 +347,7 @@ testSetup testData = do
               }
           , sales = mempty
           , nextSaleId = SaleId 0
+          , allowlist = ()
           , fee = FeeData
             { feeAddress = feeCollector
             , feePercent = testFeePercent testData
@@ -370,9 +371,9 @@ testSetup testData = do
     (FA2.fa2Contract def { FA2.cAllowedTokenIds = [moneyTokenId] })
   pure Setup {..}
 
-originateMarketplaceContract :: MonadNettest caps base m => Setup -> m (TAddress MarketplaceEntrypoints)
+originateMarketplaceContract :: MonadNettest caps base m => Setup -> m (TAddress $ MarketplaceEntrypoints ())
 originateMarketplaceContract Setup{storage, seller, buyer, assetFA2, moneyFA2} = do
-  contract <- TAddress @MarketplaceEntrypoints <$> originateUntypedSimple "marketplace-fa2-fixed-fee"
+  contract <- TAddress @( MarketplaceEntrypoints ()) <$> originateUntypedSimple "marketplace-fa2-fixed-fee"
     (untypeValue $ toVal storage)
     (convertContract marketplaceFixedFeeContract)
 
@@ -401,7 +402,7 @@ originateMarketplaceContract Setup{storage, seller, buyer, assetFA2, moneyFA2} =
 -- Call entrypoints
 ----------------------------------------------------------------------------
 
-sell :: (HasCallStack, MonadNettest caps base m) => TestData -> Setup -> TAddress MarketplaceEntrypoints -> m ()
+sell :: (HasCallStack, MonadNettest caps base m) => TestData -> Setup -> TAddress (MarketplaceEntrypoints ()) -> m ()
 sell TestData{testSalePrice, testTokenAmount} Setup{assetFA2, moneyFA2} contract =
   call contract (Call @"Sell") SaleData
     { salePricePerToken = testSalePrice
@@ -416,15 +417,15 @@ sell TestData{testSalePrice, testTokenAmount} Setup{assetFA2, moneyFA2} contract
     , tokenAmount = testTokenAmount
     }
 
-buy :: (HasCallStack, MonadNettest caps base m) => TAddress MarketplaceEntrypoints -> m ()
+buy :: (HasCallStack, MonadNettest caps base m) => TAddress (MarketplaceEntrypoints ()) -> m ()
 buy contract =
   call contract (Call @"Buy") (SaleId 0)
 
-buyAll :: (HasCallStack, MonadNettest caps base m) => TestData -> TAddress MarketplaceEntrypoints -> m ()
+buyAll :: (HasCallStack, MonadNettest caps base m) => TestData -> TAddress (MarketplaceEntrypoints ()) -> m ()
 buyAll TestData{testTokenAmount} contract =
   replicateM_ (fromIntegral testTokenAmount) $
     buy contract
 
-cancel :: (HasCallStack, MonadNettest caps base m) => TAddress MarketplaceEntrypoints -> m ()
+cancel :: (HasCallStack, MonadNettest caps base m) => TAddress (MarketplaceEntrypoints ()) -> m ()
 cancel contract =
   call contract (Call @"Cancel") (SaleId 0)

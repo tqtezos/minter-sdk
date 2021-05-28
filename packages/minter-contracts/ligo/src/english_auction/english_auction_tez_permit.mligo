@@ -1,4 +1,3 @@
-#include "../permit.mligo"
 #include "./english_auction_tez.mligo"
 
 type permit_storage = 

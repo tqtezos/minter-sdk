@@ -4,7 +4,10 @@ module Lorentz.Contracts.Marketplace.Tez where
 import Fmt (Buildable(..), genericF)
 import Lorentz
 
+import qualified Lorentz.Contracts.AllowlistSimple as AllowlistSimple
+import qualified Lorentz.Contracts.AllowlistToken as AllowlistToken
 import Lorentz.Contracts.MinterSdk
+import qualified Lorentz.Contracts.NoAllowlist as NoAllowlist
 import Lorentz.Contracts.PausableAdminOption
 import Lorentz.Contracts.Spec.FA2Interface
 import Michelson.Test.Import (embedContractM)
@@ -48,43 +51,67 @@ deriving anyclass instance IsoValue SaleParamTez
 deriving anyclass instance HasAnnotation SaleParamTez
 instance Buildable SaleParamTez where build = genericF
 
-data MarketplaceTezStorage = MarketplaceTezStorage
-  { admin :: AdminStorage
-  , sales :: BigMap SaleId SaleParamTez
+data MarketplaceTezStorage al = MarketplaceTezStorage
+  { sales :: BigMap SaleId SaleParamTez
+  , admin :: AdminStorage
   , nextSaleId :: SaleId
+  , allowlist :: al
   }
 
 customGeneric "MarketplaceTezStorage" ligoCombLayout
-deriving anyclass instance IsoValue MarketplaceTezStorage
-deriving anyclass instance HasAnnotation MarketplaceTezStorage
+deriving anyclass instance IsoValue al => IsoValue (MarketplaceTezStorage al)
+deriving anyclass instance HasAnnotation al => HasAnnotation (MarketplaceTezStorage al)
 
-initMarketplaceTezStorage :: AdminStorage -> MarketplaceTezStorage
-initMarketplaceTezStorage as = MarketplaceTezStorage as mempty (SaleId 0)
+initMarketplaceTezStorage :: Monoid al => AdminStorage -> MarketplaceTezStorage al
+initMarketplaceTezStorage as = MarketplaceTezStorage mempty as (SaleId 0) mempty
 
-data ManageSaleEntrypoints = Cancel SaleId
+data ManageSaleTezEntrypoints al = Cancel SaleId
   | Admin AdminEntrypoints
   | Sell SaleDataTez
+  | Update_allowed al
 
-customGeneric "ManageSaleEntrypoints" ligoLayout
-deriving anyclass instance IsoValue ManageSaleEntrypoints
-deriving anyclass instance HasAnnotation ManageSaleEntrypoints
+customGeneric "ManageSaleTezEntrypoints" ligoLayout
+deriving anyclass instance IsoValue al => IsoValue (ManageSaleTezEntrypoints al)
+deriving anyclass instance HasAnnotation al => HasAnnotation (ManageSaleTezEntrypoints al)
 
-data MarketplaceTezEntrypoints
+data MarketplaceTezEntrypoints al 
   = Buy SaleId
-  | ManageSale ManageSaleEntrypoints 
+  | ManageSale (ManageSaleTezEntrypoints al)
 
 customGeneric "MarketplaceTezEntrypoints" ligoLayout
-deriving anyclass instance IsoValue MarketplaceTezEntrypoints
-deriving anyclass instance HasAnnotation MarketplaceTezEntrypoints
+deriving anyclass instance IsoValue al => IsoValue (MarketplaceTezEntrypoints al)
+deriving anyclass instance HasAnnotation al => HasAnnotation (MarketplaceTezEntrypoints al)
 
-instance ParameterHasEntrypoints MarketplaceTezEntrypoints where
-  type ParameterEntrypointsDerivation MarketplaceTezEntrypoints = EpdRecursive
+instance
+  ( RequireAllUniqueEntrypoints (MarketplaceTezEntrypoints al), IsoValue al
+  , EntrypointsDerivation EpdDelegate (MarketplaceTezEntrypoints al)
+  ) =>
+    ParameterHasEntrypoints (MarketplaceTezEntrypoints al) where
+  type ParameterEntrypointsDerivation (MarketplaceTezEntrypoints al) = EpdDelegate
 
 -- Contract
 ----------------------------------------------------------------------------
 
-marketplaceTezContract :: T.Contract (ToT MarketplaceTezEntrypoints) (ToT MarketplaceTezStorage)
-marketplaceTezContract = $$(embedContractM (inBinFolder "fixed_price_sale_market_tez.tz"))
+marketplaceTezContract
+  :: T.Contract
+      (ToT (MarketplaceTezEntrypoints NoAllowlist.Entrypoints))
+      (ToT (MarketplaceTezStorage NoAllowlist.Allowlist))
+marketplaceTezContract =
+  $$(embedContractM (inBinFolder "fixed_price_sale_market_tez.tz"))
+
+marketplaceTezAllowlistedContract
+  :: T.Contract
+      (ToT (MarketplaceTezEntrypoints AllowlistSimple.Entrypoints))
+      (ToT (MarketplaceTezStorage AllowlistSimple.Allowlist))
+marketplaceTezAllowlistedContract =
+  $$(embedContractM (inBinFolder "fixed_price_sale_market_tez_allowlisted.tz"))
+
+marketplaceTezAllowlistedTokenContract
+  :: T.Contract
+      (ToT (MarketplaceTezEntrypoints AllowlistToken.Entrypoints))
+      (ToT (MarketplaceTezStorage AllowlistToken.Allowlist))
+marketplaceTezAllowlistedTokenContract =
+  $$(embedContractM (inBinFolder "fixed_price_sale_market_tez_allowlisted_token.tz"))
 
 -- Errors
 ----------------------------------------------------------------------------

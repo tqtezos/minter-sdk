@@ -34,22 +34,22 @@ test_AllowlistUpdateAuthorization =
     originateAuctionFA2Allowlisted (BidCurrency dummyAddr theTokenId)
 
 test_AllowlistChecks :: [TestTree]
-test_AllowlistChecks = allowlistChecks
+test_AllowlistChecks = allowlistSimpleChecks
   AllowlistChecksSetup
   { allowlistCheckSetup = \fa2Setup -> do
       -- In this contract only admin can create auctions
-      let admin ::< SNil = sAddresses fa2Setup
-      let tokenId ::< SNil = sTokens fa2Setup
+      let admin ::< _ = sAddresses fa2Setup
       -- FA2 that is used as money we buy for in auction
       bidFA2 <- originateFA2 "bid-fa2" fa2Setup []
-      let bidCurrency = BidCurrency (toAddress bidFA2) tokenId
+      let bidCurrency = BidCurrency (toAddress bidFA2) theTokenId
       contract <- originateAuctionFA2Allowlisted bidCurrency admin
-      return (admin, contract, (admin, tokenId))
+      return (admin, contract, admin)
 
   , allowlistRestrictionsCases = fromList
       [ AllowlistRestrictionCase
-        { allowlistError = assetAddressNotAllowed
-        , allowlistRunRestrictedAction = \(admin, tokenId) contract fa2 -> do
+        { allowlistError = assetNotAllowed
+        , allowlistRunRestrictedAction =
+          \admin contract (fa2, tokenId) -> do
             now <- getNow
             withSender admin $
               call contract (Call @"Configure") $ (defConfigureParam :: ConfigureParam)
@@ -81,7 +81,7 @@ test_Integrational = testGroup "Integrational"
           , opTokenId = tokenId
           }
       withSender alice $
-        call auction (Call @"Update_allowed") (mkAllowlistParam [fa2])
+        call auction (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
 
       now <- getNow
 

@@ -2,7 +2,6 @@
 #define PERMIT_MARKET
 
 #include "fixed_price_sale_market.mligo"
-#include "../permit.mligo"
 
 type permit_storage = 
     [@layout:comb]

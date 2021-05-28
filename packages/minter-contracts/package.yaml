@@ -23,6 +23,7 @@ library:
   source-dirs: src-hs
 
   dependencies:
+    - containers
     - cleveland
     - filepath
     - file-embed

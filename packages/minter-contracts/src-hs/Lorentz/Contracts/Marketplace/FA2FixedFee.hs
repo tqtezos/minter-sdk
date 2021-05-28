@@ -24,6 +24,7 @@ import Michelson.Test.Import (embedContractM)
 import qualified Michelson.Typed as T
 
 import qualified Lorentz.Contracts.Marketplace.FA2 as MarketFA2
+import qualified Lorentz.Contracts.NoAllowlist as NoAllowlist
 
 -- Types
 ----------------------------------------------------------------------------
@@ -38,29 +39,34 @@ deriving anyclass instance IsoValue FeeData
 deriving anyclass instance HasAnnotation FeeData
 instance Buildable FeeData where build = genericF
 
-data MarketplaceStorage = MarketplaceStorage
-  { admin :: AdminStorage
-  , sales :: BigMap MarketFA2.SaleId MarketFA2.SaleParam
+data MarketplaceStorage al = MarketplaceStorage
+  { sales :: BigMap MarketFA2.SaleId MarketFA2.SaleParam
+  , admin :: AdminStorage
   , nextSaleId :: MarketFA2.SaleId
+  , allowlist :: al
   , fee :: FeeData
   }
 
 customGeneric "MarketplaceStorage" ligoCombLayout
-deriving anyclass instance IsoValue MarketplaceStorage
-deriving anyclass instance HasAnnotation MarketplaceStorage
-instance Buildable MarketplaceStorage where build = genericF
+deriving anyclass instance IsoValue al => IsoValue (MarketplaceStorage al)
+deriving anyclass instance HasAnnotation al => HasAnnotation (MarketplaceStorage al)
+instance Buildable al => Buildable (MarketplaceStorage al) where build = genericF
 
-initMarketplaceStorage :: FeeData -> AdminStorage -> MarketplaceStorage
+initMarketplaceStorage :: Monoid al => FeeData -> AdminStorage -> MarketplaceStorage al
 initMarketplaceStorage feeData as =
   MarketplaceStorage
     { admin = as
     , sales = mempty
     , nextSaleId = MarketFA2.SaleId 0
+    , allowlist = mempty
     , fee = feeData
     }
 
 -- Contract
 ----------------------------------------------------------------------------
 
-marketplaceFixedFeeContract :: T.Contract (ToT MarketFA2.MarketplaceEntrypoints) (ToT MarketplaceStorage)
+marketplaceFixedFeeContract
+  :: T.Contract
+      (ToT (MarketFA2.MarketplaceEntrypoints NoAllowlist.Entrypoints))
+      (ToT (MarketplaceStorage NoAllowlist.Allowlist))
 marketplaceFixedFeeContract = $$(embedContractM (inBinFolder "fixed_price_sale_market_fixed_fee.tz"))

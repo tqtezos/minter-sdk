@@ -26,18 +26,18 @@ test_AllowlistUpdateAuthorization =
   allowlistUpdateAuthorizationChecks originateAllowlistedSwap
 
 test_AllowlistChecks :: [TestTree]
-test_AllowlistChecks = allowlistChecks
+test_AllowlistChecks = allowlistSimpleChecks
   AllowlistChecksSetup
   { allowlistCheckSetup = \fa2Setup -> do
-      let alice ::< SNil = sAddresses fa2Setup
-      let tokenId ::< SNil = sTokens fa2Setup
+      let alice ::< _ = sAddresses fa2Setup
+      let tokenId ::< _ = sTokens fa2Setup
       (swap, admin) <- originateAllowlistedSwapWithAdmin
       return (admin, swap, (alice, tokenId))
 
   , allowlistRestrictionsCases = fromList
       [ AllowlistRestrictionCase
         { allowlistError = errSwapOfferedNotAllowlisted
-        , allowlistRunRestrictedAction = \(alice, tokenId) swap fa2 ->
+        , allowlistRunRestrictedAction = \(alice, tokenId) swap (fa2, _) ->
             withSender alice $
               call swap (Call @"Start") SwapOffer
                 { assetsOffered = [mkFA2Assets fa2 [(tokenId, 1)]]
@@ -46,7 +46,7 @@ test_AllowlistChecks = allowlistChecks
         }
       , AllowlistRestrictionCase
         { allowlistError = errSwapRequestedNotAllowlisted
-        , allowlistRunRestrictedAction = \(alice, tokenId) swap fa2 ->
+        , allowlistRunRestrictedAction = \(alice, tokenId) swap (fa2, _) ->
             withSender alice $
               call swap (Call @"Start") SwapOffer
                 { assetsOffered = []
@@ -69,7 +69,7 @@ test_Integrational = testGroup "Integrational"
       fa2 <- originateFA2 "fa2" setup [swap]
 
       withSender admin $
-        call swap (Call @"Update_allowed") (mkAllowlistParam [fa2])
+        call swap (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
 
       assertingBalanceDeltas fa2
         [ (alice, tokenId) -: -3

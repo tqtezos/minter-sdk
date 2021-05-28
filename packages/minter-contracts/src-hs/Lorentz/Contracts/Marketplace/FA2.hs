@@ -4,7 +4,10 @@ module Lorentz.Contracts.Marketplace.FA2 where
 import Fmt (Buildable(..), genericF)
 import Lorentz
 
+import qualified Lorentz.Contracts.AllowlistSimple as AllowlistSimple
+import qualified Lorentz.Contracts.AllowlistToken as AllowlistToken
 import Lorentz.Contracts.MinterSdk
+import qualified Lorentz.Contracts.NoAllowlist as NoAllowlist
 import Lorentz.Contracts.PausableAdminOption
 import Lorentz.Contracts.Spec.FA2Interface
 import Michelson.Test.Import (embedContractM)
@@ -59,43 +62,67 @@ deriving anyclass instance IsoValue SaleParam
 deriving anyclass instance HasAnnotation SaleParam
 instance Buildable SaleParam where build = genericF
 
-data MarketplaceStorage = MarketplaceStorage
-  { admin :: AdminStorage
-  , sales :: BigMap SaleId SaleParam
+data MarketplaceStorage al = MarketplaceStorage
+  { sales :: BigMap SaleId SaleParam
+  , admin :: AdminStorage
   , nextSaleId :: SaleId
+  , allowlist :: al
   }
 
 customGeneric "MarketplaceStorage" ligoCombLayout
-deriving anyclass instance IsoValue MarketplaceStorage
-deriving anyclass instance HasAnnotation MarketplaceStorage
+deriving anyclass instance IsoValue al => IsoValue (MarketplaceStorage al)
+deriving anyclass instance HasAnnotation al => HasAnnotation (MarketplaceStorage al)
 
-initMarketplaceStorage :: AdminStorage -> MarketplaceStorage
-initMarketplaceStorage as = MarketplaceStorage as mempty (SaleId 0)
+initMarketplaceStorage :: Monoid al => AdminStorage -> MarketplaceStorage al
+initMarketplaceStorage as = MarketplaceStorage mempty as (SaleId 0) mempty
 
-data ManageSaleEntrypoints = Cancel SaleId
+data ManageSaleEntrypoints al = Cancel SaleId
   | Admin AdminEntrypoints
   | Sell SaleData
+  | Update_allowed al
 
 customGeneric "ManageSaleEntrypoints" ligoLayout
-deriving anyclass instance IsoValue ManageSaleEntrypoints
-deriving anyclass instance HasAnnotation ManageSaleEntrypoints
+deriving anyclass instance IsoValue al => IsoValue (ManageSaleEntrypoints al)
+deriving anyclass instance HasAnnotation al => HasAnnotation (ManageSaleEntrypoints al)
 
-data MarketplaceEntrypoints
+data MarketplaceEntrypoints al 
   = Buy SaleId
-  | ManageSale ManageSaleEntrypoints 
+  | ManageSale (ManageSaleEntrypoints al)
 
 customGeneric "MarketplaceEntrypoints" ligoLayout
-deriving anyclass instance IsoValue MarketplaceEntrypoints
-deriving anyclass instance HasAnnotation MarketplaceEntrypoints
+deriving anyclass instance IsoValue al => IsoValue (MarketplaceEntrypoints al)
+deriving anyclass instance HasAnnotation al => HasAnnotation (MarketplaceEntrypoints al)
 
-instance ParameterHasEntrypoints MarketplaceEntrypoints where
-  type ParameterEntrypointsDerivation MarketplaceEntrypoints = EpdRecursive
+instance
+  ( RequireAllUniqueEntrypoints (MarketplaceEntrypoints al), IsoValue al
+  , EntrypointsDerivation EpdDelegate (MarketplaceEntrypoints al)
+  ) =>
+    ParameterHasEntrypoints (MarketplaceEntrypoints al) where
+  type ParameterEntrypointsDerivation (MarketplaceEntrypoints al) = EpdDelegate
 
 -- Contract
 ----------------------------------------------------------------------------
 
-marketplaceContract :: T.Contract (ToT MarketplaceEntrypoints) (ToT MarketplaceStorage)
-marketplaceContract = $$(embedContractM (inBinFolder "fixed_price_sale_market.tz"))
+marketplaceContract
+  :: T.Contract
+      (ToT (MarketplaceEntrypoints NoAllowlist.Entrypoints))
+      (ToT (MarketplaceStorage NoAllowlist.Allowlist))
+marketplaceContract =
+  $$(embedContractM (inBinFolder "fixed_price_sale_market.tz"))
+
+marketplaceAllowlistedContract
+  :: T.Contract
+      (ToT (MarketplaceEntrypoints AllowlistSimple.Entrypoints))
+      (ToT (MarketplaceStorage AllowlistSimple.Allowlist))
+marketplaceAllowlistedContract =
+  $$(embedContractM (inBinFolder "fixed_price_sale_market_allowlisted.tz"))
+
+marketplaceAllowlistedTokenContract
+  :: T.Contract
+      (ToT (MarketplaceEntrypoints AllowlistToken.Entrypoints))
+      (ToT (MarketplaceStorage AllowlistToken.Allowlist))
+marketplaceAllowlistedTokenContract =
+  $$(embedContractM (inBinFolder "fixed_price_sale_market_allowlisted_token.tz"))
 
 -- Errors
 ----------------------------------------------------------------------------

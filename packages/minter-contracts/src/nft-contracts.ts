@@ -25,36 +25,36 @@ import {
 } from '../bin-ts';
 
 export interface MintNftParam {
-    token_metadata: TokenMetadata;
-    owner: address;
+  token_metadata: TokenMetadata;
+  owner: address;
 }
 
 export interface MintFtParam {
-    owner: address;
-    token_id: nat;
-    amount: nat;
+  owner: address;
+  token_id: nat;
+  amount: nat;
 }
 
 export interface MintFtPaarm {
-    token_medata: TokenMetadata;
-    owner: address;
+  token_medata: TokenMetadata;
+  owner: address;
 }
 
 export interface SaleTokenParamTez {
-    token_for_sale_address: address;
-    token_for_sale_token_id: nat;
+  token_for_sale_address: address;
+  token_for_sale_token_id: nat;
 }
 
 export interface SaleParamTez {
-    sale_price: BigNumber;
-    sale_token: SaleTokenParamTez;
+  sale_price: BigNumber;
+  sale_token: SaleTokenParamTez;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface AdminStorage {
-    admin: string;
-    pending_admin?: string;
-    paused: boolean;
+  admin: string;
+  pending_admin?: string;
+  paused: boolean;
 }
 
 export async function mintNftTokens(
@@ -132,14 +132,14 @@ export async function originateFtFaucet(
 export async function originateFixedPriceSale(
   tz: TezosToolkit,
 ): Promise<Contract> {
-  const storage = `(Pair None (Pair {} 0))`;
+  const storage = `(Pair {} None 0 Unit)`;
   return originateContract(tz, FixedPriceSaleMarketCode.code, storage, 'fixed-price-sale-market');
 }
 
 export async function originateFixedPriceTezSale(
   tz: TezosToolkit,
 ): Promise<Contract> {
-  const storage = `(Pair None (Pair {} 0))`;
+  const storage = `(Pair {} None 0 Unit)`;
   return originateContract(tz, FixedPriceSaleMarketTezCode.code, storage, 'fixed-price-sale-market-tez');
 }
 
@@ -147,7 +147,7 @@ export async function originateFixedPriceAdminSale(
   tz: TezosToolkit,
   adminAddress: address,
 ): Promise<Contract> {
-  const storage = `(Pair (Some (Pair (Pair "${adminAddress}" False) None)) (Pair {} 0))`;
+  const storage = `(Pair {} (Some (Pair (Pair "${adminAddress}" False) None)) 0 Unit)`;
   return originateContract(tz, FixedPriceSaleMarketCode.code, storage, 'fixed-price-sale-market-with-admin');
 }
 
@@ -155,7 +155,7 @@ export async function originateFixedPriceTezAdminSale(
   tz: TezosToolkit,
   adminAddress: address,
 ): Promise<Contract> {
-  const storage = `(Pair (Some (Pair (Pair "${adminAddress}" False) None)) (Pair {} 0))`;
+  const storage = `(Pair {} (Some (Pair (Pair "${adminAddress}" False) None)) 0 Unit)`;
   return originateContract(tz, FixedPriceSaleMarketTezCode.code, storage, 'fixed-price-sale-market-tez-with-admin');
 }
 
@@ -163,7 +163,7 @@ export async function originateFixedPriceAllowlistedSale(
   tz: TezosToolkit,
   adminAddress: address,
 ): Promise<Contract> {
-  const storage = `(Pair {} (Pair (Some (Pair (Pair "${adminAddress}" False) None)) (Pair {} 0)))`;
+  const storage = `(Pair {} (Some (Pair (Pair "${adminAddress}" False) None)) 0 {})`;
   return originateContract(tz, FixedPriceSaleMarketAllowlistedCode.code, storage, 'fixed-price-sale-market-allowlisted');
 }
 
@@ -171,14 +171,14 @@ export async function originateFixedPriceTezAllowlistedSale(
   tz: TezosToolkit,
   adminAddress: address,
 ): Promise<Contract> {
-  const storage = `(Pair {} (Pair (Some (Pair (Pair "${adminAddress}" False) None)) (Pair {} 0)))`;
+  const storage = `(Pair {} (Some (Pair (Pair "${adminAddress}" False) None)) 0 {})`;
   return originateContract(tz, FixedPriceSaleMarketTezAllowlistedCode.code, storage, 'fixed-price-sale-market-tez-allowlisted');
 }
 
 export async function originateEnglishAuctionTez(
   tz: TezosToolkit,
 ): Promise<Contract> {
-  const storage = `(Pair None (Pair 0 (Pair 86400 (Pair 86400 {}))))`;
+  const storage = `(Pair None 0 86400 86400 {} Unit)`;
   return originateContract(tz, EnglishAuctionTezCode.code, storage, 'english_auction_tez');
 }
 
@@ -186,7 +186,7 @@ export async function originateEnglishAuctionTezAdmin(
   tz: TezosToolkit,
 ): Promise<Contract> {
   const tzAddress = await tz.signer.publicKeyHash();
-  const storage = `(Pair (Some (Pair (Pair "${tzAddress}" False) None)) (Pair 0 (Pair 86400 (Pair 86400 {}))))`;
+  const storage = `(Pair (Some (Pair (Pair "${tzAddress}" False) None)) 0 86400 86400 {} Unit)`;
   return originateContract(tz, EnglishAuctionTezCode.code, storage, 'english_auction_tez_admin');
 }
 
@@ -198,25 +198,26 @@ export async function originateEditionsNftContract(
     name: 'editions',
     description: 'editions',
     interfaces: ['TZIP-012', 'TZIP-016'],
-    views : [{
+    views: [{
       name: 'token_metadata',
       description: 'Get the metadata for the tokens minted using this contract',
       pure: true,
       implementations: [
-        { michelsonStorageView :
-           {
-             parameter : {
-               prim: 'nat',
-             },
-             returnType : {
-               prim : "pair",
-               args : [
-                 { prim: "nat", annots: ["%token_id"] },
-                 { prim :"map", args :[{ prim:"string" }, { prim:"bytes" }], annots:["%token_info"] },
-               ],
-             },
-             code : EditionsTokenMetadataViewCode.code,
-           },
+        {
+          michelsonStorageView:
+          {
+            parameter: {
+              prim: 'nat',
+            },
+            returnType: {
+              prim: "pair",
+              args: [
+                { prim: "nat", annots: ["%token_id"] },
+                { prim: "map", args: [{ prim: "string" }, { prim: "bytes" }], annots: ["%token_info"] },
+              ],
+            },
+            code: EditionsTokenMetadataViewCode.code,
+          },
         },
       ],
     }],
@@ -231,46 +232,46 @@ export async function originateEditionsNftContract(
 
 export async function originateEnglishAuctionFA2(
   tz: TezosToolkit,
-  fa2_address : address,
-  token_id : nat,
+  fa2_address: address,
+  token_id: nat,
 ): Promise<Contract> {
-  const storage = `(Pair None (Pair 0 (Pair 86400 (Pair 86400 (Pair (Pair "${fa2_address}" ${token_id}){})))))`;
+  const storage = `(Pair None 0 86400 86400 (Pair "${fa2_address}" ${token_id}) {} Unit)`;
   return originateContract(tz, EnglishAuctionFa2Code.code, storage, 'english_auction_fa2');
 }
 
 export async function originateEnglishAuctionFA2Admin(
   tz: TezosToolkit,
   adminAddress: address,
-  fa2_address : address,
-  token_id : nat,
+  fa2_address: address,
+  token_id: nat,
 ): Promise<Contract> {
-  const storage = `(Pair (Some (Pair (Pair "${adminAddress}" False) None)) (Pair 0 (Pair 86400 (Pair 86400 (Pair (Pair "${fa2_address}" ${token_id}){})))))`;
+  const storage = `(Pair (Some (Pair (Pair "${adminAddress}" False) None)) 0 86400 86400 (Pair "${fa2_address}" ${token_id}) {} Unit)`;
   return originateContract(tz, EnglishAuctionFa2Code.code, storage, 'english_auction_fa2');
 }
 
 export async function originateEnglishAuctionTezPermit(
   tz: TezosToolkit,
-  adminAddress : address,
+  adminAddress: address,
 ): Promise<Contract> {
-  const storage = `(Pair (Pair (Pair "${adminAddress}" False) None) (Pair 0 (Pair 86400 (Pair 86400 (Pair {} 0)))))`;
+  const storage = `(Pair (Pair (Pair "${adminAddress}" False) None) 0 86400 86400 {} {} Unit 0)`;
   return originateContract(tz, EnglishAuctionTezPermitCode.code, storage, 'english_auction_tez_permit');
 }
 
 export async function originateEnglishAuctionTezFixedFee(
   tz: TezosToolkit,
-  feeAddress : address,
+  feeAddress: address,
 ): Promise<Contract> {
-  const storage = `(Pair None (Pair 0 (Pair 86400 (Pair 86400 (Pair {} (Pair "${feeAddress}" 10))))))`;
+  const storage = `(Pair None 0 86400 86400 {} Unit (Pair "${feeAddress}" 10))`;
   return originateContract(tz, EnglishAuctionTezFixedFeeCode.code, storage, 'english_auction_tez');
 }
 
 export async function originateEnglishAuctionFA2FixedFee(
   tz: TezosToolkit,
-  feeAddress : address,
-  fa2_address : address,
-  token_id : nat,
+  feeAddress: address,
+  fa2_address: address,
+  token_id: nat,
 ): Promise<Contract> {
-  const storage = `(Pair None (Pair 0 (Pair 86400 (Pair 86400 (Pair (Pair "${fa2_address}" ${token_id}) (Pair {} (Pair "${feeAddress}" 10)))))))`;
+  const storage = `(Pair None 0 86400 86400 (Pair "${fa2_address}" ${token_id}) {} Unit (Pair "${feeAddress}" 10))`;
   return originateContract(tz, EnglishAuctionFa2FixedFeeCode.code, storage, 'english_auction_fa2');
 }
 

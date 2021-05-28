@@ -28,19 +28,19 @@ test_AllowlistUpdateAuthorization =
   allowlistUpdateAuthorizationChecks originateAuctionTezPermitAllowlisted
 
 test_AllowlistChecks :: [TestTree]
-test_AllowlistChecks = allowlistChecks
+test_AllowlistChecks = allowlistSimpleChecks
   AllowlistChecksSetup
   { allowlistCheckSetup = \fa2Setup -> do
       -- In this contract only admin can create auctions
-      let admin ::< SNil = sAddresses fa2Setup
-      let tokenId ::< SNil = sTokens fa2Setup
+      let admin ::< _ = sAddresses fa2Setup
       contract <- originateAuctionTezPermitAllowlisted admin
-      return (admin, contract, (admin, tokenId))
+      return (admin, contract, admin)
 
   , allowlistRestrictionsCases = fromList
       [ AllowlistRestrictionCase
-        { allowlistError = assetAddressNotAllowed
-        , allowlistRunRestrictedAction = \(admin, tokenId) contract fa2 -> do
+        { allowlistError = assetNotAllowed
+        , allowlistRunRestrictedAction =
+          \admin contract (fa2, tokenId) -> do
             now <- getNow
             withSender admin $
               call contract (Call @"Permit_configure") $ one $
@@ -69,7 +69,7 @@ test_Integrational = testGroup "Integrational"
       fa2 <- originateFA2 "fa2" setup [auction]
 
       withSender alice $
-        call auction (Call @"Update_allowed") (mkAllowlistParam [fa2])
+        call auction (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
 
       now <- getNow
 

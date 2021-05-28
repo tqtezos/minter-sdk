@@ -10,7 +10,7 @@ module Test.Util
   , originateFA2
   , assertingBalanceDeltas
   , balanceOf
-  , mkAllowlistParam
+  , mkAllowlistSimpleParam
   , originateWithAdmin
   , clevelandProp
 
@@ -201,8 +201,8 @@ balanceOf fa2 tokenId account = do
           ]
 
 -- | Construct allowlist for passing to allowlist overriding entrypoint.
-mkAllowlistParam :: [TAddress p] -> BigMap Address ()
-mkAllowlistParam = mconcat . map (\a -> one (toAddress a, ()))
+mkAllowlistSimpleParam :: [TAddress p] -> BigMap Address ()
+mkAllowlistSimpleParam = mconcat . map (\a -> one (toAddress a, ()))
 
 -- | Originate the a contract and admin for it.
 originateWithAdmin
