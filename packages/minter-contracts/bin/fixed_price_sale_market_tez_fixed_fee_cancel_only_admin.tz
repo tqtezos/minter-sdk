@@ -38,6 +38,22 @@
            (pair bool string)
            unit
            { UNPAIR ; NOT ; IF { FAILWITH } { DROP ; UNIT } } ;
+         DUP ;
+         LAMBDA
+           (pair (lambda (pair bool string) unit) string)
+           unit
+           { UNPAIR ;
+             SWAP ;
+             PUSH string "DONT_TRANSFER_TEZ_TO_" ;
+             CONCAT ;
+             PUSH mutez 0 ;
+             AMOUNT ;
+             COMPARE ;
+             EQ ;
+             PAIR ;
+             EXEC } ;
+         SWAP ;
+         APPLY ;
          LAMBDA
            (pair (pair (pair address nat) (pair nat address)) address)
            operation
@@ -75,28 +91,23 @@
              SWAP ;
              PUSH unit Unit ;
              TRANSFER_TOKENS } ;
-         LAMBDA
-           string
-           string
-           { PUSH string ")" ;
-             SWAP ;
-             CONCAT ;
-             PUSH string "DON'T TRANSFER TEZ TO THIS ENTRYPOINT (" ;
-             CONCAT } ;
          DIG 6 ;
          UNPAIR ;
          IF_LEFT
            { IF_LEFT
-               { DIG 2 ;
-                 DROP ;
-                 IF_LEFT
+               { IF_LEFT
                    { DIG 2 ;
                      DROP ;
                      DIG 2 ;
                      DROP ;
-                     DIG 2 ;
+                     DIG 3 ;
                      DROP ;
-                     DIG 2 ;
+                     DIG 3 ;
+                     DROP ;
+                     PUSH string "ADMIN" ;
+                     DIG 3 ;
+                     SWAP ;
+                     EXEC ;
                      DROP ;
                      SWAP ;
                      DUP ;
@@ -159,7 +170,9 @@
                      PAIR ;
                      SWAP ;
                      PAIR }
-                   { DIG 6 ;
+                   { DIG 4 ;
+                     DROP ;
+                     DIG 6 ;
                      DROP ;
                      SWAP ;
                      DUP ;
@@ -333,7 +346,7 @@
                      PAIR ;
                      SWAP ;
                      PAIR } }
-               { DIG 3 ;
+               { DIG 2 ;
                  DROP ;
                  DIG 6 ;
                  DROP ;
@@ -349,12 +362,11 @@
                      SWAP ;
                      EXEC ;
                      DROP ;
-                     PUSH mutez 0 ;
-                     AMOUNT ;
-                     COMPARE ;
-                     NEQ ;
-                     IF { PUSH string "CANCEL" ; DIG 3 ; SWAP ; EXEC ; FAILWITH }
-                        { DIG 2 ; DROP } ;
+                     PUSH string "CANCEL" ;
+                     DIG 4 ;
+                     SWAP ;
+                     EXEC ;
+                     DROP ;
                      SWAP ;
                      DUP ;
                      DUG 2 ;
@@ -443,11 +455,11 @@
                      SWAP ;
                      EXEC ;
                      DROP ;
-                     PUSH mutez 0 ;
-                     AMOUNT ;
-                     COMPARE ;
-                     NEQ ;
-                     IF { PUSH string "SELL" ; DIG 3 ; SWAP ; EXEC ; FAILWITH } { DIG 2 ; DROP } ;
+                     PUSH string "SELL" ;
+                     DIG 4 ;
+                     SWAP ;
+                     EXEC ;
+                     DROP ;
                      SELF_ADDRESS ;
                      SENDER ;
                      DUP 3 ;
@@ -509,13 +521,16 @@
              DROP ;
              DIG 2 ;
              DROP ;
-             DIG 2 ;
+             DIG 3 ;
              DROP ;
-             DIG 2 ;
+             DIG 3 ;
              DROP ;
-             DIG 2 ;
+             DIG 3 ;
              DROP ;
-             DIG 2 ;
+             PUSH string "UPDATE_ALLOWED" ;
+             DIG 3 ;
+             SWAP ;
+             EXEC ;
              DROP ;
              SWAP ;
              DROP ;

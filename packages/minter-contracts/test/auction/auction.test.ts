@@ -22,6 +22,7 @@ describe('test NFT auction', () => {
   let nftAuction: Contract;
   let nftAuctionBob : Contract;
   let nftAuctionAlice : Contract;
+  let nftAuctionEve : Contract;
   let nftContract : Contract;
   let bobAddress : address;
   let aliceAddress : address;
@@ -53,6 +54,7 @@ describe('test NFT auction', () => {
     nftAuction = await originateEnglishAuctionTez(tezos.bob);
     nftAuctionBob = await tezos.bob.contract.at(nftAuction.address);
     nftAuctionAlice = await tezos.alice.contract.at(nftAuction.address);
+    nftAuctionEve = await tezos.eve.contract.at(nftAuction.address);
 
     $log.info('originating nft faucets...');
     nftContract = await originateNftFaucet(tezos.bob);
@@ -131,8 +133,8 @@ describe('test NFT auction', () => {
     await opBid.confirmation();
     $log.info(`Bid placed. Amount sent: ${opBid.amount} mutez`);
 
-    $log.info(`Alice bids 210tz, a 10tz increase but less than a 10% raise of previous bid `);
-    const opBid2 = await nftAuctionAlice.methods.bid(0).send({ amount : 210 });
+    $log.info(`Eve bids 210tz, a 10tz increase but less than a 10% raise of previous bid `);
+    const opBid2 = await nftAuctionEve.methods.bid(0).send({ amount : 210 });
     await opBid2.confirmation();
     $log.info(`Bid placed. Amount sent: ${opBid2.amount} mutez`);
   });

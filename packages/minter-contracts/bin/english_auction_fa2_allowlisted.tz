@@ -163,9 +163,7 @@
              CAR ;
              SWAP ;
              GET ;
-             IF_NONE
-               { PUSH string "Auction does not exist for given asset_id" ; FAILWITH }
-               {} } ;
+             IF_NONE { PUSH string "AUCTION_DOES_NOT_EXIST" ; FAILWITH } {} } ;
          LAMBDA
            (pair address
                  (pair nat
@@ -235,6 +233,18 @@
              EQ } ;
          DIG 8 ;
          UNPAIR ;
+         PUSH string "ANY_ENTRYPOINT" ;
+         PUSH string "DONT_TRANSFER_TEZ_TO_" ;
+         CONCAT ;
+         PUSH mutez 0 ;
+         AMOUNT ;
+         COMPARE ;
+         EQ ;
+         PAIR ;
+         DUP 9 ;
+         SWAP ;
+         EXEC ;
+         DROP ;
          IF_LEFT
            { IF_LEFT
                { DIG 5 ;
@@ -250,7 +260,7 @@
                      DROP ;
                      DIG 3 ;
                      DROP ;
-                     PUSH string "Amount must be 0mutez" ;
+                     PUSH string "INVALID_AMOUNT" ;
                      PUSH mutez 0 ;
                      AMOUNT ;
                      COMPARE ;
@@ -327,7 +337,7 @@
                      DIG 6 ;
                      SWAP ;
                      EXEC ;
-                     PUSH string "Bidder must be an implicit account" ;
+                     PUSH string "BIDDER_NOT_IMPLICIT" ;
                      SOURCE ;
                      SENDER ;
                      COMPARE ;
@@ -343,7 +353,7 @@
                      SWAP ;
                      EXEC ;
                      DROP ;
-                     PUSH string "Auction must be in progress" ;
+                     PUSH string "NOT_IN_PROGRESS" ;
                      SWAP ;
                      DUP ;
                      DUG 2 ;
@@ -364,7 +374,7 @@
                      SWAP ;
                      EXEC ;
                      DROP ;
-                     PUSH string "Seller cannot place a bid" ;
+                     PUSH string "SEllER_CANT_BID" ;
                      SWAP ;
                      DUP ;
                      DUG 2 ;
@@ -377,7 +387,7 @@
                      SWAP ;
                      EXEC ;
                      DROP ;
-                     PUSH string "Bidders cannot outbid themselves" ;
+                     PUSH string "NO_SELF_OUTBIDS" ;
                      SWAP ;
                      DUP ;
                      DUG 2 ;
@@ -895,7 +905,7 @@
                               IF { PUSH string "_" ; CONCAT ; PUSH string "NOT_AN_ADMIN" ; CONCAT ; FAILWITH }
                                  { DROP ; UNIT } } } ;
                      DROP ;
-                     PUSH string "Auction must not have ended" ;
+                     PUSH string "AUCTION_ENDED" ;
                      SWAP ;
                      DUP ;
                      DUG 2 ;
@@ -908,7 +918,7 @@
                      SWAP ;
                      EXEC ;
                      DROP ;
-                     PUSH string "Amount must be 0mutez" ;
+                     PUSH string "INVALID_AMOUNT" ;
                      PUSH mutez 0 ;
                      AMOUNT ;
                      COMPARE ;
@@ -1071,7 +1081,7 @@
                             GET ;
                             IF_NONE { FAILWITH } { DROP 2 } } ;
                      DROP ;
-                     PUSH string "end_time must be after start_time" ;
+                     PUSH string "INVALID_END_TIME" ;
                      SWAP ;
                      DUP ;
                      DUG 2 ;
@@ -1097,7 +1107,7 @@
                      SWAP ;
                      EXEC ;
                      DROP ;
-                     PUSH string "Auction time must be less than max_auction_time" ;
+                     PUSH string "INVALID_AUCTION_TIME" ;
                      DUP 3 ;
                      CDR ;
                      CDR ;
@@ -1127,7 +1137,7 @@
                      SWAP ;
                      EXEC ;
                      DROP ;
-                     PUSH string "Start_time must not have already passed" ;
+                     PUSH string "INVALID_START_TIME" ;
                      NOW ;
                      DUP 3 ;
                      CDR ;
@@ -1144,8 +1154,7 @@
                      SWAP ;
                      EXEC ;
                      DROP ;
-                     PUSH string
-                          "start_time must not be greater than the sum of current time and max_config_to_start_time" ;
+                     PUSH string "MAX_CONFIG_TO_START_TIME_VIOLATED" ;
                      DUP 3 ;
                      CDR ;
                      CDR ;
@@ -1169,7 +1178,7 @@
                      SWAP ;
                      EXEC ;
                      DROP ;
-                     PUSH string "Opening price must be greater than 0 tokens" ;
+                     PUSH string "INVALID_OPENING_PRICE" ;
                      PUSH nat 0 ;
                      DUP 3 ;
                      CAR ;
@@ -1180,7 +1189,7 @@
                      SWAP ;
                      EXEC ;
                      DROP ;
-                     PUSH string "Amount must be 0mutez" ;
+                     PUSH string "INVALID_AMOUNT" ;
                      PUSH mutez 0 ;
                      AMOUNT ;
                      COMPARE ;
@@ -1190,7 +1199,7 @@
                      SWAP ;
                      EXEC ;
                      DROP ;
-                     PUSH string "Round_time must be greater than 0 seconds" ;
+                     PUSH string "INVALID_ROUND_TIME" ;
                      PUSH nat 0 ;
                      DUP 3 ;
                      CDR ;
@@ -1204,7 +1213,7 @@
                      SWAP ;
                      EXEC ;
                      DROP ;
-                     PUSH string "Either min_raise_percent or min_raise must be non-zero" ;
+                     PUSH string "INVALID_RAISE_CONFIGURATION" ;
                      PUSH nat 0 ;
                      DUP 3 ;
                      CDR ;
@@ -1402,7 +1411,7 @@
                  DIG 5 ;
                  SWAP ;
                  EXEC ;
-                 PUSH string "Auction must have ended" ;
+                 PUSH string "AUCTION_ENDED" ;
                  SWAP ;
                  DUP ;
                  DUG 2 ;
@@ -1414,7 +1423,7 @@
                  SWAP ;
                  EXEC ;
                  DROP ;
-                 PUSH string "Amount must be 0mutez" ;
+                 PUSH string "INVALID_AMOUNT" ;
                  PUSH mutez 0 ;
                  AMOUNT ;
                  COMPARE ;

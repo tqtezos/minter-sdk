@@ -123,7 +123,9 @@ let update_allowed(allowlist_param, storage : allowlist_entrypoints * storage) :
     ([] : operation list), { storage with allowlist = allowlist_storage }
 #endif
 
-let fixed_price_sale_main (p, storage : market_entry_points * storage) : operation list * storage = match p with
+let fixed_price_sale_main (p, storage : market_entry_points * storage) : operation list * storage = 
+  let u : unit = tez_stuck_guard("ANY_ENTRYPOINT") in 
+  match p with
   | Sell sale_data ->
      let u : unit = fail_if_paused(storage.admin) in
 

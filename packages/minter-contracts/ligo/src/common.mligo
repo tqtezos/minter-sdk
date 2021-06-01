@@ -66,6 +66,10 @@ let percent_of_price_nat (percent, price : nat * nat) : nat =
 let assert_msg (condition, msg : bool * string ) : unit =
   if (not condition) then failwith(msg) else unit
 
+let tez_stuck_guard(entrypoint: string) : unit = 
+  let msg : string = "DONT_TRANSFER_TEZ_TO_" ^ entrypoint in 
+  (assert_msg(Tezos.amount = 0mutez, msg))
+
 let address_to_contract_transfer_entrypoint(add : address) : ((transfer list) contract) =
   let c : (transfer list) contract option = Tezos.get_entrypoint_opt "%transfer" add in
   match c with
