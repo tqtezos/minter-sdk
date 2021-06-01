@@ -58,22 +58,6 @@
                { UNIT }
                { CAR ; CDR ; IF { PUSH string "PAUSED" ; FAILWITH } { UNIT } } } ;
          LAMBDA
-           (pair nat nat)
-           nat
-           { UNPAIR ;
-             PUSH nat 100 ;
-             SWAP ;
-             DIG 2 ;
-             MUL ;
-             SWAP ;
-             INT ;
-             SWAP ;
-             NEG ;
-             EDIV ;
-             IF_NONE { PUSH string "DIV by 0" ; FAILWITH } {} ;
-             CAR ;
-             ABS } ;
-         LAMBDA
            (pair bool string)
            unit
            { UNPAIR ; NOT ; IF { FAILWITH } { DROP ; UNIT } } ;
@@ -259,7 +243,7 @@
              CDR ;
              COMPARE ;
              EQ } ;
-         DIG 10 ;
+         DIG 9 ;
          UNPAIR ;
          IF_LEFT
            { DIG 7 ;
@@ -275,8 +259,6 @@
                      DIG 2 ;
                      DROP ;
                      DIG 2 ;
-                     DROP ;
-                     DIG 3 ;
                      DROP ;
                      DIG 3 ;
                      DROP ;
@@ -346,7 +328,7 @@
                      PAIR ;
                      SWAP ;
                      PAIR }
-                   { DIG 9 ;
+                   { DIG 8 ;
                      DROP ;
                      UNPAIR ;
                      DUP 3 ;
@@ -369,7 +351,7 @@
                      DROP ;
                      DUP 4 ;
                      CAR ;
-                     DIG 10 ;
+                     DIG 9 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
@@ -399,6 +381,28 @@
                      DUP ;
                      DUG 2 ;
                      CAR ;
+                     SENDER ;
+                     COMPARE ;
+                     NEQ ;
+                     PAIR ;
+                     DUP 8 ;
+                     SWAP ;
+                     EXEC ;
+                     DROP ;
+                     PUSH string "Bidders cannot outbid themselves" ;
+                     SWAP ;
+                     DUP ;
+                     DUG 2 ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
                      SENDER ;
                      COMPARE ;
                      NEQ ;
@@ -455,10 +459,18 @@
                      CDR ;
                      CDR ;
                      CAR ;
-                     PAIR ;
-                     DIG 11 ;
+                     PUSH nat 100 ;
                      SWAP ;
-                     EXEC ;
+                     DIG 2 ;
+                     MUL ;
+                     SWAP ;
+                     INT ;
+                     SWAP ;
+                     NEG ;
+                     EDIV ;
+                     IF_NONE { PUSH string "DIV by 0" ; FAILWITH } {} ;
+                     CAR ;
+                     ABS ;
                      DIG 3 ;
                      CDR ;
                      CAR ;
@@ -855,9 +867,7 @@
                      PAIR ;
                      SWAP ;
                      PAIR } }
-               { DIG 8 ;
-                 DROP ;
-                 IF_LEFT
+               { IF_LEFT
                    { DIG 9 ;
                      DROP ;
                      SWAP ;
@@ -1092,7 +1102,7 @@
                                 DROP } } ;
                      DROP ;
                      PUSH string
-                          "Fee_percent must be less than 100%. Please originate another contract." ;
+                          "Fee_percent must be less than or equal to 100%. Please originate another contract." ;
                      PUSH nat 100 ;
                      DUP 4 ;
                      CDR ;
@@ -1238,6 +1248,26 @@
                      CAR ;
                      COMPARE ;
                      GT ;
+                     PAIR ;
+                     DUP 5 ;
+                     SWAP ;
+                     EXEC ;
+                     DROP ;
+                     PUSH string "Either min_raise_percent or min_raise must be non-zero" ;
+                     PUSH nat 0 ;
+                     DUP 3 ;
+                     CDR ;
+                     CDR ;
+                     CAR ;
+                     COMPARE ;
+                     GT ;
+                     PUSH nat 0 ;
+                     DUP 4 ;
+                     CDR ;
+                     CAR ;
+                     COMPARE ;
+                     GT ;
+                     OR ;
                      PAIR ;
                      DIG 4 ;
                      SWAP ;
@@ -1403,13 +1433,13 @@
            { DIG 6 ;
              DROP ;
              IF_LEFT
-               { DIG 10 ;
+               { DIG 9 ;
                  DROP ;
                  SWAP ;
                  DUP ;
                  DUG 2 ;
                  CAR ;
-                 DIG 10 ;
+                 DIG 9 ;
                  SWAP ;
                  EXEC ;
                  DROP ;
@@ -1476,7 +1506,7 @@
                  DIG 5 ;
                  SWAP ;
                  EXEC ;
-                 IF { SWAP ; DROP ; DIG 3 ; DROP ; DIG 3 ; DROP }
+                 IF { SWAP ; DROP ; DIG 3 ; DROP }
                     { SWAP ;
                       DUP ;
                       DUG 2 ;
@@ -1491,10 +1521,13 @@
                       CDR ;
                       CDR ;
                       CDR ;
-                      PAIR ;
-                      DIG 6 ;
+                      PUSH nat 100 ;
                       SWAP ;
-                      EXEC ;
+                      DIG 2 ;
+                      MUL ;
+                      EDIV ;
+                      IF_NONE { PUSH string "DIV by 0" ; FAILWITH } {} ;
+                      CAR ;
                       DUP ;
                       DUP 4 ;
                       CDR ;
@@ -1607,8 +1640,6 @@
                  SWAP ;
                  PAIR }
                { DIG 2 ;
-                 DROP ;
-                 DIG 2 ;
                  DROP ;
                  DIG 2 ;
                  DROP ;

@@ -151,7 +151,7 @@ let configure_auction(configure_param, storage : configure_param * storage) : re
     (fail_if_paused storage.admin);
     check_allowlisted(configure_param, storage.allowlist);
 #if FEE
-    assert_msg (storage.fee.fee_percent <= 100n, "Fee_percent must be less than 100%. Please originate another contract.");
+    assert_msg (storage.fee.fee_percent <= 100n, "Fee_percent must be less than or equal to 100%. Please originate another contract.");
 #endif
 
     assert_msg (configure_param.end_time > configure_param.start_time, "end_time must be after start_time");
@@ -163,6 +163,7 @@ let configure_auction(configure_param, storage : configure_param * storage) : re
     assert_msg (configure_param.opening_price > 0n, "Opening price must be greater than 0 tokens");
     assert_msg (Tezos.amount = 0mutez, "Amount must be 0mutez");
     assert_msg (configure_param.round_time > 0n, "Round_time must be greater than 0 seconds");
+    assert_msg(configure_param.min_raise_percent > 0n || configure_param.min_raise > 0n, "Either min_raise_percent or min_raise must be non-zero");
 
     let auction_data : auction = {
       seller = Tezos.sender;
@@ -198,7 +199,7 @@ let resolve_auction(asset_id, storage : nat * storage) : return = begin
 
     let op_list : operation list = if first_bid(auction) then
       asset_transfers else
-      let fee : nat = percent_of_bid_nat (storage.fee.fee_percent, auction.current_bid) in
+      let fee : nat = percent_of_price_nat (storage.fee.fee_percent, auction.current_bid) in //ceiling not used
       let final_price_minus_fee : nat =  (match (is_nat (auction.current_bid - fee)) with
         | Some adjusted_price -> adjusted_price
         | None -> (failwith "fee is larger than winning bid" : nat)) in
@@ -247,6 +248,7 @@ let place_bid(asset_id, token_amount, storage : nat * nat * storage) : return = 
     (fail_if_paused storage.admin);
     assert_msg (auction_in_progress(auction), "Auction must be in progress");
     assert_msg(Tezos.sender <> auction.seller, "Seller cannot place a bid");
+    assert_msg(Tezos.sender <> auction.highest_bidder, "Bidders cannot outbid themselves");
     (if not valid_bid_amount(auction, token_amount)
       then ([%Michelson ({| { FAILWITH } |} : string * (nat * nat * address * timestamp * timestamp) -> unit)] ("Invalid Bid amount", (auction.current_bid, token_amount, auction.highest_bidder, auction.last_bid_time, Tezos.now)) : unit)
       else ());

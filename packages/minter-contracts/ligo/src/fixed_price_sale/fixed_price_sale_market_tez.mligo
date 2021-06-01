@@ -50,12 +50,6 @@ type market_entry_points =
   | Admin of pauseable_admin
   | Update_allowed of allowlist_entrypoints
 
-let transfer_tez (qty, to_ : tez * address) : operation =
-  let destination = (match (Tezos.get_contract_opt to_ : unit contract option) with
-    | None -> (failwith "ADDRESS_DOES_NOT_RESOLVE" : unit contract)
-    | Some acc -> acc) in
-  Tezos.transaction () qty destination
-
 let buy_token(sale_id, storage: sale_id * storage) : (operation list * storage) =
   let sale : sale_tez = (match Big_map.find_opt sale_id storage.sales with
   | None -> (failwith "NO_SALE": sale_tez)

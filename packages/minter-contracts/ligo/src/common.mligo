@@ -53,7 +53,7 @@ let ceil_div_tez (tz_qty, nat_qty : tez * nat) : tez =
 let percent_of_bid_tez (percent, bid : nat * tez) : tez =
   (ceil_div_tez (bid *  percent, 100n))
 
-(*In Fixed Price sale normal division is used to calculate fee*)
+(*For fee calculations in Auction/Fixed-Price, normal division is used*)
 
 let percent_of_price_tez (percent, price : nat * tez) : tez =
   ((price * percent)/ 100n)
@@ -93,6 +93,11 @@ let transfer_fa2(fa2_address, token_id, amount_, from, to_: address * token_id *
     Tezos.transaction [tx] 0mutez c
  in transfer_op
 
+let transfer_tez (qty, to_ : tez * address) : operation =
+  let destination = (match (Tezos.get_contract_opt to_ : unit contract option) with
+    | None -> (failwith "ADDRESS_DOES_NOT_RESOLVE" : unit contract)
+    | Some acc -> acc) in
+  Tezos.transaction () qty destination
 
 let check_tokens_allowed
     (tokens, allowlist, err : tokens * allowlist * string) : unit =
