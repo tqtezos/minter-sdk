@@ -122,8 +122,8 @@ describe('test NFT auction', () => {
     await opBid.confirmation();
     $log.info(`Bid placed. Amount sent: ${opBid.amount} mutez`);
 
-    $log.info(`Alice bids 11tz, a 10% raise of previous bid but less than a 10tz increase`);
-    const opBid2 = await nftAuctionAlice.methods.bid(0).send({ amount : 11 });
+    $log.info(`Eve bids 11tz, a 10% raise of previous bid but less than a 10tz increase`);
+    const opBid2 = await nftAuctionEve.methods.bid(0).send({ amount : 11 });
     await opBid2.confirmation();
     $log.info(`Bid placed. Amount sent: ${opBid2.amount} mutez`);
   });
@@ -143,8 +143,8 @@ describe('test NFT auction', () => {
     const opBid = await nftAuctionAlice.methods.bid(0).send({ amount : 20 });
     await opBid.confirmation();
     $log.info(`Bid placed. Amount sent: ${opBid.amount}`);
-    $log.info(`Alice bids 21tz and we expect it to fail`);
-    const smallBidPromise = nftAuctionAlice.methods.bid(0).send({ amount : 21 });
+    $log.info(`Eve bids 21tz and we expect it to fail`);
+    const smallBidPromise = nftAuctionEve.methods.bid(0).send({ amount : 21 });
     return expect(smallBidPromise).rejects.toHaveProperty('errors' );
   });
 
@@ -188,7 +188,7 @@ describe('test NFT auction', () => {
 
     $log.info("Resolving auction");
     const opResolve = nftAuctionBob.methods.resolve(0).send({ amount : 0 });
-    expect(opResolve).rejects.toHaveProperty('errors');
+    expect(opResolve).rejects.toHaveProperty('message', 'AUCTION_NOT_ENDED');
     $log.info('Resolve operation failed as expected when called before end time');
   });
 
@@ -214,7 +214,7 @@ describe('test NFT auction', () => {
     $log.info(`Bid placed`);
     await sleep(70000); //70 seconds
     const opCancel = nftAuctionBob.methods.cancel(0).send({ amount : 0, mutez : true });
-    expect(opCancel).rejects.toHaveProperty('errors');
+    expect(opCancel).rejects.toHaveProperty('message', 'AUCTION_ENDED');
     $log.info("Cancel after end time fails as expected");
   });
 

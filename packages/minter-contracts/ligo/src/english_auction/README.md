@@ -142,12 +142,15 @@ If an auction has ended, a call to this entrypoint ought to send the asset to `h
 - `INVALID_RAISE_CONFIGURATION`: Either `min_raise_percent` or `min_raise` must be non-zero
 - `INVALID_FEE`: `Fee_percent` must be less than or equal to 100%. Please originate another contract.
 - `AUCTION_ENDED`: Auction cannot be cancelled if it has ended. 
+- `AUCTION_NOT_ENDED`: Auction cannot be resolved if it has NOT ended. 
 - `BIDDER_NOT_IMPLICIT`: Bidder must be an implicit account
 - `NOT_IN_PROGRESS`: An auction must be in progress in order to place a new bid. 
 - `SEllER_CANT_BID`: Seller cannot place a bid on their own item.
 - `NO_SELF_OUTBIDS`: A bidder cannot outbid themself if they were the previous highest bidder.
 - `INVALID_BID_AMOUNT`, (current_bid, Tezos.amount, highest_bidder, last_bid_time, Tezos.now))`: A bid of `Tezos.amount` was placed at `Tezos.now` which was invalid. At the time the bid was placed the highest bid is `current_bid` placed at `last_bid_time` by `highest_bidder`.
 - `ASSET_NOT_ALLOWED`: Only allowlisted NFTs can be listed for sale. 
+- `NOT_AN_ADMIN`: Only an admin can interact with this entrypoint. 
+- `NOT_AN_ADMIN_OR_A_SELLER`: Only an admin or the seller can cancel a configured auction. 
 
 ## Allowlisted extension
 

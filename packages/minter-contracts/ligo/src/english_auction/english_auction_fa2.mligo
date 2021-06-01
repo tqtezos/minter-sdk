@@ -186,8 +186,8 @@ let configure_auction(configure_param, storage : configure_param * storage) : re
 let resolve_auction(asset_id, storage : nat * storage) : return = begin
     (fail_if_paused storage.admin);
     let auction : auction = get_auction_data(asset_id, storage) in
-    assert_msg (auction_ended(auction) , "AUCTION_ENDED");
-    assert_msg (Tezos.amount = 0mutez, "INVALID_AMOUNT");
+    assert_msg (auction_ended(auction) , "AUCTION_NOT_ENDED");
+    tez_stuck_guard("RESOLVE");
     let asset_transfers : operation list = transfer_tokens(auction.asset, Tezos.self_address, auction.highest_bidder) in
 
 #if !FEE
