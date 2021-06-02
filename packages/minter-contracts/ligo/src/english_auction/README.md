@@ -171,7 +171,7 @@ Besides, the following restriction takes place:
 ## Design Choices/Cautions
 
 1. Only Implicit accounts can place bids.
-2. **CAUTION:**   Smart contracts can configure bids. Bidders are encouraged to inspect the code of the selling contract and confirm that the first bid as well as the final reward (upon a call to `resolve_contract`) will be accepted and not be used to steal gas in the process. See https://www.notion.so/Review-report-for-English-auction-contract-iteration-2-c3610435cc1446d1b6f2b2d60dc86c8e for more details on this.
+2. **CAUTION:**   Smart contracts can configure bids. Bidders are encouraged to inspect the code of the selling contract and confirm that the first bid as well as the final reward (upon a call to `Resolve`) will be accepted and not be used to steal gas in the process. See https://www.notion.so/Review-report-for-English-auction-contract-iteration-2-c3610435cc1446d1b6f2b2d60dc86c8e for more details on this.
 3. An auction can be configured with an empty asset list theoretically, although this would be a fruitless auction. This was decided to be as such in order to minimuze the cost of configuring an auction. 
 
 ## Future work
