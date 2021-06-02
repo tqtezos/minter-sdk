@@ -75,15 +75,12 @@
          UNPAIR ;
          IF_LEFT
            { IF_LEFT
-               { IF_LEFT
+               { DIG 3 ;
+                 DROP ;
+                 IF_LEFT
                    { DIG 2 ;
                      DROP ;
-                     DIG 3 ;
-                     DROP ;
-                     PUSH string "ADMIN" ;
-                     DIG 3 ;
-                     SWAP ;
-                     EXEC ;
+                     DIG 2 ;
                      DROP ;
                      SWAP ;
                      DUP ;
@@ -146,9 +143,7 @@
                      PAIR ;
                      SWAP ;
                      PAIR }
-                   { DIG 3 ;
-                     DROP ;
-                     DIG 4 ;
+                   { DIG 4 ;
                      DROP ;
                      SWAP ;
                      DUP ;
@@ -269,16 +264,16 @@
                { DIG 5 ;
                  DROP ;
                  IF_LEFT
-                   { SWAP ;
+                   { PUSH string "CANCEL" ;
+                     DIG 4 ;
+                     SWAP ;
+                     EXEC ;
+                     DROP ;
+                     SWAP ;
                      DUP ;
                      DUG 2 ;
                      CDR ;
                      CAR ;
-                     DIG 5 ;
-                     SWAP ;
-                     EXEC ;
-                     DROP ;
-                     PUSH string "CANCEL" ;
                      DIG 4 ;
                      SWAP ;
                      EXEC ;
@@ -347,16 +342,16 @@
                          DIG 2 ;
                          CONS ;
                          PAIR } }
-                   { SWAP ;
+                   { PUSH string "SELL" ;
+                     DIG 4 ;
+                     SWAP ;
+                     EXEC ;
+                     DROP ;
+                     SWAP ;
                      DUP ;
                      DUG 2 ;
                      CDR ;
                      CAR ;
-                     DIG 5 ;
-                     SWAP ;
-                     EXEC ;
-                     DROP ;
-                     PUSH string "SELL" ;
                      DIG 4 ;
                      SWAP ;
                      EXEC ;
@@ -420,14 +415,11 @@
                      PAIR } } }
            { DIG 2 ;
              DROP ;
-             DIG 3 ;
+             DIG 2 ;
              DROP ;
-             DIG 3 ;
+             DIG 2 ;
              DROP ;
-             PUSH string "UPDATE_ALLOWED" ;
-             DIG 3 ;
-             SWAP ;
-             EXEC ;
+             DIG 2 ;
              DROP ;
              SWAP ;
              DROP ;

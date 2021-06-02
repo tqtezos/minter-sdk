@@ -112,7 +112,7 @@ When these conditions are met, a call to this entrypoint returns previous bid to
 ```
 
 ### %cancel
-If `SENDER` is `seller` or `admin` and auction is in progress, a call to this entrypoint will return `assets` to `owner`and return `current_bid` to `highest_bidder`. It will also delete auction data from assets big_map.
+If `SENDER` is `seller` or `admin` and auction is in progress, a call to this entrypoint will return `assets` to `owner`and return `current_bid` to `highest_bidder`. It will also delete auction data from assets big_map. `cancel` must be called with an `AMOUNT` equal to 0 tez. 
 
 ```sh=
   %cancel {
@@ -121,7 +121,7 @@ If `SENDER` is `seller` or `admin` and auction is in progress, a call to this en
 ```
 
 ### %resolve
-If an auction has ended, a call to this entrypoint ought to send the asset to `highest_bidder` and `current_bid` to owner. It also delete auction data from assets big_map.
+If an auction has ended, a call to this entrypoint ought to send the asset to `highest_bidder` and `current_bid` to owner. It also delete auction data from assets big_map. `resolve` must be called with an `AMOUNT` equal to 0 tez. 
 
 ```sh=
 %resolve {
@@ -173,6 +173,7 @@ Besides, the following restriction takes place:
 1. Only Implicit accounts can place bids.
 2. **CAUTION:**   Smart contracts can configure bids. Bidders are encouraged to inspect the code of the selling contract and confirm that the first bid as well as the final reward (upon a call to `Resolve`) will be accepted and not be used to steal gas in the process. See https://www.notion.so/Review-report-for-English-auction-contract-iteration-2-c3610435cc1446d1b6f2b2d60dc86c8e for more details on this.
 3. An auction can be configured with an empty asset list theoretically, although this would be a fruitless auction. This was decided to be as such in order to minimuze the cost of configuring an auction. 
+4. In the tez auction contracts, "tez guards" are only placed on `cancel`, `configure`, and `resolve` to minimize costs. However, only bid is expected to actually receive tez. Admins should not transfer tez to any other entrypoints to avoid it getting stuck in the contract. 
 
 ## Future work
 
@@ -180,7 +181,7 @@ Besides, the following restriction takes place:
 
 # English Auction w/ FA2 bids
 
-In this version of the NFT English Auction contract, bids are made in some FA2 token specified at contract origination as `bid_currency`. Bidders must add the auction contract as an operator for their bid token and then specify the amount they would like to bid in the set FA2 token (`bid_currency`) as an argument to the `bid` entrypoint. The entrypoint will fail if the auction cannot transfer the indicated amount of `bid_currency` to itself from the bidder.
+In this version of the NFT English Auction contract, bids are made in some FA2 token specified at contract origination as `bid_currency`. Bidders must add the auction contract as an operator for their bid token and then specify the amount they would like to bid in the set FA2 token (`bid_currency`) as an argument to the `bid` entrypoint. The entrypoint will fail if the auction cannot transfer the indicated amount of `bid_currency` to itself from the bidder. In this version of the contract, no tez can be transferred to any entrypoint. An attempt to do so wil fail with `DONT_TRANSFER_TEZ_TO_ANY_ENTRYPOINT`. 
 
 # English Auction with permit configuration
 

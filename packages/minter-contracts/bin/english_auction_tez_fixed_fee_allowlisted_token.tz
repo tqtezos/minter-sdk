@@ -220,6 +220,8 @@
                { IF_LEFT
                    { DIG 5 ;
                      DROP ;
+                     DIG 6 ;
+                     DROP ;
                      IF_LEFT
                        { DIG 2 ;
                          DROP ;
@@ -229,14 +231,9 @@
                          DROP ;
                          DIG 2 ;
                          DROP ;
-                         DIG 3 ;
+                         DIG 2 ;
                          DROP ;
-                         DIG 3 ;
-                         DROP ;
-                         PUSH string "ADMIN" ;
-                         DIG 3 ;
-                         SWAP ;
-                         EXEC ;
+                         DIG 2 ;
                          DROP ;
                          SWAP ;
                          DUP ;
@@ -294,9 +291,7 @@
                          PAIR ;
                          SWAP ;
                          PAIR }
-                       { DIG 6 ;
-                         DROP ;
-                         DIG 8 ;
+                       { DIG 8 ;
                          DROP ;
                          SWAP ;
                          DUP ;
@@ -962,7 +957,7 @@
                          DIG 5 ;
                          SWAP ;
                          EXEC ;
-                         PUSH string "Auction must have ended" ;
+                         PUSH string "AUCTION_NOT_ENDED" ;
                          SWAP ;
                          DUP ;
                          DUG 2 ;
@@ -1123,19 +1118,16 @@
                  DROP ;
                  DIG 2 ;
                  DROP ;
-                 DIG 3 ;
+                 DIG 2 ;
                  DROP ;
-                 DIG 3 ;
+                 DIG 2 ;
+                 DROP ;
+                 DIG 2 ;
                  DROP ;
                  SWAP ;
                  DUP ;
                  DUG 2 ;
                  CAR ;
-                 DIG 4 ;
-                 SWAP ;
-                 EXEC ;
-                 DROP ;
-                 PUSH string "UPDATE_ALLOWED" ;
                  DIG 3 ;
                  SWAP ;
                  EXEC ;

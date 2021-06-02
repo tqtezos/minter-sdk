@@ -101,7 +101,6 @@ let check_allowlisted (data, allowlist : sale_data_tez * allowlist) : unit = beg
   unit end
 
 let deposit_for_sale(sale_data, storage: sale_data_tez * storage) : (operation list * storage) =
-    let u : unit = tez_stuck_guard("SELL") in 
     let u : unit = check_allowlisted(sale_data, storage.allowlist) in
     let sale_price : tez = sale_data.price in
     let sale_token_address : address = sale_data.sale_token.fa2_address in
@@ -116,7 +115,6 @@ let deposit_for_sale(sale_data, storage: sale_data_tez * storage) : (operation l
     [transfer_op], new_s
 
 let cancel_sale(sale_id, storage: sale_id * storage) : (operation list * storage) =
-  let u : unit = tez_stuck_guard("CANCEL") in 
   match Big_map.find_opt sale_id storage.sales with
     | None -> (failwith "NO_SALE" : (operation list * storage))
     | Some sale ->  let sale_token_address = sale.sale_data.sale_token.fa2_address in
@@ -140,7 +138,8 @@ let update_allowed(allowlist_param, storage : allowlist_entrypoints * storage) :
 
 let fixed_price_sale_tez_main (p, storage : market_entry_points * storage) : operation list * storage = match p with
   | Sell sale ->
-     let u : unit = fail_if_paused(storage.admin) in
+     let u : unit = tez_stuck_guard("SELL") in 
+     let v : unit = fail_if_paused(storage.admin) in
 #if FEE
      let v : unit = assert_msg (storage.fee.fee_percent <= 100n, "FEE_TOO_HIGH") in
 #endif
@@ -156,15 +155,14 @@ let fixed_price_sale_tez_main (p, storage : market_entry_points * storage) : ope
 #endif
      buy_token(sale_id, storage)
   | Cancel sale_id ->
-     let u : unit = fail_if_paused(storage.admin) in
+     let u : unit = tez_stuck_guard("CANCEL") in 
+     let v : unit = fail_if_paused(storage.admin) in
      cancel_sale(sale_id,storage)
   | Admin a ->
-     let u : unit = tez_stuck_guard("ADMIN") in
      let ops, admin = pauseable_admin(a, storage.admin) in
      let new_storage = { storage with admin = admin; } in
      ops, new_storage
   | Update_allowed a ->
-    let u : unit = tez_stuck_guard("UPDATE_ALLOWED") in
     update_allowed(a, storage)
 
 #if !FEE

@@ -258,7 +258,6 @@ let place_bid(asset_id, storage : nat * storage) : return = begin
   end
 
 let admin(admin_param, storage : pauseable_admin * storage) : return =
-    let u : unit = tez_stuck_guard("ADMIN") in
     let ops, admin = pauseable_admin(admin_param, storage.admin) in
     let new_storage = { storage with admin = admin; } in
     ops, new_storage
@@ -268,7 +267,6 @@ let update_allowed(allowlist_param, storage : allowlist_entrypoints * storage) :
     [%Michelson ({| { NEVER } |} : never -> return)] allowlist_param
 #else
     let u : unit = fail_if_not_admin(storage.admin) in
-    let v : unit = tez_stuck_guard("UPDATE_ALLOWED") in
     let allowlist_storage = update_allowed (allowlist_param, storage.allowlist) in
     ([] : operation list), { storage with allowlist = allowlist_storage }
 #endif
