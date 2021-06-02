@@ -52,6 +52,16 @@ deriving anyclass instance IsoValue SaleData
 deriving anyclass instance HasAnnotation SaleData
 instance Buildable SaleData where build = genericF
 
+data BuyData = BuyData
+  { purchaser :: Address
+  , paymentRelayer :: Address
+  } deriving stock (Eq, Ord)
+
+customGeneric "BuyData" ligoCombLayout
+deriving anyclass instance IsoValue BuyData
+deriving anyclass instance HasAnnotation BuyData
+instance Buildable BuyData where build = genericF
+
 data SaleParam = SaleParam
   { seller :: Address
   , saleData :: SaleData
@@ -61,6 +71,17 @@ customGeneric "SaleParam" ligoCombLayout
 deriving anyclass instance IsoValue SaleParam
 deriving anyclass instance HasAnnotation SaleParam
 instance Buildable SaleParam where build = genericF
+
+data SaleParamPermit = SaleParamPermit
+  { seller :: Address
+  , saleData :: SaleData
+  , pendingPurchases :: Set BuyData
+  } deriving stock (Eq, Ord)
+
+customGeneric "SaleParamPermit" ligoCombLayout
+deriving anyclass instance IsoValue SaleParamPermit
+deriving anyclass instance HasAnnotation SaleParamPermit
+instance Buildable SaleParamPermit where build = genericF
 
 data MarketplaceStorage al = MarketplaceStorage
   { sales :: BigMap SaleId SaleParam
@@ -73,8 +94,22 @@ customGeneric "MarketplaceStorage" ligoCombLayout
 deriving anyclass instance IsoValue al => IsoValue (MarketplaceStorage al)
 deriving anyclass instance HasAnnotation al => HasAnnotation (MarketplaceStorage al)
 
+data MarketplacePermitStorage al = MarketplacePermitStorage
+  { sales :: BigMap SaleId SaleParamPermit
+  , admin :: AdminStorage
+  , nextSaleId :: SaleId
+  , allowlist :: al
+  }
+
+customGeneric "MarketplacePermitStorage" ligoCombLayout
+deriving anyclass instance IsoValue al => IsoValue (MarketplacePermitStorage al)
+deriving anyclass instance HasAnnotation al => HasAnnotation (MarketplacePermitStorage al)
+
 initMarketplaceStorage :: Monoid al => AdminStorage -> MarketplaceStorage al
 initMarketplaceStorage as = MarketplaceStorage mempty as (SaleId 0) mempty
+
+initMarketplacePermitStorage :: Monoid al => AdminStorage -> MarketplacePermitStorage al
+initMarketplacePermitStorage as = MarketplacePermitStorage mempty as (SaleId 0) mempty
 
 data ManageSaleEntrypoints al = Cancel SaleId
   | Admin AdminEntrypoints

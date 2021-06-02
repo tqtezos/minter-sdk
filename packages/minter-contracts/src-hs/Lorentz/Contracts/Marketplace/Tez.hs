@@ -51,6 +51,27 @@ deriving anyclass instance IsoValue SaleParamTez
 deriving anyclass instance HasAnnotation SaleParamTez
 instance Buildable SaleParamTez where build = genericF
 
+data BuyData = BuyData
+  { purchaser :: Address
+  , paymentRelayer :: Address
+  } deriving stock (Eq, Ord)
+
+customGeneric "BuyData" ligoCombLayout
+deriving anyclass instance IsoValue BuyData
+deriving anyclass instance HasAnnotation BuyData
+instance Buildable BuyData where build = genericF
+
+data SaleParamTezPermit = SaleParamTezPermit
+  { seller :: Address
+  , saleDataTez :: SaleDataTez
+  , pendingPurchases :: Set BuyData
+  } deriving stock (Eq, Ord)
+
+customGeneric "SaleParamTezPermit" ligoCombLayout
+deriving anyclass instance IsoValue SaleParamTezPermit
+deriving anyclass instance HasAnnotation SaleParamTezPermit
+instance Buildable SaleParamTezPermit where build = genericF
+
 data MarketplaceTezStorage al = MarketplaceTezStorage
   { sales :: BigMap SaleId SaleParamTez
   , admin :: AdminStorage
@@ -62,8 +83,22 @@ customGeneric "MarketplaceTezStorage" ligoCombLayout
 deriving anyclass instance IsoValue al => IsoValue (MarketplaceTezStorage al)
 deriving anyclass instance HasAnnotation al => HasAnnotation (MarketplaceTezStorage al)
 
+data MarketplaceTezPermitStorage al = MarketplaceTezPermitStorage
+  { sales :: BigMap SaleId SaleParamTezPermit
+  , admin :: AdminStorage
+  , nextSaleId :: SaleId
+  , allowlist :: al
+  }
+
+customGeneric "MarketplaceTezPermitStorage" ligoCombLayout
+deriving anyclass instance IsoValue al => IsoValue (MarketplaceTezPermitStorage al)
+deriving anyclass instance HasAnnotation al => HasAnnotation (MarketplaceTezPermitStorage al)
+
 initMarketplaceTezStorage :: Monoid al => AdminStorage -> MarketplaceTezStorage al
 initMarketplaceTezStorage as = MarketplaceTezStorage mempty as (SaleId 0) mempty
+
+initMarketplaceTezPermitStorage :: Monoid al => AdminStorage -> MarketplaceTezPermitStorage al
+initMarketplaceTezPermitStorage as = MarketplaceTezPermitStorage mempty as (SaleId 0) mempty
 
 data ManageSaleTezEntrypoints al = Cancel SaleId
   | Admin AdminEntrypoints
