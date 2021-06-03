@@ -250,7 +250,7 @@ let place_bid(asset_id, token_amount, storage : nat * nat * storage) : return = 
     assert_msg(Tezos.sender <> auction.seller, "SEllER_CANT_BID");
     assert_msg(Tezos.sender <> auction.highest_bidder, "NO_SELF_OUTBIDS");
     (if not valid_bid_amount(auction, token_amount)
-      then ([%Michelson ({| { FAILWITH } |} : string * (nat * nat * address * timestamp * timestamp) -> unit)] ("Invalid Bid amount", (auction.current_bid, token_amount, auction.highest_bidder, auction.last_bid_time, Tezos.now)) : unit)
+      then ([%Michelson ({| { FAILWITH } |} : string * (nat * nat * address * timestamp * timestamp) -> unit)] ("INVALID_BID_AMOUNT", (auction.current_bid, token_amount, auction.highest_bidder, auction.last_bid_time, Tezos.now)) : unit)
       else ());
 
     let bid_self_transfer : operation = single_fa2_transfer(Tezos.sender, Tezos.self_address, token_amount, storage.bid_currency) in

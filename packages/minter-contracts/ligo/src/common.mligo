@@ -73,12 +73,12 @@ let tez_stuck_guard(entrypoint: string) : unit =
 let address_to_contract_transfer_entrypoint(add : address) : ((transfer list) contract) =
   let c : (transfer list) contract option = Tezos.get_entrypoint_opt "%transfer" add in
   match c with
-    None -> (failwith "Invalid FA2 Address" : (transfer list) contract)
+    None -> (failwith "ADDRESS_DOES_NOT_RESOLVE" : (transfer list) contract)
   | Some c ->  c
 
 let resolve_contract (add : address) : unit contract =
   match ((Tezos.get_contract_opt add) : (unit contract) option) with
-      None -> (failwith "Return address does not resolve to contract" : unit contract)
+      None -> (failwith "ADDRESS_DOES_NOT_RESOLVE" : unit contract)
     | Some c -> c
 
 let transfer_fa2(fa2_address, token_id, amount_, from, to_: address * token_id * nat * address * address): operation =
@@ -98,9 +98,7 @@ let transfer_fa2(fa2_address, token_id, amount_, from, to_: address * token_id *
  in transfer_op
 
 let transfer_tez (qty, to_ : tez * address) : operation =
-  let destination = (match (Tezos.get_contract_opt to_ : unit contract option) with
-    | None -> (failwith "ADDRESS_DOES_NOT_RESOLVE" : unit contract)
-    | Some acc -> acc) in
+  let destination : unit contract = resolve_contract (to_) in
   Tezos.transaction () qty destination
 
 let check_tokens_allowed

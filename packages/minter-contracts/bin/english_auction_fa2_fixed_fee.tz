@@ -77,7 +77,7 @@
              CONTRACT %transfer
                (list (pair (address %from_)
                            (list %txs (pair (address %to_) (pair (nat %token_id) (nat %amount)))))) ;
-             IF_NONE { PUSH string "Invalid FA2 Address" ; FAILWITH } {} ;
+             IF_NONE { PUSH string "ADDRESS_DOES_NOT_RESOLVE" ; FAILWITH } {} ;
              PUSH mutez 0 ;
              DIG 2 ;
              TRANSFER_TOKENS } ;
@@ -521,7 +521,7 @@
                           PAIR ;
                           PAIR ;
                           PAIR ;
-                          PUSH string "Invalid Bid amount" ;
+                          PUSH string "INVALID_BID_AMOUNT" ;
                           PAIR ;
                           FAILWITH }
                         {} ;
