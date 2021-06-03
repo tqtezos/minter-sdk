@@ -509,15 +509,6 @@
                  DROP } }
            { IF_LEFT
                { SWAP ;
-                 DUP ;
-                 DUG 2 ;
-                 CDR ;
-                 CAR ;
-                 DIG 7 ;
-                 SWAP ;
-                 EXEC ;
-                 DROP ;
-                 SWAP ;
                  CDR ;
                  CAR ;
                  DIG 6 ;
@@ -534,7 +525,15 @@
                         CDR ;
                         IF_NONE
                           { PUSH bool False ; SENDER ; PAIR }
-                          { DUP 4 ;
+                          { DUP 3 ;
+                            CAR ;
+                            CDR ;
+                            CAR ;
+                            DUP 9 ;
+                            SWAP ;
+                            EXEC ;
+                            DROP ;
+                            DUP 4 ;
                             CAR ;
                             PACK ;
                             BLAKE2B ;
@@ -679,6 +678,8 @@
                         SWAP ;
                         IF_NONE { SWAP } { DIG 2 ; SWAP ; CONS } ;
                         PAIR } ;
+                 SWAP ;
+                 DROP ;
                  SWAP ;
                  DROP ;
                  SWAP ;

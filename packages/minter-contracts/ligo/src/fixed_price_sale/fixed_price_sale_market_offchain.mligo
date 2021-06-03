@@ -137,8 +137,9 @@ let buy_with_optional_permit (acc, p : permit_return * permit_buy_param)  : perm
   let (purchaser, is_permited) : address * bool = match p.optional_permit with 
     | None -> (Tezos.sender, false)
     | Some permit -> 
+        let u : unit = fail_if_not_admin(permit_storage.market_storage.admin) in
         let param_hash = Crypto.blake2b (Bytes.pack p.sale_id) in 
-        let u : unit = check_permit (permit, permit_storage.counter, param_hash) in 
+        let v : unit = check_permit (permit, permit_storage.counter, param_hash) in 
         (address_from_key permit.signerKey, true) in
   let buy_data : buy_data = {purchaser = purchaser; payment_relayer = Tezos.sender;} in
   let (maybe_op, market_storage) : operation option * storage 
@@ -163,7 +164,6 @@ let fixed_price_sale_permit_main (p, permit_storage : offline_market_entry_point
 #if FEE
        let v : unit = assert_msg (storage.fee.fee_percent <= 100n, "FEE_TOO_HIGH") in
 #endif
-       let w : unit = fail_if_not_admin(storage.admin) in
        buy_with_optional_permits(permits, permit_storage)
     
     | Confirm_purchases pending_purchases -> 

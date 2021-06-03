@@ -164,7 +164,6 @@ let fixed_price_sale_permit_main (p, permit_storage : offline_market_entry_point
 #if FEE
        let v : unit = assert_msg (storage.fee.fee_percent <= 100n, "FEE_TOO_HIGH") in
 #endif
-       let w : unit = fail_if_not_admin(storage.admin) in
        buy_with_optional_permits(permits, permit_storage)
     
     | Confirm_purchases pending_purchases -> 
