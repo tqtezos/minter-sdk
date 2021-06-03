@@ -115,7 +115,7 @@ describe.each([originateFixedPriceTezOffchainSale])
 
     // Bob preapplies a transfer with the dummy_sig to extract the bytes_to_sign
     const transfer_params = marketplace.methods.permit_buy([fake_permit_buy_param])
-      .toTransferParams({ amount : 1 });
+      .toTransferParams({ amount : 0 });
     const bytes_to_sign = await tezos.bob.estimate.transfer(transfer_params)
       .catch((e) => errors_to_missigned_bytes(e.errors));
     $log.info('bytes_to_sign:', bytes_to_sign);
@@ -137,7 +137,7 @@ describe.each([originateFixedPriceTezOffchainSale])
     $log.info('permit package:', permit_buy_param);
 
 
-    // Bob submits the permit to the contract along with price in tez
+    // Bob submits the permit to the contract
     const permit_op = await marketplace.methods.permit_buy([permit_buy_param]).send({ amount: 0 });
     await permit_op.confirmation().then(() => $log.info('permit_op hash:', permit_op.hash));
 
@@ -177,7 +177,7 @@ describe.each([originateFixedPriceTezOffchainSale])
 
     // Bob preapplies a transfer with the dummy_sig to extract the bytes_to_sign
     const transfer_params = marketplace.methods.permit_buy([fake_permit_buy_param])
-      .toTransferParams({ amount : 1 });
+      .toTransferParams({ amount : 0 });
     const bytes_to_sign = await tezos.bob.estimate.transfer(transfer_params)
       .catch((e) => errors_to_missigned_bytes(e.errors));
     $log.info('bytes_to_sign:', bytes_to_sign);
@@ -199,7 +199,7 @@ describe.each([originateFixedPriceTezOffchainSale])
     $log.info('permit package:', permit_buy_param);
 
 
-    // Bob submits the permit to the contract along with price in tez
+    // Bob submits the permit to the contract
     const permit_op = await marketplace.methods.permit_buy([permit_buy_param]).send({ amount: 0 });
     await permit_op.confirmation().then(() => $log.info('permit_op hash:', permit_op.hash));
 

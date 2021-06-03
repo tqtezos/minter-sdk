@@ -10,8 +10,6 @@ import {
   originateFtFaucet,
   originateFixedPriceOffchainSale,
   mintNftTokens,
-  mintFtTokens,
-  createFtToken,
 } from '../../src/nft-contracts';
 
 import {
