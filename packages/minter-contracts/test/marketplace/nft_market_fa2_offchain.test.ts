@@ -74,14 +74,6 @@ describe.each([originateFixedPriceOffchainSale])
     marketplace = await originateMarketplace(tezos.bob, bobAddress);
     marketAddress = marketplace.address;
     const tokenAmount = new BigNumber(1);
-    await createFtToken(tezos.bob, ft, { token_id : ftTokenId, token_info: tokenMetadata });
-    await mintFtTokens(tezos.bob, ft, [
-      {
-        token_id: ftTokenId,
-        owner: bobAddress,
-        amount: new BigNumber(1000),
-      },
-    ]);
 
     await mintNftTokens(tezos.bob, [
       {
@@ -99,9 +91,6 @@ describe.each([originateFixedPriceOffchainSale])
     ], queryBalances, nft);
     expect(aliceHasNFTTokenBefore).toBe(false);
     expect(bobHasNFTTokenBefore).toBe(true);
-
-    $log.info('making marketplace an operator of Bob\'s FT tokens');
-    await addOperator(ft.address, tezos.bob, marketAddress, ftTokenId);
 
     $log.info('making marketplace an operator of bob\'s NFT token');
     await addOperator(nft.address, tezos.bob, marketAddress, nftTokenId);

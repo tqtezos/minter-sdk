@@ -200,7 +200,7 @@ describe.each([originateFixedPriceTezOffchainSale])
 
 
     // Bob submits the permit to the contract along with price in tez
-    const permit_op = await marketplace.methods.permit_buy([permit_buy_param]).send({ amount: 1 });
+    const permit_op = await marketplace.methods.permit_buy([permit_buy_param]).send({ amount: 0 });
     await permit_op.confirmation().then(() => $log.info('permit_op hash:', permit_op.hash));
 
     const revoke_param : ConfirmOrRevokePurchaseParam = {

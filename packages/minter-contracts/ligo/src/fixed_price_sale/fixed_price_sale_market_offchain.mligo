@@ -103,7 +103,7 @@ let revoke_purchases (pending_purchases, permit_storage : pending_purchase list 
   let acc : permit_return = ([] : operation list), permit_storage in 
   (List.fold revoke_pending_purchase pending_purchases acc)
 
-let buy_token_pending_confirmation (sale_id, buy_data, storage: sale_id * buy_data * storage) : (operation * storage) = begin 
+let buy_token_pending_confirmation (sale_id, buy_data, is_permited, storage: sale_id * buy_data * bool * storage) : (operation option * storage) = begin 
     let sale : sale = get_sale(sale_id, storage) in
     let { seller = _;
           pending_purchases = pending_purchases;
@@ -118,27 +118,35 @@ let buy_token_pending_confirmation (sale_id, buy_data, storage: sale_id * buy_da
           }
     } = sale in 
     assert_msg(amount_ >= 1n, "NO_SALE");
-  
-    let tx_price = transfer_fa2(money_token_address, money_token_id, sale_price, buy_data.payment_relayer, Tezos.self_address) in
-  
+    (*Payment only necessary if buy order is not permited*)
+    let maybe_tx_price : operation option = 
+      if is_permited 
+      then (None : operation option)
+      else let tx_price = transfer_fa2(money_token_address, money_token_id, sale_price, buy_data.payment_relayer, Tezos.self_address) in
+           (Some tx_price : operation option) in 
+           
     let new_sales : (sale_id, sale) big_map = 
       Big_map.update sale_id (Some {sale with pending_purchases = (Set.add buy_data pending_purchases); 
                                    sale_data = {sale.sale_data with amount = abs (amount_ - 1n)}}) storage.sales in
     let new_s = {storage with sales = new_sales } in
-    (tx_price, new_s)
+    (maybe_tx_price, new_s)
   end 
 
 let buy_with_optional_permit (acc, p : permit_return * permit_buy_param)  : permit_return = 
   let (ops, permit_storage) = acc in 
-  let purchaser = match p.optional_permit with 
-    | None -> Tezos.sender
+  let (purchaser, is_permited) : address * bool = match p.optional_permit with 
+    | None -> (Tezos.sender, false)
     | Some permit -> 
         let param_hash = Crypto.blake2b (Bytes.pack p.sale_id) in 
         let u : unit = check_permit (permit, permit_storage.counter, param_hash) in 
-        address_from_key permit.signerKey in
+        (address_from_key permit.signerKey, true) in
   let buy_data : buy_data = {purchaser = purchaser; payment_relayer = Tezos.sender;} in
-  let (op, market_storage) = buy_token_pending_confirmation (p.sale_id, buy_data, permit_storage.market_storage) in
-  (op :: ops, {permit_storage with market_storage = market_storage; counter = permit_storage.counter + 1n})
+  let (maybe_op, market_storage) : operation option * storage 
+    = buy_token_pending_confirmation (p.sale_id, buy_data, is_permited, permit_storage.market_storage) in
+  let new_ops : operation list = (match maybe_op with 
+      Some op -> op :: ops 
+    | None -> ops) in 
+  (new_ops, {permit_storage with market_storage = market_storage; counter = permit_storage.counter + 1n})
 
 let buy_with_optional_permits (permits, permit_storage : permit_buy_param list * permit_storage) : permit_return = 
   let acc : permit_return = ([] : operation list), permit_storage in 

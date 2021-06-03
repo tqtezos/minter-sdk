@@ -134,10 +134,18 @@ let buy_with_optional_permit (permit_storage, p : permit_storage * permit_buy_pa
   {permit_storage with market_storage = market_storage; counter = permit_storage.counter + 1n}
 
 let buy_with_optional_permits (permits, permit_storage : permit_buy_param list * permit_storage) : permit_return = 
-  let total_owed : tez = (List.fold (fun (acc, p : tez * permit_buy_param) -> 
-    let sale : sale_tez = get_sale(p.sale_id, permit_storage.market_storage) in
-    let sale_price = sale.sale_data.price in
-    acc + sale_price) permits 0mutez) in 
+  (*Only pay tez for non-permitted buy orders*)
+  let total_owed : tez = (List.fold 
+    (fun (acc, p : tez * permit_buy_param) -> 
+      let sale : sale_tez = get_sale(p.sale_id, permit_storage.market_storage) in 
+      ( match p.optional_permit with 
+          Some p -> acc
+        | None -> let sale_price = sale.sale_data.price in 
+                  acc + sale_price 
+      )
+    ) 
+    permits 0mutez
+  ) in 
   let amountError : unit =
     if Tezos.amount <> total_owed
     then ([%Michelson ({| { FAILWITH } |} : string * tez * tez -> unit)] ("WRONG_TEZ_PRICE", total_owed, Tezos.amount) : unit)
