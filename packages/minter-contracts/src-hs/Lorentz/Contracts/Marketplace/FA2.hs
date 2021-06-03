@@ -94,22 +94,22 @@ customGeneric "MarketplaceStorage" ligoCombLayout
 deriving anyclass instance IsoValue al => IsoValue (MarketplaceStorage al)
 deriving anyclass instance HasAnnotation al => HasAnnotation (MarketplaceStorage al)
 
-data MarketplacePermitStorage al = MarketplacePermitStorage
+data MarketplaceStorageWithPendingPurchases al = MarketplaceStorageWithPendingPurchases
   { sales :: BigMap SaleId SaleParamPermit
   , admin :: AdminStorage
   , nextSaleId :: SaleId
   , allowlist :: al
   }
 
-customGeneric "MarketplacePermitStorage" ligoCombLayout
-deriving anyclass instance IsoValue al => IsoValue (MarketplacePermitStorage al)
-deriving anyclass instance HasAnnotation al => HasAnnotation (MarketplacePermitStorage al)
+customGeneric "MarketplaceStorageWithPendingPurchases" ligoCombLayout
+deriving anyclass instance IsoValue al => IsoValue (MarketplaceStorageWithPendingPurchases al)
+deriving anyclass instance HasAnnotation al => HasAnnotation (MarketplaceStorageWithPendingPurchases al)
 
 initMarketplaceStorage :: Monoid al => AdminStorage -> MarketplaceStorage al
 initMarketplaceStorage as = MarketplaceStorage mempty as (SaleId 0) mempty
 
-initMarketplacePermitStorage :: Monoid al => AdminStorage -> MarketplacePermitStorage al
-initMarketplacePermitStorage as = MarketplacePermitStorage mempty as (SaleId 0) mempty
+initMarketplaceStorageWithPendingPurchases :: Monoid al => AdminStorage -> MarketplaceStorageWithPendingPurchases  al
+initMarketplaceStorageWithPendingPurchases as = MarketplaceStorageWithPendingPurchases mempty as (SaleId 0) mempty
 
 data ManageSaleEntrypoints al = Cancel SaleId
   | Admin AdminEntrypoints

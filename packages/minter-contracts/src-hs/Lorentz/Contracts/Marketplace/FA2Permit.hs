@@ -5,6 +5,8 @@ module Lorentz.Contracts.Marketplace.FA2Permit
   , MarketFA2.SaleToken(..)
   , MarketFA2.SaleData(..)
   , MarketFA2.SaleParam(..)
+  , MarketplaceFA2PermitEntrypoints
+  , MarketplaceFA2PermitStorage
   , initMarketplaceFA2PermitStorage
 
   -- * Contract
@@ -26,7 +28,7 @@ import qualified Lorentz.Contracts.NoAllowlist as NoAllowlist
 ----------------------------------------------------------------------------
 
 data MarketplaceFA2PermitStorage al = MarketplaceFA2PermitStorage
-  { marketplaceStorage :: (MarketFA2.MarketplacePermitStorage al)
+  { marketplaceStorage :: (MarketFA2.MarketplaceStorageWithPendingPurchases al)
   , counter :: Natural
   }
 
@@ -85,7 +87,7 @@ instance
 initMarketplaceFA2PermitStorage :: Monoid al => AdminStorage -> MarketplaceFA2PermitStorage al
 initMarketplaceFA2PermitStorage as =
   MarketplaceFA2PermitStorage
-    { marketplaceStorage = MarketFA2.initMarketplacePermitStorage as 
+    { marketplaceStorage = MarketFA2.initMarketplaceStorageWithPendingPurchases as 
     , counter = 0
     }
 

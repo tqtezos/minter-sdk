@@ -5,6 +5,8 @@ module Lorentz.Contracts.Marketplace.TezPermit
   , MarketTez.SaleToken(..)
   , MarketTez.SaleDataTez(..)
   , MarketTez.SaleParamTez(..)
+  , MarketplaceTezPermitEntrypoints
+  , MarketplaceTezPermitStorage
   , initMarketplaceTezPermitStorage
 
   -- * Contract
@@ -26,7 +28,7 @@ import qualified Lorentz.Contracts.NoAllowlist as NoAllowlist
 ----------------------------------------------------------------------------
 
 data MarketplaceTezPermitStorage al = MarketplaceTezPermitStorage
-  { marketplaceStorage :: (MarketTez.MarketplaceTezPermitStorage al)
+  { marketplaceStorage :: (MarketTez.MarketplaceTezStorageWithPendingPurchases al)
   , counter :: Natural
   }
 
@@ -85,7 +87,7 @@ instance
 initMarketplaceTezPermitStorage :: Monoid al => AdminStorage -> MarketplaceTezPermitStorage al
 initMarketplaceTezPermitStorage as =
   MarketplaceTezPermitStorage
-    { marketplaceStorage = MarketTez.initMarketplaceTezPermitStorage as 
+    { marketplaceStorage = MarketTez.initMarketplaceStorageWithPendingPurchasers as 
     , counter = 0
     }
 
