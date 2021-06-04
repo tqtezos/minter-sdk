@@ -41,9 +41,9 @@ pauseable_admin_storage %pauseable_admin
 ```
 ## Auction State
 
-- An auction is considered to be `ended` if either the current time is greater than or equal to the end time of the auction or round time has passed after the last bid was placed. 
+- An auction is considered to be `ended` if either the current time is greater than or equal to the end time of the auction or `round_time` has passed after the last bid was placed. 
 
-- An auction is considered to have `started` if the current time is greater than the auctions start time.
+- An auction is considered to have `started` if the current time is greater than or equal to the auction's start time.
 
 - An auction is `in_progress` if it has `started` and not `ended`. 
 
@@ -96,7 +96,7 @@ The contract optimistically transfers assets from `SENDER` to itself. That means
 ```
 
 ### %bid
-A new bid can be placed if the following confitions are met: 
+A new bid can be placed if the following conditions are met: 
 
 1. The auction is in progress 
 2. `AMOUNT` is a valid bid amount.
@@ -181,7 +181,7 @@ Besides, the following restriction takes place:
 
 # English Auction w/ FA2 bids
 
-In this version of the NFT English Auction contract, bids are made in some FA2 token specified at contract origination as `bid_currency`. Bidders must add the auction contract as an operator for their bid token and then specify the amount they would like to bid in the set FA2 token (`bid_currency`) as an argument to the `bid` entrypoint. The entrypoint will fail if the auction cannot transfer the indicated amount of `bid_currency` to itself from the bidder. In this version of the contract, no tez can be transferred to any entrypoint. An attempt to do so wil fail with `DONT_TRANSFER_TEZ_TO_ANY_ENTRYPOINT`. 
+In this version of the NFT English Auction contract, bids are made in some FA2 token specified at contract origination as `bid_currency`. Bidders must add the auction contract as an operator for their bid token and then specify the amount they would like to bid in the set FA2 token (`bid_currency`) as an argument to the `bid` entrypoint. The entrypoint will fail if the auction cannot transfer the indicated amount of `bid_currency` to itself from the bidder. In this version of the contract, no tez can be transferred to any entrypoint. An attempt to do so will fail with `DONT_TRANSFER_TEZ_TO_ANY_ENTRYPOINT`. 
 
 # English Auction with permit configuration
 
