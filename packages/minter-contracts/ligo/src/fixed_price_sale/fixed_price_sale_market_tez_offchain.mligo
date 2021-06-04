@@ -39,25 +39,29 @@ let execute_pending_purchase (acc, pending_purchase: permit_return * pending_pur
   
   let u : unit = assert_msg(Set.mem buy_data pending_purchases, "PURCHASE_NOT_FOUND") in 
   let tx_nft = transfer_fa2(token_for_sale_address, token_for_sale_token_id, 1n , Tezos.self_address, buy_data.purchaser) in
+  let oplist = tx_nft :: oplist in 
+  let oplist : operation list = 
+    if buy_data.is_permited 
+    then oplist
+    else 
 #if !FEE 
-  let tx_price = transfer_tez(sale_price, seller) in
-  let oplist : operation list = tx_price :: tx_nft :: oplist in 
+          let tx_price = transfer_tez(sale_price, seller) in
+          tx_price :: oplist in 
 #else 
-  let fee : tez = percent_of_price_tez (storage.fee.fee_percent, sale_price) in
-  let u : unit = assert_msg(sale_price >= fee, "FEE_TO_HIGH") in
-  let sale_price_minus_fee : tez = sale_price - fee in
-  let oplist = 
-    (if fee <> 0mutez 
-     then 
-       let tx_fee : operation = transfer_tez(fee, storage.fee.fee_address) in
-       tx_fee :: oplist 
-     else oplist) in 
-  let oplist = 
-    (if sale_price_minus_fee <> 0mutez  
-     then 
-       let tx_price = transfer_tez(sale_price_minus_fee, seller) in
-       tx_price :: oplist  
-     else oplist) in
+          let fee : tez = percent_of_price_tez (storage.fee.fee_percent, sale_price) in
+          let u : unit = assert_msg(sale_price >= fee, "FEE_TO_HIGH") in
+          let sale_price_minus_fee : tez = sale_price - fee in
+          let oplist = 
+            (if fee <> 0mutez 
+             then 
+               let tx_fee : operation = transfer_tez(fee, storage.fee.fee_address) in
+               tx_fee :: oplist 
+             else oplist) in 
+          (if sale_price_minus_fee <> 0mutez  
+           then 
+             let tx_price = transfer_tez(sale_price_minus_fee, seller) in
+             tx_price :: oplist  
+           else oplist) in
 #endif
   let new_sales : (sale_id, sale_tez) big_map = 
     if amount_ <= 0n && (Set.size pending_purchases <= 1n) 
@@ -90,8 +94,13 @@ let revoke_pending_purchase (acc, pending_purchase: permit_return * pending_purc
         }
       } = sale in 
   let u : unit = assert_msg(Set.mem buy_data pending_purchases, "PURCHASE_NOT_FOUND") in 
-  let tx_price = transfer_tez(sale_price, buy_data.payment_relayer) in
-  let oplist : operation list = tx_price :: oplist in 
+
+  let oplist : operation list = 
+    if buy_data.is_permited 
+    then oplist 
+    else let tx_price = transfer_tez(sale_price, buy_data.purchaser) in 
+         tx_price :: oplist in 
+         
   let new_sales : (sale_id, sale_tez) big_map = 
       Big_map.update sale_id (Some {sale with sale_data = {sale.sale_data with amount = amount_ + 1n};
                                               pending_purchases = Set.remove buy_data pending_purchases}) storage.sales in
@@ -122,14 +131,13 @@ let buy_token_pending_confirmation (sale_id, buy_data, storage: sale_id * buy_da
   end 
 
 let buy_with_optional_permit (permit_storage, p : permit_storage * permit_buy_param)  : permit_storage = 
-  let purchaser = match p.optional_permit with 
-    | None -> Tezos.sender
+  let buy_data : buy_data = match p.optional_permit with 
+    | None -> {purchaser = Tezos.sender; is_permited = false;}
     | Some permit -> 
         let u : unit = fail_if_not_admin(permit_storage.market_storage.admin) in
         let param_hash = Crypto.blake2b (Bytes.pack p.sale_id) in 
         let v : unit = check_permit (permit, permit_storage.counter, param_hash) in 
-        address_from_key permit.signerKey in
-  let buy_data : buy_data = {purchaser = purchaser; payment_relayer = Tezos.sender;} in
+        {purchaser = address_from_key (permit.signerKey); is_permited = true;} in
   let market_storage = buy_token_pending_confirmation (p.sale_id, buy_data, permit_storage.market_storage) in
   {permit_storage with market_storage = market_storage; counter = permit_storage.counter + 1n}
 

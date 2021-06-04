@@ -36,7 +36,7 @@ type buy_data =
   [@layout:comb]
   {
       purchaser : address;
-      payment_relayer : address;
+      is_permited : bool;
   }
 
 type pending_purchase = 

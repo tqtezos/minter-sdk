@@ -31,7 +31,7 @@ interface PermitBuyParam {
 
 interface BuyData {
     purchaser : address;
-    payment_relayer : address;
+    is_permited : boolean;
 }
 
 interface ConfirmOrRevokePurchaseParam {
@@ -45,6 +45,7 @@ describe.each([originateFixedPriceTezOffchainSale])
   let nft: Contract;
   let queryBalances: QueryBalances;
   let marketplace: Contract;
+  let marketplaceAlice: Contract;
   let marketAddress: address;
   let bobAddress: address;
   let aliceAddress: address;
@@ -64,6 +65,7 @@ describe.each([originateFixedPriceTezOffchainSale])
     nft = await originateNftFaucet(tezos.bob);
     marketplace = await originateMarketplace(tezos.bob, bobAddress);
     marketAddress = marketplace.address;
+    marketplaceAlice = await tezos.alice.contract.at(marketAddress);
     tokenId = new BigNumber(0);
     tokenMetadata = new MichelsonMap();
     salePrice = new BigNumber(1000000); //1tz
@@ -145,7 +147,7 @@ describe.each([originateFixedPriceTezOffchainSale])
       sale_id : saleId,
       buy_data : {
         purchaser : aliceAddress,
-        payment_relayer : bobAddress,
+        is_permited : true,
       },
     };
 
@@ -207,7 +209,75 @@ describe.each([originateFixedPriceTezOffchainSale])
       sale_id : saleId,
       buy_data : {
         purchaser : aliceAddress,
-        payment_relayer : bobAddress,
+        is_permited : true,
+      },
+    };
+
+    //Bob revokes the pending purchase
+    const revoke_op = await marketplace.methods.revoke_purchases([revoke_param]).send();
+    await revoke_op.confirmation();
+
+    const [aliceHasATokenAfter, bobHasATokenAfter] = await hasTokens([
+      { owner: aliceAddress, token_id: tokenId },
+      { owner: bobAddress, token_id: tokenId },
+    ], queryBalances, nft);
+    expect(aliceHasATokenAfter).toBe(false);
+    expect(bobHasATokenAfter).toBe(false);
+
+  });
+
+  test('bob makes sale, and alice buys nft without a permit. Bob confirms the purchase', async () => {
+
+    const permit_buy_param : PermitBuyParam = {
+      sale_id : saleId,
+      optional_permit : undefined,
+    };
+
+    // This is what a relayer needs to submit the parameter on the signer's behalf
+    $log.info('permit package:', permit_buy_param);
+
+
+    // Bob submits the permit to the contract along with price in tez
+    const bid_op = await marketplaceAlice.methods.permit_buy([permit_buy_param]).send({ amount: 1 });
+    await bid_op.confirmation().then(() => $log.info('permit_op hash:', bid_op.hash));
+
+    const confirm_param : ConfirmOrRevokePurchaseParam = {
+      sale_id : saleId,
+      buy_data : {
+        purchaser : aliceAddress,
+        is_permited : false,
+      },
+    };
+
+    //Bob confirms the pending purchase
+    const confirm_op = await marketplace.methods.confirm_purchases([confirm_param]).send();
+    await confirm_op.confirmation();
+
+    const [aliceHasATokenAfter, bobHasATokenAfter] = await hasTokens([
+      { owner: aliceAddress, token_id: tokenId },
+      { owner: bobAddress, token_id: tokenId },
+    ], queryBalances, nft);
+    expect(aliceHasATokenAfter).toBe(true);
+    expect(bobHasATokenAfter).toBe(false);
+
+  });
+
+  test('bob makes sale, and alice buys nft without a permit. Bob revokes the purchase', async () => {
+
+    const permit_buy_param : PermitBuyParam = {
+      sale_id : saleId,
+      optional_permit : undefined,
+    };
+
+    // Bob submits the permit to the contract along with price in tez
+    const bid_op = await marketplaceAlice.methods.permit_buy([permit_buy_param]).send({ amount: 1 });
+    await bid_op.confirmation().then(() => $log.info('permit_op hash:', bid_op.hash));
+
+    const revoke_param : ConfirmOrRevokePurchaseParam = {
+      sale_id : saleId,
+      buy_data : {
+        purchaser : aliceAddress,
+        is_permited : false,
       },
     };
 

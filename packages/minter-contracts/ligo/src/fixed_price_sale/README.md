@@ -254,7 +254,7 @@ In the normal fixed price sale with admin enabled, admins have sole authority ov
 <a name="Offchain-purchase-extension"></a>
 ## Offchain purchase extension
 
-This extension is useful for sales in which users are not necessarily onboarded to Tezos. They can buy tokens with a credit card, and the admin of some sale can submit payment in either Tez/FA2 on their behalf using a [One step permit](https://gitlab.com/tzip/tzip/-/blob/master/proposals/tzip-17/tzip-17.md#one-step-permit-entrypoints) and calling the `Permit_buy` entrypoint, potentially submitting multiple permits in batch. 
+This extension is useful for sales in which users are not necessarily onboarded to Tezos. They can buy tokens with a credit card, and the contract admin can purchase the item on their behalf without sending Tez/FA2 using a [One step permit](https://gitlab.com/tzip/tzip/-/blob/master/proposals/tzip-17/tzip-17.md#one-step-permit-entrypoints) and calling the `Permit_buy` entrypoint, potentially submitting multiple permits in batch. 
 
 ```
 Permit_buy : (list %permit_buy
@@ -274,7 +274,9 @@ and reject purchases in batch by calling:
 
 `Revoke_purchases : (list %revoke_purchases (pair (nat %sale_id) (address %purchaser)))`.
 
-After a purchase attempt is confirmed the contract sends out payments to the seller (and possibly the fee to the fee-address) and sends the token to the purchaser. After a purchase attempt is revoked, the contract sends the payment back to the `payment_relayer` who originally sent the payment. Afterwards, the token remains up for sale and a new user can attempt to purchase it.
+If a purchase was made using a permit, calling `Confirm_purchases` will just send the nft to the purchaser and `Revoke_purchases` will update storage so that the purchase is no longer marked as pending. 
+
+Otherwise, if the purchase is made without a permit `Confirm_purchases` will send out payments to the seller (and possibly the fee to the fee-address) and sends the token to the purchaser. If the purchase is made with a permit, after a purchase attempt is revoked the contract sends the payment back to the `payment_relayer` who originally sent the payment. Afterwards, the token remains up for sale and a new user can attempt to purchase it.
 
 This extension also defines the Macro `PERMIT_MARKET` which makes optional changes to the base fixed price sale contracts to allow for the offchain extension. It changes the storage structure by adding the `pending_purchases` set to the sale record (the value in the `sales` big_map). `pending_purchases` is automatically configured to the empty set upon a sale creation. Furthermore, upon an attempted sale `Cancel`, `pending_purchases` must be empty or the operation will fail with error `PENDING_PURCHASES_PRESENT`, upon which `Revoke_purchases` ought to be called to return the pending purchases. 
 
