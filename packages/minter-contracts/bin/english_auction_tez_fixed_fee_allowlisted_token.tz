@@ -1416,7 +1416,7 @@
              CAR ;
              COMPARE ;
              GT ;
-             OR ;
+             AND ;
              PAIR ;
              DIG 6 ;
              SWAP ;

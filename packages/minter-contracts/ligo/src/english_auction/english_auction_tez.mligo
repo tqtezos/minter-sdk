@@ -150,7 +150,7 @@ let configure_auction_storage(configure_param, seller, storage : configure_param
     assert_msg (configure_param.opening_price > 0mutez, "INVALID_OPENING_PRICE");
     tez_stuck_guard("CONFIGURE");
     assert_msg (configure_param.round_time > 0n, "INVALID_ROUND_TIME");
-    assert_msg(configure_param.min_raise_percent > 0n || configure_param.min_raise > 0mutez, "INVALID_RAISE_CONFIGURATION");
+    assert_msg(configure_param.min_raise_percent > 0n && configure_param.min_raise > 0mutez, "INVALID_RAISE_CONFIGURATION");
 
     let auction_data : auction = {
       seller = seller;

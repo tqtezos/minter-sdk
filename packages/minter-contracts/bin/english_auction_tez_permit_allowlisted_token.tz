@@ -1482,7 +1482,7 @@
                      CAR ;
                      COMPARE ;
                      GT ;
-                     OR ;
+                     AND ;
                      PAIR ;
                      DUP 12 ;
                      SWAP ;

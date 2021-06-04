@@ -1225,7 +1225,7 @@
                      CAR ;
                      COMPARE ;
                      GT ;
-                     OR ;
+                     AND ;
                      PAIR ;
                      DIG 4 ;
                      SWAP ;

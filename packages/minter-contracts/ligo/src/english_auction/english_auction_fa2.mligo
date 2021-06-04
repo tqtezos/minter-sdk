@@ -163,7 +163,7 @@ let configure_auction(configure_param, storage : configure_param * storage) : re
     assert_msg (configure_param.opening_price > 0n, "INVALID_OPENING_PRICE");
     assert_msg (Tezos.amount = 0mutez, "INVALID_AMOUNT");
     assert_msg (configure_param.round_time > 0n, "INVALID_ROUND_TIME");
-    assert_msg(configure_param.min_raise_percent > 0n || configure_param.min_raise > 0n, "INVALID_RAISE_CONFIGURATION");
+    assert_msg(configure_param.min_raise_percent > 0n && configure_param.min_raise > 0n, "INVALID_RAISE_CONFIGURATION");
 
     let auction_data : auction = {
       seller = Tezos.sender;

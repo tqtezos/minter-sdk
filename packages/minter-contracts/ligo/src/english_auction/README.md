@@ -67,7 +67,7 @@ The bid is greater than or equal to the opening_price and it is the first bid to
 An auction can be configured with the parameters specified in `configure_param` if the following conditions are met: 
 
 1. Admin is set and `SENDER` is an admin, or if no admin is set.
-2. Either `min_raise` or `min_raise_percent` are non-zero.
+2. Both `min_raise` AND `min_raise_percent` are non-zero in order to avoid the possibility of empty raises.
 3. The `AMOUNT` sent to the `configure` entrypoint is 0mutez.
 4. `end_time` is after `start_time`.
 5. `start_time` is greater than or equal to `NOW`.
@@ -139,7 +139,7 @@ If an auction has ended, a call to this entrypoint ought to send the asset to `h
 - `INVALID_OPENING_PRICE`: `Opening_price` must be greater than 0mutez
 - `DONT_TRANSFER_TEZ_TO_{entrypoint}: `AMOUNT` sent to {entrypoint} must be 0mutez
 - `INVALID_ROUND_TIME`: `Round_time` must be greater than 0 seconds
-- `INVALID_RAISE_CONFIGURATION`: Either `min_raise_percent` or `min_raise` must be non-zero
+- `INVALID_RAISE_CONFIGURATION`: Both `min_raise_percent` AND `min_raise` must be non-zero.
 - `INVALID_FEE`: `Fee_percent` must be less than or equal to 100%. Please originate another contract.
 - `AUCTION_ENDED`: Auction cannot be cancelled if it has ended. 
 - `AUCTION_NOT_ENDED`: Auction cannot be resolved if it has NOT ended. 
