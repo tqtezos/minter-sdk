@@ -10,13 +10,12 @@ import {
   originateFtFaucet,
   originateFixedPriceSale,
   mintNftTokens,
-  mintFtTokens,
-  createFtToken,
 } from '../../src/nft-contracts';
 import {
   addOperator,
 } from '../../src/fa2-interface';
 import { QueryBalances, queryBalancesWithLambdaView, hasTokens, getBalances } from '../fa2-balance-inspector';
+import { createPurchaseToken } from '../../src/fixed-price';
 
 jest.setTimeout(360000); // 6 minutes
 
@@ -37,6 +36,7 @@ describe.each([originateFixedPriceSale])
   let tokenMetadata: MichelsonMap<string, bytes>;
   let saleId : nat;
   let saleFtTokenId: nat;
+  let initFtBalance: nat;
 
   beforeAll(async () => {
     tezos = await bootstrap();
@@ -48,6 +48,7 @@ describe.each([originateFixedPriceSale])
     ftTokenId = new BigNumber(5);
     saleFtTokenId = new BigNumber(3);
     tokenMetadata = new MichelsonMap();
+    initFtBalance = new BigNumber(1000);
   });
 
   beforeEach(async () => {
@@ -60,14 +61,8 @@ describe.each([originateFixedPriceSale])
 
   test('bob makes sale, and alice buys nft', async () => {
     const tokenAmount = new BigNumber(1);
-    await createFtToken(tezos.alice, ft, { token_id : ftTokenId, token_info: tokenMetadata });
-    await mintFtTokens(tezos.alice, ft, [
-      {
-        token_id: ftTokenId,
-        owner: aliceAddress,
-        amount: new BigNumber(1000),
-      },
-    ]);
+    await createPurchaseToken(marketplace.address, ft, ft.address, ftTokenId,
+      tezos.alice, aliceAddress, tokenMetadata, initFtBalance);
 
     await mintNftTokens(tezos.bob, [
       {
@@ -85,9 +80,6 @@ describe.each([originateFixedPriceSale])
     ], queryBalances, nft);
     expect(aliceHasNFTTokenBefore).toBe(false);
     expect(bobHasNFTTokenBefore).toBe(true);
-
-    $log.info('making marketplace an operator of alice\'s FT tokens');
-    await addOperator(ft.address, tezos.alice, marketAddress, ftTokenId);
 
     $log.info('making marketplace an operator of bob\'s NFT token');
     await addOperator(nft.address, tezos.bob, marketAddress, nftTokenId);
@@ -113,15 +105,9 @@ describe.each([originateFixedPriceSale])
 
   test('bob makes sale, cancels it, then alice unsuccessfully tries to buy', async () => {
     const tokenAmount = new BigNumber(1);
-    await createFtToken(tezos.alice, ft, { token_id : ftTokenId, token_info: tokenMetadata });
-    await mintFtTokens(tezos.alice, ft, [
-      {
 
-        token_id: ftTokenId,
-        owner: aliceAddress,
-        amount: new BigNumber(1000),
-      },
-    ]);
+    await createPurchaseToken(marketplace.address, ft, ft.address, ftTokenId,
+      tezos.alice, aliceAddress, tokenMetadata, initFtBalance);
 
     await mintNftTokens(tezos.bob, [
       {
@@ -135,9 +121,6 @@ describe.each([originateFixedPriceSale])
 
     $log.info('making marketplace an operator of bob\'s token');
     await addOperator(nft.address, tezos.bob, marketAddress, nftTokenId);
-
-    $log.info('making marketplace an operator of alice\'s FT tokens');
-    await addOperator(ft.address, tezos.alice, marketAddress, ftTokenId);
 
     $log.info(`Creating sale`);
     const sellOp = await marketplace.methods
@@ -167,30 +150,14 @@ describe.each([originateFixedPriceSale])
   test('bob makes sale of two fts, and alice buys one', async () => {
     const tokenAmount = new BigNumber(2);
     saleFt = await originateFtFaucet(tezos.bob);
-    await createFtToken(tezos.alice, ft, { token_id : ftTokenId, token_info: tokenMetadata });
-    await createFtToken(tezos.bob, saleFt, { token_id : saleFtTokenId, token_info: tokenMetadata });
 
-    await mintFtTokens(tezos.alice, ft, [
-      {
-        token_id: ftTokenId,
-        owner: aliceAddress,
-        amount: new BigNumber(1000),
-      },
-    ]);
+    //Purchase token
+    await createPurchaseToken(marketplace.address, ft, ft.address, ftTokenId,
+      tezos.alice, aliceAddress, tokenMetadata, initFtBalance);
 
-    await mintFtTokens(tezos.bob, saleFt, [
-      {
-        token_id: saleFtTokenId,
-        owner: bobAddress,
-        amount: new BigNumber(1000),
-      },
-    ]);
-
-    $log.info('making marketplace an operator of alice\'s FT tokens');
-    await addOperator(ft.address, tezos.alice, marketAddress, ftTokenId);
-
-    $log.info('making marketplace an operator of bob\'s FT token');
-    await addOperator(saleFt.address, tezos.bob, marketAddress, saleFtTokenId);
+    //Seller edition token
+    await createPurchaseToken(marketplace.address, saleFt, saleFt.address, saleFtTokenId,
+      tezos.bob, bobAddress, tokenMetadata, initFtBalance);
 
     $log.info('starting sale...');
 
@@ -220,6 +187,5 @@ describe.each([originateFixedPriceSale])
     const amount : any = await sale.sale_data.amount;
     expect(JSON.stringify(amount, null, 2)).toEqual("\"1\"");
   });
-
 
 });
