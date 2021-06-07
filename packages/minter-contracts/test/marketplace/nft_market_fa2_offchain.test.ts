@@ -5,6 +5,8 @@ import { MichelsonMap } from '@taquito/taquito';
 import { bootstrap, TestTz } from '../bootstrap-sandbox';
 import { Contract, address, bytes, nat } from '../../src/type-aliases';
 
+import { createPurchaseToken } from '../../src/fixed-price';
+
 import {
   originateNftFaucet,
   originateFtFaucet,
@@ -40,6 +42,25 @@ interface ConfirmOrRevokePurchaseParam {
   buy_data : BuyData;
 }
 
+export async function createSale (
+  marketplace: Contract,
+  price: nat,
+  nftAddress: address,
+  ftAddress: address,
+  nftTokenId : nat,
+  ftTokenId : nat,
+  tokenAmount: nat,
+): Promise<void> {
+  $log.info(`Creating sale`);
+  const sellOp = await marketplace.methods
+    .sell(price, nftAddress, nftTokenId, ftAddress, ftTokenId, tokenAmount)
+    .send({ amount: 0 });
+  $log.info(`Waiting for ${sellOp.hash} to be confirmed...`);
+  const sellOpHash = await sellOp.confirmation().then(() => sellOp.hash);
+  $log.info(`Operation injected at hash=${sellOpHash}`);
+}
+
+
 describe.each([originateFixedPriceOffchainSale])
 ('marketplace test', (originateMarketplace) => {
   let tezos: TestTz;
@@ -51,10 +72,13 @@ describe.each([originateFixedPriceOffchainSale])
   let marketAddress: address;
   let aliceAddress: address;
   let bobAddress: address;
-  let ftTokenId: BigNumber;
-  let nftTokenId: BigNumber;
+  let ftTokenId: nat;
+  let nftTokenId: nat;
+  let tokenAmount: nat;
   let tokenMetadata: MichelsonMap<string, bytes>;
   let saleId : nat;
+  let salePrice : nat;
+  let initFtBalance : nat;
 
   beforeAll(async () => {
     tezos = await bootstrap();
@@ -65,15 +89,17 @@ describe.each([originateFixedPriceOffchainSale])
     nftTokenId = new BigNumber(0);
     ftTokenId = new BigNumber(5);
     tokenMetadata = new MichelsonMap();
+    salePrice = new BigNumber(20);
+    initFtBalance = new BigNumber(1000);
+    tokenAmount = new BigNumber(1);
   });
 
   beforeEach(async () => {
     nft = await originateNftFaucet(tezos.bob);
     ft = await originateFtFaucet(tezos.bob);
     marketplace = await originateMarketplace(tezos.bob, bobAddress);
-    marketplaceAlice = await originateMarketplace(tezos.alice, aliceAddress);
     marketAddress = marketplace.address;
-    const tokenAmount = new BigNumber(1);
+    marketplaceAlice = await tezos.alice.contract.at(marketAddress);
 
     await mintNftTokens(tezos.bob, [
       {
@@ -85,28 +111,13 @@ describe.each([originateFixedPriceOffchainSale])
       },
     ], nft);
 
-    const [aliceHasNFTTokenBefore, bobHasNFTTokenBefore] = await hasTokens([
-      { owner: aliceAddress, token_id: nftTokenId },
-      { owner: bobAddress, token_id: nftTokenId },
-    ], queryBalances, nft);
-    expect(aliceHasNFTTokenBefore).toBe(false);
-    expect(bobHasNFTTokenBefore).toBe(true);
-
     $log.info('making marketplace an operator of bob\'s NFT token');
     await addOperator(nft.address, tezos.bob, marketAddress, nftTokenId);
 
-    $log.info('starting sale...');
-
-    $log.info(`Creating sale`);
-    const sellOp = await marketplace.methods
-      .sell(new BigNumber(20), nft.address, nftTokenId, ft.address, ftTokenId, tokenAmount)
-      .send({ amount: 0 });
-    $log.info(`Waiting for ${sellOp.hash} to be confirmed...`);
-    const sellOpHash = await sellOp.confirmation().then(() => sellOp.hash);
-    $log.info(`Operation injected at hash=${sellOpHash}`);
   });
 
   test('bob makes sale, and alice buys nft with permit submitted by bob on Alices behalf. Bob confirms purchase', async () => {
+    await createSale(marketplace, salePrice, nft.address, ft.address, nftTokenId, ftTokenId, tokenAmount);
 
     const aliceKey = await tezos.alice.signer.publicKey();
 
@@ -168,6 +179,8 @@ describe.each([originateFixedPriceOffchainSale])
   });
   test('bob makes sale, and alice buys nft with permit submitted by bob on Alices behalf. Bob rejects purchase', async () => {
 
+    await createSale(marketplace, salePrice, nft.address, ft.address, nftTokenId, ftTokenId, tokenAmount);
+
     const aliceKey = await tezos.alice.signer.publicKey();
 
     const fake_permit : Permit = {
@@ -223,10 +236,15 @@ describe.each([originateFixedPriceOffchainSale])
       { owner: aliceAddress, token_id: nftTokenId },
       { owner: bobAddress, token_id: nftTokenId },
     ], queryBalances, nft);
-    expect(aliceHasATokenAfter).toBe(false);
-    expect(bobHasATokenAfter).toBe(false); // token stays in escrow
+    expect(aliceHasATokenAfter).toBe(false); // token stays in escrow
+    expect(bobHasATokenAfter).toBe(false);
   });
   test('bob makes sale, and alice buys nft without permit. Bob confirms purchase', async () => {
+
+    await createPurchaseToken(marketplace.address, ft, ft.address, ftTokenId,
+      tezos.alice, aliceAddress, tokenMetadata, initFtBalance);
+
+    await createSale(marketplace, salePrice, nft.address, ft.address, nftTokenId, ftTokenId, tokenAmount);
 
     const non_permit_buy_param : PermitBuyParam = {
       sale_id : saleId,
@@ -234,8 +252,8 @@ describe.each([originateFixedPriceOffchainSale])
     };
 
     // Bob submits the permit to the contract
-    const bid_op = await marketplace.methods.permit_buy([non_permit_buy_param]).send();
-    await bid_op.confirmation().then(() => $log.info('permit_op hash:', bid_op.hash));
+    const buy_op = await marketplaceAlice.methods.permit_buy([non_permit_buy_param]).send();
+    await buy_op.confirmation().then(() => $log.info('permit_op hash:', buy_op.hash));
 
     const confirm_param : ConfirmOrRevokePurchaseParam = {
       sale_id : saleId,
@@ -258,6 +276,12 @@ describe.each([originateFixedPriceOffchainSale])
   });
   test('bob makes sale, and alice buys nft without permit. Bob rejects purchase', async () => {
 
+    await createPurchaseToken(marketplace.address, ft, ft.address, ftTokenId,
+      tezos.alice, aliceAddress, tokenMetadata, initFtBalance);
+
+    await createSale(marketplace, salePrice, nft.address, ft.address, nftTokenId, ftTokenId, tokenAmount);
+
+
     const non_permit_buy_param : PermitBuyParam = {
       sale_id : saleId,
       optional_permit : undefined,
@@ -265,8 +289,8 @@ describe.each([originateFixedPriceOffchainSale])
 
 
     // Bob submits the permit to the contract
-    const bid_op = await marketplaceAlice.methods.permit_buy([non_permit_buy_param]).send();
-    await bid_op.confirmation().then(() => $log.info('permit_op hash:', bid_op.hash));
+    const buy_op = await marketplaceAlice.methods.permit_buy([non_permit_buy_param]).send();
+    await buy_op.confirmation().then(() => $log.info('permit_op hash:', buy_op.hash));
 
     const revoke_param : ConfirmOrRevokePurchaseParam = {
       sale_id : saleId,
@@ -284,7 +308,7 @@ describe.each([originateFixedPriceOffchainSale])
       { owner: aliceAddress, token_id: nftTokenId },
       { owner: bobAddress, token_id: nftTokenId },
     ], queryBalances, nft);
-    expect(aliceHasATokenAfter).toBe(false);
-    expect(bobHasATokenAfter).toBe(false); // token stays in escrow
+    expect(aliceHasATokenAfter).toBe(false); // token stays in escrow
+    expect(bobHasATokenAfter).toBe(false);
   });
 });

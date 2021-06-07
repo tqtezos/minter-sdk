@@ -233,10 +233,6 @@ describe.each([originateFixedPriceTezOffchainSale])
       optional_permit : undefined,
     };
 
-    // This is what a relayer needs to submit the parameter on the signer's behalf
-    $log.info('permit package:', permit_buy_param);
-
-
     // Bob submits the permit to the contract along with price in tez
     const bid_op = await marketplaceAlice.methods.permit_buy([permit_buy_param]).send({ amount: 1 });
     await bid_op.confirmation().then(() => $log.info('permit_op hash:', bid_op.hash));
