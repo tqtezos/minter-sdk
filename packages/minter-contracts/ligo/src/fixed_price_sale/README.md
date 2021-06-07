@@ -262,9 +262,9 @@ Permit_buy : (list %permit_buy
                      (option %optional_permit (pair (key %signerKey) (signature %signature)))))
 ```
 
-Only an admin can call this entrypoint with a permit, but any user can call the entrypoint directly (setting `optional_permit` to None). 
+Only an admin can call this entrypoint with a permit, but any user can call the entrypoint directly (setting `optional_permit` to None). If an admin submits a purchase order with a permit, no payment is necessary as it is assumed payment is handled offchain.
  
-In contrast to the normal Fixed price contract, after the `Permit_buy` entrypoint is called (either with a permit or without one), the token purchase is marked as pending. When the purchase is pending, no one else can purchase the token. However, the fixed price contract holds the payment and purchased token in escrow until the purchase is either approved or denied by the admin. Typically, admin will wait until the offchain payment is either approved or rejected. 
+In contrast to the normal Fixed price contract, after the `Permit_buy` entrypoint is called (either with a permit or without one), the token purchase is marked as pending. When the purchase is pending, no one else can purchase the token. However, the fixed price contract holds the payment (in case of a non-permited purhcase) and token in escrow until the purchase is either approved or denied by the admin. Typically, admin will wait until the offchain payment is either approved or rejected. 
 
 The admin can approve purchases in batch by calling:
 
@@ -274,9 +274,9 @@ and reject purchases in batch by calling:
 
 `Revoke_purchases : (list %revoke_purchases (pair (nat %sale_id) (address %purchaser)))`.
 
-If a purchase was made using a permit, calling `Confirm_purchases` will just send the nft to the purchaser and `Revoke_purchases` will update storage so that the purchase is no longer marked as pending. 
+If a purchase was made using a permit, calling `Confirm_purchases` will send the token to the purchaser and remove the token from sale. `Revoke_purchases` will update storage so that the purchase attempt is deleted and the token is put back up for sale. 
 
-Otherwise, if the purchase is made without a permit `Confirm_purchases` will send out payments to the seller (and possibly the fee to the fee-address) and sends the token to the purchaser. If the purchase is made with a permit, after a purchase attempt is revoked the contract sends the payment back to the `payment_relayer` who originally sent the payment. Afterwards, the token remains up for sale and a new user can attempt to purchase it.
+If the purchase is made without a permit `Confirm_purchases` will also send out payments to the seller (and possibly the fee to the fee-address). Similarly `Revoke_purchases` will return payment to the the buyer. 
 
 This extension also defines the Macro `PERMIT_MARKET` which makes optional changes to the base fixed price sale contracts to allow for the offchain extension. It changes the storage structure by adding the `pending_purchases` set to the sale record (the value in the `sales` big_map). `pending_purchases` is automatically configured to the empty set upon a sale creation. Furthermore, upon an attempted sale `Cancel`, `pending_purchases` must be empty or the operation will fail with error `PENDING_PURCHASES_PRESENT`, upon which `Revoke_purchases` ought to be called to return the pending purchases. 
 
