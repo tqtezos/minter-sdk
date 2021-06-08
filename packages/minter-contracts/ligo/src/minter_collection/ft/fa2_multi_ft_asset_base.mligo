@@ -10,6 +10,7 @@
   Only current admin can access `pauseable_admin` and `token_manager` entry points.
 *)
 
+
 type multi_ft_asset_storage = {
   admin : admin_storage;
   assets : multi_ft_token_storage;
@@ -19,7 +20,11 @@ type multi_ft_asset_storage = {
 type multi_ft_asset_param =
   | Assets of fa2_entry_points
   | Admin of admin_entrypoints
+#if !LIMITED_FT_ASSET
   | Tokens of token_manager
+#else
+  | [@annot:mint] Tokens of token_manager
+#endif
 
 let multi_ft_asset_main
     (param, s : multi_ft_asset_param * multi_ft_asset_storage)

@@ -27,7 +27,7 @@ type mint_fixed_supply_tokens_param = mint_fixed_supply_token_param list
 
 (* `token_manager` entry points *)
 type token_manager =
-  Mint of mint_fixed_supply_tokens_param
+  | Mint of mint_fixed_supply_tokens_param
 
 type create_tokens_accumulator = 
   [@layout:comb]

@@ -11,7 +11,7 @@
                (list %update_operators
                   (or (pair %add_operator (address %owner) (pair (address %operator) (nat %token_id)))
                       (pair %remove_operator (address %owner) (pair (address %operator) (nat %token_id)))))))
-        (list %tokens
+        (list %mint
            (pair (address %owner) (pair (nat %amount) (map %token_info string bytes))))) ;
   storage
     (pair (pair (pair %admin (pair (address %admin) (bool %paused)) (option %pending_admin address))
