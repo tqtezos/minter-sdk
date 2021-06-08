@@ -23,17 +23,19 @@ describe('test NFT auction', () => {
   let nftAuction: Contract;
   let nftAuctionBob : Contract;
   let nftAuctionAlice : Contract;
+  let nftAuctionEve : Contract;
   let nftContract : Contract;
   let ftContract : Contract;
   let bobAddress : address;
   let aliceAddress : address;
+  let eveAddress : address;
   let startTime : Date;
   let endTime : Date;
   let tokenIdNft : BigNumber;
   let tokenIdBidToken : BigNumber;
   let empty_metadata_map : MichelsonMap<string, bytes>;
   let nft : MintNftParam;
-  let bid_tokens_bob : MintFtParam;
+  let bid_tokens_eve : MintFtParam;
   let bid_tokens_alice : MintFtParam;
   let queryBalances : QueryBalances;
 
@@ -42,8 +44,9 @@ describe('test NFT auction', () => {
     empty_metadata_map = new MichelsonMap();
     tokenIdNft = new BigNumber(1);
     tokenIdBidToken = new BigNumber(0);
-    bobAddress = await tezos.bob.signer.publicKeyHash();
+    eveAddress = await tezos.eve.signer.publicKeyHash();
     aliceAddress = await tezos.alice.signer.publicKeyHash();
+    bobAddress = await tezos.bob.signer.publicKeyHash();
     nft = {
       token_metadata: {
         token_id: tokenIdNft,
@@ -51,9 +54,9 @@ describe('test NFT auction', () => {
       },
       owner: bobAddress,
     };
-    bid_tokens_bob = {
+    bid_tokens_eve = {
       token_id: tokenIdBidToken,
-      owner: bobAddress,
+      owner: eveAddress,
       amount : new BigNumber(300),
     };
     bid_tokens_alice = {
@@ -82,7 +85,7 @@ describe('test NFT auction', () => {
     $log.info(`Created FA2 Consumed gas: ${opCreateFA2.consumedGas}`);
 
     $log.info('minting fa2 for bids');
-    const opMintFA2 = await ftContract.methods.mint_tokens([bid_tokens_alice, bid_tokens_bob]).send();
+    const opMintFA2 = await ftContract.methods.mint_tokens([bid_tokens_alice, bid_tokens_eve]).send();
     await opMintFA2.confirmation();
     $log.info(`Minted FA2. Consumed gas: ${opMintFA2.consumedGas}`);
 
@@ -90,7 +93,7 @@ describe('test NFT auction', () => {
     nftAuction = await originateEnglishAuctionFA2(tezos.bob, ftContract.address, tokenIdBidToken);
     nftAuctionBob = await tezos.bob.contract.at(nftAuction.address);
     nftAuctionAlice = await tezos.alice.contract.at(nftAuction.address);
-
+    nftAuctionEve = await tezos.eve.contract.at(nftAuction.address);
 
     $log.info('adding auction contract as operator for nft');
     await addOperator(nftContract.address, tezos.bob, nftAuction.address, tokenIdNft);
@@ -100,9 +103,9 @@ describe('test NFT auction', () => {
     await addOperator(ftContract.address, tezos.alice, nftAuction.address, tokenIdBidToken);
     $log.info('Auction contract added as operator for bid token');
 
-    $log.info('adding auction contract as operator for bid token for bob');
-    await addOperator(ftContract.address, tezos.bob, nftAuction.address, tokenIdBidToken);
-    $log.info('Auction contract added as operator for bid token for bob');
+    $log.info('adding auction contract as operator for bid token for eve');
+    await addOperator(ftContract.address, tezos.eve, nftAuction.address, tokenIdBidToken);
+    $log.info('Auction contract added as operator for bid token for eve');
 
     const fa2_token : Fa2_token = {
       token_id : tokenIdNft,
@@ -159,8 +162,8 @@ describe('test NFT auction', () => {
     await opBid.confirmation();
     $log.info(`Bid placed`);
 
-    $log.info(`Alice bids 11 tokens`);
-    const opBid2 = await nftAuctionAlice.methods.bid(0, 11).send({ amount : 0 });
+    $log.info(`Eve bids 11 tokens`);
+    const opBid2 = await nftAuctionEve.methods.bid(0, 11).send({ amount : 0 });
     await opBid2.confirmation();
     $log.info(`Bid placed`);
   });
@@ -170,8 +173,8 @@ describe('test NFT auction', () => {
     await opBid.confirmation();
     $log.info(`Bid placed`);
 
-    $log.info(`Alice bids 210 tokens, a 10 token increase but less than a 10% raise of previous bid `);
-    const opBid2 = await nftAuctionAlice.methods.bid(0, 210).send({ amount : 0 });
+    $log.info(`Eve bids 210 tokens, a 10 token increase but less than a 10% raise of previous bid `);
+    const opBid2 = await nftAuctionEve.methods.bid(0, 210).send({ amount : 0 });
     await opBid2.confirmation();
     $log.info(`Bid placed.`);
   });
@@ -180,8 +183,8 @@ describe('test NFT auction', () => {
     const opBid = await nftAuctionAlice.methods.bid(0, 20).send({ amount : 0 });
     await opBid.confirmation();
     $log.info(`Bid placed`);
-    $log.info(`Alice bids 21 tokens and we expect it to fail`);
-    const smallBidPromise = nftAuctionAlice.methods.bid(0, 21).send({ amount : 0 });
+    $log.info(`Eve bids 21 tokens and we expect it to fail`);
+    const smallBidPromise = nftAuctionEve.methods.bid(0, 21).send({ amount : 0 });
     return expect(smallBidPromise).rejects.toHaveProperty('errors' );
   });
 
@@ -254,7 +257,7 @@ describe('test NFT auction', () => {
 
     $log.info("Resolving auction");
     const opResolve = nftAuctionBob.methods.resolve(0).send({ amount : 0 });
-    expect(opResolve).rejects.toHaveProperty('errors');
+    expect(opResolve).rejects.toHaveProperty('message', 'AUCTION_NOT_ENDED');
   });
 
   test('auction without bids that is resolved after end time should only return asset to seller', async () => {
@@ -288,7 +291,7 @@ describe('test NFT auction', () => {
     $log.info(`Bid placed`);
     await sleep(70000); //70 seconds
     const opCancel = nftAuctionBob.methods.cancel(0).send({ amount : 0, mutez : true });
-    expect(opCancel).rejects.toHaveProperty('errors');
+    expect(opCancel).rejects.toHaveProperty('message', 'AUCTION_ENDED');
   });
 
   test('resolved auction should send asset to buyer and highest bid to seller', async () => {

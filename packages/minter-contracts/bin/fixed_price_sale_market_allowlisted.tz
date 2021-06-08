@@ -64,6 +64,15 @@
                  TRANSFER_TOKENS } } ;
          DIG 3 ;
          UNPAIR ;
+         PUSH string "ANY_ENTRYPOINT" ;
+         PUSH string "DONT_TRANSFER_TEZ_TO_" ;
+         CONCAT ;
+         PUSH mutez 0 ;
+         AMOUNT ;
+         COMPARE ;
+         EQ ;
+         NOT ;
+         IF { FAILWITH } { DROP } ;
          IF_LEFT
            { IF_LEFT
                { IF_LEFT

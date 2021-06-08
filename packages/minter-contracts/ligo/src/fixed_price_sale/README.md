@@ -246,3 +246,8 @@ type fee_data =
 ## Cancel only admin extension
 
 In the normal fixed price sale with admin enabled, admins have sole authority over configuring and cancelling sales. For some use-cases however it is useful for anyone to have the power to configure a sale, and admins to only have sole authority over cancelling sales. This is accomplished when the C Macro `CANCEL_ONLY_ADMIN` is defined as in the LIGO files with `cancel_only_admin` in the title. 
+
+### Tez Stuck Guards
+Guards are placed on entrypoints to ensure no tez is sent to them, as to avoid the tez getting stuck in the contract. 
+- In the FA2 version of the fixed price contract, no tez can be sent to any entrypoint. An attempt to do so wil fail with `DONT_TRANSFER_TEZ_TO_ANY_ENTRYPOINT`. 
+- In the Tez version of the fixed price contract, tez is only expected to be transferred to `Buy`, however there are only guards placed on `Cancel` and `Sell` to minimize costs.
