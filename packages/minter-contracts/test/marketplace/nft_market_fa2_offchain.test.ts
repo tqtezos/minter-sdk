@@ -29,17 +29,12 @@ jest.setTimeout(360000); // 6 minutes
 
 interface PermitBuyParam {
     sale_id : nat;
-    optional_permit? : Permit;
-}
-
-interface BuyData {
-    purchaser : address;
-    is_permited : boolean;
+    permit : Permit;
 }
 
 interface ConfirmOrRevokePurchaseParam {
   sale_id : nat;
-  buy_data : BuyData;
+  purchaser : address;
 }
 
 export async function createSale (
@@ -128,11 +123,11 @@ describe.each([originateFixedPriceOffchainSale])
 
     const fake_permit_buy_param : PermitBuyParam = {
       sale_id : saleId,
-      optional_permit : fake_permit,
+      permit : fake_permit,
     };
 
     // Bob preapplies a transfer with the dummy_sig to extract the bytes_to_sign
-    const transfer_params = marketplace.methods.permit_buy([fake_permit_buy_param]).toTransferParams();
+    const transfer_params = marketplace.methods.offchain_buy([fake_permit_buy_param]).toTransferParams();
     const bytes_to_sign = await tezos.bob.estimate.transfer(transfer_params)
       .catch((e) => errors_to_missigned_bytes(e.errors));
     $log.info('bytes_to_sign:', bytes_to_sign);
@@ -147,7 +142,7 @@ describe.each([originateFixedPriceOffchainSale])
 
     const permit_buy_param : PermitBuyParam = {
       sale_id : saleId,
-      optional_permit : one_step_permit,
+      permit : one_step_permit,
     };
 
     // This is what a relayer needs to submit the parameter on the signer's behalf
@@ -155,15 +150,12 @@ describe.each([originateFixedPriceOffchainSale])
 
 
     // Bob submits the permit to the contract
-    const permit_op = await marketplace.methods.permit_buy([permit_buy_param]).send();
+    const permit_op = await marketplace.methods.offchain_buy([permit_buy_param]).send();
     await permit_op.confirmation().then(() => $log.info('permit_op hash:', permit_op.hash));
 
     const confirm_param : ConfirmOrRevokePurchaseParam = {
       sale_id : saleId,
-      buy_data : {
-        purchaser : aliceAddress,
-        is_permited : true,
-      },
+      purchaser : aliceAddress,
     };
 
     //Bob confirms the pending purchase
@@ -190,11 +182,11 @@ describe.each([originateFixedPriceOffchainSale])
 
     const fake_permit_buy_param : PermitBuyParam = {
       sale_id : saleId,
-      optional_permit : fake_permit,
+      permit : fake_permit,
     };
 
     // Bob preapplies a transfer with the dummy_sig to extract the bytes_to_sign
-    const transfer_params = marketplace.methods.permit_buy([fake_permit_buy_param]).toTransferParams();
+    const transfer_params = marketplace.methods.offchain_buy([fake_permit_buy_param]).toTransferParams();
     const bytes_to_sign = await tezos.bob.estimate.transfer(transfer_params)
       .catch((e) => errors_to_missigned_bytes(e.errors));
     $log.info('bytes_to_sign:', bytes_to_sign);
@@ -209,7 +201,7 @@ describe.each([originateFixedPriceOffchainSale])
 
     const permit_buy_param : PermitBuyParam = {
       sale_id : saleId,
-      optional_permit : one_step_permit,
+      permit : one_step_permit,
     };
 
     // This is what a relayer needs to submit the parameter on the signer's behalf
@@ -217,87 +209,12 @@ describe.each([originateFixedPriceOffchainSale])
 
 
     // Bob submits the permit to the contract
-    const permit_op = await marketplace.methods.permit_buy([permit_buy_param]).send();
+    const permit_op = await marketplace.methods.offchain_buy([permit_buy_param]).send();
     await permit_op.confirmation().then(() => $log.info('permit_op hash:', permit_op.hash));
 
     const revoke_param : ConfirmOrRevokePurchaseParam = {
       sale_id : saleId,
-      buy_data : {
-        purchaser : aliceAddress,
-        is_permited : true,
-      },
-    };
-
-    //Bob revokes the pending purchase
-    const revoke_op = await marketplace.methods.revoke_purchases([revoke_param]).send();
-    await revoke_op.confirmation();
-
-    const [aliceHasATokenAfter, bobHasATokenAfter] = await hasTokens([
-      { owner: aliceAddress, token_id: nftTokenId },
-      { owner: bobAddress, token_id: nftTokenId },
-    ], queryBalances, nft);
-    expect(aliceHasATokenAfter).toBe(false); // token stays in escrow
-    expect(bobHasATokenAfter).toBe(false);
-  });
-  test('bob makes sale, and alice buys nft without permit. Bob confirms purchase', async () => {
-
-    await createPurchaseToken(marketplace.address, ft, ft.address, ftTokenId,
-      tezos.alice, aliceAddress, tokenMetadata, initFtBalance);
-
-    await createSale(marketplace, salePrice, nft.address, ft.address, nftTokenId, ftTokenId, tokenAmount);
-
-    const non_permit_buy_param : PermitBuyParam = {
-      sale_id : saleId,
-      optional_permit : undefined,
-    };
-
-    // Bob submits the permit to the contract
-    const buy_op = await marketplaceAlice.methods.permit_buy([non_permit_buy_param]).send();
-    await buy_op.confirmation().then(() => $log.info('permit_op hash:', buy_op.hash));
-
-    const confirm_param : ConfirmOrRevokePurchaseParam = {
-      sale_id : saleId,
-      buy_data : {
-        purchaser : aliceAddress,
-        is_permited : false,
-      },
-    };
-
-    //Bob confirms the pending purchase
-    const confirm_op = await marketplace.methods.confirm_purchases([confirm_param]).send();
-    await confirm_op.confirmation();
-
-    const [aliceHasATokenAfter, bobHasATokenAfter] = await hasTokens([
-      { owner: aliceAddress, token_id: nftTokenId },
-      { owner: bobAddress, token_id: nftTokenId },
-    ], queryBalances, nft);
-    expect(aliceHasATokenAfter).toBe(true);
-    expect(bobHasATokenAfter).toBe(false);
-  });
-  test('bob makes sale, and alice buys nft without permit. Bob rejects purchase', async () => {
-
-    await createPurchaseToken(marketplace.address, ft, ft.address, ftTokenId,
-      tezos.alice, aliceAddress, tokenMetadata, initFtBalance);
-
-    await createSale(marketplace, salePrice, nft.address, ft.address, nftTokenId, ftTokenId, tokenAmount);
-
-
-    const non_permit_buy_param : PermitBuyParam = {
-      sale_id : saleId,
-      optional_permit : undefined,
-    };
-
-
-    // Bob submits the permit to the contract
-    const buy_op = await marketplaceAlice.methods.permit_buy([non_permit_buy_param]).send();
-    await buy_op.confirmation().then(() => $log.info('permit_op hash:', buy_op.hash));
-
-    const revoke_param : ConfirmOrRevokePurchaseParam = {
-      sale_id : saleId,
-      buy_data : {
-        purchaser : aliceAddress,
-        is_permited : false,
-      },
+      purchaser : aliceAddress,
     };
 
     //Bob revokes the pending purchase

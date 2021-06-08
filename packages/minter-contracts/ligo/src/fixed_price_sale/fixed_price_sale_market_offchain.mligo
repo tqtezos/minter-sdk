@@ -13,8 +13,8 @@ type permit_storage =
 type permit_return = (operation list) * permit_storage
 
 type offline_market_entry_points =
-  | BaseSale of market_entry_points_without_buy
-  | Permit_buy of permit_buy_param list 
+  | BaseSale of market_entry_points
+  | Offchain_buy of permit_buy_param list 
   | Confirm_purchases of pending_purchases
   | Revoke_purchases of pending_purchases
 
@@ -22,7 +22,7 @@ let execute_pending_purchase (acc, pending_purchase: permit_return * pending_pur
   let (oplist, permit_storage) = acc in 
   let storage = permit_storage.market_storage in 
   let { sale_id = sale_id; 
-        buy_data = buy_data; } = pending_purchase in  
+        purchaser = purchaser; } = pending_purchase in  
   let sale : sale = get_sale(sale_id, storage) in
   let { seller = seller;
         pending_purchases = pending_purchases;
@@ -41,30 +41,14 @@ let execute_pending_purchase (acc, pending_purchase: permit_return * pending_pur
 
   } = sale in 
   
-  let u : unit = assert_msg(Set.mem buy_data pending_purchases, "PURCHASE_NOT_FOUND") in 
-  let tx_nft = transfer_fa2(token_for_sale_address, token_for_sale_token_id, 1n , Tezos.self_address, buy_data.purchaser) in
+  let u : unit = assert_msg(Set.mem purchaser pending_purchases, "PURCHASE_NOT_FOUND") in 
+  let tx_nft = transfer_fa2(token_for_sale_address, token_for_sale_token_id, 1n , Tezos.self_address, purchaser) in
   let oplist = tx_nft :: oplist in 
-  let oplist = 
-    if buy_data.is_permited 
-    then oplist 
-    else 
-#if !FEE 
-      let tx_price = transfer_fa2(money_token_address, money_token_id, sale_price, Tezos.self_address, seller) in
-      tx_price :: oplist in 
-#else 
-      let fee : nat = percent_of_price_nat (storage.fee.fee_percent, sale_price) in
-      let sale_price_minus_fee : nat =  (match (is_nat (sale_price - fee)) with 
-        | Some adjusted_price -> adjusted_price 
-        | None -> (failwith "FEE_TOO_HIGH" : nat)) in
-      let tx_fee : operation = transfer_fa2(money_token_address, money_token_id, fee, Tezos.self_address, storage.fee.fee_address) in
-      let tx_price = transfer_fa2(money_token_address, money_token_id, sale_price_minus_fee, Tezos.self_address, seller) in
-      tx_price :: tx_fee :: oplist in
-#endif
   let new_sales : (sale_id, sale) big_map = 
     if amount_ <= 0n && (Set.size pending_purchases <= 1n) 
     then Big_map.remove sale_id storage.sales
     else Big_map.update sale_id (Some {sale with  
-      pending_purchases = Set.remove buy_data pending_purchases}) storage.sales in
+      pending_purchases = Set.remove purchaser pending_purchases}) storage.sales in
   let new_s = {permit_storage with market_storage = {storage with sales = new_sales }} in
   (oplist, new_s)
 
@@ -72,11 +56,10 @@ let confirm_purchases (pending_purchases, permit_storage : pending_purchase list
   let acc : permit_return = ([] : operation list), permit_storage in 
   (List.fold execute_pending_purchase pending_purchases acc)
 
-let revoke_pending_purchase (acc, pending_purchase: permit_return * pending_purchase ) : permit_return =
-  let (oplist, permit_storage) = acc in 
+let revoke_pending_purchase (permit_storage, pending_purchase: permit_storage * pending_purchase ) : permit_storage =
   let storage = permit_storage.market_storage in 
   let { sale_id = sale_id; 
-        buy_data = buy_data; } = pending_purchase in  
+        purchaser = purchaser; } = pending_purchase in  
   let sale : sale = get_sale(sale_id, storage) in
   let { seller = seller;
         pending_purchases = pending_purchases;
@@ -94,24 +77,19 @@ let revoke_pending_purchase (acc, pending_purchase: permit_return * pending_purc
         }
 
   } = sale in 
-  let u : unit = assert_msg(Set.mem buy_data pending_purchases, "PURCHASE_NOT_FOUND") in 
-  let oplist : operation list = 
-    if buy_data.is_permited 
-    then oplist
-    else let tx_price = transfer_fa2(money_token_address, money_token_id, sale_price, Tezos.self_address, buy_data.purchaser) in
-         tx_price :: oplist in
+  let u : unit = assert_msg(Set.mem purchaser pending_purchases, "PURCHASE_NOT_FOUND") in 
 
   let new_sales : (sale_id, sale) big_map = 
       Big_map.update sale_id (Some {sale with sale_data = {sale.sale_data with amount = amount_ + 1n};
-                                              pending_purchases = Set.remove buy_data pending_purchases}) storage.sales in
+                                              pending_purchases = Set.remove purchaser pending_purchases}) storage.sales in
   let new_s = {permit_storage with market_storage = {storage with sales = new_sales }} in
-  (oplist, new_s)
+  new_s
 
 let revoke_purchases (pending_purchases, permit_storage : pending_purchase list * permit_storage) : permit_return = 
-  let acc : permit_return = ([] : operation list), permit_storage in 
-  (List.fold revoke_pending_purchase pending_purchases acc)
+  let new_s : permit_storage = (List.fold revoke_pending_purchase pending_purchases permit_storage) in 
+  ([] : operation list), new_s
 
-let buy_token_pending_confirmation (sale_id, buy_data, storage: sale_id * buy_data * storage) : (operation option * storage) = begin 
+let buy_token_pending_confirmation (sale_id, purchaser, storage: sale_id * address * storage) : storage = begin 
     let sale : sale = get_sale(sale_id, storage) in
     let { seller = _;
           pending_purchases = pending_purchases;
@@ -126,51 +104,38 @@ let buy_token_pending_confirmation (sale_id, buy_data, storage: sale_id * buy_da
           }
     } = sale in 
     assert_msg(amount_ >= 1n, "NO_SALE");
-    (*Payment only necessary if buy order is not permited*)
-    let maybe_tx_price : operation option = 
-      if buy_data.is_permited 
-      then (None : operation option)
-      else let tx_price = transfer_fa2(money_token_address, money_token_id, sale_price, buy_data.purchaser, Tezos.self_address) in
-           (Some tx_price : operation option) in 
-           
+  
     let new_sales : (sale_id, sale) big_map = 
-      Big_map.update sale_id (Some {sale with pending_purchases = (Set.add buy_data pending_purchases); 
+      Big_map.update sale_id (Some {sale with pending_purchases = (Set.add purchaser pending_purchases); 
                                    sale_data = {sale.sale_data with amount = abs (amount_ - 1n)}}) storage.sales in
     let new_s = {storage with sales = new_sales } in
-    (maybe_tx_price, new_s)
+    new_s
   end 
 
-let buy_with_optional_permit (acc, p : permit_return * permit_buy_param)  : permit_return = 
-  let (ops, permit_storage) = acc in 
-  let buy_data : buy_data = match p.optional_permit with 
-    | None -> {purchaser = Tezos.sender; is_permited = false;}
-    | Some permit -> 
-        let u : unit = fail_if_not_admin(permit_storage.market_storage.admin) in
-        let param_hash = Crypto.blake2b (Bytes.pack p.sale_id) in 
-        let v : unit = check_permit (permit, permit_storage.counter, param_hash) in 
-        {purchaser = address_from_key (permit.signerKey); is_permited = true;} in
-  let (maybe_op, market_storage) : operation option * storage 
-    = buy_token_pending_confirmation (p.sale_id, buy_data, permit_storage.market_storage) in
-  let new_ops : operation list = (match maybe_op with 
-      Some op -> op :: ops 
-    | None -> ops) in 
-  (new_ops, {permit_storage with market_storage = market_storage; counter = permit_storage.counter + 1n})
+let buy_with_optional_permit (permit_storage, p : permit_storage * permit_buy_param)  : permit_storage = 
+  let param_hash = Crypto.blake2b (Bytes.pack p.sale_id) in 
+  let v : unit = check_permit (p.permit, permit_storage.counter, param_hash) in 
+  let purchaser = address_from_key (p.permit.signerKey) in
+  let market_storage : storage 
+    = buy_token_pending_confirmation (p.sale_id, purchaser, permit_storage.market_storage) in
+  {permit_storage with market_storage = market_storage; counter = permit_storage.counter + 1n}
 
-let buy_with_optional_permits (permits, permit_storage : permit_buy_param list * permit_storage) : permit_return = 
-  let acc : permit_return = ([] : operation list), permit_storage in 
-  (List.fold buy_with_optional_permit permits acc)
+let buy_with_optional_permits (permits, permit_storage : permit_buy_param list * permit_storage) : permit_return =  
+  let new_s : permit_storage = (List.fold buy_with_optional_permit permits permit_storage) in 
+  ([] : operation list), new_s
 
 let fixed_price_sale_permit_main (p, permit_storage : offline_market_entry_points * permit_storage) : operation list * permit_storage = 
   let storage = permit_storage.market_storage in 
   match p with
     | BaseSale entrypoints -> 
-        let ops, market_storage = fixed_price_sale_without_buy(entrypoints, storage) in 
+        let ops, market_storage = fixed_price_sale_main(entrypoints, storage) in 
         ops, {permit_storage with market_storage = market_storage}
-    | Permit_buy permits ->
+    | Offchain_buy permits ->
        let u : unit = fail_if_paused(storage.admin) in
 #if FEE
        let v : unit = assert_msg (storage.fee.fee_percent <= 100n, "FEE_TOO_HIGH") in
 #endif
+       let w : unit = fail_if_not_admin(permit_storage.market_storage.admin) in
        buy_with_optional_permits(permits, permit_storage)
     
     | Confirm_purchases pending_purchases -> 

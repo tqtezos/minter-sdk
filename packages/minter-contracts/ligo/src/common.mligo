@@ -32,18 +32,11 @@ type global_token_id =
       token_id : token_id;
   }
 
-type buy_data = 
-  [@layout:comb]
-  {
-      purchaser : address;
-      is_permited : bool;
-  }
-
 type pending_purchase = 
   [@layout:comb]
   {
     sale_id : sale_id;
-    buy_data : buy_data;
+    purchaser : address;
   }
 
 
@@ -60,7 +53,7 @@ type permit_buy_param =
   [@layout:comb]
   {
     sale_id : sale_id;
-    optional_permit : permit option;
+    permit : permit;
   } 
 
 (*MATH*) 

@@ -24,7 +24,7 @@ type sale_tez =
 {
   seller: address;
   sale_data: sale_data_tez;
-  pending_purchases : buy_data set;
+  pending_purchases : address set;
 }
 #endif
 
@@ -53,15 +53,12 @@ type storage =
 
 #endif
 
-type market_entry_points_without_buy =
+type market_entry_points = 
+  | Buy of sale_id 
   | Sell of sale_data_tez
   | Cancel of sale_id
   | Admin of pauseable_admin
   | Update_allowed of allowlist_entrypoints
-
-type market_entry_points = 
-  | Buy of sale_id 
-  | ManageSale of market_entry_points_without_buy
 
 let get_sale(sale_id, storage: sale_id * storage) : sale_tez = 
    (match Big_map.find_opt sale_id storage.sales with
@@ -130,7 +127,7 @@ let deposit_for_sale(sale_data, storage: sale_data_tez * storage) : (operation l
 #if !PERMIT_MARKET 
     let sale = { seller = Tezos.sender; sale_data = sale_data; } in
 #else 
-    let sale = { seller = Tezos.sender; sale_data = sale_data; pending_purchases = (Set.empty : buy_data set)} in
+    let sale = { seller = Tezos.sender; sale_data = sale_data; pending_purchases = (Set.empty : address set)} in
 #endif
     let sale_id : sale_id = storage.next_sale_id in 
     let new_s = { storage with sales = Big_map.add sale_id sale storage.sales; 
@@ -163,8 +160,7 @@ let update_allowed(allowlist_param, storage : allowlist_entrypoints * storage) :
     ([] : operation list), { storage with allowlist = allowlist_storage }
 #endif
 
-let fixed_price_sale_tez_without_buy (p, storage : market_entry_points_without_buy * storage) : operation list * storage =
-  match p with 
+let fixed_price_sale_tez_main (p, storage : market_entry_points * storage) : operation list * storage = match p with
   | Sell sale_data ->
      let u : unit = fail_if_paused(storage.admin) in
 #if FEE
@@ -184,10 +180,6 @@ let fixed_price_sale_tez_without_buy (p, storage : market_entry_points_without_b
      ops, new_storage
   | Update_allowed a ->
     update_allowed(a, storage)
-
-let fixed_price_sale_tez_main (p, storage : market_entry_points * storage) : operation list * storage = match p with
-  | ManageSale entrypoints -> 
-      fixed_price_sale_tez_without_buy(entrypoints, storage)
   | Buy sale_id ->
      let u : unit = fail_if_paused(storage.admin) in
 #if FEE
