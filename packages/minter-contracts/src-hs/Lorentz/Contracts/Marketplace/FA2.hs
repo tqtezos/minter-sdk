@@ -76,25 +76,12 @@ deriving anyclass instance HasAnnotation al => HasAnnotation (MarketplaceStorage
 initMarketplaceStorage :: Monoid al => AdminStorage -> MarketplaceStorage al
 initMarketplaceStorage as = MarketplaceStorage mempty as (SaleId 0) mempty
 
-data ManageSaleEntrypoints al = Cancel SaleId
+data MarketplaceEntrypoints al
+  = Sell SaleData
+  | Buy SaleId
+  | Cancel SaleId
   | Admin AdminEntrypoints
-  | Sell SaleData
   | Update_allowed al
-
-customGeneric "ManageSaleEntrypoints" ligoLayout
-deriving anyclass instance IsoValue al => IsoValue (ManageSaleEntrypoints al)
-deriving anyclass instance HasAnnotation al => HasAnnotation (ManageSaleEntrypoints al)
-
-instance
-  ( RequireAllUniqueEntrypoints (ManageSaleEntrypoints al), IsoValue al
-  , EntrypointsDerivation EpdDelegate (ManageSaleEntrypoints al)
-  ) =>
-    ParameterHasEntrypoints (ManageSaleEntrypoints al) where
-  type ParameterEntrypointsDerivation (ManageSaleEntrypoints al) = EpdDelegate
-
-data MarketplaceEntrypoints al 
-  = Buy SaleId
-  | ManageSale (ManageSaleEntrypoints al)
 
 customGeneric "MarketplaceEntrypoints" ligoLayout
 deriving anyclass instance IsoValue al => IsoValue (MarketplaceEntrypoints al)
