@@ -119,7 +119,7 @@ let fixed_price_sale_permit_main (p, permit_storage : offline_market_entry_point
         ops, {permit_storage with market_storage = market_storage}
     | Offchain_buy permits ->
        let u : unit = fail_if_paused(storage.admin) in
-       let v : unit = fail_if_not_admin(permit_storage.market_storage.admin) in
+       let v : unit = fail_if_not_admin(storage.admin) in
 #if FEE
        let w : unit = assert_msg (storage.fee.fee_percent <= 100n, "FEE_TOO_HIGH") in
 #endif
