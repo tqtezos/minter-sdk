@@ -98,7 +98,19 @@
          SWAP ;
          IF_LEFT
            { IF_LEFT
-               { IF_LEFT
+               { PUSH string "ANY_ENTRYPOINT" ;
+                 PUSH string "DONT_TRANSFER_TEZ_TO_" ;
+                 CONCAT ;
+                 PUSH mutez 0 ;
+                 AMOUNT ;
+                 COMPARE ;
+                 EQ ;
+                 PAIR ;
+                 DUP 7 ;
+                 SWAP ;
+                 EXEC ;
+                 DROP ;
+                 IF_LEFT
                    { IF_LEFT
                        { DIG 5 ;
                          DROP ;

@@ -287,3 +287,7 @@ Pending_purchases : (set %pending_purchases (pair (address %purchaser) (address 
 - Ligo Contracts : [Tez Version](fixed_price_sale_market_tez_offchain.mligo), [FA2 Version](fixed_price_sale_market_offchain.mligo)
 
 
+### Tez Stuck Guards
+Guards are placed on entrypoints to ensure no tez is sent to them, as to avoid the tez getting stuck in the contract. 
+- In the FA2 version of the fixed price contract, no tez can be sent to any entrypoint. An attempt to do so wil fail with `DONT_TRANSFER_TEZ_TO_ANY_ENTRYPOINT`. 
+- In the Tez version of the fixed price contract, tez is only expected to be transferred to `Buy`, however there are only guards placed on `Cancel` and `Sell` to minimize costs.

@@ -27,7 +27,7 @@ bigmap %auctions nat %asset_id {
   min_raise_percent : nat; #percentage increase of the previous bid used to determine the minimum valid subsequent bid.
   min_raise : tez; #the amount increase of previous bid in tez used to determine the minimum valid subsequent bid.
   end_time : timestamp;
-  extend_time : int; #The amount by which to extend the auction if auction is within extend_time from end_time.
+  extend_time : int; #The amount by which to extend the auction from NOW if bid placed at NOW is within extend_time from end_time.
   highest_bidder : address; #Upon config, set as SENDER. Afterwards, set to be previous bidder.
   last_bid_time : timestamp;
   round_time : nat; #In seconds-- the amount of time from when the last bid was placed for a bidder to place a new bid.
@@ -39,37 +39,45 @@ bigmap %auctions nat %asset_id {
 pauseable_admin_storage %pauseable_admin
 
 ```
-These storage variables are used to determine the state of the auction as follows:
+## Auction State
 
-```ocaml=
-let auction_ended (auction : auction) : bool =
-  ((Tezos.now >= auction.end_time) || (* auction has passed auction time*)
-   (Tezos.now > auction.last_bid_time + auction.round_time)) (*round time has passed after bid has been placed*)
+- An auction is considered to be `ended` if either the current time is greater than or equal to the end time of the auction or `round_time` has passed after the last bid was placed. 
 
-let auction_started (auction : auction) : bool =
-  Tezos.now >= auction.start_time
+- An auction is considered to have `started` if the current time is greater than or equal to the auction's start time.
 
-let auction_in_progress (auction : auction) : bool =
-  auction_started(auction) && (not auction_ended(auction))
+- An auction is `in_progress` if it has `started` and not `ended`. 
 
-```
+## Bid validity
 
-And we determine whether a given bid is valid as follows:
+We determine whether a given bid is of a sufficiently high value as follows: 
 
-```ocaml=
-let valid_bid_amount (auction : auction) : bool =
-  (Tezos.amount >= (auction.current_bid + (ceil_div (auction.min_raise_percent *  auction.current_bid, 100n)))) ||
-  (Tezos.amount >= auction.current_bid + auction.min_raise)                                            ||
-  ((Tezos.amount >= auction.current_bid) && first_bid(auction))
+The bid is greater than the the previous bid plus the ceiling of the `min_raise_percent` of it. 
 
-```
-Either `current_bid`  needs to be raised by `min_raise_percent * current_bid` OR `current_bid`  needs to be raised by `min_raise`. If it is the first bid, only the `opening_price` must be met.
+OR
+
+The bid is greater than the previous bid plus the `min_raise`
+
+OR 
+                                  
+The bid is greater than or equal to the opening_price and it is the first bid to be placed. 
 
 ## Entrypoints
 
 ### %configure
+An auction can be configured with the parameters specified in `configure_param` if the following conditions are met: 
 
-If admin is set and `SENDER` is an admin, or if no admin is set, `auctions[current_id]` is set with parameter values, `current_bid` is set to `opening_price` and `storage.current_id` is incremented. The `AMOUNT` sent to the entrypoint must be 0mutez additionally.
+1. Admin is set and `SENDER` is an admin, or if no admin is set.
+2. Both `min_raise` AND `min_raise_percent` are non-zero in order to avoid the possibility of empty raises.
+3. The `AMOUNT` sent to the `configure` entrypoint is 0mutez.
+4. `end_time` is after `start_time`.
+5. `start_time` is greater than or equal to `NOW`.
+6. `round_time` is greater than 0 seconds. 
+7. `opening_price` is greater than 0mutez/fa2. 
+8. `Fee_percent` is less than or equal to 100% (where percent is a natural number). 
+
+When the conditions are met, 
+ 
+`auctions[current_id]` is set with parameter values, `current_bid` is set to `opening_price` and `storage.current_id` is incremented. 
 
 The contract optimistically transfers assets from `SENDER` to itself. That means `SENDER` needed to already have approved the transfer to the auction contract of the assets that they are auctioning. The auction configuration fails if any of these transfers fail.
 
@@ -87,9 +95,15 @@ The contract optimistically transfers assets from `SENDER` to itself. That means
 
 ```
 
-
 ### %bid
-If auction is in progress and `AMOUNT` is a valid bid amount, a call to this entrypoint returns previous bid or seller's deposit if first bid and updates auction storage variables accordingly. If bid is placed within `extend_time` from `end_time`, extend the auction by `extend_time` to prevent front running wars at end.
+A new bid can be placed if the following conditions are met: 
+
+1. The auction is in progress 
+2. `AMOUNT` is a valid bid amount.
+3. The sender is neither the `seller` nor the last `highest_bidder`.
+4. The sender is an implicit account. 
+
+When these conditions are met, a call to this entrypoint returns previous bid to the last bidder and updates auction storage variables accordingly. If bid is placed within `extend_time` from `end_time`, extend the auction by `extend_time` from bid time (time returned by Michelson `NOW` at time of bid) to prevent front running wars at end. 
 
 ```sh=
 %bid {
@@ -98,7 +112,7 @@ If auction is in progress and `AMOUNT` is a valid bid amount, a call to this ent
 ```
 
 ### %cancel
-If `SENDER` is `seller` or `admin` and auction is in progress, a call to this entrypoint will return `assets` to `owner`and return `current_bid` to `highest_bidder`. Note, if no bids were placed, the seller's deposit is simply returned. It will also delete auction data from assets big_map
+If `SENDER` is `seller` or `admin` and auction is in progress, a call to this entrypoint will return `assets` to `owner`and return `current_bid` to `highest_bidder`. It will also delete auction data from assets big_map. `cancel` must be called with an `AMOUNT` equal to 0 tez. 
 
 ```sh=
   %cancel {
@@ -107,7 +121,7 @@ If `SENDER` is `seller` or `admin` and auction is in progress, a call to this en
 ```
 
 ### %resolve
-This entrypoint checks the auction has ended and sends asset to `highest_bidder` and `current_bid` to owner. Note, if no bids were placed, the seller's deposit is simply returned. It also delete auction data from assets big_map.
+If an auction has ended, a call to this entrypoint ought to send the asset to `highest_bidder` and `current_bid` to owner. It also delete auction data from assets big_map. `resolve` must be called with an `AMOUNT` equal to 0 tez. 
 
 ```sh=
 %resolve {
@@ -115,6 +129,28 @@ This entrypoint checks the auction has ended and sends asset to `highest_bidder`
 }
 
 ```
+## Errors 
+
+- `AUCTION_DOES_NOT_EXIST`: Auction does not exist for given `asset_id`
+- `INVALID_END_TIME`: `end_time` must be after `start_time`
+- `INVALID_AUCTION_TIME`: `end_time - start_time` must be less than or equal to `max_auction_time`
+- `INVALID_START_TIME`: `start_time` must not have already passed
+- `MAX_CONFIG_TO_START_TIME_VIOLATED`: `start_time` must not be greater than the sum of current time and `max_config_to_start_time`
+- `INVALID_OPENING_PRICE`: `Opening_price` must be greater than 0mutez
+- `DONT_TRANSFER_TEZ_TO_{entrypoint}: `AMOUNT` sent to {entrypoint} must be 0mutez
+- `INVALID_ROUND_TIME`: `Round_time` must be greater than 0 seconds
+- `INVALID_RAISE_CONFIGURATION`: Both `min_raise_percent` AND `min_raise` must be non-zero.
+- `INVALID_FEE`: `Fee_percent` must be less than or equal to 100%. Please originate another contract.
+- `AUCTION_ENDED`: Auction cannot be cancelled if it has ended. 
+- `AUCTION_NOT_ENDED`: Auction cannot be resolved if it has NOT ended. 
+- `BIDDER_NOT_IMPLICIT`: Bidder must be an implicit account
+- `NOT_IN_PROGRESS`: An auction must be in progress in order to place a new bid. 
+- `SEllER_CANT_BID`: Seller cannot place a bid on their own item.
+- `NO_SELF_OUTBIDS`: A bidder cannot outbid themself if they were the previous highest bidder.
+- `INVALID_BID_AMOUNT`, (current_bid, Tezos.amount, highest_bidder, last_bid_time, Tezos.now))`: A bid of `Tezos.amount` was placed at `Tezos.now` which was invalid. At the time the bid was placed the highest bid is `current_bid` placed at `last_bid_time` by `highest_bidder`.
+- `ASSET_NOT_ALLOWED`: Only allowlisted NFTs can be listed for sale. 
+- `NOT_AN_ADMIN`: Only an admin can interact with this entrypoint. 
+- `NOT_AN_ADMIN_OR_A_SELLER`: Only an admin or the seller can cancel a configured auction. 
 
 ## Allowlisted extension
 
@@ -135,8 +171,9 @@ Besides, the following restriction takes place:
 ## Design Choices/Cautions
 
 1. Only Implicit accounts can place bids.
-2. **CAUTION:**   Smart contracts can configure bids. Bidders are encouraged to inspect the code of the selling contract and confirm that the first bid as well as the final reward (upon a call to `resolve_contract`) will be accepted and not be used to steal gas in the process. See https://www.notion.so/Review-report-for-English-auction-contract-iteration-2-c3610435cc1446d1b6f2b2d60dc86c8e for more details on this.
-
+2. **CAUTION:**   Smart contracts can configure bids. Bidders are encouraged to inspect the code of the selling contract and confirm that the first bid as well as the final reward (upon a call to `Resolve`) will be accepted and not be used to steal gas in the process. See https://www.notion.so/Review-report-for-English-auction-contract-iteration-2-c3610435cc1446d1b6f2b2d60dc86c8e for more details on this.
+3. An auction can be configured with an empty asset list theoretically, although this would be a fruitless auction. This was decided to be as such in order to minimuze the cost of configuring an auction. 
+4. In the tez auction contracts, "tez guards" are only placed on `cancel`, `configure`, and `resolve` to minimize costs. However, only bid is expected to actually receive tez. Admins should not transfer tez to any other entrypoints to avoid it getting stuck in the contract. 
 
 ## Future work
 
@@ -144,7 +181,7 @@ Besides, the following restriction takes place:
 
 # English Auction w/ FA2 bids
 
-In this version of the NFT English Auction contract, bids are made in some FA2 token specified at contract origination as `bid_currency`. Bidders must add the auction contract as an operator for their bid token and then specify the amount they would like to bid in mutez as an argument to the `bid` entrypoint. The entrypoint will fail if the auction cannot transfer the indicated amount of `bid_currency` to itself from the bidder.
+In this version of the NFT English Auction contract, bids are made in some FA2 token specified at contract origination as `bid_currency`. Bidders must add the auction contract as an operator for their bid token and then specify the amount they would like to bid in the set FA2 token (`bid_currency`) as an argument to the `bid` entrypoint. The entrypoint will fail if the auction cannot transfer the indicated amount of `bid_currency` to itself from the bidder. In this version of the contract, no tez can be transferred to any entrypoint. An attempt to do so will fail with `DONT_TRANSFER_TEZ_TO_ANY_ENTRYPOINT`. 
 
 # English Auction with permit configuration
 
@@ -152,7 +189,7 @@ This is an implementation of the auction contract in which the standard `Configu
 
 # English Auction with Auction Fee
 
-This is a version of the Auction contract in which an address fixed at contract origination gets a fixed percent of any sale that takes place using the contract.
+This is a version of the Auction contract in which an address fixed at contract origination gets a fixed percent of any sale that takes place using the contract. The fee is calculated using normal integer division, which rounds down. Therefore, it is possible even with a positive fee percentage that the fee sent will be 0 if the final price of the item being auctioned off is too low. 
 
 # Cancel only admin extension
 

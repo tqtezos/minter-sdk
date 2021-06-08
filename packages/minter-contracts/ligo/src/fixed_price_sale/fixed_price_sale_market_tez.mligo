@@ -109,14 +109,11 @@ let buy_token(sale_id, storage: sale_id * storage) : (operation list * storage) 
   let new_s = { storage with sales = new_sales } in
   oplist, new_s
 
-let tez_stuck_guard(entrypoint: string) : string = "DON'T TRANSFER TEZ TO THIS ENTRYPOINT (" ^ entrypoint ^ ")"
-
 let check_allowlisted (data, allowlist : sale_data_tez * allowlist) : unit = begin
   check_single_token_allowed (data.sale_token.fa2_address, data.sale_token.token_id, allowlist, "SALE_TOKEN_NOT_ALLOWED");
   unit end
 
 let deposit_for_sale(sale_data, storage: sale_data_tez * storage) : (operation list * storage) =
-    let u : unit = if Tezos.amount <> 0tez then failwith (tez_stuck_guard "SELL") else () in
     let u : unit = check_allowlisted(sale_data, storage.allowlist) in
     let sale_price : tez = sale_data.price in
     let sale_token_address : address = sale_data.sale_token.fa2_address in
@@ -135,7 +132,6 @@ let deposit_for_sale(sale_data, storage: sale_data_tez * storage) : (operation l
     [transfer_op], new_s
 
 let cancel_sale(sale_id, storage: sale_id * storage) : (operation list * storage) =
-  let u : unit = if Tezos.amount <> 0tez then failwith (tez_stuck_guard "CANCEL") else () in
   let sale : sale_tez = get_sale(sale_id, storage) in
   let sale_token_address = sale.sale_data.sale_token.fa2_address in 
   let sale_token_id = sale.sale_data.sale_token.token_id in 
@@ -160,8 +156,9 @@ let update_allowed(allowlist_param, storage : allowlist_entrypoints * storage) :
 #endif
 
 let fixed_price_sale_tez_main (p, storage : market_entry_points * storage) : operation list * storage = match p with
-  | Sell sale_data ->
-     let u : unit = fail_if_paused(storage.admin) in
+  | Sell sale ->
+     let u : unit = tez_stuck_guard("SELL") in 
+     let v : unit = fail_if_paused(storage.admin) in
 #if FEE
      let v : unit = assert_msg (storage.fee.fee_percent <= 100n, "FEE_TOO_HIGH") in
 #endif
@@ -169,9 +166,10 @@ let fixed_price_sale_tez_main (p, storage : market_entry_points * storage) : ope
 #if !CANCEL_ONLY_ADMIN
      let w : unit = fail_if_not_admin(storage.admin) in
 #endif 
-     deposit_for_sale(sale_data, storage)
+     deposit_for_sale(sale, storage)
   | Cancel sale_id ->
-     let u : unit = fail_if_paused(storage.admin) in
+     let u : unit = tez_stuck_guard("CANCEL") in 
+     let v : unit = fail_if_paused(storage.admin) in
      cancel_sale(sale_id,storage)
   | Admin a ->
      let ops, admin = pauseable_admin(a, storage.admin) in
