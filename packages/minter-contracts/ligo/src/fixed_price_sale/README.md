@@ -276,7 +276,7 @@ and reject purchases in batch by calling:
 
 If a purchase was made using a permit, calling `Confirm_purchases` will send the token to the purchaser and remove the token from sale. `Revoke_purchases` will update storage so that the purchase attempt is deleted and the token is put back up for sale. 
 
-This extension also defines the Macro `PERMIT_MARKET` which makes optional changes to the base fixed price sale contracts to allow for the offchain extension. It changes the storage structure by adding the `pending_purchases` set to the sale record (the value in the `sales` big_map). `pending_purchases` is automatically configured to the empty set upon a sale creation. Furthermore, upon an attempted sale `Cancel`, `pending_purchases` must be empty or the operation will fail with error `PENDING_PURCHASES_PRESENT`, upon which `Revoke_purchases` ought to be called to return the pending purchases. 
+This extension also defines the Macro `OFFCHAIN_MARKET` which makes optional changes to the base fixed price sale contracts to allow for the offchain extension. It changes the storage structure by adding the `pending_purchases` set to the sale record (the value in the `sales` big_map). `pending_purchases` is automatically configured to the empty set upon a sale creation. Furthermore, upon an attempted sale `Cancel`, `pending_purchases` must be empty or the operation will fail with error `PENDING_PURCHASES_PRESENT`, upon which `Revoke_purchases` ought to be called to return the pending purchases. 
 
 ```
 Pending_purchases : (set %pending_purchases address)

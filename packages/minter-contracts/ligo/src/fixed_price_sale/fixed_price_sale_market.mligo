@@ -12,7 +12,7 @@ type sale_data =
   amount : nat;
 }
 
-#if !PERMIT_MARKET 
+#if !OFFCHAIN_MARKET
 type sale =
 [@layout:comb]
 {
@@ -107,7 +107,7 @@ let deposit_for_sale(sale_data, storage: sale_data * storage) : (operation list 
   let amount_ = sale_data.amount in
   let transfer_op =
     transfer_fa2 (token_for_sale_address, token_for_sale_token_id, amount_, Tezos.sender, Tezos.self_address) in
-#if !PERMIT_MARKET 
+#if !OFFCHAIN_MARKET 
   let sale = { seller = Tezos.sender; sale_data = sale_data; } in
 #else 
   let sale = { seller = Tezos.sender; sale_data = sale_data; pending_purchases = (Set.empty : address set)} in
@@ -126,7 +126,7 @@ let cancel_sale(sale_id, storage: sale_id * storage) : (operation list * storage
     let is_seller = Tezos.sender = seller in
     let v : unit = if is_seller then ()
       else fail_if_not_admin_ext (storage.admin, "OR_A_SELLER") in
-#if PERMIT_MARKET
+#if OFFCHAIN_MARKET
     let u : unit = assert_msg(Set.size sale.pending_purchases = 0n, "PENDING_PURCHASES_PRESENT") in
 #endif
     let tx_nfts_back_op = transfer_fa2(token_for_sale_address, token_for_sale_token_id, amount_, Tezos.self_address, seller) in

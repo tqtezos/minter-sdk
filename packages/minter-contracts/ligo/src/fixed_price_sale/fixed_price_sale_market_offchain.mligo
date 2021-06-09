@@ -1,5 +1,5 @@
-#if !PERMIT_MARKET
-#define PERMIT_MARKET
+#if !OFFCHAIN_MARKET
+#define OFFCHAIN_MARKET
 
 #include "fixed_price_sale_market.mligo"
 
@@ -112,7 +112,7 @@ let buy_token_pending_confirmation (sale_id, purchaser, storage: sale_id * addre
     new_s
   end 
 
-let buy_with_optional_permit (permit_storage, p : permit_storage * permit_buy_param)  : permit_storage = 
+let buy_with_permit (permit_storage, p : permit_storage * permit_buy_param)  : permit_storage = 
   let param_hash = Crypto.blake2b (Bytes.pack p.sale_id) in 
   let v : unit = check_permit (p.permit, permit_storage.counter, param_hash) in 
   let purchaser = address_from_key (p.permit.signerKey) in
@@ -120,8 +120,8 @@ let buy_with_optional_permit (permit_storage, p : permit_storage * permit_buy_pa
     = buy_token_pending_confirmation (p.sale_id, purchaser, permit_storage.market_storage) in
   {permit_storage with market_storage = market_storage; counter = permit_storage.counter + 1n}
 
-let buy_with_optional_permits (permits, permit_storage : permit_buy_param list * permit_storage) : permit_return =  
-  let new_s : permit_storage = (List.fold buy_with_optional_permit permits permit_storage) in 
+let buy_with_permits (permits, permit_storage : permit_buy_param list * permit_storage) : permit_return =  
+  let new_s : permit_storage = (List.fold buy_with_permit permits permit_storage) in 
   ([] : operation list), new_s
 
 let fixed_price_sale_permit_main (p, permit_storage : offline_market_entry_points * permit_storage) : operation list * permit_storage = 
@@ -136,7 +136,7 @@ let fixed_price_sale_permit_main (p, permit_storage : offline_market_entry_point
        let v : unit = assert_msg (storage.fee.fee_percent <= 100n, "FEE_TOO_HIGH") in
 #endif
        let w : unit = fail_if_not_admin(storage.admin) in
-       buy_with_optional_permits(permits, permit_storage)
+       buy_with_permits(permits, permit_storage)
     
     | Confirm_purchases pending_purchases -> 
        let u : unit = fail_if_paused(storage.admin) in
