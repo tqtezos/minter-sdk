@@ -3,39 +3,18 @@ module Lorentz.Contracts.EnglishAuction.Tez where
 
 import Lorentz
 
+import Fmt (Buildable(..), genericF)
 import qualified Lorentz.Contracts.AllowlistSimple as AllowlistSimple
 import qualified Lorentz.Contracts.AllowlistToken as AllowlistToken
+import Lorentz.Contracts.EnglishAuction.Common
 import Lorentz.Contracts.MinterSdk
 import qualified Lorentz.Contracts.NoAllowlist as NoAllowlist
 import Lorentz.Contracts.PausableAdminOption
-import Lorentz.Contracts.Spec.FA2Interface
 import Michelson.Test.Import (embedContractM)
 import qualified Michelson.Typed as T
 
 -- Types
 ----------------------------------------------------------------------------
-
-newtype AuctionId = AuctionId Natural
-  deriving stock (Generic, Eq, Ord)
-  deriving newtype (IsoValue, HasAnnotation)
-
-data FA2Token = FA2Token
-  { tokenId :: TokenId
-  , amount :: Natural
-  }
-
-customGeneric "FA2Token" ligoCombLayout
-deriving anyclass instance IsoValue FA2Token
-deriving anyclass instance HasAnnotation FA2Token
-
-data Tokens = Tokens
-  { fa2Address :: Address
-  , fa2Batch :: [FA2Token]
-  }
-
-customGeneric "Tokens" ligoCombLayout
-deriving anyclass instance IsoValue Tokens
-deriving anyclass instance HasAnnotation Tokens
 
 data Auction = Auction
   { seller :: Address
@@ -54,6 +33,7 @@ data Auction = Auction
 customGeneric "Auction" ligoCombLayout
 deriving anyclass instance IsoValue Auction
 deriving anyclass instance HasAnnotation Auction
+instance Buildable Auction where build = genericF
 
 data ConfigureParam = ConfigureParam
   { openingPrice :: Mutez
@@ -87,7 +67,7 @@ data AuctionStorage al = AuctionStorage
   , currentId :: Natural
   , maxAuctionTime :: Natural
   , maxConfigToStartTime :: Natural
-  , auctions :: BigMap Natural Auction
+  , auctions :: BigMap AuctionId Auction
   , allowlist :: al
   }
 

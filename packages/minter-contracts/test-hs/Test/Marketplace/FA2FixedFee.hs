@@ -11,6 +11,7 @@ import Michelson.Typed (convertContract, untypeValue)
 
 import qualified Indigo.Contracts.FA2Sample as FA2
 import Lorentz.Contracts.Marketplace.FA2FixedFee
+import Lorentz.Contracts.MinterSdk
 import Lorentz.Contracts.PausableAdminOption
 import Lorentz.Contracts.Spec.FA2Interface (TokenId(TokenId))
 import qualified Lorentz.Contracts.Spec.FA2Interface as FA2

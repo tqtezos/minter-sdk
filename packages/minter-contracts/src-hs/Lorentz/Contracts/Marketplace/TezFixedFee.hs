@@ -1,8 +1,7 @@
 -- | Lorentz bindings for the fixed price sale contract (FA2 version).
 module Lorentz.Contracts.Marketplace.TezFixedFee
   ( -- * Types
-    MarketFA2FixedFee.FeeData(..)
-  , MarketTez.SaleId(..)
+    MarketTez.SaleId(..)
   , MarketTez.SaleToken(..)
   , MarketTez.SaleDataTez(..)
   , MarketTez.SaleParamTez(..)
@@ -22,7 +21,6 @@ import Lorentz.Contracts.PausableAdminOption
 import Michelson.Test.Import (embedContractM)
 import qualified Michelson.Typed as T
 
-import qualified Lorentz.Contracts.Marketplace.FA2FixedFee as MarketFA2FixedFee
 import qualified Lorentz.Contracts.Marketplace.Tez as MarketTez
 import qualified Lorentz.Contracts.NoAllowlist as NoAllowlist
 
@@ -34,7 +32,7 @@ data MarketplaceTezStorage al = MarketplaceTezStorage
   , admin :: AdminStorage
   , nextSaleId :: MarketTez.SaleId
   , allowlist :: al
-  , fee :: MarketFA2FixedFee.FeeData
+  , fee :: FeeData
   }
 
 customGeneric "MarketplaceTezStorage" ligoCombLayout
@@ -42,7 +40,7 @@ deriving anyclass instance IsoValue al => IsoValue (MarketplaceTezStorage al)
 deriving anyclass instance HasAnnotation al => HasAnnotation (MarketplaceTezStorage al)
 instance Buildable al => Buildable (MarketplaceTezStorage al) where build = genericF
 
-initMarketplaceTezStorage :: Monoid al => MarketFA2FixedFee.FeeData -> AdminStorage -> MarketplaceTezStorage al
+initMarketplaceTezStorage :: Monoid al => FeeData -> AdminStorage -> MarketplaceTezStorage al
 initMarketplaceTezStorage feeData as =
   MarketplaceTezStorage
     { admin = as
