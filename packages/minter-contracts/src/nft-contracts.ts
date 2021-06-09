@@ -1,7 +1,7 @@
 import { $log } from '@tsed/logger';
 import { originateContract } from './ligo';
-import { Contract, address, nat } from './type-aliases';
-import { TezosToolkit } from '@taquito/taquito';
+import { Contract, address, nat, bytes } from './type-aliases';
+import { TezosToolkit, MichelsonMap } from '@taquito/taquito';
 import { char2Bytes } from '@taquito/tzip16';
 import { TokenMetadata } from './fa2-interface';
 import { BigNumber } from 'bignumber.js';
@@ -22,6 +22,7 @@ import {
   EnglishAuctionTezPermitCode,
   EnglishAuctionTezFixedFeeCode,
   EnglishAuctionFa2FixedFeeCode,
+  Fa2MultiFtAssetLimitedCode,
 } from '../bin-ts';
 
 export interface MintNftParam {
@@ -35,9 +36,10 @@ export interface MintFtParam {
   amount: nat;
 }
 
-export interface MintFtPaarm {
-  token_medata: TokenMetadata;
+export interface MintLimitedFtParam {
   owner: address;
+  amount: nat;
+  token_info : MichelsonMap<string, bytes>;
 }
 
 export interface SaleTokenParamTez {
@@ -90,6 +92,17 @@ export async function createFtToken(
   $log.info(`Created fungible token. Consumed gas: ${op.consumedGas}`);
 }
 
+export async function mintLimitedFtTokens(
+  ftContract: Contract,
+  tokens: MintLimitedFtParam[],
+): Promise<void> {
+  $log.info('minting...');
+  const op = await ftContract.methods.mint(tokens).send();
+  await op.confirmation(3);
+  $log.info(`Minted fungible tokens. Consumed gas: ${op.consumedGas}`);
+}
+
+
 const meta_uri = char2Bytes('tezos-storage:content');
 
 const sample_metadata = {
@@ -104,7 +117,7 @@ export async function originateNft(
 ): Promise<Contract> {
   const meta_content = char2Bytes(JSON.stringify(sample_metadata, null, 2));
 
-  const storage = `(Pair (Pair (Pair (Pair ${admin} True) None) (Pair (Pair {} 0) (Pair {} {}))) { Elt "" 0x${meta_uri} ; Elt "content" 0x${meta_content} })`;
+  const storage = `(Pair (Pair (Pair (Pair "${admin}" True) None) (Pair (Pair {} 0) (Pair {} {}))) { Elt "" 0x${meta_uri} ; Elt "content" 0x${meta_content} })`;
   return originateContract(tz, Fa2MultiNftAssetCode.code, storage, 'nft');
 }
 
@@ -127,6 +140,18 @@ export async function originateFtFaucet(
         { Elt "" 0x${meta_uri} ; Elt "content" 0x${meta_content} })`;
 
   return originateContract(tz, Fa2MultiFtAssetNoAdminCode.code, storage, 'ftFaucet');
+}
+
+export async function originateFtLimited(
+  tz: TezosToolkit,
+  admin: address,
+): Promise<Contract> {
+  const meta_content = char2Bytes(JSON.stringify(sample_metadata, null, 2));
+
+  const storage = `(Pair (Pair (Pair (Pair "${admin}" False) None) (Pair (Pair (Pair {} 0) (Pair {} {})) {}))
+    { Elt "" 0x${meta_uri} ; Elt "content" 0x${meta_content} })`;
+
+  return originateContract(tz, Fa2MultiFtAssetLimitedCode.code, storage, 'ftLimited');
 }
 
 export async function originateFixedPriceSale(
