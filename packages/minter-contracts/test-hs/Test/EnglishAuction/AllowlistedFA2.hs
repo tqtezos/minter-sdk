@@ -13,6 +13,7 @@ import Morley.Nettest.Tasty
 import Tezos.Address
 
 import Lorentz.Contracts.EnglishAuction.Allowlisted
+import Lorentz.Contracts.EnglishAuction.Common
 import Lorentz.Contracts.EnglishAuction.FA2
 import Test.EnglishAuction.Util
 import Test.Util

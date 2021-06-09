@@ -53,3 +53,4 @@ tests:
       - type-natural
       - hedgehog
       - tasty-hedgehog
+      - indexed-traversable

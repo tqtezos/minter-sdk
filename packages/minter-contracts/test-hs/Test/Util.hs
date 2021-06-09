@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -Wno-redundant-constraints #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Test.Util
   ( (-:)
@@ -12,7 +13,11 @@ module Test.Util
   , balanceOf
   , mkAllowlistSimpleParam
   , originateWithAdmin
+
+  -- * Property-based tests
   , clevelandProp
+  , genMutez'
+  , iterateM
 
     -- Re-exports
   , Sized
@@ -28,10 +33,12 @@ import Data.Type.Ordinal (ordToNatural)
 import Fmt (build, indentF, unlinesF, (+|), (|+))
 import GHC.TypeLits (Symbol)
 import GHC.TypeNats (Nat, type (+))
-import Hedgehog (MonadTest)
+import Hedgehog (Gen, MonadTest, Range)
+import qualified Hedgehog.Gen as Gen
 
 import Lorentz.Test.Consumer
 import Lorentz.Value
+import Tezos.Core (unMutez, unsafeMkMutez)
 
 import qualified Indigo.Contracts.FA2Sample as FA2
 import qualified Lorentz.Contracts.Spec.FA2Interface as FA2
@@ -217,3 +224,27 @@ originateWithAdmin originateFn = do
 -- | Create a hedgehog property-based test from a cleveland scenario.
 clevelandProp :: (MonadIO m, MonadTest m) => EmulatedT PureM () -> m ()
 clevelandProp = nettestTestProp . runEmulated . uncapsNettestEmulated
+
+-- Note: these instances are needed in order to create mutez @Range@s.
+-- TODO: We can delete them the next time we update morley; see: https://gitlab.com/morley-framework/morley/-/merge_requests/847
+instance Real Mutez where
+  toRational = toRational . unMutez
+
+instance Integral Mutez where
+  toInteger = toInteger . unMutez
+  quotRem x y = bimap unsafeMkMutez unsafeMkMutez $ quotRem (unMutez x) (unMutez y)
+  divMod x y = bimap unsafeMkMutez unsafeMkMutez $ quotRem (unMutez x) (unMutez y)
+
+-- | Generates an arbitrary `Mutez` value constrained to the given range.
+-- TODO: We can delete this the next time we update morley; see: https://gitlab.com/morley-framework/morley/-/merge_requests/847
+genMutez' :: Range Mutez -> Gen Mutez
+genMutez' range = unsafeMkMutez <$> Gen.word64 (unMutez <$> range)
+
+-- | Given a generator of values of type @a@ and an initial value,
+-- repeatedly uses the generator to create a list of the given length,
+-- feeding it the previously generated value at each iteration.
+iterateM :: forall a. Int -> (a -> Gen a) -> a -> Gen [a]
+iterateM 0 _ _ = pure []
+iterateM len gen previous = do
+  current <- gen previous
+  (current :) <$> iterateM (len - 1) gen current
