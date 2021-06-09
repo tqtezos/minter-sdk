@@ -51,20 +51,10 @@ deriving anyclass instance IsoValue SaleParamTez
 deriving anyclass instance HasAnnotation SaleParamTez
 instance Buildable SaleParamTez where build = genericF
 
-data BuyData = BuyData
-  { purchaser :: Address
-  , paymentRelayer :: Address
-  } deriving stock (Eq, Ord)
-
-customGeneric "BuyData" ligoCombLayout
-deriving anyclass instance IsoValue BuyData
-deriving anyclass instance HasAnnotation BuyData
-instance Buildable BuyData where build = genericF
-
 data SaleParamTezPermit = SaleParamTezPermit
   { seller :: Address
   , saleDataTez :: SaleDataTez
-  , pendingPurchases :: Set BuyData
+  , pendingPurchases :: Set Address
   } deriving stock (Eq, Ord)
 
 customGeneric "SaleParamTezPermit" ligoCombLayout
@@ -100,25 +90,12 @@ initMarketplaceTezStorage as = MarketplaceTezStorage mempty as (SaleId 0) mempty
 initMarketplaceStorageWithPendingPurchasers :: Monoid al => AdminStorage -> MarketplaceTezStorageWithPendingPurchases al
 initMarketplaceStorageWithPendingPurchasers as = MarketplaceTezStorageWithPendingPurchases mempty as (SaleId 0) mempty
 
-data ManageSaleTezEntrypoints al = Cancel SaleId
+data MarketplaceTezEntrypoints al
+  = Sell SaleDataTez
+  | Buy SaleId
+  | Cancel SaleId
   | Admin AdminEntrypoints
-  | Sell SaleDataTez
   | Update_allowed al
-
-customGeneric "ManageSaleTezEntrypoints" ligoLayout
-deriving anyclass instance IsoValue al => IsoValue (ManageSaleTezEntrypoints al)
-deriving anyclass instance HasAnnotation al => HasAnnotation (ManageSaleTezEntrypoints al)
-
-instance
-  ( RequireAllUniqueEntrypoints (ManageSaleTezEntrypoints al), IsoValue al
-  , EntrypointsDerivation EpdDelegate (ManageSaleTezEntrypoints al)
-  ) =>
-    ParameterHasEntrypoints (ManageSaleTezEntrypoints al) where
-  type ParameterEntrypointsDerivation (ManageSaleTezEntrypoints al) = EpdDelegate
-
-data MarketplaceTezEntrypoints al 
-  = Buy SaleId
-  | ManageSale (ManageSaleTezEntrypoints al)
 
 customGeneric "MarketplaceTezEntrypoints" ligoLayout
 deriving anyclass instance IsoValue al => IsoValue (MarketplaceTezEntrypoints al)

@@ -52,16 +52,6 @@ deriving anyclass instance IsoValue SaleData
 deriving anyclass instance HasAnnotation SaleData
 instance Buildable SaleData where build = genericF
 
-data BuyData = BuyData
-  { purchaser :: Address
-  , paymentRelayer :: Address
-  } deriving stock (Eq, Ord)
-
-customGeneric "BuyData" ligoCombLayout
-deriving anyclass instance IsoValue BuyData
-deriving anyclass instance HasAnnotation BuyData
-instance Buildable BuyData where build = genericF
-
 data SaleParam = SaleParam
   { seller :: Address
   , saleData :: SaleData
@@ -75,7 +65,7 @@ instance Buildable SaleParam where build = genericF
 data SaleParamPermit = SaleParamPermit
   { seller :: Address
   , saleData :: SaleData
-  , pendingPurchases :: Set BuyData
+  , pendingPurchases :: Set Address
   } deriving stock (Eq, Ord)
 
 customGeneric "SaleParamPermit" ligoCombLayout
@@ -111,25 +101,12 @@ initMarketplaceStorage as = MarketplaceStorage mempty as (SaleId 0) mempty
 initMarketplaceStorageWithPendingPurchases :: Monoid al => AdminStorage -> MarketplaceStorageWithPendingPurchases  al
 initMarketplaceStorageWithPendingPurchases as = MarketplaceStorageWithPendingPurchases mempty as (SaleId 0) mempty
 
-data ManageSaleEntrypoints al = Cancel SaleId
+data MarketplaceEntrypoints al
+  = Sell SaleData
+  | Buy SaleId
+  | Cancel SaleId
   | Admin AdminEntrypoints
-  | Sell SaleData
   | Update_allowed al
-
-customGeneric "ManageSaleEntrypoints" ligoLayout
-deriving anyclass instance IsoValue al => IsoValue (ManageSaleEntrypoints al)
-deriving anyclass instance HasAnnotation al => HasAnnotation (ManageSaleEntrypoints al)
-
-instance
-  ( RequireAllUniqueEntrypoints (ManageSaleEntrypoints al), IsoValue al
-  , EntrypointsDerivation EpdDelegate (ManageSaleEntrypoints al)
-  ) =>
-    ParameterHasEntrypoints (ManageSaleEntrypoints al) where
-  type ParameterEntrypointsDerivation (ManageSaleEntrypoints al) = EpdDelegate
-
-data MarketplaceEntrypoints al 
-  = Buy SaleId
-  | ManageSale (ManageSaleEntrypoints al)
 
 customGeneric "MarketplaceEntrypoints" ligoLayout
 deriving anyclass instance IsoValue al => IsoValue (MarketplaceEntrypoints al)

@@ -254,7 +254,7 @@ In the normal fixed price sale with admin enabled, admins have sole authority ov
 <a name="Offchain-purchase-extension"></a>
 ## Offchain purchase extension
 
-This extension is useful for sales in which users are not necessarily onboarded to Tezos. They can buy tokens with a credit card, and the admin of some sale can submit payment in either Tez/FA2 on their behalf using a [One step permit](https://gitlab.com/tzip/tzip/-/blob/master/proposals/tzip-17/tzip-17.md#one-step-permit-entrypoints) and calling the `Permit_buy` entrypoint, potentially submitting multiple permits in batch. 
+This extension is useful for sales in which users are not necessarily onboarded to Tezos. They can buy tokens with a credit card, and the contract admin can purchase the item on their behalf without sending Tez/FA2 using a [One step permit](https://gitlab.com/tzip/tzip/-/blob/master/proposals/tzip-17/tzip-17.md#one-step-permit-entrypoints) and calling the `Permit_buy` entrypoint, potentially submitting multiple permits in batch. 
 
 ```
 Permit_buy : (list %permit_buy
@@ -262,9 +262,9 @@ Permit_buy : (list %permit_buy
                      (option %optional_permit (pair (key %signerKey) (signature %signature)))))
 ```
 
-Only an admin can call this entrypoint with a permit, but any user can call the entrypoint directly (setting `optional_permit` to None). 
+Only an admin can call this entrypoint with a permit, but any user can call the entrypoint directly (setting `optional_permit` to None). If an admin submits a purchase order with a permit, no payment is necessary as it is assumed payment is handled offchain.
  
-In contrast to the normal Fixed price contract, after the `Permit_buy` entrypoint is called (either with a permit or without one), the token purchase is marked as pending. When the purchase is pending, no one else can purchase the token. However, the fixed price contract holds the payment and purchased token in escrow until the purchase is either approved or denied by the admin. Typically, admin will wait until the offchain payment is either approved or rejected. 
+In contrast to the normal Fixed price contract, after the `Permit_buy` entrypoint is called (either with a permit or without one), the token purchase is marked as pending. When the purchase is pending, no one else can purchase the token. However, the fixed price contract holds the payment (in case of a non-permited purhcase) and token in escrow until the purchase is either approved or denied by the admin. Typically, admin will wait until the offchain payment is either approved or rejected. 
 
 The admin can approve purchases in batch by calling:
 
@@ -274,7 +274,9 @@ and reject purchases in batch by calling:
 
 `Revoke_purchases : (list %revoke_purchases (pair (nat %sale_id) (address %purchaser)))`.
 
-After a purchase attempt is confirmed the contract sends out payments to the seller (and possibly the fee to the fee-address) and sends the token to the purchaser. After a purchase attempt is revoked, the contract sends the payment back to the `payment_relayer` who originally sent the payment. Afterwards, the token remains up for sale and a new user can attempt to purchase it.
+If a purchase was made using a permit, calling `Confirm_purchases` will send the token to the purchaser and remove the token from sale. `Revoke_purchases` will update storage so that the purchase attempt is deleted and the token is put back up for sale. 
+
+If the purchase is made without a permit `Confirm_purchases` will also send out payments to the seller (and possibly the fee to the fee-address). Similarly `Revoke_purchases` will return payment to the the buyer. 
 
 This extension also defines the Macro `PERMIT_MARKET` which makes optional changes to the base fixed price sale contracts to allow for the offchain extension. It changes the storage structure by adding the `pending_purchases` set to the sale record (the value in the `sales` big_map). `pending_purchases` is automatically configured to the empty set upon a sale creation. Furthermore, upon an attempted sale `Cancel`, `pending_purchases` must be empty or the operation will fail with error `PENDING_PURCHASES_PRESENT`, upon which `Revoke_purchases` ought to be called to return the pending purchases. 
 
@@ -285,3 +287,7 @@ Pending_purchases : (set %pending_purchases (pair (address %purchaser) (address 
 - Ligo Contracts : [Tez Version](fixed_price_sale_market_tez_offchain.mligo), [FA2 Version](fixed_price_sale_market_offchain.mligo)
 
 
+### Tez Stuck Guards
+Guards are placed on entrypoints to ensure no tez is sent to them, as to avoid the tez getting stuck in the contract. 
+- In the FA2 version of the fixed price contract, no tez can be sent to any entrypoint. An attempt to do so wil fail with `DONT_TRANSFER_TEZ_TO_ANY_ENTRYPOINT`. 
+- In the Tez version of the fixed price contract, tez is only expected to be transferred to `Buy`, however there are only guards placed on `Cancel` and `Sell` to minimize costs.

@@ -26,17 +26,12 @@ jest.setTimeout(360000); // 6 minutes
 
 interface PermitBuyParam {
     sale_id : nat;
-    optional_permit? : Permit;
-}
-
-interface BuyData {
-    purchaser : address;
-    payment_relayer : address;
+    permit : Permit;
 }
 
 interface ConfirmOrRevokePurchaseParam {
   sale_id : nat;
-  buy_data : BuyData;
+  purchaser : address;
 }
 
 describe.each([originateFixedPriceTezOffchainSale])
@@ -45,6 +40,7 @@ describe.each([originateFixedPriceTezOffchainSale])
   let nft: Contract;
   let queryBalances: QueryBalances;
   let marketplace: Contract;
+  let marketplaceAlice: Contract;
   let marketAddress: address;
   let bobAddress: address;
   let aliceAddress: address;
@@ -64,6 +60,7 @@ describe.each([originateFixedPriceTezOffchainSale])
     nft = await originateNftFaucet(tezos.bob);
     marketplace = await originateMarketplace(tezos.bob, bobAddress);
     marketAddress = marketplace.address;
+    marketplaceAlice = await tezos.alice.contract.at(marketAddress);
     tokenId = new BigNumber(0);
     tokenMetadata = new MichelsonMap();
     salePrice = new BigNumber(1000000); //1tz
@@ -110,12 +107,12 @@ describe.each([originateFixedPriceTezOffchainSale])
 
     const fake_permit_buy_param : PermitBuyParam = {
       sale_id : saleId,
-      optional_permit : fake_permit,
+      permit : fake_permit,
     };
 
     // Bob preapplies a transfer with the dummy_sig to extract the bytes_to_sign
-    const transfer_params = marketplace.methods.permit_buy([fake_permit_buy_param])
-      .toTransferParams({ amount : 1 });
+    const transfer_params = marketplace.methods.offchain_buy([fake_permit_buy_param])
+      .toTransferParams({ amount : 0 });
     const bytes_to_sign = await tezos.bob.estimate.transfer(transfer_params)
       .catch((e) => errors_to_missigned_bytes(e.errors));
     $log.info('bytes_to_sign:', bytes_to_sign);
@@ -130,23 +127,20 @@ describe.each([originateFixedPriceTezOffchainSale])
 
     const permit_buy_param : PermitBuyParam = {
       sale_id : saleId,
-      optional_permit : one_step_permit,
+      permit : one_step_permit,
     };
 
     // This is what a relayer needs to submit the parameter on the signer's behalf
     $log.info('permit package:', permit_buy_param);
 
 
-    // Bob submits the permit to the contract along with price in tez
-    const permit_op = await marketplace.methods.permit_buy([permit_buy_param]).send({ amount: 1 });
+    // Bob submits the permit to the contract
+    const permit_op = await marketplace.methods.offchain_buy([permit_buy_param]).send({ amount: 0 });
     await permit_op.confirmation().then(() => $log.info('permit_op hash:', permit_op.hash));
 
     const confirm_param : ConfirmOrRevokePurchaseParam = {
       sale_id : saleId,
-      buy_data : {
-        purchaser : aliceAddress,
-        payment_relayer : bobAddress,
-      },
+      purchaser : aliceAddress,
     };
 
     //Bob confirms the pending purchase
@@ -172,12 +166,12 @@ describe.each([originateFixedPriceTezOffchainSale])
 
     const fake_permit_buy_param : PermitBuyParam = {
       sale_id : saleId,
-      optional_permit : fake_permit,
+      permit : fake_permit,
     };
 
     // Bob preapplies a transfer with the dummy_sig to extract the bytes_to_sign
-    const transfer_params = marketplace.methods.permit_buy([fake_permit_buy_param])
-      .toTransferParams({ amount : 1 });
+    const transfer_params = marketplace.methods.offchain_buy([fake_permit_buy_param])
+      .toTransferParams({ amount : 0 });
     const bytes_to_sign = await tezos.bob.estimate.transfer(transfer_params)
       .catch((e) => errors_to_missigned_bytes(e.errors));
     $log.info('bytes_to_sign:', bytes_to_sign);
@@ -192,23 +186,20 @@ describe.each([originateFixedPriceTezOffchainSale])
 
     const permit_buy_param : PermitBuyParam = {
       sale_id : saleId,
-      optional_permit : one_step_permit,
+      permit : one_step_permit,
     };
 
     // This is what a relayer needs to submit the parameter on the signer's behalf
     $log.info('permit package:', permit_buy_param);
 
 
-    // Bob submits the permit to the contract along with price in tez
-    const permit_op = await marketplace.methods.permit_buy([permit_buy_param]).send({ amount: 1 });
+    // Bob submits the permit to the contract
+    const permit_op = await marketplace.methods.offchain_buy([permit_buy_param]).send({ amount: 0 });
     await permit_op.confirmation().then(() => $log.info('permit_op hash:', permit_op.hash));
 
     const revoke_param : ConfirmOrRevokePurchaseParam = {
       sale_id : saleId,
-      buy_data : {
-        purchaser : aliceAddress,
-        payment_relayer : bobAddress,
-      },
+      purchaser : aliceAddress,
     };
 
     //Bob revokes the pending purchase

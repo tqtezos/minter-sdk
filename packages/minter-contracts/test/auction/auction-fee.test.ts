@@ -113,10 +113,10 @@ describe('test NFT auction', () => {
     $log.info("Auction resolved");
 
     const internalOps = opResolve.operationResults[0].metadata.internal_operation_results as InternalOperationResult[];
-    const feeAmount = internalOps[0].amount;
-    const feeReceiver = internalOps[0].destination;
-    const paymentAmount = internalOps[1].amount;
-    const paymentReceiver = internalOps[1].destination;
+    const paymentAmount = internalOps[0].amount;
+    const paymentReceiver = internalOps[0].destination;
+    const feeAmount = internalOps[1].amount;
+    const feeReceiver = internalOps[1].destination;
 
     if (feeAmount !== (bidMutez * feePercent).toString() && feeReceiver !== eveAddress)
       throw new Error(`Operation incorrectly resulted in a transfer of ${feeAmount} to ${feeReceiver} for fee`);

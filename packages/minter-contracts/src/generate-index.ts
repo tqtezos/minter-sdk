@@ -40,7 +40,7 @@ const generateIndex = (codeFiles: string[]) => {
     .map(fileName => `  ${fileNameToContractType(fileName)},\n  ${fileNameToCodeObject(fileName)},`)
     .join('\n');
 
-  return `${codeImports}\n\nexport {\n${exports}\n};\n`;
+  return `${codeImports}\n\nexport {\n${exports}\n};\nexport * as TypeAliases from './type-aliases';\n`;
 };
 
 try {

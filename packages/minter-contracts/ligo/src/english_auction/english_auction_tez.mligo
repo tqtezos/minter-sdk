@@ -103,7 +103,7 @@ let rec tokens_list_to_operation_list_append (from_, to_, tokens_list, op_list :
 
 let get_auction_data ((asset_id, storage) : nat * storage) : auction =
   match (Big_map.find_opt asset_id storage.auctions) with
-      None -> (failwith "Auction does not exist for given asset_id" : auction)
+      None -> (failwith "AUCTION_DOES_NOT_EXIST" : auction)
     | Some auction -> auction
 
 let auction_ended (auction : auction) : bool =
@@ -141,15 +141,16 @@ let configure_auction_storage(configure_param, seller, storage : configure_param
     (fail_if_paused storage.admin);
     check_allowlisted(configure_param, storage.allowlist);
 
-    assert_msg (configure_param.end_time > configure_param.start_time, "end_time must be after start_time");
-    assert_msg (abs(configure_param.end_time - configure_param.start_time) <= storage.max_auction_time, "Auction time must be less than max_auction_time");
+    assert_msg (configure_param.end_time > configure_param.start_time, "INVALID_END_TIME");
+    assert_msg (abs(configure_param.end_time - configure_param.start_time) <= storage.max_auction_time, "INVALID_AUCTION_TIME");
 
-    assert_msg (configure_param.start_time >= Tezos.now, "Start_time must not have already passed");
-    assert_msg (abs(configure_param.start_time - Tezos.now) <= storage.max_config_to_start_time, "start_time must not be greater than the sum of current time and max_config_to_start_time");
+    assert_msg (configure_param.start_time >= Tezos.now, "INVALID_START_TIME");
+    assert_msg (abs(configure_param.start_time - Tezos.now) <= storage.max_config_to_start_time, "MAX_CONFIG_TO_START_TIME_VIOLATED");
 
-    assert_msg (configure_param.opening_price > 0mutez, "Opening price must be greater than 0mutez");
-    assert_msg (Tezos.amount = 0mutez, "Amount sent must be 0mutez");
-    assert_msg (configure_param.round_time > 0n, "Round_time must be greater than 0 seconds");
+    assert_msg (configure_param.opening_price > 0mutez, "INVALID_OPENING_PRICE");
+    tez_stuck_guard("CONFIGURE");
+    assert_msg (configure_param.round_time > 0n, "INVALID_ROUND_TIME");
+    assert_msg(configure_param.min_raise_percent > 0n && configure_param.min_raise > 0mutez, "INVALID_RAISE_CONFIGURATION");
 
     let auction_data : auction = {
       seller = seller;
@@ -170,7 +171,7 @@ let configure_auction_storage(configure_param, seller, storage : configure_param
 
 let configure_auction(configure_param, storage : configure_param * storage) : return =
 #if FEE
-  let u : unit = assert_msg (storage.fee.fee_percent <= 100n, "Fee_percent must be less than 100%. Please originate another contract.") in
+  let u : unit = assert_msg (storage.fee.fee_percent <= 100n, "INVALID_FEE") in
 #endif
   let new_storage = configure_auction_storage(configure_param, Tezos.sender, storage) in
   let fa2_transfers : operation list = transfer_tokens(configure_param.asset, Tezos.sender, Tezos.self_address) in
@@ -180,32 +181,41 @@ let configure_auction(configure_param, storage : configure_param * storage) : re
 let resolve_auction(asset_id, storage : nat * storage) : return = begin
     (fail_if_paused storage.admin);
     let auction : auction = get_auction_data(asset_id, storage) in
-    assert_msg (auction_ended(auction) , "Auction must have ended");
-    assert_msg (Tezos.amount = 0mutez, "Amount must be 0mutez");
+    assert_msg (auction_ended(auction) , "AUCTION_NOT_ENDED");
+    tez_stuck_guard("RESOLVE");
 
     let fa2_transfers : operation list = transfer_tokens(auction.asset, Tezos.self_address, auction.highest_bidder) in
-    let seller_contract : unit contract = resolve_contract(auction.seller) in
 
 #if !FEE
 
-    let op_list = if first_bid(auction) then
+    let oplist = if first_bid(auction) then
       fa2_transfers else
-      let send_final_bid : operation = Tezos.transaction unit auction.current_bid seller_contract in
+      let send_final_bid : operation = transfer_tez(auction.current_bid, auction.seller) in
       (send_final_bid :: fa2_transfers) in
 
 #else
-    let fee_contract : unit contract = resolve_contract(storage.fee.fee_address) in
-    let op_list = if first_bid(auction) then
-      fa2_transfers else
-      let fee : tez = percent_of_bid_tez (storage.fee.fee_percent, auction.current_bid) in
-      let pay_fee : operation = Tezos.transaction unit fee fee_contract in
-      let send_final_bid_minus_fee : operation = Tezos.transaction unit (auction.current_bid - fee) seller_contract in
-      (pay_fee :: send_final_bid_minus_fee :: fa2_transfers) in
-
+    let oplist = 
+      if first_bid(auction)
+      then fa2_transfers 
+      else let fee : tez = percent_of_price_tez (storage.fee.fee_percent, auction.current_bid) in //ceiling not used
+      let op_list =
+        (if fee <> 0mutez
+         then
+           let tx_fee : operation = transfer_tez(fee, storage.fee.fee_address) in
+           tx_fee :: fa2_transfers
+         else fa2_transfers) in
+      let op_list =
+        (let sale_price_minus_fee = auction.current_bid - fee in 
+         if sale_price_minus_fee <> 0mutez
+         then
+           let tx_price = transfer_tez(sale_price_minus_fee, auction.seller) in
+           tx_price :: op_list
+         else op_list) in
+      op_list 
+    in 
 #endif
-
     let updated_auctions = Big_map.remove asset_id storage.auctions in
-    (op_list, {storage with auctions = updated_auctions})
+    (oplist, {storage with auctions = updated_auctions})
   end
 
 let cancel_auction(asset_id, storage : nat * storage) : return = begin
@@ -214,14 +224,13 @@ let cancel_auction(asset_id, storage : nat * storage) : return = begin
     let is_seller : bool = Tezos.sender = auction.seller in
     let v : unit = if is_seller then ()
           else fail_if_not_admin_ext (storage.admin, "OR_A_SELLER") in
-    assert_msg (not auction_ended(auction), "Auction must not have ended");
-    assert_msg (Tezos.amount = 0mutez, "Amount must be 0mutez");
+    assert_msg (not auction_ended(auction), "AUCTION_ENDED");
+    tez_stuck_guard("CANCEL");
 
     let fa2_transfers : operation list = transfer_tokens(auction.asset, Tezos.self_address, auction.seller) in
-    let highest_bidder_contract : unit contract = resolve_contract(auction.highest_bidder) in
     let op_list : operation list = if first_bid(auction) then
       fa2_transfers else
-      let return_bid : operation = Tezos.transaction unit auction.current_bid highest_bidder_contract in
+      let return_bid : operation = transfer_tez(auction.current_bid, auction.highest_bidder) in 
       (return_bid :: fa2_transfers) in
     let updated_auctions = Big_map.remove asset_id storage.auctions in
     (op_list, {storage with auctions = updated_auctions})
@@ -229,18 +238,17 @@ let cancel_auction(asset_id, storage : nat * storage) : return = begin
 
 let place_bid(asset_id, storage : nat * storage) : return = begin
     let auction : auction = get_auction_data(asset_id, storage) in
-    assert_msg (Tezos.sender = Tezos.source, "Bidder must be an implicit account");
+    assert_msg (Tezos.sender = Tezos.source, "BIDDER_NOT_IMPLICIT");
     (fail_if_paused storage.admin);
-    assert_msg (auction_in_progress(auction), "Auction must be in progress");
-    assert_msg(Tezos.sender <> auction.seller, "Seller cannot place a bid");
+    assert_msg (auction_in_progress(auction), "NOT_IN_PROGRESS");
+    assert_msg(Tezos.sender <> auction.seller, "SEllER_CANT_BID");
+    assert_msg(Tezos.sender <> auction.highest_bidder, "NO_SELF_OUTBIDS");
     (if not valid_bid_amount(auction)
-      then ([%Michelson ({| { FAILWITH } |} : string * (tez * tez * address * timestamp * timestamp) -> unit)] ("Invalid Bid amount", (auction.current_bid, Tezos.amount, auction.highest_bidder, auction.last_bid_time, Tezos.now)) : unit)
+      then ([%Michelson ({| { FAILWITH } |} : string * (tez * tez * address * timestamp * timestamp) -> unit)] ("INVALID_BID_AMOUNT", (auction.current_bid, Tezos.amount, auction.highest_bidder, auction.last_bid_time, Tezos.now)) : unit)
       else ());
-
-    let highest_bidder_contract : unit contract = resolve_contract(auction.highest_bidder) in
     let op_list : operation list = if first_bid(auction) then
       ([] : operation list) else
-      let return_bid : operation = Tezos.transaction unit auction.current_bid highest_bidder_contract in
+      let return_bid : operation = transfer_tez(auction.current_bid,  auction.highest_bidder) in
       [return_bid] in
     let new_end_time = if auction.end_time - Tezos.now <= auction.extend_time then
       Tezos.now + auction.extend_time else auction.end_time in
@@ -250,7 +258,6 @@ let place_bid(asset_id, storage : nat * storage) : return = begin
   end
 
 let admin(admin_param, storage : pauseable_admin * storage) : return =
-    let u = assert_msg (Tezos.amount = 0mutez, "Amount must be 0mutez") in
     let ops, admin = pauseable_admin(admin_param, storage.admin) in
     let new_storage = { storage with admin = admin; } in
     ops, new_storage

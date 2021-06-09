@@ -39,7 +39,7 @@ deriving anyclass instance HasAnnotation al => HasAnnotation (MarketplaceTezPerm
 
 data PendingPurchase = PendingPurchase
   { saleId :: MarketTez.SaleId
-  , buyData :: MarketTez.BuyData
+  , purchaser :: Address
   } deriving stock (Eq, Ord)
 
 customGeneric "PendingPurchase" ligoCombLayout
@@ -59,7 +59,7 @@ instance Buildable Permit where build = genericF
 
 data PermitBuyParam = PermitBuyParam
   { saleId :: MarketTez.SaleId
-  , optionalPermit :: Maybe Permit
+  , permit :: Permit
   } deriving stock (Eq, Ord)
 
 customGeneric "PermitBuyParam" ligoCombLayout
@@ -68,7 +68,7 @@ deriving anyclass instance HasAnnotation PermitBuyParam
 instance Buildable PermitBuyParam where build = genericF
 
 data MarketplaceTezPermitEntrypoints al 
-  = BaseSale (MarketTez.ManageSaleTezEntrypoints al)
+  = BaseSale (MarketTez.MarketplaceTezEntrypoints al)
   | Permit_buy [PermitBuyParam]
   | Confirm_purchases [PendingPurchase]
   | Revoke_purchases [PendingPurchase]
