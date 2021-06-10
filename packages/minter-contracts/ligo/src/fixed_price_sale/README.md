@@ -185,6 +185,8 @@ An `admin` can pause/unpause the contract, guard other operations to be invoked 
 
 Any call to these entrypoints will fail with `NOT_AN_ADMIN` if admin capabilites are enabled, and will fail with `NO_ADMIN_CAPABILITIES_CONFIGURED` if the contract was not originated with admin capabilites. 
 
+- Ligo Contracts : [FA2 Version](fixed_price_sale_market.mligo), [Tez Version](fixed_price_sale_market_tez.mligo)
+
 <a name="allowlisted-extension"></a>
 ## Allowlisted extension
 
@@ -246,6 +248,42 @@ type fee_data =
 ## Cancel only admin extension
 
 In the normal fixed price sale with admin enabled, admins have sole authority over configuring and cancelling sales. For some use-cases however it is useful for anyone to have the power to configure a sale, and admins to only have sole authority over cancelling sales. This is accomplished when the C Macro `CANCEL_ONLY_ADMIN` is defined as in the LIGO files with `cancel_only_admin` in the title. 
+
+- Ligo Contracts : [Tez Version](fixed_price_sale_market_tez_cancel_only_admin.mligo), [FA2 Version](fixed_price_sale_market_cancel_only_admin.mligo)
+
+<a name="Offchain-purchase-extension"></a>
+## Offchain purchase extension
+
+This extension is useful for sales in which users are not necessarily onboarded to Tezos. They can buy tokens with a credit card, and the contract admin can purchase the item on their behalf without sending Tez/FA2 using a [One step permit](https://gitlab.com/tzip/tzip/-/blob/master/proposals/tzip-17/tzip-17.md#one-step-permit-entrypoints) and calling the `Offchain_buy` entrypoint, potentially submitting multiple permits in batch. 
+
+```
+Offchain_buy : (list %offchain_buy
+               (pair (nat %sale_id)
+                     (pair %permit (key %signerKey) (signature %signature))))
+```
+
+Only an admin can call this entrypoint with a permit. If an admin submits a purchase order with a permit, no payment is necessary as it is assumed payment is handled offchain.
+ 
+In contrast to the normal `Buy` entrypoint, after the `Offchain_buy` entrypoint is called, the token purchase is marked as pending. When the purchase is pending, no one else can purchase the token. However, the fixed price contract holds the payment (in case of a non-permited purhcase) and token in escrow until the purchase is either approved or denied by the admin. Typically, admin will wait until the offchain payment is either approved or rejected. 
+
+The admin can approve purchases in batch by calling:
+
+`Confirm_purchases : (list %confirm_purchases (pair (nat %sale_id) (address %purchaser)))`
+
+and reject purchases in batch by calling:
+
+`Revoke_purchases : (list %revoke_purchases (pair (nat %sale_id) (address %purchaser)))`.
+
+If a purchase was made using a permit, calling `Confirm_purchases` will send the token to the purchaser and remove the token from sale. `Revoke_purchases` will update storage so that the purchase attempt is deleted and the token is put back up for sale. 
+
+This extension also defines the Macro `OFFCHAIN_MARKET` which makes optional changes to the base fixed price sale contracts to allow for the offchain extension. It changes the storage structure by adding the `pending_purchases` set to the sale record (the value in the `sales` big_map). `pending_purchases` is automatically configured to the empty set upon a sale creation. Furthermore, upon an attempted sale `Cancel`, `pending_purchases` must be empty or the operation will fail with error `PENDING_PURCHASES_PRESENT`, upon which `Revoke_purchases` ought to be called to return the pending purchases. 
+
+```
+Pending_purchases : (set %pending_purchases address)
+```
+
+- Ligo Contracts : [Tez Version](fixed_price_sale_market_tez_offchain.mligo), [FA2 Version](fixed_price_sale_market_offchain.mligo)
+
 
 ### Tez Stuck Guards
 Guards are placed on entrypoints to ensure no tez is sent to them, as to avoid the tez getting stuck in the contract. 

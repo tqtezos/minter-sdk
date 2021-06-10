@@ -15,7 +15,7 @@ import { addOperator } from '../../src/fa2-interface';
 import { Fa2_token, Tokens, sleep } from '../../src/auction-interface';
 import { queryBalancesWithLambdaView, hasTokens, QueryBalances } from '../../test/fa2-balance-inspector';
 
-jest.setTimeout(300000); // 5 minutes
+jest.setTimeout(360000); // 6 minutes
 
 describe('test NFT auction', () => {
   let tezos: TestTz;
@@ -80,7 +80,7 @@ describe('test NFT auction', () => {
     };
 
     startTime = moment.utc().add(7, 'seconds').toDate();
-    endTime = moment(startTime).add(1, 'minute').toDate();
+    endTime = moment(startTime).add(90, 'seconds').toDate();
     const opAuction = await nftAuctionBob.methods.configure(
       //opening price = 10 tz
       new BigNumber(10000000),
@@ -96,7 +96,7 @@ describe('test NFT auction', () => {
       [tokens],
       //start_time = now + 7seconds
       startTime,
-      //end_time = start_time + 5seconds,
+      //end_time = start_time + 90 seconds,
       endTime,
     ).send({ amount : 0 });
     await opAuction.confirmation();
@@ -193,7 +193,7 @@ describe('test NFT auction', () => {
   });
 
   test('auction without bids that is resolved after end time should only return asset to seller', async () => {
-    await sleep(70000); //70 seconds
+    await sleep(90000); //90 seconds
     $log.info("Resolving auction");
     const opResolve = await nftAuctionBob.methods.resolve(0).send({ amount : 0 });
     await opResolve.confirmation();
@@ -212,7 +212,7 @@ describe('test NFT auction', () => {
     const opBid = await nftAuctionAlice.methods.bid(0).send({ amount : bidMutez.toNumber(), mutez : true });
     await opBid.confirmation();
     $log.info(`Bid placed`);
-    await sleep(70000); //70 seconds
+    await sleep(90000); //90 seconds
     const opCancel = nftAuctionBob.methods.cancel(0).send({ amount : 0, mutez : true });
     expect(opCancel).rejects.toHaveProperty('message', 'AUCTION_ENDED');
     $log.info("Cancel after end time fails as expected");
@@ -224,7 +224,7 @@ describe('test NFT auction', () => {
     const opBid = await nftAuctionAlice.methods.bid(0).send({ amount : bidMutez.toNumber(), mutez : true });
     await opBid.confirmation();
     $log.info(`Bid placed. Amount sent: ${opBid.amount} mutez`);
-    await sleep(70000); //70 seconds
+    await sleep(90000); //90 seconds
 
     $log.info("Resolving auction");
     const opResolve = await nftAuctionBob.methods.resolve(0).send({ amount : 0 });

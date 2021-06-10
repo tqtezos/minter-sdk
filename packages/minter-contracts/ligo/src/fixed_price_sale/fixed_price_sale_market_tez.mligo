@@ -11,12 +11,22 @@ type sale_data_tez =
   amount: nat;
 }
 
+#if !OFFCHAIN_MARKET
 type sale_tez =
 [@layout:comb]
 {
   seller: address;
-  sale_data : sale_data_tez;
+  sale_data: sale_data_tez;
 }
+#else 
+type sale_tez =
+[@layout:comb]
+{
+  seller: address;
+  sale_data: sale_data_tez;
+  pending_purchases : address set;
+}
+#endif
 
 #if !FEE
 
@@ -43,17 +53,20 @@ type storage =
 
 #endif
 
-type market_entry_points =
+type market_entry_points = 
+  | Buy of sale_id 
   | Sell of sale_data_tez
-  | Buy of sale_id
   | Cancel of sale_id
   | Admin of pauseable_admin
   | Update_allowed of allowlist_entrypoints
 
+let get_sale(sale_id, storage: sale_id * storage) : sale_tez = 
+   (match Big_map.find_opt sale_id storage.sales with
+    | None -> (failwith "NO_SALE": sale_tez)
+    | Some s -> s)
+
 let buy_token(sale_id, storage: sale_id * storage) : (operation list * storage) =
-  let sale : sale_tez = (match Big_map.find_opt sale_id storage.sales with
-  | None -> (failwith "NO_SALE": sale_tez)
-  | Some s -> s) in
+  let sale : sale_tez = get_sale(sale_id, storage) in
   let sale_price : tez = sale.sale_data.price in
   let sale_token_address : address = sale.sale_data.sale_token.fa2_address in
   let sale_token_id : nat = sale.sale_data.sale_token.token_id in
@@ -108,24 +121,30 @@ let deposit_for_sale(sale_data, storage: sale_data_tez * storage) : (operation l
     let amount_ : nat = sale_data.amount in
     let transfer_op =
       transfer_fa2 (sale_token_address, sale_token_id, amount_, Tezos.sender, Tezos.self_address) in
-    let sale = { seller = Tezos.sender; sale_data = sale_data } in
-    let sale_id : sale_id = storage.next_sale_id in
-    let new_s = { storage with sales = Big_map.add sale_id sale storage.sales;
+#if !OFFCHAIN_MARKET
+    let sale = { seller = Tezos.sender; sale_data = sale_data; } in
+#else 
+    let sale = { seller = Tezos.sender; sale_data = sale_data; pending_purchases = (Set.empty : address set)} in
+#endif
+    let sale_id : sale_id = storage.next_sale_id in 
+    let new_s = { storage with sales = Big_map.add sale_id sale storage.sales; 
       next_sale_id =  sale_id + 1n; } in
     [transfer_op], new_s
 
 let cancel_sale(sale_id, storage: sale_id * storage) : (operation list * storage) =
-  match Big_map.find_opt sale_id storage.sales with
-    | None -> (failwith "NO_SALE" : (operation list * storage))
-    | Some sale ->  let sale_token_address = sale.sale_data.sale_token.fa2_address in
-                    let sale_token_id = sale.sale_data.sale_token.token_id in
-                    let amount_ = sale.sale_data.amount in
-                    let seller = sale.seller in
-                    let is_seller = Tezos.sender = seller in
-                    let v : unit = if is_seller then ()
-                      else fail_if_not_admin_ext (storage.admin, "OR_A_SELLER") in
-                    let tx_nft_back_op = transfer_fa2(sale_token_address, sale_token_id, amount_, Tezos.self_address, seller) in
-                    [tx_nft_back_op], {storage with sales = Big_map.remove sale_id storage.sales }
+  let sale : sale_tez = get_sale(sale_id, storage) in
+  let sale_token_address = sale.sale_data.sale_token.fa2_address in 
+  let sale_token_id = sale.sale_data.sale_token.token_id in 
+  let amount_ = sale.sale_data.amount in 
+  let seller = sale.seller in 
+  let is_seller = Tezos.sender = seller in
+  let v : unit = if is_seller then ()
+    else fail_if_not_admin_ext (storage.admin, "OR_A_SELLER") in
+#if OFFCHAIN_MARKET
+    let u : unit = assert_msg(Set.size sale.pending_purchases = 0n, "PENDING_PURCHASES_PRESENT") in
+#endif
+  let tx_nft_back_op = transfer_fa2(sale_token_address, sale_token_id, amount_, Tezos.self_address, seller) in
+  [tx_nft_back_op], {storage with sales = Big_map.remove sale_id storage.sales }
 
 let update_allowed(allowlist_param, storage : allowlist_entrypoints * storage) : operation list * storage =
 #if !ALLOWLIST_ENABLED
@@ -146,14 +165,8 @@ let fixed_price_sale_tez_main (p, storage : market_entry_points * storage) : ope
 
 #if !CANCEL_ONLY_ADMIN
      let w : unit = fail_if_not_admin(storage.admin) in
-#endif
+#endif 
      deposit_for_sale(sale, storage)
-  | Buy sale_id ->
-     let u : unit = fail_if_paused(storage.admin) in
-#if FEE
-     let v : unit = assert_msg (storage.fee.fee_percent <= 100n, "FEE_TOO_HIGH") in
-#endif
-     buy_token(sale_id, storage)
   | Cancel sale_id ->
      let u : unit = tez_stuck_guard("CANCEL") in 
      let v : unit = fail_if_paused(storage.admin) in
@@ -164,6 +177,12 @@ let fixed_price_sale_tez_main (p, storage : market_entry_points * storage) : ope
      ops, new_storage
   | Update_allowed a ->
     update_allowed(a, storage)
+  | Buy sale_id ->
+     let u : unit = fail_if_paused(storage.admin) in
+#if FEE
+     let v : unit = assert_msg (storage.fee.fee_percent <= 100n, "FEE_TOO_HIGH") in
+#endif
+     buy_token(sale_id, storage)
 
 #if !FEE
 

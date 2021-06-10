@@ -1,8 +1,6 @@
 #if !COMMON
 #define COMMON
 
-#include "../fa2/fa2_interface.mligo"
-
 (*TYPES*)
 
 type sale_id = nat
@@ -34,7 +32,31 @@ type global_token_id =
       token_id : token_id;
   }
 
-(*MATH*)
+type pending_purchase = 
+  [@layout:comb]
+  {
+    sale_id : sale_id;
+    purchaser : address;
+  }
+
+
+type pending_purchases = pending_purchase list 
+
+type permit = 
+  [@layout:comb]
+  {
+    signerKey: key;
+    signature: signature;
+  }
+
+type permit_buy_param =
+  [@layout:comb]
+  {
+    sale_id : sale_id;
+    permit : permit;
+  } 
+
+(*MATH*) 
 
 (*In English auction it is necessary to use ceiling so that bid is guaranteed to be raised*)
 let ceil_div_nat (numerator, denominator : nat * nat) : nat = abs ((- numerator) / (int denominator))
@@ -129,5 +151,18 @@ let check_tokens_allowed
 #else
 <No check_tokens_allowed implementation>
 #endif
+
+let address_from_key (key : key) : address =
+  let a = Tezos.address (Tezos.implicit_account (Crypto.hash_key key)) in
+  a
+
+let check_permit (p, counter, param_hash : permit * nat * bytes) : unit = 
+    (* let unsigned : bytes = ([%Michelson ({| { SELF; ADDRESS; CHAIN_ID; PAIR; PAIR; PACK } |} : nat * bytes -> bytes)] (counter, param_hash) : bytes) in *)
+    let unsigned : bytes = Bytes.pack ((Tezos.chain_id, Tezos.self_address), (counter, param_hash)) in
+    let permit_valid : bool = Crypto.check p.signerKey p.signature unsigned in 
+    let u : unit = (if not permit_valid 
+     then ([%Michelson ({| { FAILWITH } |} : string * bytes -> unit)] ("MISSIGNED", unsigned) : unit)
+     else ()) in 
+    u
 
 #endif

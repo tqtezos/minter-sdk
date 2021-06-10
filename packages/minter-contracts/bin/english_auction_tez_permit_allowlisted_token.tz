@@ -89,6 +89,7 @@
              SWAP ;
              PUSH unit Unit ;
              TRANSFER_TOKENS } ;
+         LAMBDA key address { HASH_KEY ; IMPLICIT_ACCOUNT ; ADDRESS } ;
          LAMBDA
            (pair address (pair address (pair address (list (pair nat nat)))))
            operation
@@ -233,11 +234,10 @@
              CDR ;
              COMPARE ;
              EQ } ;
-         LAMBDA key address { HASH_KEY ; IMPLICIT_ACCOUNT ; ADDRESS } ;
          DIG 11 ;
          UNPAIR ;
          IF_LEFT
-           { DIG 2 ;
+           { DIG 6 ;
              DROP ;
              DIG 6 ;
              DROP ;
@@ -1174,13 +1174,13 @@
              PAIR ;
              SWAP ;
              PAIR }
-           { DIG 3 ;
+           { DIG 2 ;
              DROP ;
-             DIG 3 ;
+             DIG 2 ;
              DROP ;
-             DIG 3 ;
+             DIG 2 ;
              DROP ;
-             DIG 3 ;
+             DIG 2 ;
              DROP ;
              DIG 4 ;
              DROP ;
@@ -1269,20 +1269,16 @@
                          PAIR ;
                          PAIR ;
                          PACK ;
-                         PUSH string "MISSIGNED" ;
-                         SWAP ;
+                         DUP ;
                          DUP 3 ;
                          CDR ;
                          DIG 3 ;
                          CAR ;
                          CHECK_SIGNATURE ;
-                         PAIR ;
-                         DUP 11 ;
-                         SWAP ;
-                         EXEC ;
-                         DROP ;
+                         NOT ;
+                         IF { PUSH string "MISSIGNED" ; PAIR ; FAILWITH } { DROP } ;
                          CAR ;
-                         DUP 7 ;
+                         DUP 8 ;
                          SWAP ;
                          EXEC } ;
                      DUP 3 ;
@@ -1619,7 +1615,7 @@
                      DUP ;
                      DUG 2 ;
                      CDR ;
-                     IF_NONE { SENDER } { CAR ; DUP 6 ; SWAP ; EXEC } ;
+                     IF_NONE { SENDER } { CAR ; DUP 7 ; SWAP ; EXEC } ;
                      DIG 4 ;
                      DIG 3 ;
                      CAR ;
@@ -1655,7 +1651,7 @@
                              PAIR ;
                              DUP 4 ;
                              PAIR ;
-                             DUP 9 ;
+                             DUP 8 ;
                              SWAP ;
                              EXEC ;
                              SWAP ;

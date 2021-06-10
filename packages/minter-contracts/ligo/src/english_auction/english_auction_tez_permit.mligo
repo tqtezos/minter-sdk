@@ -1,12 +1,5 @@
 #include "./english_auction_tez.mligo"
 
-type permit = 
-  [@layout:comb]
-  {
-    signerKey: key;
-    signature: signature;
-  }
-
 type permit_storage = 
     [@layout:comb]
   {
@@ -26,16 +19,6 @@ type permit_auction_entrypoints =
   | Permit_configure of permit_config_param list
 
 type permit_return = operation list * permit_storage
-
-let address_from_key (key : key) : address =
-  let a = Tezos.address (Tezos.implicit_account (Crypto.hash_key key)) in
-  a
-
-let check_permit (p, counter, param_hash : permit * nat * bytes) : unit = begin 
-    (* let unsigned : bytes = ([%Michelson ({| { SELF; ADDRESS; CHAIN_ID; PAIR; PAIR; PACK } |} : nat * bytes -> bytes)] (counter, param_hash) : bytes) in *)
-    let unsigned : bytes = Bytes.pack ((Tezos.chain_id, Tezos.self_address), (counter, param_hash)) in
-    assert_msg (Crypto.check p.signerKey p.signature unsigned, "MISSIGNED")
-  end 
  
 let config_storage_with_permit (p, permit_storage : permit_config_param * permit_storage)  : permit_storage = begin
   let seller = match p.optional_permit with 
