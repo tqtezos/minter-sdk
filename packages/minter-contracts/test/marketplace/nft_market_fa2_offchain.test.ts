@@ -5,8 +5,6 @@ import { MichelsonMap } from '@taquito/taquito';
 import { bootstrap, TestTz } from '../bootstrap-sandbox';
 import { Contract, address, bytes, nat } from '../../src/type-aliases';
 
-import { createPurchaseToken } from '../../src/fixed-price';
-
 import {
   originateNftFaucet,
   originateFtFaucet,
@@ -63,7 +61,6 @@ describe.each([originateFixedPriceOffchainSale])
   let ft: Contract;
   let queryBalances: QueryBalances;
   let marketplace: Contract;
-  let marketplaceAlice: Contract;
   let marketAddress: address;
   let aliceAddress: address;
   let bobAddress: address;
@@ -73,7 +70,6 @@ describe.each([originateFixedPriceOffchainSale])
   let tokenMetadata: MichelsonMap<string, bytes>;
   let saleId : nat;
   let salePrice : nat;
-  let initFtBalance : nat;
 
   beforeAll(async () => {
     tezos = await bootstrap();
@@ -85,7 +81,6 @@ describe.each([originateFixedPriceOffchainSale])
     ftTokenId = new BigNumber(5);
     tokenMetadata = new MichelsonMap();
     salePrice = new BigNumber(20);
-    initFtBalance = new BigNumber(1000);
     tokenAmount = new BigNumber(1);
   });
 
@@ -94,7 +89,6 @@ describe.each([originateFixedPriceOffchainSale])
     ft = await originateFtFaucet(tezos.bob);
     marketplace = await originateMarketplace(tezos.bob, bobAddress);
     marketAddress = marketplace.address;
-    marketplaceAlice = await tezos.alice.contract.at(marketAddress);
 
     await mintNftTokens(tezos.bob, [
       {

@@ -40,7 +40,6 @@ describe.each([originateFixedPriceTezOffchainSale])
   let nft: Contract;
   let queryBalances: QueryBalances;
   let marketplace: Contract;
-  let marketplaceAlice: Contract;
   let marketAddress: address;
   let bobAddress: address;
   let aliceAddress: address;
@@ -60,7 +59,6 @@ describe.each([originateFixedPriceTezOffchainSale])
     nft = await originateNftFaucet(tezos.bob);
     marketplace = await originateMarketplace(tezos.bob, bobAddress);
     marketAddress = marketplace.address;
-    marketplaceAlice = await tezos.alice.contract.at(marketAddress);
     tokenId = new BigNumber(0);
     tokenMetadata = new MichelsonMap();
     salePrice = new BigNumber(1000000); //1tz

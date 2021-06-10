@@ -6,7 +6,7 @@ import { BigNumber } from 'bignumber.js';
 import { MichelsonMap } from '@taquito/taquito';
 import { char2Bytes } from '@taquito/tzip16';
 import { QueryBalances, queryBalancesWithLambdaView, getBalances } from './fa2-balance-inspector';
-import { getTokenMetadata, getTokenTotalSupply, TokenMetadata } from '../src/fa2-interface';
+import { getTokenMetadata, getTokenTotalSupply } from '../src/fa2-interface';
 
 jest.setTimeout(180000); // 3 minutes
 
@@ -21,7 +21,7 @@ describe('Limited Fungible Token Contract', () => {
   let ftLimitedAddress : address;
   let bobTokenId : nat;
   let aliceTokenId : nat;
-  let token0FixedSupply : nat; 
+  let token0FixedSupply : nat;
   let token1FixedSupply : nat;
 
   beforeAll(async () => {
@@ -31,10 +31,10 @@ describe('Limited Fungible Token Contract', () => {
     aliceAddress = await tezos.alice.signer.publicKeyHash();
     ftLimitedBob = await originateFtLimited(tezos.bob, bobAddress);
     ftLimitedAddress = ftLimitedBob.address;
-    
+
     bobTokenId = new BigNumber(0);
     aliceTokenId = new BigNumber(1);
-    
+
     token0FixedSupply = new BigNumber(50);
     token1FixedSupply = new BigNumber(1);
 
@@ -43,7 +43,7 @@ describe('Limited Fungible Token Contract', () => {
     token_info_bob.set('description', char2Bytes('description'));
     token_info_bob.set('ipfs_hash_image', char2Bytes('ipfs_hash_image'));
     token_info_bob.set('symbol', char2Bytes('TK1'));
-    
+
     token_info_alice = new MichelsonMap();
     token_info_alice.set('name', char2Bytes('Alices token'));
     token_info_alice.set('description', char2Bytes('description'));
@@ -72,7 +72,7 @@ describe('Limited Fungible Token Contract', () => {
       { owner: bobAddress, token_id: aliceTokenId },
       { owner: aliceAddress, token_id: aliceTokenId },
     ], queryBalances, ftLimitedBob);
-    
+
     //TEST BALANCES
     expect(bobBalanceToken0.isEqualTo(token0FixedSupply)).toBe(true);
     expect(aliceBalanceToken0.isEqualTo(0)).toBe(true);
@@ -87,7 +87,7 @@ describe('Limited Fungible Token Contract', () => {
 
     //TEST TOKEN METADATA BOB
     const bobTokenMetadata : any = await getTokenMetadata(ftLimitedAddress, tezos.bob, bobTokenId);
-    
+
     expect(bobTokenMetadata.token_id).toStrictEqual(bobTokenId);
 
     const entriesIteratorBob = bobTokenMetadata.token_info.entries();
@@ -113,7 +113,7 @@ describe('Limited Fungible Token Contract', () => {
     expect(symbolIterateeBob.done).toBe(false);
 
     expect(entriesIteratorBob.next().done).toBe(true);
-    
+
     //TEST TOKEN METADATA ALICE
 
     const aliceTokenMetadata : any = await getTokenMetadata(ftLimitedAddress, tezos.bob, aliceTokenId);
