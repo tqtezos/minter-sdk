@@ -1,13 +1,12 @@
 (*
-  One of the possible implementations of token management API which can create
-  new fungible tokens, mint and burn them.
+  One of the possible implementations of token management API.
+  
+  In this implementation, there is only a single new entrypoint added: "Mint". 
+  
+  "Mint" creates a new token type and mints a fixed amount of it that is distributed to an address. 
 
-  Token manager API allows to:
+  It is not possible to mint more tokens of that type or burn tokens of that type. 
 
-  1. Create new toke types,
-  2. Mint and burn tokens to some existing or new owner account.
-
- Burn operation fails if the owner holds less tokens then burn amount.
 *)
 
 #if !LIMITED_TOKEN_MANAGER
