@@ -1,5 +1,4 @@
-module Test.MinterCollection.Editions
-  where
+module Test.MinterCollection.Editions where
 
 import qualified Data.Map as Map
 import Hedgehog (Gen, Property, forAll, property)

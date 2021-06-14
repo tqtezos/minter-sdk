@@ -1,5 +1,5 @@
-#if !PERMIT_MARKET
-#define PERMIT_MARKET
+#if !OFFCHAIN_MARKET
+#define OFFCHAIN_MARKET
 
 #include "fixed_price_sale_market_tez.mligo"
 

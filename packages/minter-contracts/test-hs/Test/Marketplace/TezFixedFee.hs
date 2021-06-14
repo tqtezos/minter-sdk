@@ -8,10 +8,10 @@ import Morley.Nettest
 
 import Lorentz hiding (balance, contract)
 import Michelson.Typed (convertContract, untypeValue)
-import Tezos.Core (unMutez, unsafeMkMutez)
 
 import qualified Indigo.Contracts.FA2Sample as FA2
 import Lorentz.Contracts.Marketplace.TezFixedFee
+import Lorentz.Contracts.MinterSdk
 import Lorentz.Contracts.PausableAdminOption
 import Lorentz.Contracts.Spec.FA2Interface (TokenId(TokenId))
 import qualified Lorentz.Contracts.Spec.FA2Interface as FA2
@@ -21,7 +21,7 @@ hprop_Every_sale_sends_a_fee_to_the_fee_collector :: Property
 hprop_Every_sale_sends_a_fee_to_the_fee_collector =
   property $ do
     testData@TestData{testSalePrice, testTokenAmount, testFeePercent} <- forAll genTestData
-    let expectedFee = unsafeMkMutez $ (unMutez testSalePrice * fromIntegral testFeePercent) `div` 100
+    let expectedFee = (testSalePrice * fromIntegral testFeePercent) `div` 100
 
     clevelandProp $ do
       setup@Setup{seller, buyer, feeCollector} <- testSetup testData
@@ -43,7 +43,7 @@ hprop_Tez_is_transferred_to_seller :: Property
 hprop_Tez_is_transferred_to_seller  =
   property $ do
     testData@TestData{testSalePrice, testTokenAmount, testFeePercent} <- forAll genTestData
-    let expectedFee = unsafeMkMutez $ (unMutez testSalePrice * fromIntegral testFeePercent) `div` 100
+    let expectedFee = (testSalePrice * fromIntegral testFeePercent) `div` 100
     let expectedProfitPerToken = testSalePrice - expectedFee
     let expectedProfit = expectedProfitPerToken * fromIntegral testTokenAmount
 
@@ -305,11 +305,11 @@ genTestData :: Gen TestData
 genTestData = do
   feePercent <- Gen.integral (Range.linear 0 100)
   tokenAmount <- Gen.integral (Range.constant 0 10)
-  salePrice <- toMutez <$> Gen.integral (Range.linear 0 10000)
+  salePrice <- genMutez' (Range.linear 0 10000)
 
   -- Make sure the buyer has enough balance to make the purchase.
-  let minBuyersBalance = unMutez salePrice * fromIntegral tokenAmount
-  buyersBalance <- unsafeMkMutez <$> Gen.word64 (Range.linear minBuyersBalance (2 * minBuyersBalance))
+  let minBuyersBalance = salePrice * fromIntegral tokenAmount
+  buyersBalance <- genMutez' (Range.linear minBuyersBalance (2 * minBuyersBalance))
 
   pure $ TestData
     { testFeePercent = feePercent

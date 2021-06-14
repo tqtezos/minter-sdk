@@ -9,6 +9,7 @@ import Lorentz.Value
 import Morley.Nettest
 
 import Lorentz.Contracts.EnglishAuction.Allowlisted
+import Lorentz.Contracts.EnglishAuction.Common
 import Lorentz.Contracts.EnglishAuction.Tez
 import Lorentz.Contracts.EnglishAuction.TezPermit
 import Test.EnglishAuction.Util
