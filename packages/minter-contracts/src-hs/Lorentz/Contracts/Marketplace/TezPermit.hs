@@ -5,16 +5,20 @@ module Lorentz.Contracts.Marketplace.TezPermit
   , MarketTez.SaleToken(..)
   , MarketTez.SaleDataTez(..)
   , MarketTez.SaleParamTez(..)
+  , PermitBuyParam(..)
+  , Permit(..)
+  , PendingPurchase(..)
   , MarketplaceTezPermitEntrypoints
   , MarketplaceTezPermitStorage
-  , initMarketplaceTezPermitStorage
 
   -- * Contract
   , marketplaceTezPermitContract
+  , initMarketplaceTezPermitStorage
   ) where
 
 import Fmt (Buildable(..), genericF)
 import Lorentz
+import Crypto.Random (MonadRandom)
 
 import Lorentz.Contracts.MinterSdk
 import Lorentz.Contracts.PausableAdminOption
@@ -69,7 +73,7 @@ instance Buildable PermitBuyParam where build = genericF
 
 data MarketplaceTezPermitEntrypoints al 
   = BaseSale (MarketTez.MarketplaceTezEntrypoints al)
-  | Permit_buy [PermitBuyParam]
+  | Offchain_buy [PermitBuyParam]
   | Confirm_purchases [PendingPurchase]
   | Revoke_purchases [PendingPurchase]
 

@@ -69,7 +69,7 @@ instance Buildable PermitBuyParam where build = genericF
 
 data MarketplaceFA2PermitEntrypoints al 
   = BaseSale (MarketFA2.MarketplaceEntrypoints al)
-  | Permit_buy [PermitBuyParam]
+  | Offchain_buy [PermitBuyParam]
   | Confirm_purchases [PendingPurchase]
   | Revoke_purchases [PendingPurchase]
 

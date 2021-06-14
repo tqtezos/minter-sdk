@@ -25,6 +25,7 @@ library:
   dependencies:
     - containers
     - cleveland
+    - cryptonite
     - filepath
     - file-embed
     - lorentz
