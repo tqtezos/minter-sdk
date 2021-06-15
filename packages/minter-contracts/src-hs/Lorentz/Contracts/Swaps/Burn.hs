@@ -3,12 +3,8 @@ module Lorentz.Contracts.Swaps.Burn where
 
 import Lorentz
 
-import Lorentz.Contracts.MinterSdk
-import Michelson.Test.Import (embedContractM)
-import qualified Michelson.Typed as T
-
-import Tezos.Address (unsafeParseAddress)
 import Lorentz.Contracts.NonPausableSimpleAdmin
+import Tezos.Address (unsafeParseAddress)
 
 import Lorentz.Contracts.Swaps.Allowlisted
 import Lorentz.Contracts.Swaps.Basic
@@ -26,10 +22,10 @@ customGeneric "BurnSwapStorage" ligoLayout
 deriving anyclass instance IsoValue BurnSwapStorage
 deriving anyclass instance HasAnnotation BurnSwapStorage
 
-nullAddress :: Address 
+nullAddress :: Address
 nullAddress = unsafeParseAddress "tz1Ke2h7sDdakHJQh8WX4Z372du1KChsksyU"
 
-altBurnAddress :: Address 
+altBurnAddress :: Address
 altBurnAddress = unsafeParseAddress "tz1burnburnburnburnburnburnburjAYjjX"
 
 initBurnSwapStorage :: BurnSwapStorage
@@ -68,7 +64,8 @@ deriving anyclass instance HasAnnotation AllowlistedBurnSwapEntrypoints
 instance ParameterHasEntrypoints AllowlistedBurnSwapEntrypoints where
   type ParameterEntrypointsDerivation AllowlistedBurnSwapEntrypoints = EpdDelegate
 
--- Used for testing 
+
+-- Used for testing
 data ChangeBurnAddressSwapEntrypoints
   = Swap' SwapEntrypoints
   | Admin' AdminEntrypoints
@@ -81,16 +78,3 @@ deriving anyclass instance HasAnnotation ChangeBurnAddressSwapEntrypoints
 
 instance ParameterHasEntrypoints ChangeBurnAddressSwapEntrypoints where
   type ParameterEntrypointsDerivation ChangeBurnAddressSwapEntrypoints = EpdDelegate
-
--- Contract
-----------------------------------------------------------------------------
-
-allowlistedBurnSwapsContract
-  :: T.Contract (ToT AllowlistedBurnSwapEntrypoints) (ToT AllowlistedBurnSwapStorage)
-allowlistedBurnSwapsContract =
-  $$(embedContractM (inBinFolder "fa2_allowlisted_swap_with_burn.tz"))
-
-changeBurnAddressSwapsContract
-  :: T.Contract (ToT ChangeBurnAddressSwapEntrypoints) (ToT AllowlistedBurnSwapStorage)
-changeBurnAddressSwapsContract =
-  $$(embedContractM (inBinFolder "fa2_allowlisted_swap_with_change_burn_address.tz"))

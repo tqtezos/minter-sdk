@@ -3,9 +3,6 @@ module Lorentz.Contracts.PausableWallet where
 import Fmt (Buildable(..), genericF)
 import Lorentz
 import qualified Lorentz.Contracts.SimpleAdmin as SimpleAdmin
-import Michelson.Test.Import (embedContractM)
-import qualified Michelson.Typed as T
-import Lorentz.Contracts.MinterSdk
 
 -- Types
 ----------------------------------------------------------------------------
@@ -17,9 +14,9 @@ deriving anyclass instance HasAnnotation PausableWalletStorage
 instance Buildable PausableWalletStorage where build = genericF
 
 data PausableWalletEntrypoints
-  = Send Mutez 
-  | Default 
-  | Admin SimpleAdmin.AdminEntrypoints 
+  = Send Mutez
+  | Default
+  | Admin SimpleAdmin.AdminEntrypoints
 
 customGeneric "PausableWalletEntrypoints" ligoLayout
 deriving anyclass instance IsoValue PausableWalletEntrypoints
@@ -30,11 +27,4 @@ instance ParameterHasEntrypoints PausableWalletEntrypoints where
 
 
 initPausableWalletStorage :: Address -> PausableWalletStorage
-initPausableWalletStorage = PausableWalletStorage . SimpleAdmin.initAdminStorage 
-
-pausableWalletContract
-  :: T.Contract
-      (ToT PausableWalletEntrypoints)
-      (ToT PausableWalletStorage)
-pausableWalletContract =
-  $$(embedContractM (inBinFolder "pausable_wallet.tz"))
+initPausableWalletStorage = PausableWalletStorage . SimpleAdmin.initAdminStorage

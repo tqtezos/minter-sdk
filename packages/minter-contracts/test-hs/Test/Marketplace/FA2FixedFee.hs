@@ -7,9 +7,9 @@ import qualified Hedgehog.Range as Range
 import Morley.Nettest
 
 import Lorentz hiding (balance, contract)
-import Michelson.Typed (convertContract, untypeValue)
 
 import qualified Indigo.Contracts.FA2Sample as FA2
+import Lorentz.Contracts.Marketplace.Contracts
 import Lorentz.Contracts.Marketplace.FA2FixedFee
 import Lorentz.Contracts.MinterSdk
 import Lorentz.Contracts.PausableAdminOption
@@ -155,7 +155,8 @@ hprop_Cant_sell_if_fee_is_too_high  =
       contract <- originateMarketplaceContract setup
 
       withSender seller $ do
-        sell testData setup contract `expectFailure` failedWith contract [mt|FEE_TOO_HIGH|]
+        sell testData setup contract
+          & expectTransferFailure [failedWith $ constant [mt|FEE_TOO_HIGH|]]
 
 hprop_Cant_buy_if_fee_is_too_high :: Property
 hprop_Cant_buy_if_fee_is_too_high  =
@@ -190,7 +191,8 @@ hprop_Cant_buy_if_fee_is_too_high  =
 
       -- Attempt to buy the asset held in the contract
       withSender buyer $ do
-        buy contract `expectFailure` failedWith contract [mt|FEE_TOO_HIGH|]
+        buy contract
+          & expectTransferFailure [failedWith $ constant [mt|FEE_TOO_HIGH|]]
 
   where
     addSaleToInitialStorage :: TestData -> Setup -> Setup
@@ -262,7 +264,7 @@ hprop_Cancelling_a_sale_deletes_it_from_storage =
         sell testData setup contract
         cancel contract
 
-      storage <- fromVal @(MarketplaceStorage ()) <$> getStorage' contract
+      storage <- getStorage' contract
       sales storage @== mempty
 
 hprop_Cant_buy_more_assets_than_are_available :: Property
@@ -278,7 +280,7 @@ hprop_Cant_buy_more_assets_than_are_available =
             }
 
     clevelandProp $ do
-      setup@Setup{seller, buyer, assetFA2} <- testSetup testData'
+      setup@Setup{seller, buyer} <- testSetup testData'
       contract <- originateMarketplaceContract setup
 
       withSender seller $ do
@@ -286,10 +288,12 @@ hprop_Cant_buy_more_assets_than_are_available =
       withSender buyer $ do
         buyAll testData' contract
 
-        buy contract `expectFailure`
-          if testTokenAmount == 0
-            then failedWith assetFA2 ([mt|FA2_INSUFFICIENT_BALANCE|], 1 :: Natural, 0 :: Natural)
-            else failedWith contract [mt|NO_SALE|]
+        buy contract
+          & expectTransferFailure
+              if testTokenAmount == 0
+              then [ failedWith $ constant
+                      ([mt|FA2_INSUFFICIENT_BALANCE|], 1 :: Natural, 0 :: Natural) ]
+              else [ failedWith $ constant [mt|NO_SALE|] ]
 
 ----------------------------------------------------------------------------
 -- Helpers
@@ -328,8 +332,8 @@ data Setup = Setup
   { seller :: Address
   , buyer :: Address
   , feeCollector :: Address
-  , assetFA2 :: TAddress FA2.FA2SampleParameter
-  , moneyFA2 :: TAddress FA2.FA2SampleParameter
+  , assetFA2 :: ContractHandler FA2.FA2SampleParameter FA2.Storage
+  , moneyFA2 :: ContractHandler FA2.FA2SampleParameter FA2.Storage
   , storage :: MarketplaceStorage ()
   }
 
@@ -372,11 +376,9 @@ testSetup testData = do
     (FA2.fa2Contract def { FA2.cAllowedTokenIds = [moneyTokenId] })
   pure Setup {..}
 
-originateMarketplaceContract :: MonadNettest caps base m => Setup -> m (TAddress $ MarketplaceEntrypoints ())
+originateMarketplaceContract :: MonadNettest caps base m => Setup -> m (ContractHandler (MarketplaceEntrypoints Never) (MarketplaceStorage ()))
 originateMarketplaceContract Setup{storage, seller, buyer, assetFA2, moneyFA2} = do
-  contract <- TAddress @( MarketplaceEntrypoints ()) <$> originateUntypedSimple "marketplace-fa2-fixed-fee"
-    (untypeValue $ toVal storage)
-    (convertContract marketplaceFixedFeeContract)
+  contract <- originateSimple "marketplace-fa2-fixed-fee" storage marketplaceFixedFeeContract
 
   -- Make the contract an operator for the seller and the buyer.
   withSender seller $ do
@@ -403,7 +405,7 @@ originateMarketplaceContract Setup{storage, seller, buyer, assetFA2, moneyFA2} =
 -- Call entrypoints
 ----------------------------------------------------------------------------
 
-sell :: (HasCallStack, MonadNettest caps base m) => TestData -> Setup -> TAddress (MarketplaceEntrypoints ()) -> m ()
+sell :: (HasCallStack, MonadNettest caps base m) => TestData -> Setup -> ContractHandler (MarketplaceEntrypoints Never) storage -> m ()
 sell TestData{testSalePrice, testTokenAmount} Setup{assetFA2, moneyFA2} contract =
   call contract (Call @"Sell") SaleData
     { salePricePerToken = testSalePrice
@@ -418,15 +420,15 @@ sell TestData{testSalePrice, testTokenAmount} Setup{assetFA2, moneyFA2} contract
     , tokenAmount = testTokenAmount
     }
 
-buy :: (HasCallStack, MonadNettest caps base m) => TAddress (MarketplaceEntrypoints ()) -> m ()
+buy :: (HasCallStack, MonadNettest caps base m) => ContractHandler (MarketplaceEntrypoints Never) storage -> m ()
 buy contract =
   call contract (Call @"Buy") (SaleId 0)
 
-buyAll :: (HasCallStack, MonadNettest caps base m) => TestData -> TAddress (MarketplaceEntrypoints ()) -> m ()
+buyAll :: (HasCallStack, MonadNettest caps base m) => TestData -> ContractHandler (MarketplaceEntrypoints Never) storage -> m ()
 buyAll TestData{testTokenAmount} contract =
   replicateM_ (fromIntegral testTokenAmount) $
     buy contract
 
-cancel :: (HasCallStack, MonadNettest caps base m) => TAddress (MarketplaceEntrypoints ()) -> m ()
+cancel :: (HasCallStack, MonadNettest caps base m) => ContractHandler (MarketplaceEntrypoints Never) storage -> m ()
 cancel contract =
   call contract (Call @"Cancel") (SaleId 0)

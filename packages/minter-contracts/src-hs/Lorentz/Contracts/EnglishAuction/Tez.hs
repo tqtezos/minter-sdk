@@ -4,14 +4,8 @@ module Lorentz.Contracts.EnglishAuction.Tez where
 import Lorentz
 
 import Fmt (Buildable(..), genericF)
-import qualified Lorentz.Contracts.AllowlistSimple as AllowlistSimple
-import qualified Lorentz.Contracts.AllowlistToken as AllowlistToken
 import Lorentz.Contracts.EnglishAuction.Common
-import Lorentz.Contracts.MinterSdk
-import qualified Lorentz.Contracts.NoAllowlist as NoAllowlist
 import Lorentz.Contracts.PausableAdminOption
-import Michelson.Test.Import (embedContractM)
-import qualified Michelson.Typed as T
 
 -- Types
 ----------------------------------------------------------------------------
@@ -117,30 +111,6 @@ instance
   ) =>
     ParameterHasEntrypoints (AuctionEntrypoints al) where
   type ParameterEntrypointsDerivation (AuctionEntrypoints al) = EpdDelegate
-
--- Contract
-----------------------------------------------------------------------------
-
-auctionTezContract
-  :: T.Contract
-      (ToT (AuctionEntrypoints NoAllowlist.Entrypoints))
-      (ToT (AuctionStorage NoAllowlist.Allowlist))
-auctionTezContract =
-  $$(embedContractM (inBinFolder "english_auction_tez.tz"))
-
-auctionTezAllowlistedContract
-  :: T.Contract
-      (ToT (AuctionEntrypoints AllowlistSimple.Entrypoints))
-      (ToT (AuctionStorage AllowlistSimple.Allowlist))
-auctionTezAllowlistedContract =
-  $$(embedContractM (inBinFolder "english_auction_tez_allowlisted.tz"))
-
-auctionTezAllowlistedTokenContract
-  :: T.Contract
-      (ToT (AuctionEntrypoints AllowlistToken.Entrypoints))
-      (ToT (AuctionStorage AllowlistToken.Allowlist))
-auctionTezAllowlistedTokenContract =
-  $$(embedContractM (inBinFolder "english_auction_tez_allowlisted_token.tz"))
 
 -- Errors
 ----------------------------------------------------------------------------

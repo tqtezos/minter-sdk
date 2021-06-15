@@ -8,21 +8,14 @@ module Lorentz.Contracts.Marketplace.TezFixedFee
   , MarketplaceTezStorage(..)
   , MarketTez.MarketplaceTezEntrypoints(..)
   , initMarketplaceTezStorage
-
-  -- * Contract
-  , marketplaceTezFixedFeeContract
   ) where
 
 import Fmt (Buildable(..), genericF)
 import Lorentz
 
+import qualified Lorentz.Contracts.Marketplace.Tez as MarketTez
 import Lorentz.Contracts.MinterSdk
 import Lorentz.Contracts.PausableAdminOption
-import Michelson.Test.Import (embedContractM)
-import qualified Michelson.Typed as T
-
-import qualified Lorentz.Contracts.Marketplace.Tez as MarketTez
-import qualified Lorentz.Contracts.NoAllowlist as NoAllowlist
 
 -- Types
 ----------------------------------------------------------------------------
@@ -49,12 +42,3 @@ initMarketplaceTezStorage feeData as =
     , allowlist = mempty
     , fee = feeData
     }
-
--- Contract
-----------------------------------------------------------------------------
-
-marketplaceTezFixedFeeContract
-  :: T.Contract
-      (ToT (MarketTez.MarketplaceTezEntrypoints NoAllowlist.Entrypoints))
-      (ToT (MarketplaceTezStorage NoAllowlist.Allowlist))
-marketplaceTezFixedFeeContract = $$(embedContractM (inBinFolder "fixed_price_sale_tez_fixed_fee.tz"))

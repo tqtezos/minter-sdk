@@ -3,14 +3,10 @@ module Lorentz.Contracts.Swaps.AllowlistedFee where
 
 import Lorentz
 
-import Lorentz.Contracts.MinterSdk
-import Michelson.Test.Import (embedContractM)
-import qualified Michelson.Typed as T
-
 import Lorentz.Contracts.NonPausableSimpleAdmin
-import Lorentz.Contracts.Swaps.Basic hiding (SwapOffer, SwapOffers, SwapInfo, 
-                                             SwapEntrypoints, SwapStorage, initSwapStorage, 
-                                             mkNOffers, mkSingleOffer) 
+import Lorentz.Contracts.Swaps.Basic hiding
+  (SwapEntrypoints, SwapInfo, SwapOffer, SwapOffers, SwapStorage, initSwapStorage, mkNOffers,
+  mkSingleOffer)
 
 -- Types
 ----------------------------------------------------------------------------
@@ -99,14 +95,6 @@ deriving anyclass instance HasAnnotation AllowlistedFeeSwapEntrypoints
 instance ParameterHasEntrypoints AllowlistedFeeSwapEntrypoints where
   type ParameterEntrypointsDerivation AllowlistedFeeSwapEntrypoints = EpdDelegate
 
--- Contract
-----------------------------------------------------------------------------
-
-allowlistedFeeSwapsContract
-  :: T.Contract (ToT AllowlistedFeeSwapEntrypoints) (ToT AllowlistedFeeSwapStorage)
-allowlistedFeeSwapsContract =
-  $$(embedContractM (inBinFolder "fa2_fee_allowlisted_swap.tz"))
-
 -- Errors
 ----------------------------------------------------------------------------
 
@@ -116,19 +104,19 @@ errSwapOfferedNotAllowlisted = [mt|SWAP_OFFERED_FA2_NOT_ALLOWLISTED|]
 errSwapRequestedNotAllowlisted :: MText
 errSwapRequestedNotAllowlisted = [mt|SWAP_REQUESTED_FA2_NOT_ALLOWLISTED|]
 
-errNoXtzTransferred :: MText 
+errNoXtzTransferred :: MText
 errNoXtzTransferred = [mt|SWAP_REQUESTED_XTZ_INVALID|]
 
 
 -- Helpers
 ----------------------------------------------------------------------------
- 
-mkNOffers :: Natural -> SwapOffer -> SwapOffers 
-mkNOffers n s = SwapOffers 
+
+mkNOffers :: Natural -> SwapOffer -> SwapOffers
+mkNOffers n s = SwapOffers
   {
     swapOffer = s
   , remainingOffers = n
   }
 
-mkSingleOffer :: SwapOffer -> SwapOffers 
+mkSingleOffer :: SwapOffer -> SwapOffers
 mkSingleOffer = mkNOffers 1

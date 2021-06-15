@@ -3,15 +3,11 @@ module Lorentz.Contracts.Swaps.SwapPermitBurnFee where
 
 import Lorentz
 
-import Lorentz.Contracts.MinterSdk
-import Michelson.Test.Import (embedContractM)
-import qualified Michelson.Typed as T
-
 import Lorentz.Contracts.NonPausableSimpleAdmin
+import Lorentz.Contracts.Swaps.AllowlistedFee as AllowlistedFee
 import Lorentz.Contracts.Swaps.Basic
 import Lorentz.Contracts.Swaps.Burn
 import Lorentz.Contracts.Swaps.SwapPermit
-import Lorentz.Contracts.Swaps.AllowlistedFee as AllowlistedFee 
 -- Types
 ----------------------------------------------------------------------------
 
@@ -59,14 +55,6 @@ deriving anyclass instance HasAnnotation PermitSwapBurnFeeEntrypoints
 
 instance ParameterHasEntrypoints PermitSwapBurnFeeEntrypoints where
   type ParameterEntrypointsDerivation PermitSwapBurnFeeEntrypoints = EpdDelegate
-
--- Contract
-----------------------------------------------------------------------------
-
-allowlistedSwapsPermitBurnFeeContract
-  :: T.Contract (ToT PermitSwapBurnFeeEntrypoints) (ToT AllowlistedBurnSwapFeeStorage)
-allowlistedSwapsPermitBurnFeeContract =
-  $$(embedContractM (inBinFolder "fa2_swap_offchain_burn_fee.tz"))
 
 -- Errors
 ----------------------------------------------------------------------------

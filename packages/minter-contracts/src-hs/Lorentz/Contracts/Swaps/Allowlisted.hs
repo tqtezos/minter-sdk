@@ -3,10 +3,6 @@ module Lorentz.Contracts.Swaps.Allowlisted where
 
 import Lorentz
 
-import Lorentz.Contracts.MinterSdk
-import Michelson.Test.Import (embedContractM)
-import qualified Michelson.Typed as T
-
 import Lorentz.Contracts.NonPausableSimpleAdmin
 import Lorentz.Contracts.Swaps.Basic
 
@@ -43,14 +39,6 @@ deriving anyclass instance HasAnnotation AllowlistedSwapEntrypoints
 
 instance ParameterHasEntrypoints AllowlistedSwapEntrypoints where
   type ParameterEntrypointsDerivation AllowlistedSwapEntrypoints = EpdDelegate
-
--- Contract
-----------------------------------------------------------------------------
-
-allowlistedSwapsContract
-  :: T.Contract (ToT AllowlistedSwapEntrypoints) (ToT AllowlistedSwapStorage)
-allowlistedSwapsContract =
-  $$(embedContractM (inBinFolder "fa2_allowlisted_swap.tz"))
 
 -- Errors
 ----------------------------------------------------------------------------

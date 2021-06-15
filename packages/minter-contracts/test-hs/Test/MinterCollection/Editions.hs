@@ -9,10 +9,10 @@ import Morley.Nettest
 
 import Lorentz
 import Lorentz.Test (contractConsumer)
-import Michelson.Typed (convertContract, untypeValue)
 import qualified Unsafe
 
-import Lorentz.Contracts.MinterCollection.Editions
+import Lorentz.Contracts.MinterCollection.Editions.Contracts
+import Lorentz.Contracts.MinterCollection.Editions.Types
 import qualified Lorentz.Contracts.MinterCollection.Nft.Asset as NftAsset
 import qualified Lorentz.Contracts.MinterCollection.Nft.Token as NftToken
 import qualified Lorentz.Contracts.PausableAdminOption as Admin
@@ -42,7 +42,7 @@ hprop_MintEditions_creates_one_entry_for_each_param =
                     }
                 )
 
-        st <- fromVal @Storage <$> getStorage' editions
+        st <- getStorage' editions
         editionsMetadata st @== expectedEditionsMetadata
 
 hprop_NextEditionId_is_incremented_by_the_number_of_edition_runs_minted :: Property
@@ -56,7 +56,7 @@ hprop_NextEditionId_is_incremented_by_the_number_of_edition_runs_minted =
       withSender admin $ do
         mintEditionRuns editions editionRuns
 
-        st <- fromVal @Storage <$> getStorage' editions
+        st <- getStorage' editions
         nextEditionId st @== genericLength editionRuns
 
 hprop_Each_distribution_mints_a_new_TokenId :: Property
@@ -75,7 +75,7 @@ hprop_Each_distribution_mints_a_new_TokenId =
         forM_ (editionRuns `zip` receivers) \(editionRun, rcvs) ->
           forM_ rcvs \rcv -> do
             -- Check how many editions are still available.
-            st <- fromVal @Storage <$> getStorage' editions
+            st <- getStorage' editions
             let toDistribute =
                   st
                     & getEditionMetadata (dataEditionId editionRun)
@@ -95,7 +95,7 @@ hprop_Each_distribution_mints_a_new_TokenId =
             -- Check that a new FA2 Token ID was minted.
             let balanceRequest = FA2.BalanceRequestItem rcv (TokenId expectedTokenId)
             call editions (Call @"Balance_of") (mkFA2View [balanceRequest] consumer)
-            consumerStorage <- fromVal @[[FA2.BalanceResponseItem]] <$> getStorage consumer
+            consumerStorage <- getStorage consumer
             safeHead consumerStorage @== Just [FA2.BalanceResponseItem balanceRequest 1]
 
 hprop_Distributing_n_editions_decrements_NumberOfEditionsToDistribute_by_n :: Property
@@ -111,7 +111,7 @@ hprop_Distributing_n_editions_decrements_NumberOfEditionsToDistribute_by_n =
         mintEditionRuns editions editionRuns
         distributeEditions editions editionRuns receivers
 
-        st <- fromVal @Storage <$> getStorage' editions
+        st <- getStorage' editions
         forM_ editionRuns \er ->
           (st & getEditionMetadata (dataEditionId er) <&> numberOfEditionsToDistribute)
             @== Just (dataNumberOfEditions er - dataNumberToDistribute er)
@@ -137,7 +137,7 @@ hprop_Distributing_more_editions_than_are_available_fails =
 
         forM_ (editionRuns `zip` receivers) \(editionRun, rcvs) ->
           distributeEditions editions [editionRun] [rcvs]
-            `expectFailure` failedWith editions [mt|NO_EDITIONS_TO_DISTRIBUTE|]
+            & expectFailedWith [mt|NO_EDITIONS_TO_DISTRIBUTE|]
 
 hprop_Calling_MintEditions_many_times_is_the_same_as_calling_it_once :: Property
 hprop_Calling_MintEditions_many_times_is_the_same_as_calling_it_once =
@@ -161,8 +161,8 @@ hprop_Calling_MintEditions_many_times_is_the_same_as_calling_it_once =
         forM_ editionRuns \editionRun ->
           mintEditionRuns editions2 [editionRun]
 
-        st1 <- fromVal @Storage <$> getStorage' editions1
-        st2 <- fromVal @Storage <$> getStorage' editions2
+        st1 <- getStorage' editions1
+        st2 <- getStorage' editions2
 
         st1 @== st2
 
@@ -193,8 +193,8 @@ hprop_Calling_DistributeEditions_many_times_is_the_same_as_calling_it_once =
           forM rcvs \rcv ->
             distributeEditions editions2 [editionRun] [[rcv]]
 
-        st1 <- fromVal @Storage <$> getStorage' editions1
-        st2 <- fromVal @Storage <$> getStorage' editions2
+        st1 <- getStorage' editions1
+        st2 <- getStorage' editions2
 
         st1 @== st2
 
@@ -202,13 +202,13 @@ hprop_Calling_DistributeEditions_many_times_is_the_same_as_calling_it_once =
 -- Helpers
 ----------------------------------------------------------------------------
 
-originateEditionsContract :: MonadNettest caps base m => Storage -> m (TAddress Entrypoints)
+originateEditionsContract
+  :: MonadNettest caps base m
+  => Storage -> m (ContractHandler Entrypoints Storage)
 originateEditionsContract storage =
-  TAddress @Entrypoints <$> originateUntypedSimple "editions"
-    (untypeValue $ toVal storage)
-    (convertContract editionsContract)
+  originateSimple "editions" storage editionsContract
 
-mintEditionRuns :: (HasCallStack, MonadNettest caps base m) => TAddress Entrypoints -> [EditionRunData] -> m ()
+mintEditionRuns :: (HasCallStack, MonadNettest caps base m) => ContractHandler Entrypoints Storage -> [EditionRunData] -> m ()
 mintEditionRuns addr editionRuns =
   call addr (Call @"Mint_editions") $
     editionRuns <&> \editionRun ->
@@ -217,7 +217,7 @@ mintEditionRuns addr editionRuns =
         , numberOfEditions = dataNumberOfEditions editionRun
         }
 
-distributeEditions :: (HasCallStack, MonadNettest caps base m) => TAddress Entrypoints -> [EditionRunData] -> [[Address]] -> m ()
+distributeEditions :: (HasCallStack, MonadNettest caps base m) => ContractHandler Entrypoints Storage -> [EditionRunData] -> [[Address]] -> m ()
 distributeEditions addr editionRuns receivers =
   call addr (Call @"Distribute_editions") $
     (editionRuns `zip` receivers) <&> \(editionRun, rcvs) ->
@@ -230,7 +230,7 @@ distributeEditions addr editionRuns receivers =
 createReceivers :: MonadNettest caps base m => EditionRunData -> m [Address]
 createReceivers editionRun = do
   forM [1 .. dataNumberToDistribute editionRun] \i ->
-    newAddress ("editions-receiver-" <> show i)
+    newAddress (fromString $ "editions-receiver-" <> show i)
 
 -- | Create the contract's storage and an admin account.
 mkStorage :: MonadNettest caps base m => (Storage -> Storage) -> m (Storage, Address)
