@@ -22,20 +22,18 @@ import Test.Util
 originateSwap
   :: MonadNettest caps base m
   => m (TAddress SwapEntrypoints)
-originateSwap = do
-  TAddress <$> originateUntypedSimple "swaps"
-    (T.untypeValue $ T.toVal initSwapStorage)
-    (T.convertContract swapsContract)
+originateSwap =
+  originateSimple "swaps" initSwapStorage swapsContract
 
 -- | Originate the allowlisted swaps contract.
 originateAllowlistedSwap
   :: MonadNettest caps base m
   => Address
   -> m (TAddress AllowlistedSwapEntrypoints)
-originateAllowlistedSwap admin = do
-  TAddress <$> originateUntypedSimple "swaps"
-    (T.untypeValue $ T.toVal $ initAllowlistedSwapStorage admin)
-    (T.convertContract allowlistedSwapsContract)
+originateAllowlistedSwap admin =
+  originateSimple "swaps"
+    (initAllowlistedSwapStorage admin)
+    allowlistedSwapsContract
 
 -- | Originate the allowlisted swaps contract and admin for it.
 originateAllowlistedSwapWithAdmin

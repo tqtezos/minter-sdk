@@ -20,7 +20,7 @@ extra-deps:
 - git:
     https://gitlab.com/morley-framework/morley.git
   commit:
-    5fe2d892b64ac22aa29b6c2c07d19bd4c475c210  # master
+    439239cc921fcf0bf90490eaffb03eb01bc9f7d1  # master
   subdirs:
     - code/morley
     - code/lorentz

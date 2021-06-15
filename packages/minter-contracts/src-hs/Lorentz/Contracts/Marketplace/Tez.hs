@@ -10,7 +10,7 @@ import Lorentz.Contracts.MinterSdk
 import qualified Lorentz.Contracts.NoAllowlist as NoAllowlist
 import Lorentz.Contracts.PausableAdminOption
 import Lorentz.Contracts.Spec.FA2Interface
-import Michelson.Test.Import (embedContractM)
+import Lorentz.Test.Import (embedContractM)
 import qualified Michelson.Typed as T
 
 -- Types
@@ -87,23 +87,23 @@ instance
 ----------------------------------------------------------------------------
 
 marketplaceTezContract
-  :: T.Contract
-      (ToT (MarketplaceTezEntrypoints NoAllowlist.Entrypoints))
-      (ToT (MarketplaceTezStorage NoAllowlist.Allowlist))
+  :: Contract
+      (MarketplaceTezEntrypoints NoAllowlist.Entrypoints)
+      (MarketplaceTezStorage NoAllowlist.Allowlist)
 marketplaceTezContract =
   $$(embedContractM (inBinFolder "fixed_price_sale_market_tez.tz"))
 
 marketplaceTezAllowlistedContract
-  :: T.Contract
-      (ToT (MarketplaceTezEntrypoints AllowlistSimple.Entrypoints))
-      (ToT (MarketplaceTezStorage AllowlistSimple.Allowlist))
+  :: Contract
+      (MarketplaceTezEntrypoints AllowlistSimple.Entrypoints)
+      (MarketplaceTezStorage AllowlistSimple.Allowlist)
 marketplaceTezAllowlistedContract =
   $$(embedContractM (inBinFolder "fixed_price_sale_market_tez_allowlisted.tz"))
 
 marketplaceTezAllowlistedTokenContract
-  :: T.Contract
-      (ToT (MarketplaceTezEntrypoints AllowlistToken.Entrypoints))
-      (ToT (MarketplaceTezStorage AllowlistToken.Allowlist))
+  :: Contract
+      (MarketplaceTezEntrypoints AllowlistToken.Entrypoints)
+      (MarketplaceTezStorage AllowlistToken.Allowlist)
 marketplaceTezAllowlistedTokenContract =
   $$(embedContractM (inBinFolder "fixed_price_sale_market_tez_allowlisted_token.tz"))
 

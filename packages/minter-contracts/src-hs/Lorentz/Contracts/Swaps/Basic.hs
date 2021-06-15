@@ -5,8 +5,7 @@ import Lorentz
 
 import Lorentz.Contracts.MinterSdk
 import Lorentz.Contracts.Spec.FA2Interface
-import Michelson.Test.Import (embedContractM)
-import qualified Michelson.Typed as T
+import Lorentz.Test.Import (embedContractM)
 
 -- Types
 ----------------------------------------------------------------------------
@@ -81,7 +80,7 @@ initSwapStorage = SwapStorage
 -- Contract
 ----------------------------------------------------------------------------
 
-swapsContract :: T.Contract (ToT SwapEntrypoints) (ToT SwapStorage)
+swapsContract :: Contract SwapEntrypoints SwapStorage
 swapsContract = $$(embedContractM (inBinFolder "fa2_swap.tz"))
 
 -- Errors

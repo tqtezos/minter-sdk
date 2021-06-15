@@ -4,8 +4,7 @@ module Lorentz.Contracts.Swaps.Allowlisted where
 import Lorentz
 
 import Lorentz.Contracts.MinterSdk
-import Michelson.Test.Import (embedContractM)
-import qualified Michelson.Typed as T
+import Lorentz.Test.Import (embedContractM)
 
 import Lorentz.Contracts.NonPausableSimpleAdmin
 import Lorentz.Contracts.Swaps.Basic
@@ -48,7 +47,7 @@ instance ParameterHasEntrypoints AllowlistedSwapEntrypoints where
 ----------------------------------------------------------------------------
 
 allowlistedSwapsContract
-  :: T.Contract (ToT AllowlistedSwapEntrypoints) (ToT AllowlistedSwapStorage)
+  :: Contract AllowlistedSwapEntrypoints AllowlistedSwapStorage
 allowlistedSwapsContract =
   $$(embedContractM (inBinFolder "fa2_allowlisted_swap.tz"))
 

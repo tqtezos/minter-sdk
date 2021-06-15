@@ -18,7 +18,7 @@ import Lorentz
 
 import Lorentz.Contracts.MinterSdk
 import Lorentz.Contracts.PausableAdminOption
-import Michelson.Test.Import (embedContractM)
+import Lorentz.Test.Import (embedContractM)
 import qualified Michelson.Typed as T
 
 import qualified Lorentz.Contracts.Marketplace.Tez as MarketTez
@@ -54,7 +54,8 @@ initMarketplaceTezStorage feeData as =
 ----------------------------------------------------------------------------
 
 marketplaceTezFixedFeeContract
-  :: T.Contract
-      (ToT (MarketTez.MarketplaceTezEntrypoints NoAllowlist.Entrypoints))
-      (ToT (MarketplaceTezStorage NoAllowlist.Allowlist))
-marketplaceTezFixedFeeContract = $$(embedContractM (inBinFolder "fixed_price_sale_tez_fixed_fee.tz"))
+  :: Contract
+      (MarketTez.MarketplaceTezEntrypoints NoAllowlist.Entrypoints)
+      (MarketplaceTezStorage NoAllowlist.Allowlist)
+marketplaceTezFixedFeeContract =
+  $$(embedContractM (inBinFolder "fixed_price_sale_tez_fixed_fee.tz"))

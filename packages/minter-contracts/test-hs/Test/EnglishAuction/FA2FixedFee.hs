@@ -643,10 +643,8 @@ waitForAuctionToStart TestData{testTimeToStart} =
   advanceTime (sec $ fromIntegral testTimeToStart)
 
 originateAuctionContract :: MonadNettest caps base m => AuctionStorage -> m (TAddress (AuctionEntrypoints NoAllowlist.Entrypoints))
-originateAuctionContract storage = do
-  TAddress @(AuctionEntrypoints NoAllowlist.Entrypoints) <$> originateUntypedSimple "auction-tez-fixed-fee"
-    (untypeValue $ toVal storage)
-    (convertContract englishAuctionFA2FixedFeeContract)
+originateAuctionContract storage =
+  originateSimple "auction-tez-fixed-fee" storage englishAuctionFA2FixedFeeContract
 
 -- | Create a new bidder account for each bid.
 -- Each account will have enough tokens to bid, and will give the auction contract permissions to act

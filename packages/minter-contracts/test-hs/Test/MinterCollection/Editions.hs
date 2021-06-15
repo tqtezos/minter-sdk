@@ -204,9 +204,7 @@ hprop_Calling_DistributeEditions_many_times_is_the_same_as_calling_it_once =
 
 originateEditionsContract :: MonadNettest caps base m => Storage -> m (TAddress Entrypoints)
 originateEditionsContract storage =
-  TAddress @Entrypoints <$> originateUntypedSimple "editions"
-    (untypeValue $ toVal storage)
-    (convertContract editionsContract)
+  originateSimple "editions" storage editionsContract
 
 mintEditionRuns :: (HasCallStack, MonadNettest caps base m) => TAddress Entrypoints -> [EditionRunData] -> m ()
 mintEditionRuns addr editionRuns =

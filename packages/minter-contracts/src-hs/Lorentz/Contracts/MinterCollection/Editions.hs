@@ -12,7 +12,7 @@ module Lorentz.Contracts.MinterCollection.Editions
 
 import Fmt (Buildable(..), genericF)
 import Lorentz
-import Michelson.Test.Import (embedContractM)
+import Lorentz.Test.Import (embedContractM)
 import qualified Michelson.Typed as T
 
 import qualified Lorentz.Contracts.MinterCollection.Nft.Asset as NftAsset
@@ -82,5 +82,5 @@ instance ParameterHasEntrypoints Entrypoints where
 -- Contract
 ----------------------------------------------------------------------------
 
-editionsContract :: T.Contract (ToT Entrypoints) (ToT Storage)
+editionsContract :: Contract Entrypoints Storage
 editionsContract = $$(embedContractM (inBinFolder "fa2_multi_nft_token_editions.tz"))

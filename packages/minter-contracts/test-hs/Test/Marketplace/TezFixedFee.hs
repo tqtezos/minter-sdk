@@ -361,9 +361,9 @@ testSetup testData = do
 
 originateMarketplaceContract :: MonadNettest caps base m => Setup -> m (TAddress $ MarketplaceTezEntrypoints ())
 originateMarketplaceContract Setup{storage, seller, assetFA2} = do
-  contract <- TAddress @(MarketplaceTezEntrypoints ()) <$> originateUntypedSimple "marketplace-tez-fixed-fee"
-    (untypeValue $ toVal storage)
-    (convertContract marketplaceTezFixedFeeContract)
+  contract <- originateSimple "marketplace-tez-fixed-fee"
+    storage
+    marketplaceTezFixedFeeContract
 
   -- Make the contract an operator for the seller.
   withSender seller $ do

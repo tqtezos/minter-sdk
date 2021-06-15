@@ -619,9 +619,9 @@ waitForAuctionToStart TestData{testTimeToStart} =
 
 originateAuctionContract :: MonadNettest caps base m => AuctionStorage -> m (TAddress (AuctionEntrypoints NoAllowlist.Entrypoints))
 originateAuctionContract storage = do
-  TAddress @(AuctionEntrypoints NoAllowlist.Entrypoints) <$> originateUntypedSimple "auction-tez-fixed-fee"
-    (untypeValue $ toVal storage)
-    (convertContract englishAuctionTezFixedFeeContract)
+  originateSimple "auction-tez-fixed-fee"
+    storage
+    englishAuctionTezFixedFeeContract
 
 mkBidders :: (MonadNettest caps base m, TraversableWithIndex Int f) => f Mutez -> m (f Address)
 mkBidders bids =
