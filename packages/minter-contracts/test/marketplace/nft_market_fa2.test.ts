@@ -96,7 +96,10 @@ describe.each([originateFixedPriceSale])
 
     $log.info(`Alice buys non-fungible token with her fungible tokens`);
     const buyOp = await marketplaceAlice.methods
-      .buy(saleId)
+      .buy({
+        sale_id : saleId,
+        buy_amount : new BigNumber(1),
+      })
       .send({ amount: 0 });
     $log.info(`Waiting for ${buyOp.hash} to be confirmed...`);
     const buyOpHash = await buyOp.confirmation().then(() => buyOp.hash);
@@ -140,7 +143,10 @@ describe.each([originateFixedPriceSale])
 
     $log.info(`Alice buys non-fungible token with her fungible tokens`);
     const buyOp = marketplaceAlice.methods
-      .buy(saleId)
+      .buy({
+        sale_id : saleId,
+        buy_amount : new BigNumber(1),
+      })
       .send({ amount: 0 });
     expect(buyOp).rejects.toHaveProperty('message', 'NO_SALE');
     $log.info(`alice cannot buy`);
@@ -171,7 +177,10 @@ describe.each([originateFixedPriceSale])
 
     $log.info(`Alice buys non-fungible token with her fungible tokens`);
     const buyOp = await marketplaceAlice.methods
-      .buy(saleId)
+      .buy({
+        sale_id : saleId,
+        buy_amount : new BigNumber(1),
+      })
       .send({ amount: 0 });
     $log.info(`Waiting for ${buyOp.hash} to be confirmed...`);
     const buyOpHash = await buyOp.confirmation().then(() => buyOp.hash);

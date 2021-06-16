@@ -31,3 +31,8 @@ export async function createPurchaseToken (
   $log.info('making marketplace an operator of purchaser\'s FT tokens');
   await addOperator(ftAddress, purchaser, marketAddress, ftTokenId);
 }
+
+export interface BuyParam {
+  sale_id : nat;
+  buy_amount : nat;
+}

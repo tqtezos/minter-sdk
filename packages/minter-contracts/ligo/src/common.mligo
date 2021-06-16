@@ -5,6 +5,8 @@
 
 type sale_id = nat
 
+type pending_purchase_id = nat 
+
 type fee_data =
   [@layout:comb]
   {
@@ -36,11 +38,19 @@ type pending_purchase =
   [@layout:comb]
   {
     sale_id : sale_id;
-    purchaser : address;
+    purchases : pending_purchase_id list;
   }
 
-
 type pending_purchases = pending_purchase list 
+
+type purchase_data = 
+  [@layout:comb]
+  {
+    purchaser : address;
+    amount : nat;
+  }
+
+type sale_pending_purchases = (pending_purchase_id, purchase_data) map
 
 type permit = 
   [@layout:comb]
@@ -49,10 +59,17 @@ type permit =
     signature: signature;
   }
 
+type buy_param = 
+[@layout:comb]
+{
+  sale_id : sale_id;
+  buy_amount : nat;
+}
+
 type permit_buy_param =
   [@layout:comb]
   {
-    sale_id : sale_id;
+    buy_param : buy_param;
     permit : permit;
   } 
 
