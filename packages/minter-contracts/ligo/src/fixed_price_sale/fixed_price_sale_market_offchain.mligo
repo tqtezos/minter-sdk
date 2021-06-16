@@ -89,10 +89,13 @@ let revoke_purchases (pending_purchases, permit_storage : pending_purchase list 
   let new_s : permit_storage = (List.fold revoke_pending_purchase pending_purchases permit_storage) in 
   ([] : operation list), new_s
 
-let buy_token_pending_confirmation (sale_id, purchaser, storage: sale_id * address * storage) : storage = begin 
+let buy_token_pending_confirmation (buy_param, purchaser, storage: buy_param * address * storage) : storage = begin 
+    let { sale_id = sale_id;
+          buy_amount = buy_amount } = buy_param in 
     let sale : sale = get_sale(sale_id, storage) in
     let { seller = _;
           pending_purchases = pending_purchases;
+          next_pending_purchase_id = next_pending_purchase_id;
           sale_data = {
               money_token = {
                   token_id = money_token_id;
@@ -103,25 +106,30 @@ let buy_token_pending_confirmation (sale_id, purchaser, storage: sale_id * addre
               amount = amount_;
           }
     } = sale in 
-    assert_msg(amount_ >= 1n, "NO_SALE");
-  
+    
+    let new_amount : int = amount_ - buy_amount in 
+    let u : unit = assert_msg(new_amount >= 0, "BUY_AMOUNT_EXCEEDS_REMAINING_SUPPLY") in
+    let purchase_data : purchase_data = {
+      purchaser = purchaser;
+      amount = buy_amount;} in 
     let new_sales : (sale_id, sale) big_map = 
-      Big_map.update sale_id (Some {sale with pending_purchases = (Set.add purchaser pending_purchases); 
-                                   sale_data = {sale.sale_data with amount = abs (amount_ - 1n)}}) storage.sales in
+      Big_map.update sale_id (Some {sale with pending_purchases = (Map.update next_pending_purchase_id (Some purchase_data) pending_purchases); 
+                                   sale_data = {sale.sale_data with amount = abs(new_amount)}}) storage.sales in
     let new_s = {storage with sales = new_sales } in
     new_s
   end 
 
 let buy_with_permit (permit_storage, p : permit_storage * permit_buy_param)  : permit_storage = 
-  let param_hash = Crypto.blake2b (Bytes.pack p.sale_id) in 
+  let param_hash = Crypto.blake2b (Bytes.pack p.buy_param) in 
   let v : unit = check_permit (p.permit, permit_storage.counter, param_hash) in 
   let purchaser = address_from_key (p.permit.signerKey) in
   let market_storage : storage 
-    = buy_token_pending_confirmation (p.sale_id, purchaser, permit_storage.market_storage) in
-  {permit_storage with market_storage = market_storage; counter = permit_storage.counter + 1n}
+    = buy_token_pending_confirmation (p.buy_param, purchaser, permit_storage.market_storage) in
+  {permit_storage with market_storage = market_storage;}
 
 let buy_with_permits (permits, permit_storage : permit_buy_param list * permit_storage) : permit_return =  
   let new_s : permit_storage = (List.fold buy_with_permit permits permit_storage) in 
+  let new_s : permit_storage = {new_s with counter = new_s.counter + 1n} in 
   ([] : operation list), new_s
 
 let fixed_price_sale_permit_main (p, permit_storage : offline_market_entry_points * permit_storage) : operation list * permit_storage = 
