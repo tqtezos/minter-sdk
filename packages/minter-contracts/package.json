@@ -28,13 +28,6 @@
     "generate-types": "rimraf ./bin-ts && contract-type-generator --types file --g ./bin ./bin-ts && ts-node src/generate-index.ts",
     "spawn-jest-worker": "ts-node spawn-jest-worker.ts"
   },
-  "bin": {
-    "compile-ligo": "ts-node src/compile-ligo.ts",
-    "bootstrap": "ts-node src/bootstrap-contracts-config.ts",
-    "bootstrap-sandbox": "env TZ_NETWORK=sandbox ts-node src/bootstrap-contracts-config.ts",
-    "bootstrap-testnet": "env TZ_NETWORK=testnet ts-node src/bootstrap-contracts-config.ts",
-    "bootstrap-mainnet": "env TZ_NETWORK=mainnet ts-node src/bootstrap-contracts-config.ts"
-  },
   "author": "TQ Tezos Maintainers <info@tqtezos.com>",
   "license": "MIT",
   "devDependencies": {
