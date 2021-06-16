@@ -31,14 +31,17 @@ type token_manager =
 type create_tokens_accumulator = 
   [@layout:comb]
   {
-      create_tokens_param : token_metadata list;
+      new_tokens_metadata : token_metadata list;
       mint_tokens_param : mint_burn_tokens_param;
       next_token_id : token_id;
   }
 
 let mint_fixed_supply_tokens (params, storage : 
   mint_fixed_supply_tokens_param * multi_ft_token_storage) : multi_ft_token_storage = 
-  let create_tokens_accumulator : create_tokens_accumulator = 
+  let { new_tokens_metadata = new_tokens_metadata; 
+        mint_tokens_param = mint_tokens_param;
+        next_token_id = next_token_id; 
+      } : create_tokens_accumulator = 
     (List.fold 
       (fun (acc, param : create_tokens_accumulator * mint_fixed_supply_token_param) -> 
         let md : token_metadata = {
@@ -52,23 +55,19 @@ let mint_fixed_supply_tokens (params, storage :
         } in 
         let next_token_id : token_id = acc.next_token_id + 1n in 
 
-        ({create_tokens_param = md :: acc.create_tokens_param;
+        ({new_tokens_metadata = md :: acc.new_tokens_metadata;
          mint_tokens_param = mint_token_param :: acc.mint_tokens_param;
          next_token_id = next_token_id;} : create_tokens_accumulator)
       ) 
       params 
       ({
-          create_tokens_param = ([] : token_metadata list);
+          new_tokens_metadata = ([] : token_metadata list);
           mint_tokens_param = ([] : mint_burn_tokens_param);
           next_token_id = storage.next_token_id;
       } : create_tokens_accumulator)
     ) in 
-  let { create_tokens_param = create_tokens_param; 
-        mint_tokens_param = mint_tokens_param;
-        next_token_id = next_token_id; 
-      } = create_tokens_accumulator in  
   let new_s : multi_ft_token_storage = 
-    (List.fold_right create_token create_tokens_param storage) in 
+    (List.fold_right create_token new_tokens_metadata storage) in 
   let new_s = mint_tokens(mint_tokens_param, new_s) in 
   {new_s with next_token_id = next_token_id}
 
