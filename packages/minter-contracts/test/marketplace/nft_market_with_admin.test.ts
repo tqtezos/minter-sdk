@@ -108,7 +108,10 @@ describe.each([originateFixedPriceTezAdminSale])
     $log.info(`Operation injected at hash=${sellOpHash}`);
     $log.info('alice buys nft...');
     const buyOp = await marketplaceAlice.methods
-      .buy(saleId)
+      .buy({
+        sale_id : saleId,
+        buy_amount : new BigNumber(1),
+      })
       .send({ amount: 1 });
     $log.info(`Waiting for ${buyOp.hash} to be confirmed...`);
     const buyOpHash = await buyOp.confirmation().then(() => buyOp.hash);
@@ -158,7 +161,12 @@ describe.each([originateFixedPriceTezAdminSale])
     const removeSaleOpHash = await removeSaleOp.confirmation(1).then(() => removeSaleOp.hash);
     $log.info(`Operation injected at hash=${removeSaleOpHash}`);
     $log.info(`alice tries to buy`);
-    const buyOp = marketplaceAlice.methods.buy(saleId).send({ amount: 1 });
+    const buyOp = marketplaceAlice.methods
+      .buy({
+        sale_id : saleId,
+        buy_amount : new BigNumber(1),
+      })
+      .send({ amount: 1 });
     expect(buyOp).rejects.toHaveProperty('message', 'NO_SALE');
     $log.info(`Alice is unable to buy cancelled sale`);
   });

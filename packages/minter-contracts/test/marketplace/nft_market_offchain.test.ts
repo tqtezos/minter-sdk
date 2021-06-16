@@ -21,18 +21,23 @@ import {
 import {
   addOperator,
 } from '../../src/fa2-interface';
-import { QueryBalances, queryBalancesWithLambdaView, getBalances} from '../fa2-balance-inspector';
+import { QueryBalances, queryBalancesWithLambdaView, getBalances } from '../fa2-balance-inspector';
 
 jest.setTimeout(360000); // 6 minutes
 
+interface BuyParam {
+  sale_id : nat;
+  buy_amount : nat;
+}
+
 interface PermitBuyParam {
-    sale_id : nat;
+    buy_param : BuyParam;
     permit : Permit;
 }
 
 interface ConfirmOrRevokePurchaseParam {
   sale_id : nat;
-  purchaser : address;
+  purchases : [nat];
 }
 
 describe.each([originateFixedPriceTezOffchainSale])
@@ -41,7 +46,6 @@ describe.each([originateFixedPriceTezOffchainSale])
   let ft: Contract;
   let queryBalances: QueryBalances;
   let marketplace: Contract;
-  let marketplaceAlice: Contract;
   let marketAddress: address;
   let bobAddress: address;
   let aliceAddress: address;
@@ -61,13 +65,12 @@ describe.each([originateFixedPriceTezOffchainSale])
     ft = await originateFtFaucet(tezos.bob);
     marketplace = await originateMarketplace(tezos.bob, bobAddress);
     marketAddress = marketplace.address;
-    marketplaceAlice = await tezos.alice.contract.at(marketAddress);
     tokenId = new BigNumber(0);
     tokenMetadata = new MichelsonMap();
     salePrice = new BigNumber(1000000); //1tz
     saleId = new BigNumber(0);
     const tokenAmount = new BigNumber(2);
-    await createFtToken(tezos.bob, ft, 
+    await createFtToken(tezos.bob, ft,
       {
         token_id: tokenId,
         token_info: tokenMetadata,
@@ -76,7 +79,7 @@ describe.each([originateFixedPriceTezOffchainSale])
       {
         token_id : tokenId,
         owner: bobAddress,
-        amount: tokenAmount
+        amount: tokenAmount,
       },
     ]);
 
@@ -102,7 +105,10 @@ describe.each([originateFixedPriceTezOffchainSale])
     };
 
     const fake_permit_buy_param : PermitBuyParam = {
-      sale_id : saleId,
+      buy_param : {
+        sale_id : saleId,
+        buy_amount : new BigNumber(2),
+      },
       permit : fake_permit,
     };
 
@@ -122,7 +128,10 @@ describe.each([originateFixedPriceTezOffchainSale])
     };
 
     const permit_buy_param : PermitBuyParam = {
-      sale_id : saleId,
+      buy_param : {
+        sale_id : saleId,
+        buy_amount : new BigNumber(2),
+      },
       permit : one_step_permit,
     };
 
@@ -134,41 +143,13 @@ describe.each([originateFixedPriceTezOffchainSale])
     const permit_op = await marketplace.methods.offchain_buy([permit_buy_param]).send({ amount: 0 });
     await permit_op.confirmation().then(() => $log.info('permit_op hash:', permit_op.hash));
 
-    // Bob preapplies a transfer with the dummy_sig to extract the bytes_to_sign
-    const transfer_params_2 = marketplace.methods.offchain_buy([fake_permit_buy_param])
-      .toTransferParams({ amount : 0 });
-    const bytes_to_sign_2 = await tezos.bob.estimate.transfer(transfer_params_2)
-      .catch((e) => errors_to_missigned_bytes(e.errors));
-    $log.info('bytes_to_sign:', bytes_to_sign_2);
-
-    // Alice sign the parameter
-    const param_sig_2 = await tezos.alice.signer.sign(bytes_to_sign_2).then(s => s.prefixSig);
-
-    const one_step_permit_2 : Permit = {
-      signerKey : aliceKey,
-      signature : param_sig_2,
-    };
-
-    const permit_buy_param_2 : PermitBuyParam = {
-      sale_id : saleId,
-      permit : one_step_permit_2,
-    };
-
-    // This is what a relayer needs to submit the parameter on the signer's behalf
-    $log.info('permit package:', permit_buy_param_2);
-
-
-    // Bob submits the permit to the contract
-    const permit_op_2 = await marketplace.methods.offchain_buy([permit_buy_param_2]).send({ amount: 0 });
-    await permit_op_2.confirmation().then(() => $log.info('permit_op hash:', permit_op_2.hash));
-
     const confirm_param : ConfirmOrRevokePurchaseParam = {
       sale_id : saleId,
-      purchaser : aliceAddress,
+      purchases : [new BigNumber(0)],
     };
 
     //Bob confirms the pending purchase
-    const confirm_op = await marketplace.methods.confirm_purchases([confirm_param, confirm_param]).send();
+    const confirm_op = await marketplace.methods.confirm_purchases([confirm_param]).send();
     await confirm_op.confirmation();
 
     const [aliceBalanceAfter, bobBalanceAfter] = await getBalances([
@@ -189,7 +170,10 @@ describe.each([originateFixedPriceTezOffchainSale])
     };
 
     const fake_permit_buy_param : PermitBuyParam = {
-      sale_id : saleId,
+      buy_param : {
+        sale_id : saleId,
+        buy_amount : new BigNumber(2),
+      },
       permit : fake_permit,
     };
 
@@ -209,7 +193,10 @@ describe.each([originateFixedPriceTezOffchainSale])
     };
 
     const permit_buy_param : PermitBuyParam = {
-      sale_id : saleId,
+      buy_param : {
+        sale_id : saleId,
+        buy_amount : new BigNumber(2),
+      },
       permit : one_step_permit,
     };
 
@@ -223,7 +210,7 @@ describe.each([originateFixedPriceTezOffchainSale])
 
     const revoke_param : ConfirmOrRevokePurchaseParam = {
       sale_id : saleId,
-      purchaser : aliceAddress,
+      purchases : [new BigNumber(0)],
     };
 
     //Bob revokes the pending purchase
