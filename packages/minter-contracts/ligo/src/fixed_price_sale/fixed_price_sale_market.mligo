@@ -6,7 +6,7 @@
 type sale_data =
 [@layout:comb]
 {
-  sale_price: nat;
+  price: nat;
   sale_token : global_token_id;
   money_token : global_token_id;
   amount : nat;
@@ -81,7 +81,7 @@ let buy_token(buy_param, storage: buy_param * storage) : (operation list * stora
             fa2_address = money_token_address;
             token_id = money_token_id;
           };
-          sale_price = sale_price;
+          price = sale_price;
           amount = amount_;
         };
 #if OFFCHAIN_MARKET 
