@@ -4,7 +4,7 @@
                        (nat %buy))
                    (or (nat %cancel)
                        (pair %sell
-                          (nat %sale_price)
+                          (nat %price)
                           (pair (pair %sale_token (address %fa2_address) (nat %token_id))
                                 (pair (pair %money_token (address %fa2_address) (nat %token_id)) (nat %amount))))))
                (never %update_allowed))
@@ -18,7 +18,7 @@
                 nat
                 (pair (address %seller)
                       (pair (pair %sale_data
-                               (nat %sale_price)
+                               (nat %price)
                                (pair (pair %sale_token (address %fa2_address) (nat %token_id))
                                      (pair (pair %money_token (address %fa2_address) (nat %token_id)) (nat %amount))))
                             (set %pending_purchases address))))
@@ -559,45 +559,57 @@
                         SWAP ;
                         EXEC ;
                         DUP ;
-                        UNPAIR 3 ;
-                        DROP ;
-                        UNPAIR 4 ;
-                        DROP ;
-                        SWAP ;
-                        DROP ;
-                        UNPAIR ;
+                        CDR ;
+                        CDR ;
                         PUSH string "PURCHASE_NOT_FOUND" ;
-                        DUP 5 ;
-                        DUP 9 ;
-                        MEM ;
-                        PAIR ;
-                        DUP 14 ;
                         SWAP ;
-                        EXEC ;
-                        DROP ;
-                        DUP 7 ;
-                        SELF_ADDRESS ;
-                        PUSH nat 1 ;
-                        PAIR ;
-                        DIG 3 ;
-                        DIG 3 ;
-                        PAIR ;
-                        PAIR ;
+                        DUP ;
+                        DUG 2 ;
+                        DUP 6 ;
+                        MEM ;
                         PAIR ;
                         DUP 11 ;
                         SWAP ;
                         EXEC ;
-                        DIG 8 ;
+                        DROP ;
+                        DUP 4 ;
+                        SELF_ADDRESS ;
+                        PUSH nat 1 ;
+                        PAIR ;
+                        DUP 4 ;
                         CDR ;
-                        DUP 8 ;
+                        CAR ;
+                        CDR ;
+                        CAR ;
+                        CDR ;
+                        DUP 5 ;
+                        CDR ;
+                        CAR ;
+                        CDR ;
+                        CAR ;
+                        CAR ;
+                        PAIR ;
+                        PAIR ;
+                        PAIR ;
+                        DUP 10 ;
+                        SWAP ;
+                        EXEC ;
+                        DIG 7 ;
+                        CDR ;
+                        DUP 7 ;
                         CDR ;
                         PUSH nat 1 ;
-                        DUP 6 ;
+                        DUP 5 ;
                         SIZE ;
                         COMPARE ;
                         LE ;
                         PUSH nat 0 ;
-                        DIG 5 ;
+                        DUP 7 ;
+                        CDR ;
+                        CAR ;
+                        CDR ;
+                        CDR ;
+                        CDR ;
                         COMPARE ;
                         LE ;
                         AND ;
@@ -711,23 +723,26 @@
                         SWAP ;
                         EXEC ;
                         DUP ;
-                        UNPAIR 3 ;
-                        DROP ;
-                        UNPAIR 4 ;
-                        DROP 3 ;
+                        CDR ;
+                        CAR ;
+                        CDR ;
+                        CDR ;
+                        CDR ;
                         PUSH string "NO_SALE" ;
                         PUSH nat 1 ;
                         DUP 3 ;
                         COMPARE ;
                         GE ;
                         PAIR ;
-                        DUP 10 ;
+                        DUP 9 ;
                         SWAP ;
                         EXEC ;
                         DROP ;
-                        DUP 6 ;
+                        DUP 5 ;
                         CAR ;
-                        DIG 2 ;
+                        DUP 3 ;
+                        CDR ;
+                        CDR ;
                         DIG 5 ;
                         PUSH bool True ;
                         SWAP ;
@@ -818,26 +833,31 @@
                         SWAP ;
                         EXEC ;
                         DUP ;
-                        UNPAIR 3 ;
-                        DROP ;
-                        UNPAIR 4 ;
-                        DROP 3 ;
+                        CDR ;
+                        CDR ;
                         PUSH string "PURCHASE_NOT_FOUND" ;
-                        DUP 3 ;
-                        DUP 7 ;
+                        SWAP ;
+                        DUP ;
+                        DUG 2 ;
+                        DUP 6 ;
                         MEM ;
                         PAIR ;
-                        DUP 10 ;
+                        DUP 9 ;
                         SWAP ;
                         EXEC ;
                         DROP ;
-                        DUP 6 ;
+                        DUP 5 ;
                         CAR ;
-                        DUP 4 ;
+                        DUP 3 ;
                         CDR ;
                         CDR ;
                         PUSH nat 1 ;
-                        DIG 3 ;
+                        DUP 5 ;
+                        CDR ;
+                        CAR ;
+                        CDR ;
+                        CDR ;
+                        CDR ;
                         ADD ;
                         DUP 5 ;
                         CDR ;
