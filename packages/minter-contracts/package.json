@@ -1,6 +1,6 @@
 {
   "name": "@tqtezos/minter-contracts",
-  "version": "1.5.0",
+  "version": "1.6.1",
   "description": "smart contracts tests using flextesa sandbox and taquito",
   "main": "dist",
   "files": [
@@ -24,16 +24,9 @@
     "bootstrap-testnet": "env TZ_NETWORK=testnet ts-node src/bootstrap-contracts-config.ts",
     "bootstrap-mainnet": "env TZ_NETWORK=mainnet ts-node src/bootstrap-contracts-config.ts",
     "compile-ligo": "rimraf ./bin/* && ts-node src/compile-ligo.ts",
-    "prepare": "yarn compile-ligo && yarn generate-types",
+    "prepublishOnly": "yarn compile-ligo && yarn generate-types",
     "generate-types": "rimraf ./bin-ts && contract-type-generator --types file --g ./bin ./bin-ts && ts-node src/generate-index.ts",
     "spawn-jest-worker": "ts-node spawn-jest-worker.ts"
-  },
-  "bin": {
-    "compile-ligo": "ts-node src/compile-ligo.ts",
-    "bootstrap": "ts-node src/bootstrap-contracts-config.ts",
-    "bootstrap-sandbox": "env TZ_NETWORK=sandbox ts-node src/bootstrap-contracts-config.ts",
-    "bootstrap-testnet": "env TZ_NETWORK=testnet ts-node src/bootstrap-contracts-config.ts",
-    "bootstrap-mainnet": "env TZ_NETWORK=mainnet ts-node src/bootstrap-contracts-config.ts"
   },
   "author": "TQ Tezos Maintainers <info@tqtezos.com>",
   "license": "MIT",
