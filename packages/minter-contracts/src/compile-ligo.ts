@@ -368,6 +368,18 @@ const compileSources: CompileSourceEntry[] = [
     dstFile: 'fixed_price_sale_market_fixed_fee_allowlisted_token.tz',
     contract: true,
   },
+  {
+    srcFile: 'fixed_price_sale/fixed_price_sale_market_fixed_fee_offchain.mligo',
+    mainFn: 'fixed_price_sale_permit_main',
+    dstFile: 'fixed_price_sale_market_fixed_fee_offchain.tz',
+    contract: true,
+  },
+  {
+    srcFile: 'fixed_price_sale/fixed_price_sale_market_tez_fixed_fee_offchain.mligo',
+    mainFn: 'fixed_price_sale_permit_main',
+    dstFile: 'fixed_price_sale_market_tez_fixed_fee_offchain.tz',
+    contract: true,
+  },
 ];
 
 const filterSources = (sources: CompileSourceEntry[]): CompileSourceEntry[] => {
