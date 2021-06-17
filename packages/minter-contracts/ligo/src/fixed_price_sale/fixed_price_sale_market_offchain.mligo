@@ -69,6 +69,8 @@ let buy_token_pending_confirmation (sale_id, purchaser, storage: sale_id * addre
 
     assert_msg(amount_ >= 1n, "NO_SALE");
   
+    assert_msg(!(Set.mem purchaser pending_purchases), "PENDING_PURCHASE_PRESENT"); 
+  
     let new_sales : (sale_id, sale) big_map = 
       Big_map.update sale_id (Some {sale with pending_purchases = (Set.add purchaser pending_purchases); 
                                    sale_data = {sale.sale_data with amount = abs (amount_ - 1n)}}) storage.sales in

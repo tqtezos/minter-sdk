@@ -266,6 +266,8 @@ Only an admin can call this entrypoint with a permit. If an admin submits a purc
  
 In contrast to the normal `Buy` entrypoint, after the `Offchain_buy` entrypoint is called, the token purchase is marked as pending. When the purchase is pending, no one else can purchase the token. However, the fixed price contract holds the payment (in case of a non-permited purhcase) and token in escrow until the purchase is either approved or denied by the admin. Typically, admin will wait until the offchain payment is either approved or rejected. 
 
+Additionally, the purchaser cannot attempt to buy another token from a given sale again, until the admin either approves or rejects the previous purchase attempt-- otherwise the contract call will fail with `PENDING_PURCHASE_PRESENT`. 
+
 The admin can approve purchases in batch by calling:
 
 `Confirm_purchases : (list %confirm_purchases (pair (nat %sale_id) (address %purchaser)))`
