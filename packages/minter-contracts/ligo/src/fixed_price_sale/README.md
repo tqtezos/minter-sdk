@@ -254,7 +254,7 @@ In the normal fixed price sale with admin enabled, admins have sole authority ov
 <a name="Offchain-purchase-extension"></a>
 ## Offchain purchase extension
 
-This extension is useful for sales in which users are not necessarily onboarded to Tezos. They can buy tokens with a credit card, and the contract admin can purchase the item on their behalf without sending Tez/FA2 using a [One step permit](https://gitlab.com/tzip/tzip/-/blob/master/proposals/tzip-17/tzip-17.md#one-step-permit-entrypoints) and calling the `Offchain_buy` entrypoint, potentially submitting multiple permits in batch. 
+This extension is useful for sales in which users are not necessarily onboarded to Tezos. They can buy tokens with a credit card, and the contract admin can purchase the item on their behalf without sending Tez/FA2 using a permit similar to the implementation in [One step permit](https://gitlab.com/tzip/tzip/-/blob/master/proposals/tzip-17/tzip-17.md#one-step-permit-entrypoints) calling the `Offchain_buy` entrypoint, potentially submitting multiple permits in batch. 
 
 ```
 Offchain_buy : (list %offchain_buy
@@ -262,9 +262,11 @@ Offchain_buy : (list %offchain_buy
                      (pair %permit (key %signerKey) (signature %signature))))
 ```
 
-Only an admin can call this entrypoint with a permit. If an admin submits a purchase order with a permit, no payment is necessary as it is assumed payment is handled offchain.
+Only an admin can call this entrypoint with a permit. If an admin submits a purchase order with a permit, no payment is necessary as it is assumed payment is handled offchain. For these reasons, `Offchain_buy` is not formally a `One-step permit` entrypoint as in [TZIP-17](https://gitlab.com/tzip/tzip/-/blob/master/proposals/tzip-17/tzip-17.md#batched) as its behavior is different from the normal `Buy` entrypoint. 
  
 In contrast to the normal `Buy` entrypoint, after the `Offchain_buy` entrypoint is called, the token purchase is marked as pending. When the purchase is pending, no one else can purchase the token. However, the fixed price contract holds the payment (in case of a non-permited purhcase) and token in escrow until the purchase is either approved or denied by the admin. Typically, admin will wait until the offchain payment is either approved or rejected. 
+
+Additionally, the purchaser cannot attempt to buy another token from a given sale again, until the admin either approves or rejects the previous purchase attempt-- otherwise the contract call will fail with `PENDING_PURCHASE_PRESENT`. 
 
 The admin can approve purchases in batch by calling:
 
@@ -281,6 +283,10 @@ This extension also defines the Macro `OFFCHAIN_MARKET` which makes optional cha
 ```
 Pending_purchases : (set %pending_purchases address)
 ```
+
+### Permit creation
+
+Permit creation is the same as the specification in [TZIP-17](https://gitlab.com/tzip/tzip/-/blob/master/proposals/tzip-17/tzip-17.md#specification-2). Additionally, it should be noted that when permits are submitted in batch, it is necessary to increment the counter that will be used to sign the `BLAKE2B` hash of the packed parameter for each permit in the list. 
 
 - Ligo Contracts : [Tez Version](fixed_price_sale_market_tez_offchain.mligo), [FA2 Version](fixed_price_sale_market_offchain.mligo)
 

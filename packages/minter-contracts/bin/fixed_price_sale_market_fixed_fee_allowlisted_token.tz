@@ -3,7 +3,7 @@
                 (nat %buy))
             (or (nat %cancel)
                 (pair %sell
-                   (nat %sale_price)
+                   (nat %price)
                    (pair (pair %sale_token (address %fa2_address) (nat %token_id))
                          (pair (pair %money_token (address %fa2_address) (nat %token_id)) (nat %amount))))))
         (pair %update_allowed
@@ -16,7 +16,7 @@
              nat
              (pair (address %seller)
                    (pair %sale_data
-                      (nat %sale_price)
+                      (nat %price)
                       (pair (pair %sale_token (address %fa2_address) (nat %token_id))
                             (pair (pair %money_token (address %fa2_address) (nat %token_id)) (nat %amount))))))
           (pair (option %admin
