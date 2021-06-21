@@ -6,7 +6,7 @@
 type sale_data =
 [@layout:comb]
 {
-  sale_price: nat;
+  price: nat;
   sale_token : global_token_id;
   money_token : global_token_id;
   amount : nat;
@@ -73,7 +73,7 @@ let buy_token(sale_id, storage: sale_id * storage) : (operation list * storage) 
   let token_for_sale_token_id = sale.sale_data.sale_token.token_id in 
   let money_token_address = sale.sale_data.money_token.fa2_address in 
   let money_token_id = sale.sale_data.money_token.token_id in
-  let sale_price = sale.sale_data.sale_price in
+  let sale_price = sale.sale_data.price in
   let amount_ = sale.sale_data.amount in
 
   let tx_nft = transfer_fa2(token_for_sale_address, token_for_sale_token_id, 1n , Tezos.self_address, Tezos.sender) in
