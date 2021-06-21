@@ -5,6 +5,8 @@ module Test.Marketplace.Util
   , originateMarketplaceAllowlistedToken
   , originateMarketplaceTezAllowlisted
   , originateMarketplaceTezAllowlistedToken
+  , originateOffchainMarketplace
+  , originateOffchainTezMarketplace
   ) where
 
 import Lorentz.Value

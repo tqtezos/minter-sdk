@@ -20,6 +20,25 @@ import qualified Lorentz.Contracts.Spec.FA2Interface as FA2
 import Test.Util
 import Tezos.Crypto
 
+hprop_Contracts_balance_is_zero_after_a_sale_is_concluded :: Property
+hprop_Contracts_balance_is_zero_after_a_sale_is_concluded =
+  property $ do
+    testData <- forAll genTestData
+
+    clevelandProp $ do
+      setup@Setup{seller, buyer, assetFA2} <- testSetup testData
+      contract <- originateOffchainTezMarketplaceContract setup
+
+      withSender seller $
+        sell testData setup contract
+      withSender seller $ 
+        buyAllOffchain testData setup contract
+
+      contractAssetBalance <- balanceOf assetFA2 assetTokenId contract
+      contractTezBalance <- getBalance contract
+      contractAssetBalance @== 0
+      contractTezBalance @== 0
+
 ----------------------------------------------------------------------------
 -- Helpers
 ----------------------------------------------------------------------------
@@ -80,8 +99,8 @@ testSetup testData = do
 
   pure Setup {..}
 
-originateOffchainMarketplaceContract :: MonadNettest caps base m => Setup -> m (TAddress $ MarketplaceTezPermitEntrypoints ())
-originateOffchainMarketplaceContract Setup{storage, seller, assetFA2} = do
+originateOffchainTezMarketplaceContract :: MonadNettest caps base m => Setup -> m (TAddress $ MarketplaceTezPermitEntrypoints ())
+originateOffchainTezMarketplaceContract Setup{storage, seller, assetFA2} = do
   contract <- TAddress @(MarketplaceTezPermitEntrypoints ()) <$> originateUntypedSimple "marketplace-tez-offchain"
     (untypeValue $ toVal storage)
     (convertContract marketplaceTezPermitContract)
@@ -145,7 +164,8 @@ offchainBuy contract =
       }
     ])
 
-buyAllOffchain :: (HasCallStack, MonadNettest caps base m, MonadRandom m) => TestData -> TAddress (MarketplaceTezPermitEntrypoints ()) -> m ()
-buyAllOffchain TestData{testTokenAmount} contract =
-  replicateM_ (fromIntegral testTokenAmount) $
+buyAllOffchain :: (HasCallStack, MonadNettest caps base m, MonadRandom m) => TestData -> Setup -> TAddress (MarketplaceTezPermitEntrypoints ()) -> m ()
+buyAllOffchain TestData{testTokenAmount} setup contract =
+  replicateM_ (fromIntegral testTokenAmount) $ do
     offchainBuy contract
+    confirmPurchase setup contract
