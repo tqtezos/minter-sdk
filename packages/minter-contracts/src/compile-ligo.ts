@@ -369,6 +369,12 @@ const compileSources: CompileSourceEntry[] = [
     contract: true,
   },
   {
+    srcFile: 'minter_collection/ft/fa2_multi_ft_asset_limited_simple_admin.mligo',
+    mainFn: 'multi_ft_asset_main',
+    dstFile: 'fa2_multi_ft_asset_limited.tz',
+    contract : true,
+  },
+  {
     srcFile: 'fixed_price_sale/fixed_price_sale_market_fixed_fee_offchain.mligo',
     mainFn: 'fixed_price_sale_permit_main',
     dstFile: 'fixed_price_sale_market_fixed_fee_offchain.tz',

@@ -90,3 +90,25 @@ export async function removeOperator(
   await op.confirmation(3);
   $log.info(`consumed gas: ${op.consumedGas}`);
 }
+
+export async function getTokenMetadata(
+  fa2Address: address,
+  operator: TezosToolkit,
+  token_id : nat,
+): Promise<any> {
+  const fa2Contract = await operator.contract.at(fa2Address);
+  const fa2Storage : any = await fa2Contract.storage();
+  const token_metadata : any = await fa2Storage.assets.token_metadata;
+  return token_metadata.get(token_id.toString());
+}
+
+export async function getTokenTotalSupply(
+  fa2Address: address,
+  operator: TezosToolkit,
+  token_id : nat,
+): Promise<any> {
+  const fa2Contract = await operator.contract.at(fa2Address);
+  const fa2Storage : any = await fa2Contract.storage();
+  const token_total_supply : any = await fa2Storage.assets.token_total_supply;
+  return token_total_supply.get(token_id.toString());
+}

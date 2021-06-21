@@ -11,12 +11,26 @@ type ledger = ((address * token_id), nat) big_map
 (* token_id -> total_supply *)
 type token_total_supply = (token_id, nat) big_map
 
+#if !LIMITED_TOKEN_MANAGER
+
 type multi_ft_token_storage = {
   ledger : ledger;
   operators : operator_storage;
   token_total_supply : token_total_supply;
   token_metadata : token_metadata_storage;
 }
+
+#else 
+
+type multi_ft_token_storage = {
+  ledger : ledger;
+  operators : operator_storage;
+  token_total_supply : token_total_supply;
+  token_metadata : token_metadata_storage;
+  next_token_id : token_id;
+}
+
+#endif
 
 let get_balance_amt (key, ledger : (address * nat) * ledger) : nat =
   let bal_opt = Big_map.find_opt key ledger in
