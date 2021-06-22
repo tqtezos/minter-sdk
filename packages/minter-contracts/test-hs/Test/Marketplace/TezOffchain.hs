@@ -1,4 +1,4 @@
-module Test.Marketplace.TezPermit where
+module Test.Marketplace.TezOffchain where
 
 import qualified Data.Map as Map
 import Hedgehog (Gen, Property, forAll, property)
@@ -11,7 +11,7 @@ import Michelson.Typed (convertContract, untypeValue)
 import Michelson.Interpret.Pack
 
 import qualified Indigo.Contracts.FA2Sample as FA2
-import Lorentz.Contracts.Marketplace.TezPermit 
+import Lorentz.Contracts.Marketplace.TezOffchain
 import Lorentz.Contracts.PausableAdminOption
 import Lorentz.Contracts.Spec.FA2Interface (TokenId(TokenId))
 import qualified Lorentz.Contracts.Spec.FA2Interface as FA2
@@ -31,7 +31,7 @@ hprop_Contracts_balance_is_zero_after_a_sale_is_concluded =
         sell testData setup contract
       withSender seller $ 
           replicateM_ (fromIntegral testTokenAmount) $ do
-            marketplaceStorage <- fromVal @(MarketplaceTezPermitStorage ()) <$> getStorage' contract
+            marketplaceStorage <- fromVal @(MarketplaceTezOffchainStorage ()) <$> getStorage' contract
             let permitCounter = counter marketplaceStorage 
             offchainBuy setup permitCounter contract
             confirmPurchase setup contract
@@ -73,7 +73,7 @@ data Setup = Setup
   { seller :: Address
   , buyer :: Address
   , assetFA2 :: TAddress FA2.FA2SampleParameter
-  , storage :: MarketplaceTezPermitStorage ()
+  , storage :: MarketplaceTezOffchainStorage ()
   }
 
 testSetup :: MonadNettest caps base m => TestData -> m Setup
@@ -82,7 +82,7 @@ testSetup testData = do
   buyer <- newAddress "buyer"
 
   let storage =
-        initMarketplaceTezPermitStorage $
+        initMarketplaceTezOffchainStorage $
           Just AdminStorage
               { admin = seller
               , pendingAdmin = Nothing
@@ -101,11 +101,11 @@ testSetup testData = do
 
   pure Setup {..}
 
-originateOffchainTezMarketplaceContract :: MonadNettest caps base m => Setup -> m (TAddress $ MarketplaceTezPermitEntrypoints ())
+originateOffchainTezMarketplaceContract :: MonadNettest caps base m => Setup -> m (TAddress $ MarketplaceTezOffchainEntrypoints ())
 originateOffchainTezMarketplaceContract Setup{storage, seller, assetFA2} = do
-  contract <- TAddress @(MarketplaceTezPermitEntrypoints ()) <$> originateUntypedSimple "marketplace-tez-offchain"
+  contract <- TAddress @(MarketplaceTezOffchainEntrypoints ()) <$> originateUntypedSimple "marketplace-tez-offchain"
     (untypeValue $ toVal storage)
-    (convertContract marketplaceTezPermitContract)
+    (convertContract marketplaceTezOffchainContract)
 
   -- Make the contract an operator for the seller.
   withSender seller $ do
@@ -123,7 +123,7 @@ originateOffchainTezMarketplaceContract Setup{storage, seller, assetFA2} = do
 -- Call entrypoints
 ----------------------------------------------------------------------------
 
-confirmPurchase :: (HasCallStack, MonadNettest caps base m) => Setup -> TAddress (MarketplaceTezPermitEntrypoints ()) -> m ()
+confirmPurchase :: (HasCallStack, MonadNettest caps base m) => Setup -> TAddress (MarketplaceTezOffchainEntrypoints ()) -> m ()
 confirmPurchase Setup{buyer} contract = 
     call contract (Call @"Confirm_purchases") 
       [
@@ -134,7 +134,7 @@ confirmPurchase Setup{buyer} contract =
           }
       ]
 
-revokePurchase :: (HasCallStack, MonadNettest caps base m) => Setup -> TAddress (MarketplaceTezPermitEntrypoints ()) -> m ()
+revokePurchase :: (HasCallStack, MonadNettest caps base m) => Setup -> TAddress (MarketplaceTezOffchainEntrypoints ()) -> m ()
 revokePurchase Setup{buyer} contract = 
     call contract (Call @"Revoke_purchases") 
       [
@@ -146,7 +146,7 @@ revokePurchase Setup{buyer} contract =
       ]
     
 
-sell :: (HasCallStack, MonadNettest caps base m) => TestData -> Setup -> TAddress (MarketplaceTezPermitEntrypoints ()) -> m ()
+sell :: (HasCallStack, MonadNettest caps base m) => TestData -> Setup -> TAddress (MarketplaceTezOffchainEntrypoints ()) -> m ()
 sell TestData{testSalePrice, testTokenAmount} Setup{assetFA2} contract =
   call contract (Call @"Sell") SaleDataTez
     { saleToken = SaleToken
@@ -157,14 +157,14 @@ sell TestData{testSalePrice, testTokenAmount} Setup{assetFA2} contract =
     , tokenAmount = testTokenAmount
     }
 
-offchainBuy :: (HasCallStack, MonadNettest caps base m) => Setup -> Natural -> TAddress (MarketplaceTezPermitEntrypoints ()) -> m ()
+offchainBuy :: (HasCallStack, MonadNettest caps base m) => Setup -> Natural -> TAddress (MarketplaceTezOffchainEntrypoints ()) -> m ()
 offchainBuy Setup{buyer} counter contract = do
   signerPK <- getPublicKey buyer
-  chainId <- getChainId
-  let unsigned = packValue' $ toVal ((chainId, marketplaceAddress), (counter, buyParamHash))
+  marketplaceChainId <- getChainId
+  let unsigned = packValue' $ toVal ((marketplaceChainId, marketplaceAddress), (counter, buyParamHash))
   signature <- signBinary unsigned buyer 
   call contract (Call @"Offchain_buy") 
-    [PermitBuyParam
+    [OffchainBuyParam
       {
         saleId = buyParam
       , permit = Permit
