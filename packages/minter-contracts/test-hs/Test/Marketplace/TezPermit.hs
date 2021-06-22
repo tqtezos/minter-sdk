@@ -9,11 +9,9 @@ import Morley.Nettest
 import Lorentz hiding (balance, contract)
 import Michelson.Typed (convertContract, untypeValue)
 import Michelson.Interpret.Pack
-import Tezos.Core (unMutez, unsafeMkMutez)
-import Crypto.Random (MonadRandom)
 
 import qualified Indigo.Contracts.FA2Sample as FA2
-import Lorentz.Contracts.Marketplace.TezPermit
+import Lorentz.Contracts.Marketplace.TezPermit 
 import Lorentz.Contracts.PausableAdminOption
 import Lorentz.Contracts.Spec.FA2Interface (TokenId(TokenId))
 import qualified Lorentz.Contracts.Spec.FA2Interface as FA2
@@ -23,16 +21,20 @@ import Tezos.Crypto
 hprop_Contracts_balance_is_zero_after_a_sale_is_concluded :: Property
 hprop_Contracts_balance_is_zero_after_a_sale_is_concluded =
   property $ do
-    testData <- forAll genTestData
+    testData@TestData{testTokenAmount} <- forAll genTestData
 
     clevelandProp $ do
-      setup@Setup{seller, buyer, assetFA2} <- testSetup testData
+      setup@Setup{seller, assetFA2} <- testSetup testData
       contract <- originateOffchainTezMarketplaceContract setup
 
       withSender seller $
         sell testData setup contract
       withSender seller $ 
-        buyAllOffchain testData setup contract
+          replicateM_ (fromIntegral testTokenAmount) $ do
+            marketplaceStorage <- fromVal @(MarketplaceTezPermitStorage ()) <$> getStorage' contract
+            let permitCounter = counter marketplaceStorage 
+            offchainBuy setup permitCounter contract
+            confirmPurchase setup contract
 
       contractAssetBalance <- balanceOf assetFA2 assetTokenId contract
       contractTezBalance <- getBalance contract
@@ -122,13 +124,24 @@ originateOffchainTezMarketplaceContract Setup{storage, seller, assetFA2} = do
 ----------------------------------------------------------------------------
 
 confirmPurchase :: (HasCallStack, MonadNettest caps base m) => Setup -> TAddress (MarketplaceTezPermitEntrypoints ()) -> m ()
-confirmPurchase Setup{seller} contract = 
+confirmPurchase Setup{buyer} contract = 
     call contract (Call @"Confirm_purchases") 
       [
         PendingPurchase 
           {
             saleId = SaleId 0
-          , purchaser = seller
+          , purchaser = buyer
+          }
+      ]
+
+revokePurchase :: (HasCallStack, MonadNettest caps base m) => Setup -> TAddress (MarketplaceTezPermitEntrypoints ()) -> m ()
+revokePurchase Setup{buyer} contract = 
+    call contract (Call @"Revoke_purchases") 
+      [
+        PendingPurchase 
+          {
+            saleId = SaleId 0
+          , purchaser = buyer
           }
       ]
     
@@ -144,28 +157,23 @@ sell TestData{testSalePrice, testTokenAmount} Setup{assetFA2} contract =
     , tokenAmount = testTokenAmount
     }
 
-offchainBuy :: (HasCallStack, MonadNettest caps base m, MonadRandom m) => TAddress (MarketplaceTezPermitEntrypoints ()) -> m ()
-offchainBuy contract =
-  let buyParam = SaleId 0 
-      buyParamHash = packValue' $ toVal buyParam 
-      secretKey = detSecretKey "edsk2rKA8YEExg9Zo2qNPiQnnYheF1DhqjLVmfKdxiFfu5GyGRZRnb" 
-      pubKey = toPublic secretKey in 
-  do
-  signature <- sign secretKey buyParamHash
-  (call contract (Call @"Offchain_buy") 
+offchainBuy :: (HasCallStack, MonadNettest caps base m) => Setup -> Natural -> TAddress (MarketplaceTezPermitEntrypoints ()) -> m ()
+offchainBuy Setup{buyer} counter contract = do
+  signerPK <- getPublicKey buyer
+  chainId <- getChainId
+  let unsigned = packValue' $ toVal ((chainId, marketplaceAddress), (counter, buyParamHash))
+  signature <- signBinary unsigned buyer 
+  call contract (Call @"Offchain_buy") 
     [PermitBuyParam
       {
         saleId = buyParam
       , permit = Permit
           {
-            signerKey = pubKey
-          , signature = signature
+            signerKey = signerPK
+          , signature = unTSignature signature
           } 
       }
-    ])
-
-buyAllOffchain :: (HasCallStack, MonadNettest caps base m, MonadRandom m) => TestData -> Setup -> TAddress (MarketplaceTezPermitEntrypoints ()) -> m ()
-buyAllOffchain TestData{testTokenAmount} setup contract =
-  replicateM_ (fromIntegral testTokenAmount) $ do
-    offchainBuy contract
-    confirmPurchase setup contract
+    ]
+  where buyParam = SaleId 0 
+        buyParamHash = blake2b $ packValue' $ toVal buyParam 
+        marketplaceAddress = toAddress contract

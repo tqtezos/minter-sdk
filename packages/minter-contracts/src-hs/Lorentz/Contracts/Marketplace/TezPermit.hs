@@ -9,7 +9,7 @@ module Lorentz.Contracts.Marketplace.TezPermit
   , Permit(..)
   , PendingPurchase(..)
   , MarketplaceTezPermitEntrypoints
-  , MarketplaceTezPermitStorage
+  , MarketplaceTezPermitStorage(..)
 
   -- * Contract
   , marketplaceTezPermitContract
@@ -18,7 +18,6 @@ module Lorentz.Contracts.Marketplace.TezPermit
 
 import Fmt (Buildable(..), genericF)
 import Lorentz
-import Crypto.Random (MonadRandom)
 
 import Lorentz.Contracts.MinterSdk
 import Lorentz.Contracts.PausableAdminOption
@@ -32,14 +31,14 @@ import qualified Lorentz.Contracts.NoAllowlist as NoAllowlist
 ----------------------------------------------------------------------------
 
 data MarketplaceTezPermitStorage al = MarketplaceTezPermitStorage
-  { marketplaceStorage :: (MarketTez.MarketplaceTezStorageWithPendingPurchases al)
+  { marketplaceStorage :: MarketTez.MarketplaceTezStorageWithPendingPurchases al
   , counter :: Natural
   }
 
 customGeneric "MarketplaceTezPermitStorage" ligoCombLayout
 deriving anyclass instance IsoValue al => IsoValue (MarketplaceTezPermitStorage al)
 deriving anyclass instance HasAnnotation al => HasAnnotation (MarketplaceTezPermitStorage al)
-
+instance Buildable al => Buildable (MarketplaceTezPermitStorage al) where build = genericF
 
 data PendingPurchase = PendingPurchase
   { saleId :: MarketTez.SaleId

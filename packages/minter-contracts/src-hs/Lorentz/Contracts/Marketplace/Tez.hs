@@ -83,6 +83,7 @@ data MarketplaceTezStorageWithPendingPurchases al = MarketplaceTezStorageWithPen
 customGeneric "MarketplaceTezStorageWithPendingPurchases" ligoCombLayout
 deriving anyclass instance IsoValue al => IsoValue (MarketplaceTezStorageWithPendingPurchases al)
 deriving anyclass instance HasAnnotation al => HasAnnotation (MarketplaceTezStorageWithPendingPurchases al)
+instance Buildable al => Buildable (MarketplaceTezStorageWithPendingPurchases al) where build = genericF
 
 initMarketplaceTezStorage :: Monoid al => AdminStorage -> MarketplaceTezStorage al
 initMarketplaceTezStorage as = MarketplaceTezStorage mempty as (SaleId 0) mempty
