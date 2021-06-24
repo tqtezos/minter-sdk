@@ -77,7 +77,7 @@ const compileSources: CompileSourceEntry[] = [
   },
   {
     srcFile: 'fixed_price_sale/fixed_price_sale_market_tez.mligo',
-    mainFn: 'fixed_price_sale_tez_main',
+    mainFn: 'fixed_price_sale_main',
     dstFile: 'fixed_price_sale_market_tez.tz',
     contract: true,
   },
@@ -89,7 +89,7 @@ const compileSources: CompileSourceEntry[] = [
   },
   {
     srcFile: 'fixed_price_sale/fixed_price_sale_market_tez_allowlisted.mligo',
-    mainFn: 'fixed_price_sale_tez_main',
+    mainFn: 'fixed_price_sale_main',
     dstFile: 'fixed_price_sale_market_tez_allowlisted.tz',
     contract: true,
   },
@@ -101,7 +101,7 @@ const compileSources: CompileSourceEntry[] = [
   },
   {
     srcFile: 'fixed_price_sale/fixed_price_sale_market_tez_allowlisted_token.mligo',
-    mainFn: 'fixed_price_sale_tez_main',
+    mainFn: 'fixed_price_sale_main',
     dstFile: 'fixed_price_sale_market_tez_allowlisted_token.tz',
     contract: true,
   },
@@ -263,7 +263,7 @@ const compileSources: CompileSourceEntry[] = [
   },
   {
     srcFile: 'fixed_price_sale/fixed_price_sale_market_tez_fixed_fee.mligo',
-    mainFn: 'fixed_price_sale_tez_main',
+    mainFn: 'fixed_price_sale_main',
     dstFile: 'fixed_price_sale_tez_fixed_fee.tz',
     contract: true,
   },
@@ -275,7 +275,7 @@ const compileSources: CompileSourceEntry[] = [
   },
   {
     srcFile: 'fixed_price_sale/fixed_price_sale_market_tez_fixed_fee_allowlisted.mligo',
-    mainFn: 'fixed_price_sale_tez_main',
+    mainFn: 'fixed_price_sale_main',
     dstFile: 'fixed_price_sale_tez_fixed_fee_allowlisted.tz',
     contract: true,
   },
@@ -298,7 +298,7 @@ const compileSources: CompileSourceEntry[] = [
     contract: false,
   },
   {
-    srcFile: 'fixed_price_sale/fixed_price_sale_market_offchain.mligo',
+    srcFile: 'fixed_price_sale/fixed_price_sale_market_fa2_offchain.mligo',
     mainFn: 'fixed_price_sale_permit_main',
     dstFile: 'fixed_price_sale_market_offchain.tz',
     contract: true,
@@ -317,7 +317,7 @@ const compileSources: CompileSourceEntry[] = [
   },
   {
     srcFile: 'fixed_price_sale/fixed_price_sale_market_tez_cancel_only_admin.mligo',
-    mainFn: 'fixed_price_sale_tez_main',
+    mainFn: 'fixed_price_sale_main',
     dstFile: 'fixed_price_sale_market_tez_cancel_only_admin.tz',
     contract: true,
   },
@@ -341,13 +341,13 @@ const compileSources: CompileSourceEntry[] = [
   },
   {
     srcFile: 'fixed_price_sale/fixed_price_sale_market_tez_fixed_fee_cancel_only_admin.mligo',
-    mainFn: 'fixed_price_sale_tez_main',
+    mainFn: 'fixed_price_sale_main',
     dstFile: 'fixed_price_sale_market_tez_fixed_fee_cancel_only_admin.tz',
     contract: true,
   },
   {
     srcFile: 'fixed_price_sale/fixed_price_sale_market_tez_fixed_fee_allowlisted.mligo',
-    mainFn: 'fixed_price_sale_tez_main',
+    mainFn: 'fixed_price_sale_main',
     dstFile: 'fixed_price_sale_tez_fixed_fee_allowlisted.tz',
     contract: true,
   },
@@ -358,7 +358,7 @@ const compileSources: CompileSourceEntry[] = [
     contract: true,
   }, {
     srcFile: 'fixed_price_sale/fixed_price_sale_market_tez_fixed_fee_allowlisted_token.mligo',
-    mainFn: 'fixed_price_sale_tez_main',
+    mainFn: 'fixed_price_sale_main',
     dstFile: 'fixed_price_sale_tez_fixed_fee_allowlisted_token.tz',
     contract: true,
   },
@@ -366,6 +366,24 @@ const compileSources: CompileSourceEntry[] = [
     srcFile: 'fixed_price_sale/fixed_price_sale_market_fixed_fee_allowlisted_token.mligo',
     mainFn: 'fixed_price_sale_main',
     dstFile: 'fixed_price_sale_market_fixed_fee_allowlisted_token.tz',
+    contract: true,
+  },
+  {
+    srcFile: 'minter_collection/ft/fa2_multi_ft_asset_limited_simple_admin.mligo',
+    mainFn: 'multi_ft_asset_main',
+    dstFile: 'fa2_multi_ft_asset_limited.tz',
+    contract : true,
+  },
+  {
+    srcFile: 'fixed_price_sale/fixed_price_sale_market_fixed_fee_offchain.mligo',
+    mainFn: 'fixed_price_sale_permit_main',
+    dstFile: 'fixed_price_sale_market_fixed_fee_offchain.tz',
+    contract: true,
+  },
+  {
+    srcFile: 'fixed_price_sale/fixed_price_sale_market_tez_fixed_fee_offchain.mligo',
+    mainFn: 'fixed_price_sale_permit_main',
+    dstFile: 'fixed_price_sale_market_tez_fixed_fee_offchain.tz',
     contract: true,
   },
 ];

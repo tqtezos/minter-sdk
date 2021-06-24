@@ -21,6 +21,7 @@ let address_from_key (key : key) : address =
   let a = Tezos.address (Tezos.implicit_account (Crypto.hash_key key)) in
   a
 
+(*param_hash is the Blake2b of the hashed parameter*)
 let check_permit (p, counter, param_hash : permit * nat * bytes) : unit = 
     (* let unsigned : bytes = ([%Michelson ({| { SELF; ADDRESS; CHAIN_ID; PAIR; PAIR; PACK } |} : nat * bytes -> bytes)] (counter, param_hash) : bytes) in *)
     let unsigned : bytes = Bytes.pack ((Tezos.chain_id, Tezos.self_address), (counter, param_hash)) in

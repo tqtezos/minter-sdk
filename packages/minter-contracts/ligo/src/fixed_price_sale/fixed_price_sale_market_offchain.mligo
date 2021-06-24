@@ -1,8 +1,3 @@
-#if !OFFCHAIN_MARKET
-#define OFFCHAIN_MARKET
-
-#include "fixed_price_sale_market.mligo"
-
 type permit_storage = 
     [@layout:comb]
   {
@@ -24,22 +19,11 @@ let execute_pending_purchase (acc, pending_purchase: permit_return * pending_pur
   let { sale_id = sale_id; 
         purchaser = purchaser; } = pending_purchase in  
   let sale : sale = get_sale(sale_id, storage) in
-  let { seller = seller;
-        pending_purchases = pending_purchases;
-        sale_data = {
-            money_token = {
-                token_id = money_token_id;
-                fa2_address = money_token_address;
-            };
-            sale_token = {
-                token_id = token_for_sale_token_id;
-                fa2_address = token_for_sale_address;
-            };
-            sale_price = sale_price;
-            amount = amount_;
-        }
 
-  } = sale in 
+  let pending_purchases = sale.pending_purchases in 
+  let token_for_sale_token_id = sale.sale_data.sale_token.token_id in 
+  let token_for_sale_address = sale.sale_data.sale_token.fa2_address in 
+  let amount_ = sale.sale_data.amount in 
   
   let u : unit = assert_msg(Set.mem purchaser pending_purchases, "PURCHASE_NOT_FOUND") in 
   let tx_nft = transfer_fa2(token_for_sale_address, token_for_sale_token_id, 1n , Tezos.self_address, purchaser) in
@@ -61,22 +45,10 @@ let revoke_pending_purchase (permit_storage, pending_purchase: permit_storage * 
   let { sale_id = sale_id; 
         purchaser = purchaser; } = pending_purchase in  
   let sale : sale = get_sale(sale_id, storage) in
-  let { seller = seller;
-        pending_purchases = pending_purchases;
-        sale_data = {
-            money_token = {
-                token_id = money_token_id;
-                fa2_address = money_token_address;
-            };
-            sale_token = {
-                token_id = token_for_sale_token_id;
-                fa2_address = token_for_sale_address;
-            };
-            sale_price = sale_price;
-            amount = amount_;
-        }
 
-  } = sale in 
+  let pending_purchases = sale.pending_purchases in 
+  let amount_ = sale.sale_data.amount in  
+
   let u : unit = assert_msg(Set.mem purchaser pending_purchases, "PURCHASE_NOT_FOUND") in 
 
   let new_sales : (sale_id, sale) big_map = 
@@ -91,19 +63,13 @@ let revoke_purchases (pending_purchases, permit_storage : pending_purchase list 
 
 let buy_token_pending_confirmation (sale_id, purchaser, storage: sale_id * address * storage) : storage = begin 
     let sale : sale = get_sale(sale_id, storage) in
-    let { seller = _;
-          pending_purchases = pending_purchases;
-          sale_data = {
-              money_token = {
-                  token_id = money_token_id;
-                  fa2_address = money_token_address;
-              };
-              sale_token = _;
-              sale_price = sale_price;
-              amount = amount_;
-          }
-    } = sale in 
+    
+    let pending_purchases = sale.pending_purchases in 
+    let amount_ = sale.sale_data.amount in  
+
     assert_msg(amount_ >= 1n, "NO_SALE");
+  
+    assert_msg(not (Set.mem purchaser pending_purchases), "PENDING_PURCHASE_PRESENT"); 
   
     let new_sales : (sale_id, sale) big_map = 
       Big_map.update sale_id (Some {sale with pending_purchases = (Set.add purchaser pending_purchases); 
@@ -164,5 +130,3 @@ let rec activeSalesHelper (active_sales, sale_id, s : (sale list) * sale_id * pe
 
 let getActiveSales (initial_sale_id , s : sale_id * permit_storage) : (sale list) = 
   (activeSalesHelper (([] : sale list), initial_sale_id,  s))
-
-#endif

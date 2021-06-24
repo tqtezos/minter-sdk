@@ -12,14 +12,14 @@ type sale_data_tez =
 }
 
 #if !OFFCHAIN_MARKET
-type sale_tez =
+type sale =
 [@layout:comb]
 {
   seller: address;
   sale_data: sale_data_tez;
 }
 #else 
-type sale_tez =
+type sale =
 [@layout:comb]
 {
   seller: address;
@@ -33,7 +33,7 @@ type sale_tez =
 type storage =
 [@layout:comb]
 {
-  sales: (sale_id, sale_tez) big_map;
+  sales: (sale_id, sale) big_map;
   admin: pauseable_admin_storage;
   next_sale_id : sale_id;
   allowlist : allowlist;
@@ -44,7 +44,7 @@ type storage =
 type storage =
 [@layout:comb]
 {
-  sales: (sale_id, sale_tez) big_map;
+  sales: (sale_id, sale) big_map;
   admin: pauseable_admin_storage;
   next_sale_id : sale_id;
   allowlist : allowlist;
@@ -60,13 +60,13 @@ type market_entry_points =
   | Admin of pauseable_admin
   | Update_allowed of allowlist_entrypoints
 
-let get_sale(sale_id, storage: sale_id * storage) : sale_tez = 
+let get_sale(sale_id, storage: sale_id * storage) : sale = 
    (match Big_map.find_opt sale_id storage.sales with
-    | None -> (failwith "NO_SALE": sale_tez)
+    | None -> (failwith "NO_SALE": sale)
     | Some s -> s)
 
 let buy_token(sale_id, storage: sale_id * storage) : (operation list * storage) =
-  let sale : sale_tez = get_sale(sale_id, storage) in
+  let sale : sale = get_sale(sale_id, storage) in
   let sale_price : tez = sale.sale_data.price in
   let sale_token_address : address = sale.sale_data.sale_token.fa2_address in
   let sale_token_id : nat = sale.sale_data.sale_token.token_id in
@@ -102,7 +102,7 @@ let buy_token(sale_id, storage: sale_id * storage) : (operation list * storage) 
        tx_price :: oplist
      else oplist) in
 #endif
-  let new_sales : (sale_id, sale_tez) big_map =
+  let new_sales : (sale_id, sale) big_map =
     if sale.sale_data.amount <= 1n
     then Big_map.remove sale_id storage.sales
     else Big_map.update sale_id (Some {sale with sale_data.amount = abs (amount_ - 1n)}) storage.sales in
@@ -132,7 +132,7 @@ let deposit_for_sale(sale_data, storage: sale_data_tez * storage) : (operation l
     [transfer_op], new_s
 
 let cancel_sale(sale_id, storage: sale_id * storage) : (operation list * storage) =
-  let sale : sale_tez = get_sale(sale_id, storage) in
+  let sale : sale = get_sale(sale_id, storage) in
   let sale_token_address = sale.sale_data.sale_token.fa2_address in 
   let sale_token_id = sale.sale_data.sale_token.token_id in 
   let amount_ = sale.sale_data.amount in 
@@ -155,7 +155,7 @@ let update_allowed(allowlist_param, storage : allowlist_entrypoints * storage) :
     ([] : operation list), { storage with allowlist = allowlist_storage }
 #endif
 
-let fixed_price_sale_tez_main (p, storage : market_entry_points * storage) : operation list * storage = match p with
+let fixed_price_sale_main (p, storage : market_entry_points * storage) : operation list * storage = match p with
   | Sell sale ->
      let u : unit = tez_stuck_guard("SELL") in 
      let v : unit = fail_if_paused(storage.admin) in
@@ -192,7 +192,7 @@ let sample_storage : storage =
         admin =  ("tz1KqTpEZ7Yob7QbPE4Hy4Wo8fHG8LhKxZSx" :address);
         pending_admin = (None : address option);
         paused = false;});
-    sales = (Big_map.empty : (sale_id, sale_tez) big_map);
+    sales = (Big_map.empty : (sale_id, sale) big_map);
     next_sale_id = 0n;
     allowlist = init_allowlist;
   }
@@ -206,7 +206,7 @@ let sample_storage : storage =
         pending_admin = (None : address option);
         paused = false;
               });
-    sales = (Big_map.empty : (sale_id, sale_tez) big_map);
+    sales = (Big_map.empty : (sale_id, sale) big_map);
     next_sale_id = 0n;
     allowlist = init_allowlist;
     fee = {
@@ -217,13 +217,13 @@ let sample_storage : storage =
 #endif
 
 (*VIEWS*)
-let rec activeSalesHelper (active_sales, sale_id, s : (sale_tez list) * sale_id * storage)
-  : (sale_tez list) =
+let rec activeSalesHelper (active_sales, sale_id, s : (sale list) * sale_id * storage)
+  : (sale list) =
   (if sale_id >= s.next_sale_id
   then active_sales
   else ( match (Big_map.find_opt sale_id s.sales) with
     | Some sale -> activeSalesHelper((sale :: active_sales), sale_id + 1n, s)
     | None -> activeSalesHelper(active_sales, sale_id + 1n, s)))
 
-let getActiveSales (initial_sale_id , s : sale_id * storage) : (sale_tez list) =
-  (activeSalesHelper (([] : sale_tez list), initial_sale_id,  s))
+let getActiveSales (initial_sale_id , s : sale_id * storage) : (sale list) =
+  (activeSalesHelper (([] : sale list), initial_sale_id,  s))

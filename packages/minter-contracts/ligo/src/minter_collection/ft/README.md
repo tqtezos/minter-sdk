@@ -14,6 +14,8 @@ The code in this file manages the aspects of the contract described by the [FA2 
 
 ## [FA2 Multi FT Token Manager](fa2_multi_ft_token_manager.mligo) (MANAGER)
 
+### TOKEN_MANAGER
+
 The code in this file manages the Minting and Burning of tokens, which FA2 does not specify an interface for. The entrypoints this covers includes `Create_token`, `Mint_tokens`, and `Burn_tokens`.
 
 * `Create_token`
@@ -39,6 +41,20 @@ Burn_tokens : (list %burn_tokens (pair (address %owner) (pair (nat %token_id) (n
 ```
 
 `Burn_tokens` burns the specified tokens out of supply. It is the inverse of `Mint_tokens`.
+
+### LIMITED_TOKEN_MANAGER
+
+This is an alternative implementation of TOKEN_MANAGER used to mint a fixed supply of a given token type. It adds a single entrypoint `Mint` that creates a new token type and mints a fixed supply to the designated address. 
+
+This token manager implementation is used in [fa2_multi_ft_asset_limited.tz](../../../../bin/fa2_multi_ft_asset_limited.tz) which corresponds to the LIGO contract [fa2_multi_ft_asset_limited.mligo](fa2_multi_ft_asset_limited.mligo). This contract also adds the `next_token_id` storage variable to the normal FT Asset storage and mints tokens incrementally instead of requiring users to pass the `token_id` they would like to mint to. 
+
+Tokens minted using the `Mint` entrypoint are similar to those created by the editions contract [Edition set](../editions/README.md) in that both have guarantees of a fixed supply. However, they have an important difference in that tokens of the same type minted with the `limited_ft` contract share the same `token_id`, as opposed to those minted with the `editions` contract. In that sense, tokens of the same type mintd with `limited_ft` are indeed fungible.
+
+```
+(list %mint
+           (pair (address %owner) (pair (nat %amount) (map %token_info string bytes))))
+```
+
 
 ## [FA2 Multi FT Faucet](fa2_multi_ft_faucet.mligo) (FAUCET)
 
