@@ -67,7 +67,7 @@ data MarketplaceTezStorage al = MarketplaceTezStorage
   , admin :: AdminStorage
   , nextSaleId :: SaleId
   , allowlist :: al
-  }
+  } deriving stock (Eq)
 
 customGeneric "MarketplaceTezStorage" ligoCombLayout
 deriving anyclass instance IsoValue al => IsoValue (MarketplaceTezStorage al)
@@ -78,7 +78,7 @@ data MarketplaceTezStorageWithPendingPurchases al = MarketplaceTezStorageWithPen
   , admin :: AdminStorage
   , nextSaleId :: SaleId
   , allowlist :: al
-  }
+  } deriving stock (Eq)
 
 customGeneric "MarketplaceTezStorageWithPendingPurchases" ligoCombLayout
 deriving anyclass instance IsoValue al => IsoValue (MarketplaceTezStorageWithPendingPurchases al)

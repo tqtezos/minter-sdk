@@ -51,6 +51,7 @@ tests:
       - minter-sdk
       - sized
       - tasty
+      - text
       - type-natural
       - hedgehog
       - tasty-hedgehog

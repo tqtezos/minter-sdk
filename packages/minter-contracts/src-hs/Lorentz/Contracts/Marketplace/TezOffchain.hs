@@ -42,7 +42,7 @@ instance Buildable Permit where build = genericF
 data MarketplaceTezOffchainStorage al = MarketplaceTezOffchainStorage
   { marketplaceStorage :: MarketTez.MarketplaceTezStorageWithPendingPurchases al
   , counter :: Natural
-  }
+  } deriving stock (Eq)
 
 customGeneric "MarketplaceTezOffchainStorage" ligoCombLayout
 deriving anyclass instance IsoValue al => IsoValue (MarketplaceTezOffchainStorage al)
@@ -90,7 +90,7 @@ initMarketplaceTezOffchainStorage :: Monoid al => AdminStorage -> MarketplaceTez
 initMarketplaceTezOffchainStorage as =
   MarketplaceTezOffchainStorage
     { marketplaceStorage = MarketTez.initMarketplaceStorageWithPendingPurchasers as 
-    , counter = 0
+    , counter = 1
     }
 
 -- Contract
