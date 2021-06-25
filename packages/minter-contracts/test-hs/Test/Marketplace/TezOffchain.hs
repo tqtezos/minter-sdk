@@ -1,6 +1,8 @@
 module Test.Marketplace.TezOffchain where
 
 import qualified Data.Map as Map
+import Data.Set as Set 
+
 import Hedgehog (Gen, Property, forAll, property)
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
@@ -11,6 +13,8 @@ import Michelson.Typed (convertContract, untypeValue)
 import Michelson.Interpret.Pack
 
 import qualified Indigo.Contracts.FA2Sample as FA2
+
+import Lorentz.Contracts.Marketplace.Tez
 import Lorentz.Contracts.Marketplace.TezOffchain
 
 import Lorentz.Contracts.PausableAdminOption
@@ -78,16 +82,14 @@ hprop_Cant_offchain_buy_more_assets_than_are_available =
     testData@TestData{testTokenAmount} <- forAll genTestData
 
     clevelandProp $ do
-      setup@Setup{seller, assetFA2, buyer} <- testSetup testData
+      setup@Setup{seller, buyer} <- testSetup testData
       contract <- originateOffchainTezMarketplaceContract setup
 
       withSender seller $ do
         sell testData setup contract
         offchainBuyAll testData contract
         offchainBuy buyer (testTokenAmount + 1) contract `expectFailure`
-          if testTokenAmount == 0
-            then failedWith assetFA2 ([mt|FA2_INSUFFICIENT_BALANCE|], 1 :: Natural, 0 :: Natural)
-            else failedWith contract [mt|NO_SALE|]
+          failedWith contract [mt|NO_SALE|]
 
 hprop_Cant_buy_with_tez_after_all_assets_are_reserved_through_offchain_buy :: Property
 hprop_Cant_buy_with_tez_after_all_assets_are_reserved_through_offchain_buy =
@@ -202,6 +204,44 @@ hprop_Forged_offchain_buy_fails =
         sell testData setup contract
         offchainBuyForged buyer 1 contract `expectFailure` failedWith contract 
           ([mt|MISSIGNED|], missignedBytes)
+
+hprop_Cant_offchain_buy_if_purchaser_has_pending_purchase_present :: Property
+hprop_Cant_offchain_buy_if_purchaser_has_pending_purchase_present  =
+  property $ do
+    testData <- forAll genTestData
+
+    clevelandProp $ do
+      setup@Setup{seller, buyer} <- addSaleAndPendingPurcahseToInitialStorage testData <$> testSetup testData
+      contract <- originateOffchainTezMarketplaceContract setup
+
+      withSender seller $ do
+        offchainBuy buyer 1 contract `expectFailure`
+          failedWith contract [mt|PENDING_PURCHASE_PRESENT|]
+  where
+  addSaleAndPendingPurcahseToInitialStorage :: TestData -> Setup -> Setup
+  addSaleAndPendingPurcahseToInitialStorage TestData{testSalePrice, testTokenAmount} setup@Setup{storage, buyer, seller, assetFA2} =
+    setup
+      { storage = storage
+          { marketplaceStorage = (marketplaceStorage storage)
+            { sales = BigMap $ Map.fromList
+               [ (SaleId 0
+                 , SaleParamTezOffchain
+                   { seller = seller
+                   , saleDataTez = SaleDataTez
+                     { saleToken = SaleToken
+                       { fa2Address = toAddress assetFA2
+                       , tokenId = assetTokenId
+                       }
+                     , salePricePerToken = testSalePrice
+                     , tokenAmount = testTokenAmount
+                     }
+                   , pendingPurchases = Set.singleton buyer 
+                   }
+                 )
+               ]
+            }
+          }
+      }
 
 ----------------------------------------------------------------------------
 -- Helpers

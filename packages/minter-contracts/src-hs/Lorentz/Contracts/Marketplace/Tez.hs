@@ -51,7 +51,7 @@ deriving anyclass instance IsoValue SaleParamTez
 deriving anyclass instance HasAnnotation SaleParamTez
 instance Buildable SaleParamTez where build = genericF
 
-data SaleParamTezPermit = SaleParamTezPermit
+data SaleParamTezPermit = SaleParamTezOffchain
   { seller :: Address
   , saleDataTez :: SaleDataTez
   , pendingPurchases :: Set Address
