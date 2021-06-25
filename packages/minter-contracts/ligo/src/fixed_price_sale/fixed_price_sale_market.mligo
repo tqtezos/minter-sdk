@@ -3,6 +3,7 @@
 #include "../../fa2_modules/fa2_allowlist/allowlist_base.mligo"
 #include "../common.mligo"
 
+#if !PER_SALE_FEE
 type sale_data =
 [@layout:comb]
 {
@@ -11,6 +12,17 @@ type sale_data =
   money_token : global_token_id;
   amount : nat;
 }
+#else 
+type sale_data =
+[@layout:comb]
+{
+  price: nat;
+  sale_token : global_token_id;
+  money_token : global_token_id;
+  amount : nat;
+  fee : fee_data;
+}
+#endif
 
 #if !OFFCHAIN_MARKET
 type sale =
@@ -77,10 +89,8 @@ let buy_token(sale_id, storage: sale_id * storage) : (operation list * storage) 
   let amount_ = sale.sale_data.amount in
 
   let tx_nft = transfer_fa2(token_for_sale_address, token_for_sale_token_id, 1n , Tezos.self_address, Tezos.sender) in
-#if !FEE
-  let tx_price = transfer_fa2(money_token_address, money_token_id, sale_price, Tezos.sender, seller) in
-  let oplist : operation list = [tx_price; tx_nft] in
-#else
+
+#if FEE
   let fee : nat = percent_of_price_nat (storage.fee.fee_percent, sale_price) in
   let sale_price_minus_fee : nat =  (match (is_nat (sale_price - fee)) with
     | Some adjusted_price -> adjusted_price
@@ -88,7 +98,19 @@ let buy_token(sale_id, storage: sale_id * storage) : (operation list * storage) 
   let tx_fee : operation = transfer_fa2(money_token_address, money_token_id, fee, Tezos.sender, storage.fee.fee_address) in
   let tx_price = transfer_fa2(money_token_address, money_token_id, sale_price_minus_fee, Tezos.sender, seller) in
   let oplist : operation list = [tx_price; tx_nft; tx_fee] in
+#elif PER_SALE_FEE
+  let fee : nat = percent_of_price_nat (sale.sale_data.fee.fee_percent, sale_price) in
+  let sale_price_minus_fee : nat =  (match (is_nat (sale_price - fee)) with
+    | Some adjusted_price -> adjusted_price
+    | None -> (failwith "FEE_TOO_HIGH" : nat)) in
+  let tx_fee : operation = transfer_fa2(money_token_address, money_token_id, fee, Tezos.sender, sale.sale_data.fee.fee_address) in
+  let tx_price = transfer_fa2(money_token_address, money_token_id, sale_price_minus_fee, Tezos.sender, seller) in
+  let oplist : operation list = [tx_price; tx_nft; tx_fee] in  
+#else
+  let tx_price = transfer_fa2(money_token_address, money_token_id, sale_price, Tezos.sender, seller) in
+  let oplist : operation list = [tx_price; tx_nft] in
 #endif
+
   let new_sales : (sale_id, sale) big_map =
     if sale.sale_data.amount <= 1n
     then Big_map.remove sale_id storage.sales

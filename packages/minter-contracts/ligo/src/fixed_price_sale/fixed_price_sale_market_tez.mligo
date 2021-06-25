@@ -3,6 +3,7 @@
 #include "../../fa2_modules/fa2_allowlist/allowlist_base.mligo"
 #include "../common.mligo"
 
+#if !PER_SALE_FEE
 type sale_data_tez =
 [@layout:comb]
 {
@@ -10,6 +11,16 @@ type sale_data_tez =
   price: tez;
   amount: nat;
 }
+#else
+type sale_data_tez =
+[@layout:comb]
+{
+  sale_token: global_token_id;
+  price: tez;
+  amount: nat;
+  fee : fee_data;
+}
+#endif
 
 #if !OFFCHAIN_MARKET
 type sale =
@@ -78,14 +89,8 @@ let buy_token(sale_id, storage: sale_id * storage) : (operation list * storage) 
     else () in
   let tx_nft = transfer_fa2(sale_token_address, sale_token_id, 1n, Tezos.self_address, Tezos.sender) in
   let oplist : operation list = [tx_nft] in
-#if !FEE
-  let oplist =
-    (if sale_price <> 0mutez
-     then
-       let tx_price = transfer_tez(sale_price, seller) in
-       tx_price :: oplist
-     else oplist) in
-#else
+
+#if FEE
   let fee : tez = percent_of_price_tez (storage.fee.fee_percent, sale_price) in
   let u : unit = assert_msg(sale_price >= fee, "FEE_TO_HIGH") in
   let sale_price_minus_fee : tez = sale_price - fee in
@@ -101,7 +106,31 @@ let buy_token(sale_id, storage: sale_id * storage) : (operation list * storage) 
        let tx_price = transfer_tez(sale_price_minus_fee, seller) in
        tx_price :: oplist
      else oplist) in
+#elif PER_SALE_FEE
+  let fee : tez = percent_of_price_tez (sale.sale_data.fee.fee_percent, sale_price) in
+  let u : unit = assert_msg(sale_price >= fee, "FEE_TO_HIGH") in
+  let sale_price_minus_fee : tez = sale_price - fee in
+  let oplist =
+    (if fee <> 0mutez
+     then
+       let tx_fee : operation = transfer_tez(fee, sale.sale_data.fee.fee_address) in
+       tx_fee :: oplist
+     else oplist) in
+  let oplist =
+    (if sale_price_minus_fee <> 0mutez
+     then
+       let tx_price = transfer_tez(sale_price_minus_fee, seller) in
+       tx_price :: oplist
+     else oplist) in
+#else
+  let oplist =
+    (if sale_price <> 0mutez
+     then
+       let tx_price = transfer_tez(sale_price, seller) in
+       tx_price :: oplist
+     else oplist) in
 #endif
+
   let new_sales : (sale_id, sale) big_map =
     if sale.sale_data.amount <= 1n
     then Big_map.remove sale_id storage.sales
