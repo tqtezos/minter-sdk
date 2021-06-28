@@ -76,6 +76,26 @@ let get_sale(sale_id, storage: sale_id * storage) : sale =
     | None -> (failwith "NO_SALE": sale)
     | Some s -> s)
 
+
+let tx_price_and_fee_tez(fee, fee_address, sale_price, seller, oplist :
+   tez * address * tez * address * operation list) = 
+     let u : unit = assert_msg(sale_price >= fee, "FEE_TO_HIGH") in
+     let sale_price_minus_fee : tez = sale_price - fee in
+     let oplist =
+       (if fee <> 0mutez
+        then
+          let tx_fee : operation = transfer_tez(fee, fee_address) in
+          tx_fee :: oplist
+        else oplist) in
+     let oplist =
+       (if sale_price_minus_fee <> 0mutez
+        then
+          let tx_price = transfer_tez(sale_price_minus_fee, seller) in
+          tx_price :: oplist
+        else oplist) in
+     oplist
+ 
+
 let buy_token(sale_id, storage: sale_id * storage) : (operation list * storage) =
   let sale : sale = get_sale(sale_id, storage) in
   let sale_price : tez = sale.sale_data.price in
@@ -92,36 +112,12 @@ let buy_token(sale_id, storage: sale_id * storage) : (operation list * storage) 
 
 #if FEE
   let fee : tez = percent_of_price_tez (storage.fee.fee_percent, sale_price) in
-  let u : unit = assert_msg(sale_price >= fee, "FEE_TO_HIGH") in
-  let sale_price_minus_fee : tez = sale_price - fee in
-  let oplist =
-    (if fee <> 0mutez
-     then
-       let tx_fee : operation = transfer_tez(fee, storage.fee.fee_address) in
-       tx_fee :: oplist
-     else oplist) in
-  let oplist =
-    (if sale_price_minus_fee <> 0mutez
-     then
-       let tx_price = transfer_tez(sale_price_minus_fee, seller) in
-       tx_price :: oplist
-     else oplist) in
+  let fee_address : address = storage.fee.fee_address in 
+  let oplist = tx_price_and_fee_tez(fee, fee_address, sale_price, seller, oplist) in 
 #elif PER_SALE_FEE
   let fee : tez = percent_of_price_tez (sale.sale_data.fee.fee_percent, sale_price) in
-  let u : unit = assert_msg(sale_price >= fee, "FEE_TO_HIGH") in
-  let sale_price_minus_fee : tez = sale_price - fee in
-  let oplist =
-    (if fee <> 0mutez
-     then
-       let tx_fee : operation = transfer_tez(fee, sale.sale_data.fee.fee_address) in
-       tx_fee :: oplist
-     else oplist) in
-  let oplist =
-    (if sale_price_minus_fee <> 0mutez
-     then
-       let tx_price = transfer_tez(sale_price_minus_fee, seller) in
-       tx_price :: oplist
-     else oplist) in
+  let fee_address = sale.sale_data.fee.fee_address in 
+  let oplist = tx_price_and_fee_tez(fee, fee_address, sale_price, seller, oplist) in 
 #else
   let oplist =
     (if sale_price <> 0mutez
