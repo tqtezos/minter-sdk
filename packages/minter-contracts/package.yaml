@@ -25,7 +25,6 @@ library:
   dependencies:
     - containers
     - cleveland
-    - cryptonite
     - filepath
     - file-embed
     - lorentz
@@ -51,7 +50,6 @@ tests:
       - minter-sdk
       - sized
       - tasty
-      - text
       - type-natural
       - hedgehog
       - tasty-hedgehog
