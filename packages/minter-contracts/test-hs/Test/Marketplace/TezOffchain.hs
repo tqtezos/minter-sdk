@@ -1,9 +1,9 @@
 module Test.Marketplace.TezOffchain where
 
 import qualified Data.Map as Map
-import Data.List as List
+import Data.List()
 import Data.Set as Set 
-import Data.Int
+import Data.Int()
 
 import Hedgehog (Gen, Property, forAll, property)
 import qualified Hedgehog.Gen as Gen
@@ -31,12 +31,12 @@ hprop_Contracts_balance_is_zero_after_a_sale_is_concluded =
     testData <- forAll genTestData
 
     clevelandProp $ do
-      setup@Setup{seller, buyer, assetFA2} <- testSetup testData
+      setup@Setup{seller, assetFA2} <- testSetup testData
       contract <- originateOffchainTezMarketplaceContract setup
 
       withSender seller $ do
         sell testData setup contract
-        offchainBuyAndConfirmAll buyer testData contract
+        offchainBuyAll testData setup contract
 
       contractAssetBalance <- balanceOf assetFA2 assetTokenId contract
       contractTezBalance <- getBalance contract
@@ -89,7 +89,7 @@ hprop_Cant_offchain_buy_more_assets_than_are_available =
 
       withSender seller $ do
         sell testData setup contract
-        offchainBuyAll testData contract
+        offchainBuyAll testData setup contract
         offchainBuy buyer (testTokenAmount + 1) contract `expectFailure`
           failedWith contract [mt|NO_SALE|]
 
@@ -99,12 +99,12 @@ hprop_Cant_buy_with_tez_after_all_assets_are_reserved_through_offchain_buy =
     testData@TestData{testTokenAmount} <- forAll genTestData
 
     clevelandProp $ do
-      setup@Setup{seller, assetFA2, buyer} <- testSetup testData
+      setup@Setup{seller, buyer, assetFA2} <- testSetup testData
       contract <- originateOffchainTezMarketplaceContract setup
 
       withSender seller $ do
         sell testData setup contract
-        offchainBuyAll testData contract
+        offchainBuyAll testData setup contract
       
       withSender buyer $ do 
         buy testData contract `expectFailure`
@@ -129,7 +129,7 @@ hprop_Offchain_buy_and_confirm_equals_buy =
         sell testData setup2 contract2
 
       withSender seller1 $ 
-        offchainBuyAndConfirmAll buyer1 testData contract1
+        offchainBuyAll testData setup1 contract1
 
       withSender buyer2 $ 
         buyAll testData contract2
@@ -248,19 +248,19 @@ hprop_Cant_offchain_buy_if_purchaser_has_pending_purchase_present  =
 hprop_Batch_offchain_buy_equals_iterative_buy :: Property
 hprop_Batch_offchain_buy_equals_iterative_buy =
     property $ do
-    testData@TestData{testTokenAmount} <- forAll genTestData
+    testData <- forAll genTestData
 
     clevelandProp $ do
-      setup1@Setup{seller, assetFA2, buyer} <- testSetup testData
-      setup2@Setup{seller, assetFA2, buyer} <- testSetup testData
+      setup1@Setup{seller} <- testSetup testData
+      setup2 <- testSetup testData
       contract1 <- originateOffchainTezMarketplaceContract setup1
       contract2 <- originateOffchainTezMarketplaceContract setup2
 
       withSender seller $ do
         sell testData setup1 contract1
         sell testData setup2 contract2
-        offchainBuyAll testData contract1
-        offchainBuyAllBatchAndConfirm testData contract2
+        offchainBuyAll testData setup1 contract1
+        offchainBuyAllBatch testData contract2
     
       marketplaceStorage1 <- toVal <$>
                              marketplaceStorage <$>
@@ -388,27 +388,20 @@ sell TestData{testSalePrice, testTokenAmount} Setup{assetFA2} contract =
     , tokenAmount = testTokenAmount
     }
 
-offchainBuyAndConfirmAll :: (HasCallStack, MonadNettest caps base m) => Address -> TestData -> TAddress (MarketplaceTezOffchainEntrypoints ()) -> m ()
-offchainBuyAndConfirmAll buyer TestData{testTokenAmount} contract = do
+offchainBuyAll :: (HasCallStack, MonadNettest caps base m) => TestData -> Setup -> TAddress (MarketplaceTezOffchainEntrypoints ()) -> m ()
+offchainBuyAll TestData{testTokenAmount} Setup{buyer} contract = do
     forM_ [1 .. testTokenAmount] \permitCounter -> do
       offchainBuy buyer permitCounter contract
       confirmPurchase buyer contract
 
-offchainBuyAll :: (HasCallStack, MonadNettest caps base m) => TestData -> TAddress (MarketplaceTezOffchainEntrypoints ()) -> m ()
-offchainBuyAll TestData{testTokenAmount} contract = 
-    forM_ [1 .. testTokenAmount] \permitCounter -> do
-      buyer <- newAddress "buyer"
-      offchainBuy buyer permitCounter contract
-      confirmPurchase buyer contract
-
-offchainBuyAllBatchAndConfirm :: (HasCallStack, MonadNettest caps base m) => TestData -> TAddress (MarketplaceTezOffchainEntrypoints ()) -> m ()
-offchainBuyAllBatchAndConfirm TestData{testTokenAmount} contract = do
+offchainBuyAllBatch :: (HasCallStack, MonadNettest caps base m) => TestData -> TAddress (MarketplaceTezOffchainEntrypoints ()) -> m ()
+offchainBuyAllBatch TestData{testTokenAmount} contract = do
     addresses <- mkNAddresses testTokenAmount 
     offchainBuyBatch addresses contract
     mapM_ (`confirmPurchase` contract) addresses
 
 mkNAddresses :: (HasCallStack, MonadNettest caps base m) => Natural -> m [Address]
-mkNAddresses n = do 
+mkNAddresses n =  
     replicateM (fromIntegral n) (newAddress "buyer")
 
 mkPermitToForge :: (HasCallStack, MonadNettest caps base m) => SaleId -> Natural -> TAddress (MarketplaceTezOffchainEntrypoints ()) -> m (ByteString, PublicKey)
@@ -459,7 +452,7 @@ offchainBuyBatch buyers contract = do
               } 
           }
       pure ( newParam : batchParam, counter + 1) 
-      ) ([], 1) buyers 
+    ) ([], 1) buyers 
   call contract (Call @"Offchain_buy") param 
   where buyParam = SaleId 0 
 
