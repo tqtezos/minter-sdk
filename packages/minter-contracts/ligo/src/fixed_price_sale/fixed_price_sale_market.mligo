@@ -78,12 +78,12 @@ let get_sale(sale_id, storage: sale_id * storage) : sale =
     | None -> (failwith "NO_SALE": sale)
     | Some s -> s)
 
-let tx_price_and_fee (money_token_id, money_token_address, fee, fee_address, sale_price, seller, oplist :
+let tx_price_and_fee (money_token_id, money_token_address, fee, fee_recipient_address, sale_price, seller, oplist :
    nat * address * nat * address * nat * address * operation list) = 
   let sale_price_minus_fee : nat =  (match (is_nat (sale_price - fee)) with
     | Some adjusted_price -> adjusted_price
     | None -> (failwith "FEE_TOO_HIGH" : nat)) in
-  let tx_fee : operation = transfer_fa2(money_token_address, money_token_id, fee, Tezos.sender, fee_address) in
+  let tx_fee : operation = transfer_fa2(money_token_address, money_token_id, fee, Tezos.sender, fee_recipient_address) in
   let tx_price = transfer_fa2(money_token_address, money_token_id, sale_price_minus_fee, Tezos.sender, seller) in
   (tx_price :: tx_fee :: oplist)
 
@@ -101,12 +101,12 @@ let buy_token(sale_id, storage: sale_id * storage) : (operation list * storage) 
   let oplist : operation list = [tx_nft] in 
 #if FEE
   let fee : nat = percent_of_price_nat (storage.fee.fee_percent, sale_price) in
-  let fee_address : address = storage.fee.fee_address in 
-  let oplist = tx_price_and_fee (money_token_id, money_token_address, fee, fee_address, sale_price, seller, oplist) in 
+  let fee_recipient_address : address = storage.fee.fee_address in 
+  let oplist = tx_price_and_fee (money_token_id, money_token_address, fee, fee_recipient_address, sale_price, seller, oplist) in 
 #elif PER_SALE_FEE
   let fee : nat = percent_of_price_nat (sale.sale_data.fee.fee_percent, sale_price) in
-  let fee_address : address = sale.sale_data.fee.fee_address in 
-  let oplist = tx_price_and_fee (money_token_id, money_token_address, fee, fee_address, sale_price, seller, oplist) in
+  let fee_recipient_address : address = sale.sale_data.fee.fee_address in 
+  let oplist = tx_price_and_fee (money_token_id, money_token_address, fee, fee_recipient_address, sale_price, seller, oplist) in
 #else
   let tx_price = transfer_fa2(money_token_address, money_token_id, sale_price, Tezos.sender, seller) in
   let oplist : operation list = [tx_price; tx_nft] in
