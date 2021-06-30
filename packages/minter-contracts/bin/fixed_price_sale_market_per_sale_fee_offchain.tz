@@ -6,7 +6,8 @@
                        (pair %sell
                           (nat %price)
                           (pair (pair %sale_token (address %fa2_address) (nat %token_id))
-                                (pair (pair %money_token (address %fa2_address) (nat %token_id)) (nat %amount))))))
+                                (pair (pair %money_token (address %fa2_address) (nat %token_id))
+                                      (pair (nat %amount) (pair %fee (address %fee_address) (nat %fee_percent))))))))
                (never %update_allowed))
             (list %confirm_purchases (pair (nat %sale_id) (address %purchaser))))
         (or (list %offchain_buy
@@ -20,12 +21,12 @@
                       (pair (pair %sale_data
                                (nat %price)
                                (pair (pair %sale_token (address %fa2_address) (nat %token_id))
-                                     (pair (pair %money_token (address %fa2_address) (nat %token_id)) (nat %amount))))
+                                     (pair (pair %money_token (address %fa2_address) (nat %token_id))
+                                           (pair (nat %amount) (pair %fee (address %fee_address) (nat %fee_percent))))))
                             (set %pending_purchases address))))
              (pair (option %admin
                       (pair (pair (address %admin) (bool %paused)) (option %pending_admin address)))
-                   (pair (nat %next_sale_id)
-                         (pair (unit %allowlist) (pair %fee (address %fee_address) (nat %fee_percent))))))
+                   (pair (nat %next_sale_id) (unit %allowlist))))
           (nat %counter)) ;
   code { LAMBDA
            (option (pair (pair address bool) (option address)))
@@ -80,11 +81,12 @@
                  (pair (big_map
                           nat
                           (pair address
-                                (pair (pair nat (pair (pair address nat) (pair (pair address nat) nat))) (set address))))
-                       (pair (option (pair (pair address bool) (option address)))
-                             (pair nat (pair unit (pair address nat))))))
+                                (pair (pair nat (pair (pair address nat) (pair (pair address nat) (pair nat (pair address nat)))))
+                                      (set address))))
+                       (pair (option (pair (pair address bool) (option address))) (pair nat unit))))
            (pair address
-                 (pair (pair nat (pair (pair address nat) (pair (pair address nat) nat))) (set address)))
+                 (pair (pair nat (pair (pair address nat) (pair (pair address nat) (pair nat (pair address nat)))))
+                       (set address)))
            { UNPAIR ;
              SWAP ;
              CAR ;
@@ -114,10 +116,10 @@
                  DROP ;
                  IF_LEFT
                    { IF_LEFT
-                       { IF_LEFT
+                       { DIG 5 ;
+                         DROP ;
+                         IF_LEFT
                            { DIG 3 ;
-                             DROP ;
-                             DIG 3 ;
                              DROP ;
                              DIG 3 ;
                              DROP ;
@@ -184,28 +186,13 @@
                              PAIR ;
                              SWAP ;
                              PAIR }
-                           { DIG 7 ;
+                           { DIG 6 ;
                              DROP ;
                              SWAP ;
                              DUP ;
                              DUG 2 ;
                              CDR ;
                              CAR ;
-                             DIG 7 ;
-                             SWAP ;
-                             EXEC ;
-                             DROP ;
-                             PUSH string "FEE_TOO_HIGH" ;
-                             PUSH nat 100 ;
-                             DUP 4 ;
-                             CDR ;
-                             CDR ;
-                             CDR ;
-                             CDR ;
-                             CDR ;
-                             COMPARE ;
-                             LE ;
-                             PAIR ;
                              DIG 6 ;
                              SWAP ;
                              EXEC ;
@@ -249,7 +236,9 @@
                              SWAP ;
                              DUP ;
                              DUG 2 ;
-                             DUP 6 ;
+                             DUP 4 ;
+                             CDR ;
+                             CAR ;
                              CDR ;
                              CDR ;
                              CDR ;
@@ -270,7 +259,9 @@
                              DIG 3 ;
                              PAIR ;
                              PAIR ;
-                             DUP 5 ;
+                             DUP 3 ;
+                             CDR ;
+                             CAR ;
                              CDR ;
                              CDR ;
                              CDR ;
@@ -337,6 +328,7 @@
                              CDR ;
                              CDR ;
                              CDR ;
+                             CAR ;
                              COMPARE ;
                              LE ;
                              IF { SWAP ;
@@ -345,7 +337,8 @@
                                   CAR ;
                                   DIG 2 ;
                                   NONE (pair address
-                                             (pair (pair nat (pair (pair address nat) (pair (pair address nat) nat))) (set address))) ;
+                                             (pair (pair nat (pair (pair address nat) (pair (pair address nat) (pair nat (pair address nat)))))
+                                                   (set address))) ;
                                   SWAP ;
                                   UPDATE }
                                 { DUP 4 ;
@@ -353,15 +346,24 @@
                                   DUP 3 ;
                                   CDR ;
                                   CDR ;
-                                  PUSH nat 1 ;
-                                  DUP 5 ;
+                                  DUP 4 ;
                                   CDR ;
                                   CAR ;
                                   CDR ;
                                   CDR ;
                                   CDR ;
+                                  CDR ;
+                                  PUSH nat 1 ;
+                                  DUP 6 ;
+                                  CDR ;
+                                  CAR ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CAR ;
                                   SUB ;
                                   ABS ;
+                                  PAIR ;
                                   DUP 5 ;
                                   CDR ;
                                   CAR ;
@@ -456,6 +458,7 @@
                              CDR ;
                              CDR ;
                              CDR ;
+                             CAR ;
                              PAIR ;
                              DUP 3 ;
                              CDR ;
@@ -481,7 +484,8 @@
                              CAR ;
                              DIG 3 ;
                              NONE (pair address
-                                        (pair (pair nat (pair (pair address nat) (pair (pair address nat) nat))) (set address))) ;
+                                        (pair (pair nat (pair (pair address nat) (pair (pair address nat) (pair nat (pair address nat)))))
+                                              (set address))) ;
                              SWAP ;
                              UPDATE ;
                              PAIR ;
@@ -491,26 +495,13 @@
                              PAIR }
                            { DIG 3 ;
                              DROP ;
+                             DIG 4 ;
+                             DROP ;
                              SWAP ;
                              DUP ;
                              DUG 2 ;
                              CDR ;
                              CAR ;
-                             DIG 6 ;
-                             SWAP ;
-                             EXEC ;
-                             DROP ;
-                             PUSH string "FEE_TOO_HIGH" ;
-                             PUSH nat 100 ;
-                             DUP 4 ;
-                             CDR ;
-                             CDR ;
-                             CDR ;
-                             CDR ;
-                             CDR ;
-                             COMPARE ;
-                             LE ;
-                             PAIR ;
                              DIG 5 ;
                              SWAP ;
                              EXEC ;
@@ -530,6 +521,7 @@
                              CDR ;
                              CDR ;
                              CDR ;
+                             CAR ;
                              PAIR ;
                              DUP 3 ;
                              CDR ;
@@ -615,21 +607,6 @@
                  SWAP ;
                  EXEC ;
                  DROP ;
-                 PUSH string "FEE_TOO_HIGH" ;
-                 PUSH nat 100 ;
-                 DUP 4 ;
-                 CDR ;
-                 CDR ;
-                 CDR ;
-                 CDR ;
-                 CDR ;
-                 COMPARE ;
-                 LE ;
-                 PAIR ;
-                 DUP 7 ;
-                 SWAP ;
-                 EXEC ;
-                 DROP ;
                  SWAP ;
                  CDR ;
                  CAR ;
@@ -709,6 +686,7 @@
                         CDR ;
                         CDR ;
                         CDR ;
+                        CAR ;
                         COMPARE ;
                         LE ;
                         AND ;
@@ -722,7 +700,8 @@
                              CAR ;
                              DIG 4 ;
                              NONE (pair address
-                                        (pair (pair nat (pair (pair address nat) (pair (pair address nat) nat))) (set address))) ;
+                                        (pair (pair nat (pair (pair address nat) (pair (pair address nat) (pair nat (pair address nat)))))
+                                              (set address))) ;
                              SWAP ;
                              UPDATE }
                            { DIG 7 ;
@@ -762,21 +741,6 @@
                  CDR ;
                  CAR ;
                  DIG 6 ;
-                 SWAP ;
-                 EXEC ;
-                 DROP ;
-                 PUSH string "FEE_TOO_HIGH" ;
-                 PUSH nat 100 ;
-                 DUP 4 ;
-                 CDR ;
-                 CDR ;
-                 CDR ;
-                 CDR ;
-                 CDR ;
-                 COMPARE ;
-                 LE ;
-                 PAIR ;
-                 DUP 6 ;
                  SWAP ;
                  EXEC ;
                  DROP ;
@@ -847,6 +811,7 @@
                         CDR ;
                         CDR ;
                         CDR ;
+                        CAR ;
                         PUSH string "NO_SALE" ;
                         PUSH nat 1 ;
                         DUP 3 ;
@@ -887,10 +852,16 @@
                         DIG 4 ;
                         CDR ;
                         CAR ;
+                        DUP ;
+                        CDR ;
+                        CDR ;
+                        CDR ;
+                        CDR ;
                         PUSH nat 1 ;
-                        DIG 5 ;
+                        DIG 6 ;
                         SUB ;
                         ABS ;
+                        PAIR ;
                         SWAP ;
                         DUP ;
                         DUG 2 ;
@@ -939,21 +910,6 @@
                  SWAP ;
                  EXEC ;
                  DROP ;
-                 PUSH string "FEE_TOO_HIGH" ;
-                 PUSH nat 100 ;
-                 DUP 4 ;
-                 CDR ;
-                 CDR ;
-                 CDR ;
-                 CDR ;
-                 CDR ;
-                 COMPARE ;
-                 LE ;
-                 PAIR ;
-                 DUP 6 ;
-                 SWAP ;
-                 EXEC ;
-                 DROP ;
                  SWAP ;
                  CDR ;
                  CAR ;
@@ -993,14 +949,23 @@
                         DUP 3 ;
                         CDR ;
                         CDR ;
-                        PUSH nat 1 ;
-                        DUP 5 ;
+                        DUP 4 ;
                         CDR ;
                         CAR ;
                         CDR ;
                         CDR ;
                         CDR ;
+                        CDR ;
+                        PUSH nat 1 ;
+                        DUP 6 ;
+                        CDR ;
+                        CAR ;
+                        CDR ;
+                        CDR ;
+                        CDR ;
+                        CAR ;
                         ADD ;
+                        PAIR ;
                         DUP 5 ;
                         CDR ;
                         CAR ;
