@@ -14,6 +14,7 @@ import Lorentz hiding (balance, contract)
 import Michelson.Typed (convertContract, untypeValue)
 import Michelson.Interpret.Pack
 
+import Morley.Client.TezosClient.Types
 import qualified Indigo.Contracts.FA2Sample as FA2
 
 import Lorentz.Contracts.Marketplace.Tez
@@ -245,8 +246,8 @@ hprop_Cant_offchain_buy_if_purchaser_has_pending_purchase_present  =
           }
       }
 
-hprop_Batch_offchain_buy_equals_iterative_buy :: Property
-hprop_Batch_offchain_buy_equals_iterative_buy =
+hprop_Consecutive_offchain_buy_equals_iterative_buy :: Property
+hprop_Consecutive_offchain_buy_equals_iterative_buy =
     property $ do
     testData <- forAll genTestData
 
@@ -259,7 +260,34 @@ hprop_Batch_offchain_buy_equals_iterative_buy =
       withSender seller $ do
         sell testData setup1 contract1
         sell testData setup2 contract2
-        offchainBuyAll testData setup1 contract1
+        offchainBuyAllConsecutive testData contract1
+        offchainBuyAll testData setup2 contract2
+    
+      marketplaceStorage1 <- toVal <$>
+                             marketplaceStorage <$>
+                             fromVal @(MarketplaceTezOffchainStorage ()) <$> 
+                             getStorage' contract1
+      marketplaceStorage2 <- toVal <$>
+                             marketplaceStorage <$>
+                             fromVal @(MarketplaceTezOffchainStorage ()) <$> 
+                             getStorage' contract2
+      marketplaceStorage1 @== marketplaceStorage2
+
+hprop_Batch_offchain_buy_equals_consecutive_buy :: Property
+hprop_Batch_offchain_buy_equals_consecutive_buy =
+    property $ do
+    testData <- forAll genTestData
+
+    clevelandProp $ do
+      setup1@Setup{seller} <- testSetup testData
+      setup2 <- testSetup testData
+      contract1 <- originateOffchainTezMarketplaceContract setup1
+      contract2 <- originateOffchainTezMarketplaceContract setup2
+
+      withSender seller $ do
+        sell testData setup1 contract1
+        sell testData setup2 contract2
+        offchainBuyAllConsecutive testData contract1
         offchainBuyAllBatch testData contract2
     
       marketplaceStorage1 <- toVal <$>
@@ -388,12 +416,24 @@ sell TestData{testSalePrice, testTokenAmount} Setup{assetFA2} contract =
     , tokenAmount = testTokenAmount
     }
 
+-- a single buyer buys all by alternatively offchain buying and confirming 
 offchainBuyAll :: (HasCallStack, MonadNettest caps base m) => TestData -> Setup -> TAddress (MarketplaceTezOffchainEntrypoints ()) -> m ()
 offchainBuyAll TestData{testTokenAmount} Setup{buyer} contract = do
     forM_ [1 .. testTokenAmount] \permitCounter -> do
       offchainBuy buyer permitCounter contract
       confirmPurchase buyer contract
 
+-- N addresses buy all N assets in a sale conseutively, and then all N are confirmed
+offchainBuyAllConsecutive :: (HasCallStack, MonadNettest caps base m) => TestData -> TAddress (MarketplaceTezOffchainEntrypoints ()) -> m ()
+offchainBuyAllConsecutive TestData{testTokenAmount} contract = do
+  addresses <- mkNAddresses testTokenAmount 
+  foldM_ ( \counter buyer -> do
+      offchainBuy buyer counter contract
+      pure (counter + 1) 
+    ) 1 addresses 
+  mapM_ (`confirmPurchase` contract) addresses
+
+-- N addresses buy all N assets in a sale by submitting N permits that are submitted to the contract together in batch. 
 offchainBuyAllBatch :: (HasCallStack, MonadNettest caps base m) => TestData -> TAddress (MarketplaceTezOffchainEntrypoints ()) -> m ()
 offchainBuyAllBatch TestData{testTokenAmount} contract = do
     addresses <- mkNAddresses testTokenAmount 
@@ -402,7 +442,7 @@ offchainBuyAllBatch TestData{testTokenAmount} contract = do
 
 mkNAddresses :: (HasCallStack, MonadNettest caps base m) => Natural -> m [Address]
 mkNAddresses n =  
-    replicateM (fromIntegral n) (newAddress "buyer")
+    foldM (\addresses i -> (: addresses) <$> ((newAddress . AliasHint . show) i)) [] [1 .. n] 
 
 mkPermitToForge :: (HasCallStack, MonadNettest caps base m) => SaleId -> Natural -> TAddress (MarketplaceTezOffchainEntrypoints ()) -> m (ByteString, PublicKey)
 mkPermitToForge buyParam counter contract = do 
@@ -423,7 +463,7 @@ offchainBuy :: (HasCallStack, MonadNettest caps base m) => Address -> Natural ->
 offchainBuy buyer counter contract = do
   buyerPK <- getPublicKey buyer
   unsigned <- mkPermitToSign buyParam counter contract
-  signature <- signBinary unsigned buyer 
+  signature <- signBytes unsigned buyer 
   call contract (Call @"Offchain_buy") 
     [OffchainBuyParam
       {
@@ -431,7 +471,7 @@ offchainBuy buyer counter contract = do
       , permit = Permit
           {
             signerKey = buyerPK
-          , signature = unTSignature signature
+          , signature = signature
           } 
       }
     ]
@@ -439,16 +479,16 @@ offchainBuy buyer counter contract = do
 
 offchainBuyBatch :: (HasCallStack, MonadNettest caps base m) => [Address] -> TAddress (MarketplaceTezOffchainEntrypoints ()) -> m ()
 offchainBuyBatch buyers contract = do
-  (param, _) <- foldM ( curry $ \((batchParam, counter), buyer) -> do
+  (param, _) <- foldM (\(batchParam, counter) buyer -> do
       buyerPK <- getPublicKey buyer
       unsigned <- mkPermitToSign buyParam counter contract
-      signature <- signBinary unsigned buyer 
+      signature <- signBytes unsigned buyer 
       let newParam = OffchainBuyParam {
             saleId = buyParam
           , permit = Permit
               {
                 signerKey = buyerPK
-              , signature = unTSignature signature
+              , signature = signature
               } 
           }
       pure ( newParam : batchParam, counter + 1) 
@@ -460,7 +500,7 @@ offchainBuyForged :: (HasCallStack, MonadNettest caps base m) => Address -> Natu
 offchainBuyForged buyer counter contract = do
   let buyParam = SaleId 0 
   (unsigned, forgedPK) <- mkPermitToForge buyParam counter contract
-  signature <- signBinary unsigned buyer 
+  signature <- signBytes unsigned buyer 
   (\() -> unsigned) <$> call contract (Call @"Offchain_buy") 
     [OffchainBuyParam
       {
@@ -468,7 +508,7 @@ offchainBuyForged buyer counter contract = do
       , permit = Permit
           {
             signerKey = forgedPK
-          , signature = unTSignature signature
+          , signature = signature
           } 
       }
     ] 

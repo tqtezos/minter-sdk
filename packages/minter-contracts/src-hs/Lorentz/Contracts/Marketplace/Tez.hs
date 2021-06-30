@@ -51,16 +51,16 @@ deriving anyclass instance IsoValue SaleParamTez
 deriving anyclass instance HasAnnotation SaleParamTez
 instance Buildable SaleParamTez where build = genericF
 
-data SaleParamTezPermit = SaleParamTezOffchain
+data SaleParamTezOffchain = SaleParamTezOffchain
   { seller :: Address
   , saleDataTez :: SaleDataTez
   , pendingPurchases :: Set Address
   } deriving stock (Eq, Ord)
 
-customGeneric "SaleParamTezPermit" ligoCombLayout
-deriving anyclass instance IsoValue SaleParamTezPermit
-deriving anyclass instance HasAnnotation SaleParamTezPermit
-instance Buildable SaleParamTezPermit where build = genericF
+customGeneric "SaleParamTezOffchain" ligoCombLayout
+deriving anyclass instance IsoValue SaleParamTezOffchain
+deriving anyclass instance HasAnnotation SaleParamTezOffchain
+instance Buildable SaleParamTezOffchain where build = genericF
 
 data MarketplaceTezStorage al = MarketplaceTezStorage
   { sales :: BigMap SaleId SaleParamTez
@@ -74,7 +74,7 @@ deriving anyclass instance IsoValue al => IsoValue (MarketplaceTezStorage al)
 deriving anyclass instance HasAnnotation al => HasAnnotation (MarketplaceTezStorage al)
 
 data MarketplaceTezStorageWithPendingPurchases al = MarketplaceTezStorageWithPendingPurchases 
-  { sales :: BigMap SaleId SaleParamTezPermit
+  { sales :: BigMap SaleId SaleParamTezOffchain
   , admin :: AdminStorage
   , nextSaleId :: SaleId
   , allowlist :: al
