@@ -5,6 +5,7 @@ module Test.Marketplace.Util
   , originateMarketplaceAllowlistedToken
   , originateMarketplaceTezAllowlisted
   , originateMarketplaceTezAllowlistedToken
+  , originateOffchainTezMarketplace
   ) where
 
 import Lorentz.Value
@@ -15,6 +16,7 @@ import Lorentz.Contracts.AllowlistSimple as AllowlistSimple
 import Lorentz.Contracts.AllowlistToken as AllowlistToken
 import Lorentz.Contracts.Marketplace.FA2
 import Lorentz.Contracts.Marketplace.Tez
+import Lorentz.Contracts.Marketplace.TezOffchain
 import qualified Lorentz.Contracts.PausableAdminOption as PausableAdminOption
 
 originateMarketplaceAllowlisted
@@ -60,3 +62,14 @@ originateMarketplaceTezAllowlistedToken admin = do
       initMarketplaceTezStorage @AllowlistToken.Allowlist
         (PausableAdminOption.initAdminStorage admin))
     (T.convertContract marketplaceTezAllowlistedTokenContract)
+
+originateOffchainTezMarketplace
+  :: MonadNettest caps base m
+  => Address
+  -> m (TAddress $ MarketplaceTezOffchainEntrypoints AllowlistSimple.Entrypoints)
+originateOffchainTezMarketplace admin = do
+  TAddress <$> originateUntypedSimple "marketplace"
+    (T.untypeValue $ T.toVal $
+      initMarketplaceTezOffchainStorage @AllowlistSimple.Allowlist
+        (PausableAdminOption.initAdminStorage admin))
+    (T.convertContract marketplaceTezOffchainContract)
