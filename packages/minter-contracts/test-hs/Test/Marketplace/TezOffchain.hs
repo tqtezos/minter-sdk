@@ -427,10 +427,10 @@ offchainBuyAll TestData{testTokenAmount} Setup{buyer} contract = do
 offchainBuyAllConsecutive :: (HasCallStack, MonadNettest caps base m) => TestData -> TAddress (MarketplaceTezOffchainEntrypoints ()) -> m ()
 offchainBuyAllConsecutive TestData{testTokenAmount} contract = do
   addresses <- mkNAddresses testTokenAmount 
-  foldM_ ( \counter buyer -> do
+  forM_  (zip [1 .. testTokenAmount] addresses) ( \(counter, buyer) -> do
       offchainBuy buyer counter contract
       pure (counter + 1) 
-    ) 1 addresses 
+    )
   mapM_ (`confirmPurchase` contract) addresses
 
 -- N addresses buy all N assets in a sale by submitting N permits that are submitted to the contract together in batch. 
@@ -442,7 +442,7 @@ offchainBuyAllBatch TestData{testTokenAmount} contract = do
 
 mkNAddresses :: (HasCallStack, MonadNettest caps base m) => Natural -> m [Address]
 mkNAddresses n =  
-    foldM (\addresses i -> (: addresses) <$> ((newAddress . AliasHint . show) i)) [] [1 .. n] 
+    forM [1 .. n] (newAddress . AliasHint . show)
 
 mkPermitToForge :: (HasCallStack, MonadNettest caps base m) => SaleId -> Natural -> TAddress (MarketplaceTezOffchainEntrypoints ()) -> m (ByteString, PublicKey)
 mkPermitToForge buyParam counter contract = do 
@@ -479,20 +479,19 @@ offchainBuy buyer counter contract = do
 
 offchainBuyBatch :: (HasCallStack, MonadNettest caps base m) => [Address] -> TAddress (MarketplaceTezOffchainEntrypoints ()) -> m ()
 offchainBuyBatch buyers contract = do
-  (param, _) <- foldM (\(batchParam, counter) buyer -> do
-      buyerPK <- getPublicKey buyer
-      unsigned <- mkPermitToSign buyParam counter contract
-      signature <- signBytes unsigned buyer 
-      let newParam = OffchainBuyParam {
-            saleId = buyParam
-          , permit = Permit
-              {
-                signerKey = buyerPK
-              , signature = signature
-              } 
-          }
-      pure ( newParam : batchParam, counter + 1) 
-    ) ([], 1) buyers 
+  let numBuyers = length buyers 
+  param <- forM (zip [1 .. numBuyers] buyers) $ \(counter, buyer) -> do
+    buyerPK <- getPublicKey buyer
+    unsigned <- mkPermitToSign buyParam (fromIntegral counter) contract
+    signature <- signBytes unsigned buyer
+    return OffchainBuyParam { 
+        saleId = buyParam
+      , permit = Permit
+          {
+            signerKey = buyerPK
+          , signature = signature
+          } 
+      } 
   call contract (Call @"Offchain_buy") param 
   where buyParam = SaleId 0 
 
