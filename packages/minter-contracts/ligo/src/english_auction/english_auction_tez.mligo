@@ -3,6 +3,7 @@
 #include "../../fa2_modules/fa2_allowlist/allowlist_base.mligo"
 #include "../common.mligo"
 
+#if !PER_SALE_FEE 
 type auction =
   [@layout:comb]
   {
@@ -31,6 +32,39 @@ type configure_param =
     start_time : timestamp;
     end_time : timestamp;
   }
+
+#else 
+type auction =
+  [@layout:comb]
+  {
+    seller : address;
+    current_bid : tez;
+    start_time : timestamp;
+    last_bid_time : timestamp;
+    round_time : int;
+    extend_time : int;
+    asset : (tokens list);
+    min_raise_percent : nat;
+    min_raise : tez;
+    end_time : timestamp;
+    highest_bidder : address;
+    fee : fee_data;
+  }
+
+type configure_param =
+  [@layout:comb]
+  {
+    opening_price : tez;
+    min_raise_percent : nat;
+    min_raise : tez;
+    round_time : nat;
+    extend_time : nat;
+    asset : (tokens list);
+    start_time : timestamp;
+    end_time : timestamp;
+    fee : fee_data;
+  }
+#endif
 
 type auction_without_configure_entrypoints =
   | Bid of nat
@@ -164,6 +198,9 @@ let configure_auction_storage(configure_param, seller, storage : configure_param
       end_time = configure_param.end_time;
       highest_bidder = seller;
       last_bid_time = configure_param.start_time;
+#if PER_SALE_FEE
+      fee = configure_param.fee;
+#endif
     } in
     let updated_auctions : (nat, auction) big_map = Big_map.update storage.current_id (Some auction_data) storage.auctions in
     {storage with auctions = updated_auctions; current_id = storage.current_id + 1n}
@@ -172,6 +209,8 @@ let configure_auction_storage(configure_param, seller, storage : configure_param
 let configure_auction(configure_param, storage : configure_param * storage) : return =
 #if FEE
   let u : unit = assert_msg (storage.fee.fee_percent <= 100n, "INVALID_FEE") in
+#elif PER_SALE_FEE
+  let u : unit = assert_msg (configure_param.fee.fee_percent <= 100n, "INVALID_FEE") in
 #endif
   let new_storage = configure_auction_storage(configure_param, Tezos.sender, storage) in
   let fa2_transfers : operation list = transfer_tokens(configure_param.asset, Tezos.sender, Tezos.self_address) in
@@ -186,24 +225,32 @@ let resolve_auction(asset_id, storage : nat * storage) : return = begin
 
     let fa2_transfers : operation list = transfer_tokens(auction.asset, Tezos.self_address, auction.highest_bidder) in
 
-#if !FEE
-
-    let oplist = if first_bid(auction) then
-      fa2_transfers else
-      let send_final_bid : operation = transfer_tez(auction.current_bid, auction.seller) in
-      (send_final_bid :: fa2_transfers) in
-
-#else
     let oplist = 
       if first_bid(auction)
       then fa2_transfers 
-      else let fee : tez = percent_of_price_tez (storage.fee.fee_percent, auction.current_bid) in //ceiling not used
+      else 
+
+#if FEE 
+      let fee : tez = percent_of_price_tez (storage.fee.fee_percent, auction.current_bid) in //ceiling not used
       let op_list =
-        (if fee <> 0mutez
+       (if fee <> 0mutez 
          then
-           let tx_fee : operation = transfer_tez(fee, storage.fee.fee_address) in
-           tx_fee :: fa2_transfers
+            let tx_fee : operation = transfer_tez(fee, storage.fee.fee_address) in
+            tx_fee :: fa2_transfers 
          else fa2_transfers) in
+
+#elif PER_SALE_FEE 
+      let fee : tez = percent_of_price_tez (auction.fee.fee_percent, auction.current_bid) in //ceiling not used
+      let op_list =
+       (if fee <> 0mutez 
+         then
+            let tx_fee : operation = transfer_tez(fee, auction.fee.fee_address) in 
+            tx_fee :: fa2_transfers 
+         else fa2_transfers) in
+#else  
+      let fee : tez = 0mutez in 
+      let op_list = fa2_transfers in 
+#endif    
       let op_list =
         (let sale_price_minus_fee = auction.current_bid - fee in 
          if sale_price_minus_fee <> 0mutez
@@ -213,7 +260,6 @@ let resolve_auction(asset_id, storage : nat * storage) : return = begin
          else op_list) in
       op_list 
     in 
-#endif
     let updated_auctions = Big_map.remove asset_id storage.auctions in
     (oplist, {storage with auctions = updated_auctions})
   end
