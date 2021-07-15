@@ -84,7 +84,7 @@ let buy_with_permit (permit_storage, p : permit_storage * permit_buy_param)  : p
   let purchaser = address_from_key (p.permit.signerKey) in
   let market_storage : storage 
     = buy_token_pending_confirmation (p.sale_id, purchaser, permit_storage.market_storage) in
-  {permit_storage with market_storage = market_storage; counter = permit_storage.counter + 1n}
+  {permit_storage with market_storage = market_storage; counter = permit_storage.counter}
 
 let buy_with_permits (permits, permit_storage : permit_buy_param list * permit_storage) : permit_return =  
   let new_s : permit_storage = (List.fold buy_with_permit permits permit_storage) in 
