@@ -2,7 +2,7 @@ type permit_storage =
     [@layout:comb]
   {
     market_storage : storage;
-    counter : nat;
+    counter : (address, nat) big_map;
   }
 
 type permit_return = (operation list) * permit_storage
@@ -12,6 +12,11 @@ type offline_market_entry_points =
   | Offchain_buy of permit_buy_param list 
   | Confirm_purchases of pending_purchases
   | Revoke_purchases of pending_purchases
+
+let get_counter(addr, permit_storage: address * permit_storage) : nat = 
+   (match Big_map.find_opt addr permit_storage.counter with
+    | None -> 0n
+    | Some s -> s)
 
 let execute_pending_purchase (acc, pending_purchase: permit_return * pending_purchase ) : permit_return =
   let (oplist, permit_storage) = acc in 
@@ -80,11 +85,13 @@ let buy_token_pending_confirmation (sale_id, purchaser, storage: sale_id * addre
 
 let buy_with_permit (permit_storage, p : permit_storage * permit_buy_param)  : permit_storage = 
   let param_hash = Crypto.blake2b (Bytes.pack p.sale_id) in 
-  let v : unit = check_permit (p.permit, permit_storage.counter, param_hash) in 
   let purchaser = address_from_key (p.permit.signerKey) in
+  let purchaser_counter : nat = get_counter (purchaser, permit_storage) in
+  let v : unit = check_permit (p.permit, purchaser_counter, param_hash) in 
   let market_storage : storage 
     = buy_token_pending_confirmation (p.sale_id, purchaser, permit_storage.market_storage) in
-  {permit_storage with market_storage = market_storage; counter = permit_storage.counter + 1n}
+  let new_counter : (address, nat) big_map = Big_map.update purchaser (Some(purchaser_counter + 1n)) permit_storage.counter in
+  {permit_storage with market_storage = market_storage; counter = new_counter}
 
 let buy_with_permits (permits, permit_storage : permit_buy_param list * permit_storage) : permit_return =  
   let new_s : permit_storage = (List.fold buy_with_permit permits permit_storage) in 
