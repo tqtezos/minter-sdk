@@ -310,6 +310,12 @@ const compileSources: CompileSourceEntry[] = [
     contract: true,
   },
   {
+    srcFile: 'fixed_price_sale/fixed_price_sale_market_tez_offchain_nocounter.mligo',
+    mainFn: 'fixed_price_sale_permit_main',
+    dstFile: 'fixed_price_sale_market_tez_offchain_nocounter.tz',
+    contract: true,
+  },
+  {
     srcFile: 'fixed_price_sale/fixed_price_sale_market_cancel_only_admin.mligo',
     mainFn: 'fixed_price_sale_main',
     dstFile: 'fixed_price_sale_market_cancel_only_admin.tz',
