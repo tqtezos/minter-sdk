@@ -244,6 +244,15 @@ type fee_data =
 
 `fee_percent` is a nat between 0 and 100 representing the percent of the sale to be paid to the `fee_address`. If `fee_percent > 100`, the `sell` and `buy` entrypoints will both fail with `FEE_TOO_HIGH`.  Fee is subtracted from the buying price and is calculated as `((fee_percent * price) / 100)`. For example, if an NFT is listed for 100tz, and `fee_percent := 30` then 70tz will be sent to the seller and 30tz will be sent to the `fee_address`.
 
+The `fixed_fee` contracts are activated with the `FEE` macro. 
+
+<a name="Per-sale-fee-extension"></a>
+## Per Sale Fee Extension
+
+The `per_sale_fee` contract versions are similar to the `fixed_fee` versions but differ in that fee data is configurable per sale as opposed to per contract-- `fee_data` is pased to the `configure` entrypoint in these contracts as opposed to being passed as storage data upon contract origination. 
+
+The `per_sale_fee` contracts are activated by the `PER_SALE_FEE` macro, which is mututally exclusive with the `FEE` macro used to activate the `fixed_fee` contracts. 
+
 <a name="Cancel-only-admin-extension"></a>
 ## Cancel only admin extension
 
