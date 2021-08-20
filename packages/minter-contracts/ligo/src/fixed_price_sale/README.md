@@ -115,6 +115,7 @@ type sale_data_tez =
   sale_token : global_token_id;
   amount : nat;
 }
+```
 
 ## <a name="entrypoints-section"></a> Entrypoints
 
