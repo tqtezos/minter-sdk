@@ -33,7 +33,7 @@ data MarketplaceTezStorage al = MarketplaceTezStorage
   , nextSaleId :: MarketTez.SaleId
   , allowlist :: al
   , fee :: FeeData
-  }
+  } 
 
 customGeneric "MarketplaceTezStorage" ligoCombLayout
 deriving anyclass instance IsoValue al => IsoValue (MarketplaceTezStorage al)

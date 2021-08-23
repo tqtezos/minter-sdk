@@ -62,6 +62,17 @@ deriving anyclass instance IsoValue SaleParam
 deriving anyclass instance HasAnnotation SaleParam
 instance Buildable SaleParam where build = genericF
 
+data SaleParamPermit = SaleParamPermit
+  { seller :: Address
+  , saleData :: SaleData
+  , pendingPurchases :: Set Address
+  } deriving stock (Eq, Ord)
+
+customGeneric "SaleParamPermit" ligoCombLayout
+deriving anyclass instance IsoValue SaleParamPermit
+deriving anyclass instance HasAnnotation SaleParamPermit
+instance Buildable SaleParamPermit where build = genericF
+
 data MarketplaceStorage al = MarketplaceStorage
   { sales :: BigMap SaleId SaleParam
   , admin :: AdminStorage
@@ -73,8 +84,22 @@ customGeneric "MarketplaceStorage" ligoCombLayout
 deriving anyclass instance IsoValue al => IsoValue (MarketplaceStorage al)
 deriving anyclass instance HasAnnotation al => HasAnnotation (MarketplaceStorage al)
 
+data MarketplaceStorageWithPendingPurchases al = MarketplaceStorageWithPendingPurchases
+  { sales :: BigMap SaleId SaleParamPermit
+  , admin :: AdminStorage
+  , nextSaleId :: SaleId
+  , allowlist :: al
+  }
+
+customGeneric "MarketplaceStorageWithPendingPurchases" ligoCombLayout
+deriving anyclass instance IsoValue al => IsoValue (MarketplaceStorageWithPendingPurchases al)
+deriving anyclass instance HasAnnotation al => HasAnnotation (MarketplaceStorageWithPendingPurchases al)
+
 initMarketplaceStorage :: Monoid al => AdminStorage -> MarketplaceStorage al
 initMarketplaceStorage as = MarketplaceStorage mempty as (SaleId 0) mempty
+
+initMarketplaceStorageWithPendingPurchases :: Monoid al => AdminStorage -> MarketplaceStorageWithPendingPurchases  al
+initMarketplaceStorageWithPendingPurchases as = MarketplaceStorageWithPendingPurchases mempty as (SaleId 0) mempty
 
 data MarketplaceEntrypoints al
   = Sell SaleData
