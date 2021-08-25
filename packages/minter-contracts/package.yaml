@@ -54,3 +54,4 @@ tests:
       - hedgehog
       - tasty-hedgehog
       - indexed-traversable
+      - morley-client
