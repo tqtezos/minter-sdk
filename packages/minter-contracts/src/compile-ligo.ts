@@ -338,7 +338,7 @@ const compileSources: CompileSourceEntry[] = [
     mainFn: 'english_auction_tez_main',
     dstFile: 'english_auction_tez_allowlisted_token_cancel_only_admin.tz',
     contract: true,
-  },  
+  },
   {
     srcFile: 'english_auction/english_auction_fa2_cancel_only_admin.mligo',
     mainFn: 'english_auction_fa2_main',
