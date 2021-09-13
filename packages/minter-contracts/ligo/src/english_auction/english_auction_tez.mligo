@@ -287,6 +287,7 @@ let place_bid(asset_id, storage : nat * storage) : return = begin
   end
 
 let place_bid_offchain(offchain_bid_data, storage : offchain_bid_data * storage) : return = begin
+    fail_if_not_admin(storage.admin);
     let asset_id : nat = offchain_bid_data.asset_id in 
     let bid_amount : tez = offchain_bid_data.bid_amount in
     let auction : auction = get_auction_data(asset_id, storage) in

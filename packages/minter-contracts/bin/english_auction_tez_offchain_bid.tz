@@ -1022,12 +1022,12 @@
                          PAIR ;
                          SWAP ;
                          PAIR } }
-                   { DIG 12 ;
-                     DROP ;
-                     IF_LEFT
+                   { IF_LEFT
                        { DIG 2 ;
                          DROP ;
                          DIG 3 ;
+                         DROP ;
+                         DIG 10 ;
                          DROP ;
                          SWAP ;
                          DUP ;
@@ -1178,6 +1178,14 @@
                          DIG 6 ;
                          DROP ;
                          DIG 7 ;
+                         DROP ;
+                         SWAP ;
+                         DUP ;
+                         DUG 2 ;
+                         CAR ;
+                         DIG 10 ;
+                         SWAP ;
+                         EXEC ;
                          DROP ;
                          DUP ;
                          CAR ;
