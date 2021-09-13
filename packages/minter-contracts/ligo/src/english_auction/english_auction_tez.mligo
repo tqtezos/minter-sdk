@@ -22,21 +22,12 @@ type auction =
 #endif
   }
 
-#if !OFFCHAIN_BID
-
-type bid_data = nat
-
-#else 
-
-type bid_data = 
+type offchain_bid_data = 
   [@layout:comb]
   {
     asset_id : nat;
     bid_amount : tez;
-    offchain_bid : bool;
   }
-
-#endif
 
 type configure_param =
   [@layout:comb]
@@ -52,11 +43,14 @@ type configure_param =
   }
 
 type auction_without_configure_entrypoints =
-  | Bid of bid_data
+  | Bid of nat
   | Cancel of nat
   | Resolve of nat
   | Admin of pauseable_admin
   | Update_allowed of allowlist_entrypoints
+#if OFFCHAIN_BID
+  | Offchain_bid of offchain_bid_data
+#endif
 
 type auction_entrypoints =
   | Configure of configure_param
@@ -265,16 +259,8 @@ let cancel_auction(asset_id, storage : nat * storage) : return = begin
     (op_list, {storage with auctions = updated_auctions})
   end
 
-let place_bid(bid_data, storage : bid_data * storage) : return = begin
-#if !OFFCHAIN_BID 
-    let asset_id : nat = bid_data in 
+let place_bid(asset_id, storage : nat * storage) : return = begin
     let bid_amount = Tezos.amount in 
-#else 
-    let asset_id : nat = bid_data.asset_id in 
-    let bid_amount : tez = if bid_data.offchain_bid 
-      then bid_data.bid_amount 
-      else Tezos.amount in 
-#endif
     let auction : auction = get_auction_data(asset_id, storage) in
     assert_msg (Tezos.sender = Tezos.source, "BIDDER_NOT_IMPLICIT");
     (fail_if_paused storage.admin);
@@ -292,8 +278,36 @@ let place_bid(bid_data, storage : bid_data * storage) : return = begin
       Tezos.now + auction.extend_time else auction.end_time in
     let updated_auction_data = {auction with current_bid = bid_amount; highest_bidder = Tezos.sender; 
                                 last_bid_time = Tezos.now; end_time = new_end_time; 
-#if OFFFCHAIN_BID
-                                offchain_bid = bid_data.offchain_bid
+#if OFFCHAIN_BID
+                                offchain_bid = false
+#endif
+                               } in
+    let updated_auctions = Big_map.update asset_id (Some updated_auction_data) storage.auctions in
+    (op_list , {storage with auctions = updated_auctions})
+  end
+
+let place_bid_offchain(offchain_bid_data, storage : offchain_bid_data * storage) : return = begin
+    let asset_id : nat = offchain_bid_data.asset_id in 
+    let bid_amount : tez = offchain_bid_data.bid_amount in
+    let auction : auction = get_auction_data(asset_id, storage) in
+    assert_msg (Tezos.sender = Tezos.source, "BIDDER_NOT_IMPLICIT");
+    (fail_if_paused storage.admin);
+    assert_msg (auction_in_progress(auction), "NOT_IN_PROGRESS");
+    assert_msg(Tezos.sender <> auction.seller, "SEllER_CANT_BID");
+    assert_msg(Tezos.sender <> auction.highest_bidder, "NO_SELF_OUTBIDS");
+    (if not valid_bid_amount(auction, bid_amount)
+      then ([%Michelson ({| { FAILWITH } |} : string * (tez * tez * address * timestamp * timestamp) -> unit)] ("INVALID_BID_AMOUNT", (auction.current_bid, Tezos.amount, auction.highest_bidder, auction.last_bid_time, Tezos.now)) : unit)
+      else ());
+    let op_list : operation list = if dont_return_bid(auction) then
+      ([] : operation list) else
+      let return_bid : operation = transfer_tez(auction.current_bid,  auction.highest_bidder) in
+      [return_bid] in
+    let new_end_time = if auction.end_time - Tezos.now <= auction.extend_time then
+      Tezos.now + auction.extend_time else auction.end_time in
+    let updated_auction_data = {auction with current_bid = bid_amount; highest_bidder = Tezos.sender; 
+                                last_bid_time = Tezos.now; end_time = new_end_time; 
+#if OFFCHAIN_BID
+                                offchain_bid = true
 #endif
                                } in
     let updated_auctions = Big_map.update asset_id (Some updated_auction_data) storage.auctions in
@@ -321,6 +335,9 @@ let english_auction_tez_no_configure (p,storage : auction_without_configure_entr
     | Resolve asset_id -> resolve_auction(asset_id, storage)
     | Admin a -> admin(a, storage)
     | Update_allowed a -> update_allowed(a, storage)
+#if OFFCHAIN_BID
+    | Offchain_bid offchain_bid_data -> place_bid_offchain(offchain_bid_data, storage)
+#endif
 
 let english_auction_tez_main (p,storage : auction_entrypoints * storage) : return = match p with
     | Configure config -> configure_auction(config, storage)
