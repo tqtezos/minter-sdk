@@ -194,3 +194,7 @@ This is a version of the Auction contract in which an address fixed at contract 
 # Cancel only admin extension
 
 In the normal english auction contract with admin enabled, admins have sole authority over configuring and cancelling auctions. For some use-cases however it is useful for anyone to have the power to configure an auction, and admins to only have sole authority over cancelling auctions. This is accomplished when the C Macro `CANCEL_ONLY_ADMIN` is defined as in the LIGO files with `cancel_only_admin` in the title.
+
+# Offchain bid extension
+
+This extension adds a new entrypoint, `Offchain_bid` that allows admins to enter new bids received offchain. This functionality is useful for auctions that might involve bids placed by putting holds on credit cards or accepting non-tez payment. After an offchain bid is placed, the auction resumes as if a user placed the bid in tez, with the exception that the bid will not be returned (in tez) to any user after subsequent bids are placed (returning bids is handled offchain presumably).  
