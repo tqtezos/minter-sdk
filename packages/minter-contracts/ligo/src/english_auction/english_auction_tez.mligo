@@ -18,7 +18,7 @@ type auction =
     end_time : timestamp;
     highest_bidder : address;
 #if OFFCHAIN_BID
-    offchain_bid : bool;
+    last_bid_offchain : bool;
 #endif
   }
 
@@ -137,7 +137,7 @@ let dont_return_bid (auction : auction) : bool =
   first_bid(auction)
 
 #if OFFCHAIN_BID
-  || auction.offchain_bid 
+  || auction.last_bid_offchain 
 #endif
 
 let valid_bid_amount (auction, bid_amount : auction * tez) : bool =
@@ -185,7 +185,7 @@ let configure_auction_storage(configure_param, seller, storage : configure_param
       highest_bidder = seller;
       last_bid_time = configure_param.start_time;
 #if OFFCHAIN_BID
-      offchain_bid = false;
+      last_bid_offchain = false;
 #endif
     } in
     let updated_auctions : (nat, auction) big_map = Big_map.update storage.current_id (Some auction_data) storage.auctions in
@@ -279,7 +279,7 @@ let place_bid(asset_id, storage : nat * storage) : return = begin
     let updated_auction_data = {auction with current_bid = bid_amount; highest_bidder = Tezos.sender; 
                                 last_bid_time = Tezos.now; end_time = new_end_time; 
 #if OFFCHAIN_BID
-                                offchain_bid = false
+                                last_bid_offchain = false
 #endif
                                } in
     let updated_auctions = Big_map.update asset_id (Some updated_auction_data) storage.auctions in
@@ -308,7 +308,7 @@ let place_bid_offchain(offchain_bid_data, storage : offchain_bid_data * storage)
     let updated_auction_data = {auction with current_bid = bid_amount; highest_bidder = Tezos.sender; 
                                 last_bid_time = Tezos.now; end_time = new_end_time; 
 #if OFFCHAIN_BID
-                                offchain_bid = true
+                                last_bid_offchain = true
 #endif
                                } in
     let updated_auctions = Big_map.update asset_id (Some updated_auction_data) storage.auctions in

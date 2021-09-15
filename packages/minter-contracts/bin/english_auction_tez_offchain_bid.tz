@@ -31,7 +31,8 @@
                                                                                   (pair (address %fa2_address) (list %fa2_batch (pair (nat %token_id) (nat %amount)))))
                                                                                (pair (nat %min_raise_percent)
                                                                                      (pair (mutez %min_raise)
-                                                                                           (pair (timestamp %end_time) (pair (address %highest_bidder) (bool %offchain_bid)))))))))))))
+                                                                                           (pair (timestamp %end_time)
+                                                                                                 (pair (address %highest_bidder) (bool %last_bid_offchain)))))))))))))
                                   (unit %allowlist)))))) ;
   code { LAMBDA
            (option (pair (pair address bool) (option address)))
