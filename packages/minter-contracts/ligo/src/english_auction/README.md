@@ -144,6 +144,7 @@ If an auction has ended, a call to this entrypoint ought to send the asset to `h
 - `AUCTION_ENDED`: Auction cannot be cancelled if it has ended. 
 - `AUCTION_NOT_ENDED`: Auction cannot be resolved if it has NOT ended. 
 - `BIDDER_NOT_IMPLICIT`: Bidder must be an implicit account
+- `CALLER_NOT_IMPLICIT`: Contract caller must be an implicit account on bids.
 - `NOT_IN_PROGRESS`: An auction must be in progress in order to place a new bid. 
 - `SEllER_CANT_BID`: Seller cannot place a bid on their own item.
 - `NO_SELF_OUTBIDS`: A bidder cannot outbid themself if they were the previous highest bidder.
