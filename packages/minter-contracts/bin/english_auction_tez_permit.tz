@@ -369,16 +369,6 @@
                          SWAP ;
                          EXEC ;
                          DROP ;
-                         PUSH string "BIDDER_NOT_IMPLICIT" ;
-                         SOURCE ;
-                         DUP 4 ;
-                         COMPARE ;
-                         EQ ;
-                         PAIR ;
-                         DUP 12 ;
-                         SWAP ;
-                         EXEC ;
-                         DROP ;
                          DUP 5 ;
                          CAR ;
                          DIG 12 ;

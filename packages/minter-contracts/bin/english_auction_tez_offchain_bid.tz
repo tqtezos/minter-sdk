@@ -353,10 +353,10 @@
              EXEC ;
              DROP ;
              PUSH string "BIDDER_NOT_IMPLICIT" ;
-             SOURCE ;
+             PUSH address "tz3jfebmewtfXYD1Xef34TwrfMg2rrrw6oum" ;
              DUP 4 ;
              COMPARE ;
-             EQ ;
+             LE ;
              PAIR ;
              DUP 11 ;
              SWAP ;
