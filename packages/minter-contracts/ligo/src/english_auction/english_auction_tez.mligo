@@ -288,11 +288,15 @@ let place_bid(asset_id, auction, bid_amount, bidder, storage : nat * auction * t
 let place_bid_onchain(asset_id, storage : nat * storage) : return = begin
     let bid_amount = Tezos.amount in 
     let bidder = Tezos.sender in 
-    let auction : auction = get_auction_data(asset_id, storage) in
-#if OFFCHAIN_BID
-    let auction = {auction with last_bid_offchain = false } in
-#endif
+    let auction : auction = get_auction_data(asset_id, storage) in 
     let (ops, new_storage) = place_bid(asset_id, auction, bid_amount, bidder, storage) in 
+    let auction : auction = get_auction_data(asset_id, new_storage) in 
+#if OFFCHAIN_BID
+    let auction = {auction with last_bid_offchain = false} in 
+    let new_storage = {new_storage 
+       with auctions = Big_map.update asset_id (Some auction) new_storage.auctions
+      } in
+#endif
     (ops, new_storage)
   end
 
@@ -302,10 +306,14 @@ let place_bid_offchain(offchain_bid_data, storage : offchain_bid_data * storage)
           bid_amount = bid_amount;
           bidder = bidder; } = offchain_bid_data in 
     let auction : auction = get_auction_data(asset_id, storage) in
-#if OFFCHAIN_BID
-    let auction = {auction with last_bid_offchain = true } in
-#endif
     let (ops, new_storage) = place_bid(asset_id, auction, bid_amount, bidder, storage) in 
+    let auction : auction = get_auction_data(asset_id, new_storage) in 
+#if OFFCHAIN_BID
+    let auction = {auction with last_bid_offchain = true} in 
+    let new_storage = {new_storage 
+       with auctions = Big_map.update asset_id (Some auction) new_storage.auctions
+      } in
+#endif
     (ops, new_storage)
   end
 

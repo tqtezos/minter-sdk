@@ -21,11 +21,12 @@ describe('test NFT auction', () => {
   let tezos: TestTz;
   let nftAuction: Contract;
   let nftAuctionBob : Contract;
-  //let nftAuctionAlice : Contract;
-  //let nftAuctionEve : Contract;
+  let nftAuctionAlice : Contract;
+  let nftAuctionEve : Contract;
   let nftContract : Contract;
   let bobAddress : address;
-  //let aliceAddress : address;
+  let aliceAddress : address;
+  let eveAddress : address;
   let startTime : Date;
   let endTime : Date;
   let tokenId : BigNumber;
@@ -38,7 +39,8 @@ describe('test NFT auction', () => {
     empty_metadata_map = new MichelsonMap();
     tokenId = new BigNumber(0);
     bobAddress = await tezos.bob.signer.publicKeyHash();
-    //aliceAddress = await tezos.alice.signer.publicKeyHash();
+    aliceAddress = await tezos.alice.signer.publicKeyHash();
+    eveAddress = await tezos.eve.signer.publicKeyHash();
     mintToken = {
       token_metadata: {
         token_id: tokenId,
@@ -53,8 +55,8 @@ describe('test NFT auction', () => {
     $log.info('originating nft auction...');
     nftAuction = await originateEnglishAuctionTezOffchainBid(tezos.bob);
     nftAuctionBob = await tezos.bob.contract.at(nftAuction.address);
-    //nftAuctionAlice = await tezos.alice.contract.at(nftAuction.address);
-    //nftAuctionEve = await tezos.eve.contract.at(nftAuction.address);
+    nftAuctionAlice = await tezos.alice.contract.at(nftAuction.address);
+    nftAuctionEve = await tezos.eve.contract.at(nftAuction.address);
 
     $log.info('originating nft faucets...');
     nftContract = await originateNftFaucet(tezos.bob);
@@ -127,6 +129,25 @@ describe('test NFT auction', () => {
     const internalOps = opResolve.operationResults[0].metadata.internal_operation_results as InternalOperationResult[];
     expect(internalOps.length).toEqual(1);
     expect(internalOps[0].destination).toEqual(nftContract.address);
-
   });
+
+  test('outbid offchain bid should not return offchain bid', async () => {
+    const aliceAddress = await tezos.alice.signer.publicKeyHash();
+    $log.info(`Alice bids 200tz`);
+    const bidMutez = new BigNumber(0);
+    const opBid = await nftAuctionBob.methods
+      .offchain_bid(0, 10000000, aliceAddress).send({ amount : bidMutez.toNumber(), mutez : true });
+    await opBid.confirmation();
+    $log.info(`Bid placed. Amount sent: ${opBid.amount} mutez`);
+
+    const outBidMutez = new BigNumber(200000000);
+    const opOutbid = await nftAuctionEve.methods.bid(0).send({ amount : outBidMutez.toNumber(), mutez : true });
+    await opOutbid.confirmation();
+    $log.info(`Bid placed`);
+
+    const internalOps = opOutbid.operationResults[0].metadata.internal_operation_results as InternalOperationResult[];
+    expect(internalOps).toBeUndefined();
+  });
+
+
 });
