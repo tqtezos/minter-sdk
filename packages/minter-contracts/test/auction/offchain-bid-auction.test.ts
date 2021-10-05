@@ -106,7 +106,7 @@ describe('test NFT auction', () => {
     await sleep(7000); //7 seconds
   });
 
-  test('resovled auction should only send NFT to winning bidder, not send payment', async () => {
+  test('resovled auction with winning offchain bid should only send NFT to winning bidder, not send payment', async () => {
     $log.info(`Alice bids 200tz`);
     const bidMutez = new BigNumber(0);
     const opBid = await nftAuctionBob.methods
@@ -130,7 +130,7 @@ describe('test NFT auction', () => {
     expect(internalOps[0].destination).toEqual(nftContract.address);
   });
 
-  test('outbid offchain bid should not return offchain bid', async () => {
+  test('offchain bid outbid by normal bid should not return offchain bid', async () => {
     $log.info(`Alice bids 200tz`);
     const bidMutez = new BigNumber(10000000);
     const opBid = await nftAuctionBob.methods
@@ -147,7 +147,25 @@ describe('test NFT auction', () => {
     expect(internalOps).toBeUndefined();
   });
 
-  test('Offchain bid outbidding bid should return that bid', async () => {
+  test('offchain bid outbid by another offchain bid should not return first offchain bid', async () => {
+    $log.info(`Alice bids 200tz`);
+    const bidMutez = new BigNumber(10000000);
+    const opBid = await nftAuctionBob.methods
+      .offchain_bid(0, bidMutez, aliceAddress).send({ amount : 0 });
+    await opBid.confirmation();
+    $log.info(`Bid placed. Amount sent: ${opBid.amount} mutez`);
+
+    const outBidMutez = new BigNumber(200000000);
+    const opOutbid = await nftAuctionBob.methods
+      .offchain_bid(0, outBidMutez, eveAddress).send({ amount : 0 });
+    await opOutbid.confirmation();
+    $log.info(`Bid placed`);
+
+    const internalOps = opOutbid.operationResults[0].metadata.internal_operation_results as InternalOperationResult[];
+    expect(internalOps).toBeUndefined();
+  });
+
+  test('Offchain bid outbidding normal bid should return that bid', async () => {
     const bidMutez = new BigNumber(10000000);
     const opBid = await nftAuctionEve.methods.bid(0).send({ amount : bidMutez.toNumber(), mutez : true });
     await opBid.confirmation();
@@ -166,7 +184,6 @@ describe('test NFT auction', () => {
     const feeDestination = feeOp.destination;
     expect(amountReturned).toEqual(bidMutez.toString());
     expect(feeDestination).toEqual(eveAddress);
-
   });
 
   test('Offchain bid by non admin should fail', async () => {
