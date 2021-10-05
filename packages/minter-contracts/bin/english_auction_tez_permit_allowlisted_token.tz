@@ -354,7 +354,7 @@
                          DUP 4 ;
                          DUP 4 ;
                          PAIR ;
-                         DUP 10 ;
+                         DIG 9 ;
                          SWAP ;
                          EXEC ;
                          DIG 4 ;
@@ -362,7 +362,7 @@
                          DIG 3 ;
                          PAIR ;
                          DIG 2 ;
-                         DUP 4 ;
+                         DIG 3 ;
                          DIG 2 ;
                          UNPAIR ;
                          PUSH string "CALLER_NOT_IMPLICIT" ;
@@ -371,19 +371,19 @@
                          COMPARE ;
                          EQ ;
                          PAIR ;
-                         DUP 14 ;
+                         DUP 12 ;
                          SWAP ;
                          EXEC ;
                          DROP ;
                          DUP 5 ;
                          CAR ;
-                         DIG 14 ;
+                         DIG 12 ;
                          SWAP ;
                          EXEC ;
                          DROP ;
                          PUSH string "NOT_IN_PROGRESS" ;
                          DUP 5 ;
-                         DIG 11 ;
+                         DIG 10 ;
                          SWAP ;
                          EXEC ;
                          NOT ;
@@ -396,7 +396,7 @@
                          GE ;
                          AND ;
                          PAIR ;
-                         DUP 13 ;
+                         DUP 11 ;
                          SWAP ;
                          EXEC ;
                          DROP ;
@@ -407,7 +407,7 @@
                          COMPARE ;
                          NEQ ;
                          PAIR ;
-                         DUP 13 ;
+                         DUP 11 ;
                          SWAP ;
                          EXEC ;
                          DROP ;
@@ -427,14 +427,14 @@
                          COMPARE ;
                          NEQ ;
                          PAIR ;
-                         DIG 12 ;
+                         DIG 10 ;
                          SWAP ;
                          EXEC ;
                          DROP ;
                          DUP ;
                          DUP 5 ;
                          DUP ;
-                         DIG 11 ;
+                         DIG 10 ;
                          SWAP ;
                          EXEC ;
                          SWAP ;
@@ -530,10 +530,10 @@
                               FAILWITH }
                             {} ;
                          DUP 4 ;
-                         DIG 8 ;
+                         DIG 7 ;
                          SWAP ;
                          EXEC ;
-                         IF { DIG 8 ; DROP ; NIL operation }
+                         IF { DIG 6 ; DROP ; NIL operation }
                             { DUP 4 ;
                               CDR ;
                               CDR ;
@@ -549,7 +549,7 @@
                               CDR ;
                               CAR ;
                               PAIR ;
-                              DIG 9 ;
+                              DIG 7 ;
                               SWAP ;
                               EXEC ;
                               NIL operation ;
@@ -831,14 +831,7 @@
                          DIG 2 ;
                          CAR ;
                          PAIR ;
-                         DUP ;
-                         DUG 2 ;
-                         DIG 3 ;
-                         PAIR ;
-                         DIG 4 ;
                          SWAP ;
-                         EXEC ;
-                         DROP ;
                          PAIR } }
                    { DIG 4 ;
                      DROP ;

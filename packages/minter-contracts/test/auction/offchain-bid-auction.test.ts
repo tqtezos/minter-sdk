@@ -107,7 +107,6 @@ describe('test NFT auction', () => {
   });
 
   test('resovled auction should only send NFT to winning bidder, not send payment', async () => {
-    const aliceAddress = await tezos.alice.signer.publicKeyHash();
     $log.info(`Alice bids 200tz`);
     const bidMutez = new BigNumber(0);
     const opBid = await nftAuctionBob.methods
@@ -132,11 +131,10 @@ describe('test NFT auction', () => {
   });
 
   test('outbid offchain bid should not return offchain bid', async () => {
-    const aliceAddress = await tezos.alice.signer.publicKeyHash();
     $log.info(`Alice bids 200tz`);
-    const bidMutez = new BigNumber(0);
+    const bidMutez = new BigNumber(10000000);
     const opBid = await nftAuctionBob.methods
-      .offchain_bid(0, 10000000, aliceAddress).send({ amount : bidMutez.toNumber(), mutez : true });
+      .offchain_bid(0, bidMutez, aliceAddress).send({ amount : 0 });
     await opBid.confirmation();
     $log.info(`Bid placed. Amount sent: ${opBid.amount} mutez`);
 
@@ -147,6 +145,35 @@ describe('test NFT auction', () => {
 
     const internalOps = opOutbid.operationResults[0].metadata.internal_operation_results as InternalOperationResult[];
     expect(internalOps).toBeUndefined();
+  });
+
+  test('Offchain bid outbidding bid should return that bid', async () => {
+    const bidMutez = new BigNumber(10000000);
+    const opBid = await nftAuctionEve.methods.bid(0).send({ amount : bidMutez.toNumber(), mutez : true });
+    await opBid.confirmation();
+    $log.info(`Bid placed. Amount sent: ${opBid.amount} mutez`);
+
+    const outBidMutez = new BigNumber(200000000);
+    const opOutbid = await nftAuctionBob.methods
+      .offchain_bid(0, outBidMutez.toNumber(), aliceAddress).send({ amount : 0 });
+    await opOutbid.confirmation();
+    $log.info(`Bid placed`);
+
+    const internalOps = opOutbid.operationResults[0].metadata.internal_operation_results as InternalOperationResult[];
+    expect(internalOps.length).toEqual(1);
+    const feeOp = internalOps[0];
+    const amountReturned = feeOp.amount;
+    const feeDestination = feeOp.destination;
+    expect(amountReturned).toEqual(bidMutez.toString());
+    expect(feeDestination).toEqual(eveAddress);
+
+  });
+
+  test('Offchain bid by non admin should fail', async () => {
+    const bidMutez = new BigNumber(10000000);
+    const opBid = nftAuctionAlice.methods
+      .offchain_bid(0, bidMutez, aliceAddress).send({ amount : 0 });
+    expect(opBid).rejects.toHaveProperty('message', 'NOT_AN_ADMIN');
   });
 
 
