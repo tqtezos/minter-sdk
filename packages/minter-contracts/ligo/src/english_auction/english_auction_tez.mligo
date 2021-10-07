@@ -271,9 +271,6 @@ let place_bid(  asset_id
              ) : return = begin
 
     assert_msg (Tezos.sender = Tezos.source, "CALLER_NOT_IMPLICIT");
-#if OFFCHAIN_BID
-    assert_msg(bidder <= threshold_address, "BIDDER_NOT_IMPLICIT");
-#endif
     (fail_if_paused storage.admin);
     assert_msg (auction_in_progress(auction), "NOT_IN_PROGRESS");
     assert_msg(bidder <> auction.seller, "SEllER_CANT_BID");

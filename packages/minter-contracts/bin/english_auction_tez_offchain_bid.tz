@@ -357,16 +357,6 @@
              SWAP ;
              EXEC ;
              DROP ;
-             PUSH string "BIDDER_NOT_IMPLICIT" ;
-             PUSH address "tz3jfebmewtfXYD1Xef34TwrfMg2rrrw6oum" ;
-             DUP 6 ;
-             COMPARE ;
-             LE ;
-             PAIR ;
-             DUP 12 ;
-             SWAP ;
-             EXEC ;
-             DROP ;
              DUP ;
              CAR ;
              DIG 12 ;

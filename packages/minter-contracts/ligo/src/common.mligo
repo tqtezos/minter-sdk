@@ -1,10 +1,6 @@
 #if !COMMON
 #define COMMON
 
-(*CONSTANTS*)
-
-let threshold_address : address = ("tz3jfebmewtfXYD1Xef34TwrfMg2rrrw6oum" : address)
-
 (*TYPES*)
 
 type sale_id = nat
