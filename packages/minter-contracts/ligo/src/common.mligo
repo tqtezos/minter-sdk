@@ -65,7 +65,6 @@ type offchain_bid_data =
   {
     asset_id : nat;
     bid_amount : tez;
-    bidder : address;
   }
 
 type permit_bid_param =

@@ -4,9 +4,7 @@
                    (nat %bid))
                (or (nat %cancel)
                    (pair %offchain_bid
-                      (pair %offchain_bid_data
-                         (nat %asset_id)
-                         (pair (mutez %bid_amount) (address %bidder)))
+                      (pair %offchain_bid_data (nat %asset_id) (mutez %bid_amount))
                       (pair %permit (key %signerKey) (signature %signature)))))
            (or (nat %resolve) (never %update_allowed)))
         (pair %configure
@@ -1250,8 +1248,15 @@
                          NOT ;
                          IF { PUSH string "MISSIGNED" ; PAIR ; FAILWITH } { DROP } ;
                          SWAP ;
-                         DROP ;
-                         UNPAIR 3 ;
+                         CDR ;
+                         CAR ;
+                         HASH_KEY ;
+                         IMPLICIT_ACCOUNT ;
+                         ADDRESS ;
+                         DIG 2 ;
+                         SWAP ;
+                         DIG 2 ;
+                         UNPAIR ;
                          DUP 4 ;
                          SWAP ;
                          DUP ;

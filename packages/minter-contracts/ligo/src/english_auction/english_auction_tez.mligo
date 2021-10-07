@@ -309,10 +309,10 @@ let place_bid_onchain(asset_id, storage : nat * storage) : return = begin
     (ops, new_storage)
   end
 
-let place_bid_offchain(offchain_bid_data, storage : offchain_bid_data * storage) : return = begin
+let place_bid_offchain(offchain_bid_data, bidder, storage : offchain_bid_data * address * storage) : return = begin
     let { asset_id = asset_id;
           bid_amount = bid_amount;
-          bidder = bidder; } = offchain_bid_data in 
+        } = offchain_bid_data in 
     let auction : auction = get_auction_data(asset_id, storage) in
     let (ops, new_storage) = place_bid(asset_id, auction, bid_amount, bidder, storage
 #if OFFCHAIN_BID
@@ -328,8 +328,8 @@ let bid_with_permit (p, storage : permit_bid_param * storage)  : return = begin
          permit = permit; } = p in 
     let param_hash = Crypto.blake2b (Bytes.pack offchain_bid_data) in 
     let v : unit = check_permit (permit, 0n, param_hash) in  (*Always set counter to 0*)
-    let purchaser = address_from_key (p.permit.signerKey) in
-    let (ops, storage) = place_bid_offchain(offchain_bid_data, storage) in 
+    let bidder = address_from_key (p.permit.signerKey) in
+    let (ops, storage) = place_bid_offchain(offchain_bid_data, bidder, storage) in 
     (ops, storage)
   end
 
