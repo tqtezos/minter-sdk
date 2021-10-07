@@ -22,14 +22,6 @@ type auction =
 #endif
   }
 
-type offchain_bid_data = 
-  [@layout:comb]
-  {
-    asset_id : nat;
-    bid_amount : tez;
-    bidder : address;
-  }
-
 type configure_param =
   [@layout:comb]
   {
@@ -50,7 +42,7 @@ type auction_without_configure_entrypoints =
   | Admin of pauseable_admin
   | Update_allowed of allowlist_entrypoints
 #if OFFCHAIN_BID
-  | Offchain_bid of offchain_bid_data
+  | Offchain_bid of permit_bid_param
 #endif
 
 type auction_entrypoints =
@@ -318,7 +310,6 @@ let place_bid_onchain(asset_id, storage : nat * storage) : return = begin
   end
 
 let place_bid_offchain(offchain_bid_data, storage : offchain_bid_data * storage) : return = begin
-    fail_if_not_admin(storage.admin);
     let { asset_id = asset_id;
           bid_amount = bid_amount;
           bidder = bidder; } = offchain_bid_data in 
@@ -329,6 +320,17 @@ let place_bid_offchain(offchain_bid_data, storage : offchain_bid_data * storage)
 #endif
       ) in 
     (ops, new_storage)
+  end
+
+let bid_with_permit (p, storage : permit_bid_param * storage)  : return = begin 
+    fail_if_not_admin(storage.admin);
+    let {offchain_bid_data = offchain_bid_data;
+         permit = permit; } = p in 
+    let param_hash = Crypto.blake2b (Bytes.pack offchain_bid_data) in 
+    let v : unit = check_permit (permit, 0n, param_hash) in  (*Always set counter to 0*)
+    let purchaser = address_from_key (p.permit.signerKey) in
+    let (ops, storage) = place_bid_offchain(offchain_bid_data, storage) in 
+    (ops, storage)
   end
 
 let admin(admin_param, storage : pauseable_admin * storage) : return =
@@ -353,7 +355,7 @@ let english_auction_tez_no_configure (p,storage : auction_without_configure_entr
     | Admin a -> admin(a, storage)
     | Update_allowed a -> update_allowed(a, storage)
 #if OFFCHAIN_BID
-    | Offchain_bid offchain_bid_data -> place_bid_offchain(offchain_bid_data, storage)
+    | Offchain_bid permit -> bid_with_permit(permit, storage)
 #endif
 
 let english_auction_tez_main (p,storage : auction_entrypoints * storage) : return = match p with

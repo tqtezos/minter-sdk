@@ -3,7 +3,11 @@
            (or (or (or %admin (or (unit %confirm_admin) (bool %pause)) (address %set_admin))
                    (nat %bid))
                (or (nat %cancel)
-                   (pair %offchain_bid (nat %asset_id) (pair (mutez %bid_amount) (address %bidder)))))
+                   (pair %offchain_bid
+                      (pair %offchain_bid_data
+                         (nat %asset_id)
+                         (pair (mutez %bid_amount) (address %bidder)))
+                      (pair %permit (key %signerKey) (signature %signature)))))
            (or (nat %resolve) (never %update_allowed)))
         (pair %configure
            (mutez %opening_price)
@@ -1222,6 +1226,30 @@
                          DIG 5 ;
                          SWAP ;
                          EXEC ;
+                         DROP ;
+                         DUP ;
+                         UNPAIR ;
+                         DUP ;
+                         PACK ;
+                         BLAKE2B ;
+                         PUSH nat 0 ;
+                         DIG 3 ;
+                         DUG 2 ;
+                         PAIR ;
+                         SELF_ADDRESS ;
+                         CHAIN_ID ;
+                         PAIR ;
+                         PAIR ;
+                         PACK ;
+                         DUP ;
+                         DUP 3 ;
+                         CDR ;
+                         DIG 3 ;
+                         CAR ;
+                         CHECK_SIGNATURE ;
+                         NOT ;
+                         IF { PUSH string "MISSIGNED" ; PAIR ; FAILWITH } { DROP } ;
+                         SWAP ;
                          DROP ;
                          UNPAIR 3 ;
                          DUP 4 ;

@@ -60,6 +60,21 @@ type permit_buy_param =
     permit : permit;
   } 
 
+type offchain_bid_data = 
+  [@layout:comb]
+  {
+    asset_id : nat;
+    bid_amount : tez;
+    bidder : address;
+  }
+
+type permit_bid_param =
+  [@layout:comb]
+  {
+    offchain_bid_data : offchain_bid_data;
+    permit : permit;
+  } 
+
 (*MATH*) 
 
 (*In English auction it is necessary to use ceiling so that bid is guaranteed to be raised*)
