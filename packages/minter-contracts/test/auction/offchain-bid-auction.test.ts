@@ -2,20 +2,79 @@ import { $log } from '@tsed/logger';
 import { BigNumber } from 'bignumber.js';
 import moment from 'moment';
 import { bootstrap, TestTz } from '../bootstrap-sandbox';
-import { Contract, bytes, address } from '../../src/type-aliases';
+import { Contract, address, bytes, nat, mutez, key } from '../../src/type-aliases';
 import { InternalOperationResult } from '@taquito/rpc';
 import {
   originateEnglishAuctionTezOffchainBid,
   MintNftParam,
   originateNftFaucet,
 } from '../../src/nft-contracts';
-import { MichelsonMap } from '@taquito/taquito';
+import { ContractAbstraction, ContractProvider, MichelsonMap, TezosToolkit } from '@taquito/taquito';
 
 import { addOperator } from '../../src/fa2-interface';
 import { Fa2_token, Tokens, sleep } from '../../src/auction-interface';
 import { queryBalancesWithLambdaView, hasTokens, QueryBalances } from '../../test/fa2-balance-inspector';
 
+import {
+  errors_to_missigned_bytes,
+  Permit,
+  dummy_sig,
+} from '../../src/permit';
+
 jest.setTimeout(360000); // 6 minutes
+
+interface OffchainBidData {
+  asset_id : nat;
+  bid_amount : mutez;
+}
+
+interface PermitBidParam {
+  offchain_bid_data : OffchainBidData;
+  permit : Permit;
+}
+
+async function createPermit( signerKey : key,
+  assetId: nat,
+  bidAmount : mutez,
+  auction : ContractAbstraction<ContractProvider>,
+  permitSigner : TezosToolkit,
+  submitter : TezosToolkit ): Promise<PermitBidParam> {
+  const fake_permit : Permit = {
+    signerKey : signerKey,
+    signature : dummy_sig,
+  };
+
+  const offchain_bid_data : OffchainBidData = {
+    asset_id : assetId,
+    bid_amount : bidAmount,
+  };
+
+  const fake_permit_bid_param : PermitBidParam = {
+    offchain_bid_data : offchain_bid_data,
+    permit : fake_permit,
+  };
+
+  // Bob preapplies a transfer with the dummy_sig to extract the bytes_to_sign
+  const transfer_params = auction.methodsObject.offchain_bid(fake_permit_bid_param)
+    .toTransferParams({ amount : 0 });
+  const bytes_to_sign = await submitter.estimate.transfer(transfer_params)
+    .catch((e) => errors_to_missigned_bytes(e.errors));
+  $log.info('bytes_to_sign:', bytes_to_sign);
+  // Alice sign the parameter
+  const param_sig = await permitSigner.signer.sign(bytes_to_sign).then(s => s.prefixSig);
+
+  const one_step_permit : Permit = {
+    signerKey : signerKey,
+    signature : param_sig,
+  };
+  const permit_bid_param : PermitBidParam = {
+    offchain_bid_data : offchain_bid_data,
+    permit : one_step_permit,
+  };
+  // This is what a relayer needs to submit the parameter on the signer's behalf
+  $log.info('permit package:', permit_bid_param);
+  return permit_bid_param;
+};
 
 describe('test NFT auction', () => {
   let tezos: TestTz;
@@ -27,12 +86,16 @@ describe('test NFT auction', () => {
   let bobAddress : address;
   let aliceAddress : address;
   let eveAddress : address;
+  let aliceKey : key;
+  let eveKey : key;
   let startTime : Date;
   let endTime : Date;
   let tokenId : BigNumber;
   let empty_metadata_map : MichelsonMap<string, bytes>;
   let mintToken : MintNftParam;
+  let assetId : nat;
   let queryBalances : QueryBalances;
+  let dummy_permit_bid_param : PermitBidParam;
 
   beforeAll(async () => {
     tezos = await bootstrap();
@@ -41,6 +104,8 @@ describe('test NFT auction', () => {
     bobAddress = await tezos.bob.signer.publicKeyHash();
     aliceAddress = await tezos.alice.signer.publicKeyHash();
     eveAddress = await tezos.eve.signer.publicKeyHash();
+    eveKey = await tezos.eve.signer.publicKey();
+    aliceKey = await tezos.alice.signer.publicKey();
     mintToken = {
       token_metadata: {
         token_id: tokenId,
@@ -49,6 +114,7 @@ describe('test NFT auction', () => {
       owner: bobAddress,
     };
     queryBalances = queryBalancesWithLambdaView(tezos.lambdaView);
+    assetId = new BigNumber(0);
   });
 
   beforeEach(async() => {
@@ -107,10 +173,11 @@ describe('test NFT auction', () => {
   });
 
   test('resovled auction with winning offchain bid should only send NFT to winning bidder, not send payment', async () => {
-    $log.info(`Alice bids 200tz`);
-    const bidMutez = new BigNumber(0);
-    const opBid = await nftAuctionBob.methods
-      .offchain_bid(0, 10000000, aliceAddress).send({ amount : bidMutez.toNumber(), mutez : true });
+
+    const bidMutez = new BigNumber(10000000);
+    const permit_bid_param = await createPermit(aliceKey, assetId, bidMutez, nftAuctionBob, tezos.alice, tezos.bob);
+    const opBid = await nftAuctionBob.methodsObject
+      .offchain_bid(permit_bid_param).send({ amount : 0 });
     await opBid.confirmation();
     $log.info(`Bid placed. Amount sent: ${opBid.amount} mutez`);
     await sleep(90000); //90 seconds
@@ -131,10 +198,10 @@ describe('test NFT auction', () => {
   });
 
   test('offchain bid outbid by normal bid should not return offchain bid', async () => {
-    $log.info(`Alice bids 200tz`);
     const bidMutez = new BigNumber(10000000);
-    const opBid = await nftAuctionBob.methods
-      .offchain_bid(0, bidMutez, aliceAddress).send({ amount : 0 });
+    const permit_bid_param = await createPermit(aliceKey, assetId, bidMutez, nftAuctionBob, tezos.alice, tezos.bob);
+    const opBid = await nftAuctionBob.methodsObject
+      .offchain_bid(permit_bid_param).send({ amount : 0 });
     await opBid.confirmation();
     $log.info(`Bid placed. Amount sent: ${opBid.amount} mutez`);
 
@@ -148,16 +215,17 @@ describe('test NFT auction', () => {
   });
 
   test('offchain bid outbid by another offchain bid should not return first offchain bid', async () => {
-    $log.info(`Alice bids 200tz`);
     const bidMutez = new BigNumber(10000000);
-    const opBid = await nftAuctionBob.methods
-      .offchain_bid(0, bidMutez, aliceAddress).send({ amount : 0 });
+    const permit_bid_param = await createPermit(aliceKey, assetId, bidMutez, nftAuctionBob, tezos.alice, tezos.bob);
+    const opBid = await nftAuctionBob.methodsObject
+      .offchain_bid(permit_bid_param).send({ amount : 0 });
     await opBid.confirmation();
     $log.info(`Bid placed. Amount sent: ${opBid.amount} mutez`);
 
-    const outBidMutez = new BigNumber(200000000);
-    const opOutbid = await nftAuctionBob.methods
-      .offchain_bid(0, outBidMutez, eveAddress).send({ amount : 0 });
+    const outBidMutez = new BigNumber(20000000);
+    const permit_outbid_param = await createPermit(eveKey, assetId, outBidMutez, nftAuctionBob, tezos.eve, tezos.bob);
+    const opOutbid = await nftAuctionBob.methodsObject
+      .offchain_bid(permit_outbid_param).send({ amount : 0 });
     await opOutbid.confirmation();
     $log.info(`Bid placed`);
 
@@ -171,9 +239,11 @@ describe('test NFT auction', () => {
     await opBid.confirmation();
     $log.info(`Bid placed. Amount sent: ${opBid.amount} mutez`);
 
-    const outBidMutez = new BigNumber(200000000);
-    const opOutbid = await nftAuctionBob.methods
-      .offchain_bid(0, outBidMutez.toNumber(), aliceAddress).send({ amount : 0 });
+    const outBidMutez = new BigNumber(20000000);
+    const permit_outbid_param =
+      await createPermit(aliceKey, assetId, outBidMutez, nftAuctionBob, tezos.alice, tezos.bob);
+    const opOutbid = await nftAuctionBob.methodsObject
+      .offchain_bid(permit_outbid_param).send({ amount : 0 });
     await opOutbid.confirmation();
     $log.info(`Bid placed`);
 
@@ -187,11 +257,19 @@ describe('test NFT auction', () => {
   });
 
   test('Offchain bid by non admin should fail', async () => {
-    const bidMutez = new BigNumber(10000000);
-    const opBid = nftAuctionAlice.methods
-      .offchain_bid(0, bidMutez, aliceAddress).send({ amount : 0 });
+    dummy_permit_bid_param = {
+      offchain_bid_data : {
+        asset_id : new BigNumber(0),
+        bid_amount : new BigNumber(0),
+      },
+      permit : {
+        signerKey : aliceKey,
+        signature : dummy_sig,
+      },
+    };
+    const opBid = nftAuctionAlice.methodsObject
+      .offchain_bid(dummy_permit_bid_param).send({ amount : 0 });
     expect(opBid).rejects.toHaveProperty('message', 'NOT_AN_ADMIN');
   });
-
 
 });

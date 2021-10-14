@@ -34,7 +34,7 @@
     "@taquito/contract-type-generator": "8.1.0-e06c8330--722",
     "@taquito/rpc": "9.0.1",
     "@taquito/signer": "9.0.1",
-    "@taquito/taquito": "9.0.1",
+    "@taquito/taquito": "10.2.0",
     "@taquito/tzip16": "9.0.1",
     "@tsed/logger": "5.5.2",
     "@types/async-retry": "^1.4.2",
