@@ -306,16 +306,13 @@ let place_bid_onchain(asset_id, storage : nat * storage) : return = begin
     (ops, new_storage)
   end
 
+#if OFFCHAIN_BID
 let place_bid_offchain(offchain_bid_data, bidder, storage : offchain_bid_data * address * storage) : return = begin
     let { asset_id = asset_id;
           bid_amount = bid_amount;
         } = offchain_bid_data in 
     let auction : auction = get_auction_data(asset_id, storage) in
-    let (ops, new_storage) = place_bid(asset_id, auction, bid_amount, bidder, storage
-#if OFFCHAIN_BID
-      , true
-#endif
-      ) in 
+    let (ops, new_storage) = place_bid(asset_id, auction, bid_amount, bidder, storage, true ) in 
     (ops, new_storage)
   end
 
@@ -329,6 +326,7 @@ let bid_with_permit (p, storage : permit_bid_param * storage)  : return = begin
     let (ops, storage) = place_bid_offchain(offchain_bid_data, bidder, storage) in 
     (ops, storage)
   end
+#endif
 
 let admin(admin_param, storage : pauseable_admin * storage) : return =
     let ops, admin = pauseable_admin(admin_param, storage.admin) in
