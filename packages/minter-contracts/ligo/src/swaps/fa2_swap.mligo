@@ -36,15 +36,23 @@ type swap_entrypoints =
 type swap_storage =
   { next_swap_id : swap_id
   ; swaps : (swap_id, swap_info) big_map
+#if BURN_REQUESTED
+  ; burn_address : address
+#endif
   }
 
 type return = operation list * swap_storage
 
 (* ==== Values ==== *)
 
+[@inline] let null_address = ("tz1Ke2h7sDdakHJQh8WX4Z372du1KChsksyU" : address)
+
 let init_storage : swap_storage =
   { next_swap_id = 0n
   ; swaps = (Big_map.empty : (swap_id, swap_info) big_map)
+#if BURN_REQUESTED
+  ; burn_address = null_address
+#endif
   }
 
 (* ==== Helpers ==== *)
@@ -137,7 +145,11 @@ let accept_swap(swap_id, storage : swap_id * swap_storage) : return =
         swap.swap_offer.assets_offered in
   let ops2 =
         List.map
+#if !BURN_PAYMENT
         (transfer_asset(Tezos.sender, swap.seller, "SWAP_REQUESTED_FA2_INVALID"))
+#else 
+        (transfer_asset(Tezos.sender, storage.burn_address, "SWAP_REQUESTED_FA2_INVALID"))
+#endif
         swap.swap_offer.assets_requested in
   let snoc_ops (l, a : operation list * operation) = a :: l in
   let allOps = List.fold snoc_ops ops1 ops2 in
