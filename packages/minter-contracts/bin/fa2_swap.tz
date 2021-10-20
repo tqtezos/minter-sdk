@@ -15,11 +15,13 @@
                       (list %assets_requested
                          (pair (address %fa2_address) (list %tokens (pair (nat %token_id) (nat %amount))))))
                    (address %seller)))) ;
-  code { PUSH mutez 0 ;
+  code { PUSH string "XTZ_TRANSFER" ;
+         PUSH mutez 0 ;
          AMOUNT ;
          COMPARE ;
          EQ ;
-         IF {} { PUSH string "XTZ_TRANSFER" ; FAILWITH } ;
+         NOT ;
+         IF { FAILWITH } { DROP } ;
          LAMBDA
            (pair (pair address address) string)
            (lambda (pair address (list (pair nat nat))) operation)

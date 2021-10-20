@@ -1,4 +1,3 @@
-#include "../../fa2/fa2_interface.mligo"
 #include "../../fa2_modules/admin/non_pausable_simple_admin.mligo"
 #include "../../fa2_modules/fa2_allowlist/allowlist_simple.mligo"
 #include "fa2_swap.mligo"

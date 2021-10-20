@@ -1,5 +1,6 @@
 #include "../../fa2/fa2_interface.mligo"
-
+#include "../../fa2_modules/fa2_allowlist/allowlist_base.mligo"
+#include "../common.mligo"
 (* ==== Types ==== *)
 
 type swap_id = nat
@@ -19,7 +20,11 @@ type fa2_assets =
 type swap_offer =
   [@layout:comb]
   { assets_offered : fa2_assets list
+#if !TEZ_FEE
   ; assets_requested : fa2_assets list
+#else 
+  ; assets_requested : fa2_assets list * tez
+#endif
   }
 
 type swap_info =
@@ -55,11 +60,14 @@ let init_storage : swap_storage =
 [@inline]
 let unexpected_err(err : string) : string = err
 
-let forbid_xtz_transfer : unit =
-  if Tezos.amount = 0tez
-  then unit
-  else failwith "XTZ_TRANSFER"
-
+let forbid_xtz_transfer : unit = 
+#if !TEZ_FEE
+  let u : unit = assert_msg(Tezos.amount = 0tez, "XTZ_TRANSFER") in 
+#else
+  let u : unit = unit in 
+#endif 
+  u
+ 
 let fa2_transfer_entrypoint(fa2, on_invalid_fa2 : address * string)
     : ((transfer list) contract) =
   match (Tezos.get_entrypoint_opt "%transfer" fa2 : (transfer list) contract option) with
@@ -126,7 +134,7 @@ let cancel_swap(swap_id, storage : swap_id * swap_storage) : return = begin
   (ops, storage)
   end
 
-let accept_swap(swap_id, storage : swap_id * swap_storage) : return =
+let accept_swap(swap_id, storage : swap_id * swap_storage) : return = begin
   let swap = get_swap(swap_id, storage) in
 
   let storage = { storage with swaps = Big_map.remove swap_id storage.swaps } in
@@ -139,10 +147,19 @@ let accept_swap(swap_id, storage : swap_id * swap_storage) : return =
         List.map
         (transfer_asset(Tezos.sender, swap.seller, "SWAP_REQUESTED_FA2_INVALID"))
         swap.swap_offer.assets_requested in
+
   let snoc_ops (l, a : operation list * operation) = a :: l in
   let allOps = List.fold snoc_ops ops1 ops2 in
 
-  allOps, storage
+#if TEZ_FEE 
+  let xtz_requested : tez = swap.swap_offer.assets_requested.1 in 
+  assert_msg(Tezos.amount = xtz_requested, "SWAP_REQUESTED_XTZ_INVALID");
+  let xtz_op = transfer_tez(xtz_requested, swap.seller) in 
+  let allOps = xtz_op :: allOps in 
+#endif
+
+  (allOps, storage)
+  end
 
 let swaps_main (param, storage : swap_entrypoints * swap_storage) : return = begin
   forbid_xtz_transfer;
