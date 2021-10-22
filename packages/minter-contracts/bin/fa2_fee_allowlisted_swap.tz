@@ -216,26 +216,33 @@
                          EQ ;
                          NOT ;
                          IF { FAILWITH } { DROP } ;
-                         DIG 2 ;
-                         CDR ;
-                         CONTRACT unit ;
-                         IF_NONE { PUSH string "ADDRESS_DOES_NOT_RESOLVE" ; FAILWITH } {} ;
+                         PUSH mutez 0 ;
                          SWAP ;
-                         PUSH unit Unit ;
-                         TRANSFER_TOKENS ;
-                         DUP 4 ;
+                         DUP ;
+                         DUG 2 ;
+                         COMPARE ;
+                         EQ ;
+                         IF { DROP ; SWAP ; DROP }
+                            { DIG 2 ;
+                              CDR ;
+                              CONTRACT unit ;
+                              IF_NONE { PUSH string "ADDRESS_DOES_NOT_RESOLVE" ; FAILWITH } {} ;
+                              SWAP ;
+                              PUSH unit Unit ;
+                              TRANSFER_TOKENS ;
+                              CONS } ;
+                         DUP 3 ;
                          CDR ;
-                         DIG 3 ;
+                         DIG 2 ;
                          NONE (pair (pair (list (pair address (list (pair nat nat))))
                                           (pair (list (pair address (list (pair nat nat)))) mutez))
                                     address) ;
                          SWAP ;
                          UPDATE ;
-                         DIG 3 ;
+                         DIG 2 ;
                          CAR ;
                          PAIR ;
-                         DUG 2 ;
-                         CONS ;
+                         SWAP ;
                          PAIR }
                        { SWAP ;
                          DUP ;

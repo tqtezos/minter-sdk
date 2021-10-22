@@ -158,8 +158,13 @@ let accept_swap(swap_id, storage : swap_id * swap_storage) : return = begin
 #if XTZ_FEE 
   let xtz_requested : tez = swap.swap_offer.assets_requested.1 in 
   assert_msg(Tezos.amount = xtz_requested, "SWAP_REQUESTED_XTZ_INVALID");
-  let xtz_op = transfer_tez(xtz_requested, swap.seller) in 
-  let allOps = xtz_op :: allOps in 
+  let allOps = 
+    if xtz_requested = 0mutez 
+    then allOps 
+    else 
+      let xtz_op = transfer_tez(xtz_requested, swap.seller) in  
+      xtz_op :: allOps 
+    in 
 #endif
 
   (allOps, storage)
