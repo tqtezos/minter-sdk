@@ -20,7 +20,7 @@ type fa2_assets =
 type swap_offer =
   [@layout:comb]
   { assets_offered : fa2_assets list
-#if !TEZ_FEE
+#if !XTZ_FEE
   ; assets_requested : fa2_assets list
 #else 
   ; assets_requested : fa2_assets list * tez
@@ -61,7 +61,7 @@ let init_storage : swap_storage =
 let unexpected_err(err : string) : string = err
 
 let forbid_xtz_transfer : unit = 
-#if !TEZ_FEE
+#if !XTZ_FEE
   let u : unit = assert_msg(Tezos.amount = 0tez, "XTZ_TRANSFER") in 
 #else
   let u : unit = unit in 
@@ -146,12 +146,16 @@ let accept_swap(swap_id, storage : swap_id * swap_storage) : return = begin
   let ops2 =
         List.map
         (transfer_asset(Tezos.sender, swap.seller, "SWAP_REQUESTED_FA2_INVALID"))
-        swap.swap_offer.assets_requested in
+#if !XTZ_FEE
+      swap.swap_offer.assets_requested in
+#else
+      swap.swap_offer.assets_requested.0 in
+#endif
 
   let snoc_ops (l, a : operation list * operation) = a :: l in
   let allOps = List.fold snoc_ops ops1 ops2 in
 
-#if TEZ_FEE 
+#if XTZ_FEE 
   let xtz_requested : tez = swap.swap_offer.assets_requested.1 in 
   assert_msg(Tezos.amount = xtz_requested, "SWAP_REQUESTED_XTZ_INVALID");
   let xtz_op = transfer_tez(xtz_requested, swap.seller) in 

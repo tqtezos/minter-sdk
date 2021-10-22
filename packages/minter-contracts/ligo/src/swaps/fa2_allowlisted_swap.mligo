@@ -18,7 +18,11 @@ let swap_check_allowlist(allowlist, swap_param : allowlist * swap_entrypoints) :
       List.iter (check_asset "SWAP_OFFERED_FA2_NOT_ALLOWLISTED")
                 swap_offer.assets_offered;
       List.iter (check_asset "SWAP_REQUESTED_FA2_NOT_ALLOWLISTED")
+#if !XTZ_FEE
                 swap_offer.assets_requested;
+#else
+                swap_offer.assets_requested.0;
+#endif
       unit
       end
   | Accept -> unit
