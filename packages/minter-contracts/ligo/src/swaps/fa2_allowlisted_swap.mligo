@@ -8,7 +8,7 @@
 
 let swap_check_allowlist(allowlist, swap_param : allowlist * swap_entrypoints) : unit =
   match swap_param with
-    Start swap_offer -> begin
+    Start swap_offers -> begin
       [@inline]
       let check_asset(on_err : string)(assets : fa2_assets) : unit =
         match Big_map.find_opt assets.fa2_address allowlist with
@@ -16,12 +16,12 @@ let swap_check_allowlist(allowlist, swap_param : allowlist * swap_entrypoints) :
         | None -> failwith on_err
         in
       List.iter (check_asset "SWAP_OFFERED_FA2_NOT_ALLOWLISTED")
-                swap_offer.assets_offered;
+                swap_offers.swap_offer.assets_offered;
       List.iter (check_asset "SWAP_REQUESTED_FA2_NOT_ALLOWLISTED")
 #if !XTZ_FEE
-                swap_offer.assets_requested;
+                swap_offers.swap_offer.assets_requested;
 #else
-                swap_offer.assets_requested.0;
+                swap_offers.swap_offer.assets_requested.0;
 #endif
       unit
       end
