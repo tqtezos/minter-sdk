@@ -126,18 +126,18 @@ let cancel_swap(swap_id, storage : swap_id * swap_storage) : return = begin
   (ops, storage)
   end
 
-let accept_swap(swap_id, storage : swap_id * swap_storage) : return =
+let accept_swap(swap_id, accepter, storage : swap_id * address * swap_storage) : return =
   let swap = get_swap(swap_id, storage) in
 
   let storage = { storage with swaps = Big_map.remove swap_id storage.swaps } in
 
   let ops1 =
         List.map
-        (transfer_asset(Tezos.self_address, Tezos.sender, unexpected_err "SWAP_OFFERED_FA2_INVALID"))
+        (transfer_asset(Tezos.self_address, accepter, unexpected_err "SWAP_OFFERED_FA2_INVALID"))
         swap.swap_offer.assets_offered in
   let ops2 =
         List.map
-        (transfer_asset(Tezos.sender, swap.seller, "SWAP_REQUESTED_FA2_INVALID"))
+        (transfer_asset(accepter, swap.seller, "SWAP_REQUESTED_FA2_INVALID"))
         swap.swap_offer.assets_requested in
   let snoc_ops (l, a : operation list * operation) = a :: l in
   let allOps = List.fold snoc_ops ops1 ops2 in
@@ -149,5 +149,5 @@ let swaps_main (param, storage : swap_entrypoints * swap_storage) : return = beg
   match param with
     | Start swap_offer -> start_swap(swap_offer, storage)
     | Cancel swap_id -> cancel_swap(swap_id, storage)
-    | Accept swap_id -> accept_swap(swap_id, storage)
+    | Accept swap_id -> accept_swap(swap_id, Tezos.sender, storage)
   end

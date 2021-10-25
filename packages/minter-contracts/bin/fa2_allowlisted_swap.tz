@@ -159,8 +159,9 @@
                  IF_LEFT
                    { IF_LEFT
                        { SWAP ;
-                         DUP ;
-                         DUG 2 ;
+                         SENDER ;
+                         DIG 2 ;
+                         DUP 3 ;
                          SWAP ;
                          DUP ;
                          DUG 2 ;
@@ -173,11 +174,11 @@
                          CAR ;
                          CAR ;
                          MAP { PUSH string "SWAP_OFFERED_FA2_INVALID" ;
-                               SENDER ;
+                               DUP 5 ;
                                SELF_ADDRESS ;
                                PAIR ;
                                PAIR ;
-                               DUP 7 ;
+                               DUP 8 ;
                                SWAP ;
                                EXEC ;
                                SWAP ;
@@ -190,15 +191,17 @@
                          MAP { PUSH string "SWAP_REQUESTED_FA2_INVALID" ;
                                DUP 4 ;
                                CDR ;
-                               SENDER ;
+                               DUP 7 ;
                                PAIR ;
                                PAIR ;
-                               DUP 8 ;
+                               DUP 9 ;
                                SWAP ;
                                EXEC ;
                                SWAP ;
                                EXEC } ;
                          DIG 2 ;
+                         DROP ;
+                         DIG 3 ;
                          DROP ;
                          DIG 5 ;
                          DROP ;
