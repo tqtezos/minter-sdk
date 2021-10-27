@@ -9,7 +9,7 @@ import Lorentz.Value
 import Morley.Nettest
 import Morley.Nettest.Tasty (nettestScenarioCaps)
 
-import Lorentz.Contracts.Swaps.Basic hiding (SwapOffer)
+import Lorentz.Contracts.Swaps.Basic hiding (SwapOffer, mkSingleOffer, mkNOffers)
 import Lorentz.Contracts.Swaps.AllowlistedFee
 import Test.Swaps.Util
 import Test.Util
@@ -32,7 +32,7 @@ test_Integrational = testGroup "Integrational"
         , (bob, tokenId) -: 3
         ] $ do
           withSender alice $
-            call swap (Call @"Start") SwapOffer
+            call swap (Call @"Start") $ mkSingleOffer SwapOffer
               { assetsOffered = [mkFA2Assets fa2 [(tokenId, 10)]]
               , assetsRequested = ([mkFA2Assets fa2 [(tokenId, 7)]], 0)
               }
@@ -56,7 +56,7 @@ test_ContractSendsFee = testGroup "Tests that contract sends fee"
         call swap (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
     
       withSender alice $
-          call swap (Call @"Start") SwapOffer
+          call swap (Call @"Start") $ mkSingleOffer SwapOffer
             { assetsOffered = [mkFA2Assets fa2 [(tokenId, 10)]]
             , assetsRequested = ([mkFA2Assets fa2 [(tokenId, 7)]], amountRequested)
             }
@@ -89,7 +89,7 @@ test_BuyerMustSendFee = testGroup "Tests that buyer must send fee"
         call swap (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
     
       withSender alice $
-          call swap (Call @"Start") SwapOffer
+          call swap (Call @"Start") $ mkSingleOffer SwapOffer
             { assetsOffered = [mkFA2Assets fa2 [(tokenId, 10)]]
             , assetsRequested = ([mkFA2Assets fa2 [(tokenId, 7)]], amountRequested)
             }

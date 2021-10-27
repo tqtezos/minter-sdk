@@ -42,8 +42,17 @@ customGeneric "SwapOffer" ligoCombLayout
 deriving anyclass instance IsoValue SwapOffer
 deriving anyclass instance HasAnnotation SwapOffer
 
-data SwapInfo = SwapInfo
+data SwapOffers = SwapOffers
   { swapOffer :: SwapOffer
+  , remainingOffers :: Natural
+  }
+
+customGeneric "SwapOffers" ligoCombLayout
+deriving anyclass instance IsoValue SwapOffers
+deriving anyclass instance HasAnnotation SwapOffers
+
+data SwapInfo = SwapInfo
+  { swapOffers :: SwapOffers
   , seller :: Address
   }
 
@@ -52,7 +61,7 @@ deriving anyclass instance IsoValue SwapInfo
 deriving anyclass instance HasAnnotation SwapInfo
 
 data SwapEntrypoints
-  = Start SwapOffer
+  = Start SwapOffers
   | Cancel SwapId
   | Accept SwapId
 
@@ -105,3 +114,16 @@ errSwapOfferedFA2Invalid = [mt|SWAP_OFFERED_FA2_INVALID|]
 
 errSwapRequestedFA2Invalid :: MText
 errSwapRequestedFA2Invalid = [mt|SWAP_REQUESTED_FA2_INVALID|]
+
+-- Helpers
+----------------------------------------------------------------------------
+ 
+mkNOffers :: Natural -> SwapOffer -> SwapOffers 
+mkNOffers n s = SwapOffers 
+  {
+    swapOffer = s
+  , remainingOffers = n
+  }
+
+mkSingleOffer :: SwapOffer -> SwapOffers 
+mkSingleOffer = mkNOffers 1

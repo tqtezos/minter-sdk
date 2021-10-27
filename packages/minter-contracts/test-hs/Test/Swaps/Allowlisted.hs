@@ -39,7 +39,7 @@ test_AllowlistChecks = allowlistSimpleChecks
         { allowlistError = errSwapOfferedNotAllowlisted
         , allowlistRunRestrictedAction = \(alice, tokenId) swap (fa2, _) ->
             withSender alice $
-              call swap (Call @"Start") SwapOffer
+              call swap (Call @"Start") $ mkSingleOffer SwapOffer
                 { assetsOffered = [mkFA2Assets fa2 [(tokenId, 1)]]
                 , assetsRequested = []
                 }
@@ -48,7 +48,7 @@ test_AllowlistChecks = allowlistSimpleChecks
         { allowlistError = errSwapRequestedNotAllowlisted
         , allowlistRunRestrictedAction = \(alice, tokenId) swap (fa2, _) ->
             withSender alice $
-              call swap (Call @"Start") SwapOffer
+              call swap (Call @"Start") $ mkSingleOffer SwapOffer
                 { assetsOffered = []
                 , assetsRequested = [mkFA2Assets fa2 [(tokenId, 1)]]
                 }
@@ -76,7 +76,7 @@ test_Integrational = testGroup "Integrational"
         , (bob, tokenId) -: 3
         ] $ do
           withSender alice $
-            call swap (Call @"Start") SwapOffer
+            call swap (Call @"Start") $ mkSingleOffer SwapOffer
               { assetsOffered = [mkFA2Assets fa2 [(tokenId, 10)]]
               , assetsRequested = [mkFA2Assets fa2 [(tokenId, 7)]]
               }

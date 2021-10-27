@@ -8,7 +8,9 @@ import Michelson.Test.Import (embedContractM)
 import qualified Michelson.Typed as T
 
 import Lorentz.Contracts.NonPausableSimpleAdmin
-import Lorentz.Contracts.Swaps.Basic hiding (SwapOffer, SwapInfo, SwapEntrypoints, SwapStorage, initSwapStorage) 
+import Lorentz.Contracts.Swaps.Basic hiding (SwapOffer, SwapOffers, SwapInfo, 
+                                             SwapEntrypoints, SwapStorage, initSwapStorage, 
+                                             mkNOffers, mkSingleOffer) 
 
 -- Types
 ----------------------------------------------------------------------------
@@ -21,8 +23,17 @@ customGeneric "SwapOffer" ligoCombLayout
 deriving anyclass instance IsoValue SwapOffer
 deriving anyclass instance HasAnnotation SwapOffer
 
-data SwapInfo = SwapInfo
+data SwapOffers = SwapOffers
   { swapOffer :: SwapOffer
+  , remainingOffers :: Natural
+  }
+
+customGeneric "SwapOffers" ligoCombLayout
+deriving anyclass instance IsoValue SwapOffers
+deriving anyclass instance HasAnnotation SwapOffers
+
+data SwapInfo = SwapInfo
+  { swapOffers :: SwapOffers
   , seller :: Address
   }
 
@@ -31,7 +42,7 @@ deriving anyclass instance IsoValue SwapInfo
 deriving anyclass instance HasAnnotation SwapInfo
 
 data SwapEntrypoints
-  = Start SwapOffer
+  = Start SwapOffers
   | Cancel SwapId
   | Accept SwapId
 
@@ -107,3 +118,17 @@ errSwapRequestedNotAllowlisted = [mt|SWAP_REQUESTED_FA2_NOT_ALLOWLISTED|]
 
 errNoXtzTransferred :: MText 
 errNoXtzTransferred = [mt|SWAP_REQUESTED_XTZ_INVALID|]
+
+
+-- Helpers
+----------------------------------------------------------------------------
+ 
+mkNOffers :: Natural -> SwapOffer -> SwapOffers 
+mkNOffers n s = SwapOffers 
+  {
+    swapOffer = s
+  , remainingOffers = n
+  }
+
+mkSingleOffer :: SwapOffer -> SwapOffers 
+mkSingleOffer = mkNOffers 1
