@@ -5,6 +5,7 @@ module Test.Swaps.Util
   , originateWithAdmin
   , originateSwap
   , originateAllowlistedSwap
+  , originateAllowlistedBurnSwap
   , originateAllowlistedSwapWithAdmin
   , mkFA2Assets
   ) where
@@ -16,6 +17,8 @@ import Morley.Nettest
 
 import Lorentz.Contracts.Swaps.Allowlisted
 import Lorentz.Contracts.Swaps.Basic
+
+import Lorentz.Contracts.Swaps.Burn
 import Test.Util
 
 -- | Originate the swaps contract.
@@ -36,6 +39,16 @@ originateAllowlistedSwap admin = do
   TAddress <$> originateUntypedSimple "swaps"
     (T.untypeValue $ T.toVal $ initAllowlistedSwapStorage admin)
     (T.convertContract allowlistedSwapsContract)
+
+-- | Originate the allowlisted burn swaps contract.
+originateAllowlistedBurnSwap
+  :: MonadNettest caps base m
+  => Address
+  -> m (TAddress AllowlistedBurnSwapEntrypoints)
+originateAllowlistedBurnSwap admin = do
+  TAddress <$> originateUntypedSimple "swaps"
+    (T.untypeValue $ T.toVal $ initAllowlistedBurnSwapStorage admin)
+    (T.convertContract allowlistedBurnSwapsContract)
 
 -- | Originate the allowlisted swaps contract and admin for it.
 originateAllowlistedSwapWithAdmin
