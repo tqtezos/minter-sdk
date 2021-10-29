@@ -163,21 +163,23 @@ let accept_swap(swap_id, storage : swap_id * swap_storage) : return = begin
     else { storage with swaps = Big_map.remove swap_id storage.swaps }
     in 
 
-  let ops1 =
+  let ops =
         List.map
         (transfer_assets(Tezos.self_address, Tezos.sender, 1n, unexpected_err "SWAP_OFFERED_FA2_INVALID"))
         swap.swap_offers.swap_offer.assets_offered in
-  let ops2 =
-        List.map
-        (transfer_assets(Tezos.sender, swap.seller, 1n, "SWAP_REQUESTED_FA2_INVALID"))
+  let allOps =
+        List.fold
+        (fun (ops, tokens : operation list * fa2_assets) ->  
+          let transfer = transfer_assets(Tezos.sender, swap.seller, 1n, "SWAP_REQUESTED_FA2_INVALID") in 
+          let op : operation = transfer tokens in 
+          (op :: ops)
+        )
 #if !XTZ_FEE
-      swap.swap_offers.swap_offer.assets_requested in
+        swap.swap_offers.swap_offer.assets_requested 
 #else
-      swap.swap_offers.swap_offer.assets_requested.0 in
+        swap.swap_offers.swap_offer.assets_requested.0
 #endif
-
-  let snoc_ops (l, a : operation list * operation) = a :: l in
-  let allOps = List.fold snoc_ops ops1 ops2 in
+      ops in 
 
 #if XTZ_FEE 
   let xtz_requested : tez = swap.swap_offers.swap_offer.assets_requested.1 in 
