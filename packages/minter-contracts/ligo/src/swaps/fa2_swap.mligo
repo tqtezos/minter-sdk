@@ -45,13 +45,13 @@ type return = operation list * swap_storage
 
 (* ==== Values ==== *)
 
-[@inline] let null_address = ("tz1Ke2h7sDdakHJQh8WX4Z372du1KChsksyU" : address)
+[@inline] let example_burn_address = ("tz1Ke2h7sDdakHJQh8WX4Z372du1KChsksyU" : address)
 
 let init_storage : swap_storage =
   { next_swap_id = 0n
   ; swaps = (Big_map.empty : (swap_id, swap_info) big_map)
 #if BURN_PAYMENT
-  ; burn_address = null_address
+  ; burn_address = example_burn_address
 #endif
   }
 
