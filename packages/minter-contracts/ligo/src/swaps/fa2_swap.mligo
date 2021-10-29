@@ -36,7 +36,7 @@ type swap_entrypoints =
 type swap_storage =
   { next_swap_id : swap_id
   ; swaps : (swap_id, swap_info) big_map
-#if BURN_REQUESTED
+#if BURN_PAYMENT
   ; burn_address : address
 #endif
   }
@@ -50,7 +50,7 @@ type return = operation list * swap_storage
 let init_storage : swap_storage =
   { next_swap_id = 0n
   ; swaps = (Big_map.empty : (swap_id, swap_info) big_map)
-#if BURN_REQUESTED
+#if BURN_PAYMENT
   ; burn_address = null_address
 #endif
   }
