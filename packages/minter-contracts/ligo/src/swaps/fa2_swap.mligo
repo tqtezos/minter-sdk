@@ -108,24 +108,26 @@ let authorize_seller(swap : swap_info) : unit =
 
 (* ==== Entrypoints ==== *)
 
-let start_swap(swap_offers, storage : swap_offers * swap_storage) : return =
-  let swap_id = storage.next_swap_id in
-  let seller = Tezos.sender in
-  let swap : swap_info =
-    { swap_offers = swap_offers
-    ; seller = seller
-    } in
-  let storage = { storage with
-      next_swap_id = storage.next_swap_id + 1n
-    ; swaps = Big_map.add swap_id swap storage.swaps
-    } in
-
-  let ops =
-        List.map
-        (transfer_assets(seller, Tezos.self_address, swap_offers.remaining_offers, "SWAP_OFFERED_FA2_INVALID"))
-        swap_offers.swap_offer.assets_offered in
-
-  ops, storage
+let start_swap(swap_offers, storage : swap_offers * swap_storage) : return = begin
+    assert_msg(swap_offers.remaining_offers > 0n, "OFFERS_MUST_BE_NONZERO");
+    let swap_id = storage.next_swap_id in
+    let seller = Tezos.sender in
+    let swap : swap_info =
+      { swap_offers = swap_offers
+      ; seller = seller
+      } in
+    let storage = { storage with
+        next_swap_id = storage.next_swap_id + 1n
+      ; swaps = Big_map.add swap_id swap storage.swaps
+      } in
+  
+    let ops =
+          List.map
+          (transfer_assets(seller, Tezos.self_address, swap_offers.remaining_offers, "SWAP_OFFERED_FA2_INVALID"))
+          swap_offers.swap_offer.assets_offered in
+  
+    (ops, storage)
+  end
 
 let cancel_swap(swap_id, storage : swap_id * swap_storage) : return = begin
   let swap = get_swap(swap_id, storage) in

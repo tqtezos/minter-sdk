@@ -19,13 +19,22 @@
                             (pair (address %fa2_address) (list %tokens (pair (nat %token_id) (nat %amount))))))
                       (nat %remaining_offers))
                    (address %seller)))) ;
-  code { PUSH string "XTZ_TRANSFER" ;
+  code { LAMBDA
+           (pair bool string)
+           unit
+           { UNPAIR ; NOT ; IF { FAILWITH } { DROP ; UNIT } } ;
+         PUSH string "XTZ_TRANSFER" ;
          PUSH mutez 0 ;
          AMOUNT ;
          COMPARE ;
          EQ ;
-         NOT ;
-         IF { FAILWITH } { DROP } ;
+         PAIR ;
+         SWAP ;
+         DUP ;
+         DUG 2 ;
+         SWAP ;
+         EXEC ;
+         DROP ;
          LAMBDA
            (pair (pair address address) (pair nat string))
            (lambda (pair address (list (pair nat nat))) operation)
@@ -76,10 +85,12 @@
                  TRANSFER_TOKENS } ;
              SWAP ;
              APPLY } ;
-         SWAP ;
+         DIG 2 ;
          UNPAIR ;
          IF_LEFT
-           { IF_LEFT
+           { DIG 3 ;
+             DROP ;
+             IF_LEFT
                { SWAP ;
                  DUP ;
                  DUG 2 ;
@@ -230,7 +241,18 @@
                  PAIR ;
                  SWAP ;
                  PAIR } }
-           { SENDER ;
+           { PUSH string "OFFERS_MUST_BE_NONZERO" ;
+             PUSH nat 0 ;
+             DUP 3 ;
+             CDR ;
+             COMPARE ;
+             GT ;
+             PAIR ;
+             DIG 4 ;
+             SWAP ;
+             EXEC ;
+             DROP ;
+             SENDER ;
              DUP 3 ;
              CDR ;
              PUSH nat 1 ;

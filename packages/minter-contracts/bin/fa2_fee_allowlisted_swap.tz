@@ -36,6 +36,10 @@
              NEQ ;
              IF { PUSH string "NOT_AN_ADMIN" ; FAILWITH } { UNIT } } ;
          LAMBDA
+           (pair bool string)
+           unit
+           { UNPAIR ; NOT ; IF { FAILWITH } { DROP ; UNIT } } ;
+         LAMBDA
            (pair (pair address address) (pair nat string))
            (lambda (pair address (list (pair nat nat))) operation)
            { UNPAIR ;
@@ -85,11 +89,13 @@
                  TRANSFER_TOKENS } ;
              SWAP ;
              APPLY } ;
-         DIG 2 ;
+         DIG 3 ;
          UNPAIR ;
          IF_LEFT
            { IF_LEFT
                { DIG 2 ;
+                 DROP ;
+                 DIG 2 ;
                  DROP ;
                  SWAP ;
                  DUP ;
@@ -135,7 +141,7 @@
                  PAIR ;
                  SWAP ;
                  PAIR }
-               { DIG 3 ;
+               { DIG 4 ;
                  DROP ;
                  DUP ;
                  DUP 3 ;
@@ -282,8 +288,11 @@
                          AMOUNT ;
                          COMPARE ;
                          EQ ;
-                         NOT ;
-                         IF { FAILWITH } { DROP } ;
+                         PAIR ;
+                         DIG 6 ;
+                         SWAP ;
+                         EXEC ;
+                         DROP ;
                          PUSH mutez 0 ;
                          SWAP ;
                          DUP ;
@@ -300,7 +309,9 @@
                               TRANSFER_TOKENS ;
                               CONS } ;
                          PAIR }
-                       { SWAP ;
+                       { DIG 4 ;
+                         DROP ;
+                         SWAP ;
                          DUP ;
                          DUG 2 ;
                          SWAP ;
@@ -356,7 +367,18 @@
                          PAIR ;
                          SWAP ;
                          PAIR } }
-                   { SENDER ;
+                   { PUSH string "OFFERS_MUST_BE_NONZERO" ;
+                     PUSH nat 0 ;
+                     DUP 3 ;
+                     CDR ;
+                     COMPARE ;
+                     GT ;
+                     PAIR ;
+                     DIG 5 ;
+                     SWAP ;
+                     EXEC ;
+                     DROP ;
+                     SENDER ;
                      DUP 3 ;
                      CDR ;
                      PUSH nat 1 ;
@@ -409,6 +431,8 @@
                  SWAP ;
                  PAIR } }
            { DIG 2 ;
+             DROP ;
+             DIG 2 ;
              DROP ;
              SWAP ;
              DUP ;
