@@ -5,6 +5,7 @@ module Test.Swaps.Util
   , originateWithAdmin
   , originateSwap
   , originateAllowlistedSwap
+  , originateAllowlistedFeeSwap
   , originateAllowlistedSwapWithAdmin
   , mkFA2Assets
   ) where
@@ -16,15 +17,17 @@ import Morley.Nettest
 
 import Lorentz.Contracts.Swaps.Allowlisted
 import Lorentz.Contracts.Swaps.Basic
+
+import Lorentz.Contracts.Swaps.AllowlistedFee
 import Test.Util
 
 -- | Originate the swaps contract.
 originateSwap
   :: MonadNettest caps base m
-  => m (TAddress SwapEntrypoints)
+  => m (TAddress Lorentz.Contracts.Swaps.Basic.SwapEntrypoints)
 originateSwap = do
   TAddress <$> originateUntypedSimple "swaps"
-    (T.untypeValue $ T.toVal initSwapStorage)
+    (T.untypeValue $ T.toVal Lorentz.Contracts.Swaps.Basic.initSwapStorage)
     (T.convertContract swapsContract)
 
 -- | Originate the allowlisted swaps contract.
@@ -36,6 +39,16 @@ originateAllowlistedSwap admin = do
   TAddress <$> originateUntypedSimple "swaps"
     (T.untypeValue $ T.toVal $ initAllowlistedSwapStorage admin)
     (T.convertContract allowlistedSwapsContract)
+
+-- | Originate the allowlisted swaps contract with tez fee.
+originateAllowlistedFeeSwap
+  :: MonadNettest caps base m
+  => Address
+  -> m (TAddress Lorentz.Contracts.Swaps.AllowlistedFee.AllowlistedFeeSwapEntrypoints)
+originateAllowlistedFeeSwap admin = do
+  TAddress <$> originateUntypedSimple "swaps"
+    (T.untypeValue $ T.toVal $ initAllowlistedFeeSwapStorage admin)
+    (T.convertContract allowlistedFeeSwapsContract)
 
 -- | Originate the allowlisted swaps contract and admin for it.
 originateAllowlistedSwapWithAdmin

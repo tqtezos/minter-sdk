@@ -1,41 +1,22 @@
--- | Lorentz bindings for the swaps contract.
-module Lorentz.Contracts.Swaps.Basic where
+-- | Lorentz bindings for the allowlisted swaps contract.
+module Lorentz.Contracts.Swaps.AllowlistedFee where
 
 import Lorentz
 
 import Lorentz.Contracts.MinterSdk
-import Lorentz.Contracts.Spec.FA2Interface
 import Michelson.Test.Import (embedContractM)
 import qualified Michelson.Typed as T
 
+import Lorentz.Contracts.NonPausableSimpleAdmin
+import Lorentz.Contracts.Swaps.Basic hiding (SwapOffer, SwapOffers, SwapInfo, 
+                                             SwapEntrypoints, SwapStorage, initSwapStorage, 
+                                             mkNOffers, mkSingleOffer) 
+
 -- Types
 ----------------------------------------------------------------------------
-
-newtype SwapId = SwapId Natural
-  deriving stock (Show, Eq, Ord)
-  deriving newtype (IsoValue, HasAnnotation)
-
-data FA2Token = FA2Token
-  { tokenId :: TokenId
-  , amount :: Natural
-  }
-
-customGeneric "FA2Token" ligoCombLayout
-deriving anyclass instance IsoValue FA2Token
-deriving anyclass instance HasAnnotation FA2Token
-
-data FA2Assets = FA2Assets
-  { fa2Address :: Address
-  , tokens :: [FA2Token]
-  }
-
-customGeneric "FA2Assets" ligoCombLayout
-deriving anyclass instance IsoValue FA2Assets
-deriving anyclass instance HasAnnotation FA2Assets
-
 data SwapOffer = SwapOffer
   { assetsOffered :: [FA2Assets]
-  , assetsRequested :: [FA2Assets]
+  , assetsRequested :: ([FA2Assets], Mutez)
   }
 
 customGeneric "SwapOffer" ligoCombLayout
@@ -87,33 +68,57 @@ initSwapStorage = SwapStorage
   , swaps = mempty
   }
 
+type Allowlist = BigMap Address ()
+
+data AllowlistedFeeSwapStorage = AllowlistedFeeSwapStorage
+  { swapStorage :: SwapStorage
+  , admin :: AdminStorage
+  , allowlist :: Allowlist
+  }
+
+customGeneric "AllowlistedFeeSwapStorage" ligoLayout
+deriving anyclass instance IsoValue AllowlistedFeeSwapStorage
+deriving anyclass instance HasAnnotation AllowlistedFeeSwapStorage
+
+initAllowlistedFeeSwapStorage :: Address -> AllowlistedFeeSwapStorage
+initAllowlistedFeeSwapStorage admin = AllowlistedFeeSwapStorage
+  { swapStorage = initSwapStorage
+  , admin = initAdminStorage admin
+  , allowlist = mempty
+  }
+
+data AllowlistedFeeSwapEntrypoints
+  = Swap SwapEntrypoints
+  | Admin AdminEntrypoints
+  | Update_allowed (BigMap Address ())
+
+customGeneric "AllowlistedFeeSwapEntrypoints" ligoLayout
+deriving anyclass instance IsoValue AllowlistedFeeSwapEntrypoints
+deriving anyclass instance HasAnnotation AllowlistedFeeSwapEntrypoints
+
+instance ParameterHasEntrypoints AllowlistedFeeSwapEntrypoints where
+  type ParameterEntrypointsDerivation AllowlistedFeeSwapEntrypoints = EpdDelegate
+
 -- Contract
 ----------------------------------------------------------------------------
 
-swapsContract :: T.Contract (ToT SwapEntrypoints) (ToT SwapStorage)
-swapsContract = $$(embedContractM (inBinFolder "fa2_swap.tz"))
+allowlistedFeeSwapsContract
+  :: T.Contract (ToT AllowlistedFeeSwapEntrypoints) (ToT AllowlistedFeeSwapStorage)
+allowlistedFeeSwapsContract =
+  $$(embedContractM (inBinFolder "fa2_fee_allowlisted_swap.tz"))
 
 -- Errors
 ----------------------------------------------------------------------------
 
-errSwapNotExist :: MText
-errSwapNotExist = [mt|SWAP_NOT_EXIST|]
+errSwapOfferedNotAllowlisted :: MText
+errSwapOfferedNotAllowlisted = [mt|SWAP_OFFERED_FA2_NOT_ALLOWLISTED|]
 
-errSwapFinished :: MText
-errSwapFinished = [mt|SWAP_NOT_EXIST|]
+errSwapRequestedNotAllowlisted :: MText
+errSwapRequestedNotAllowlisted = [mt|SWAP_REQUESTED_FA2_NOT_ALLOWLISTED|]
 
-errSwapCancelled :: MText
-errSwapCancelled = [mt|SWAP_NOT_EXIST|]
--- ↑ The contract does not actually distinguish these cases
+errNoXtzTransferred :: MText 
+errNoXtzTransferred = [mt|SWAP_REQUESTED_XTZ_INVALID|]
 
-errNotSwapSeller :: MText
-errNotSwapSeller = [mt|NOT_SWAP_SELLER|]
-
-errSwapOfferedFA2Invalid :: MText
-errSwapOfferedFA2Invalid = [mt|SWAP_OFFERED_FA2_INVALID|]
-
-errSwapRequestedFA2Invalid :: MText
-errSwapRequestedFA2Invalid = [mt|SWAP_REQUESTED_FA2_INVALID|]
 
 -- Helpers
 ----------------------------------------------------------------------------

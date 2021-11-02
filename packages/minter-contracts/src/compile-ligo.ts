@@ -178,6 +178,12 @@ const compileSources: CompileSourceEntry[] = [
     contract: true,
   },
   {
+    srcFile: 'swaps/fa2_fee_allowlisted_swap.mligo',
+    mainFn: 'allowlisted_swaps_main',
+    dstFile: 'fa2_fee_allowlisted_swap.tz',
+    contract: true,
+  },
+  {
     srcFile: 'english_auction/english_auction_fa2.mligo',
     mainFn: 'english_auction_fa2_main',
     dstFile: 'english_auction_fa2.tz',
