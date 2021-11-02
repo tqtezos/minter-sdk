@@ -7,6 +7,7 @@ module Test.Swaps.Util
   , originateAllowlistedSwap
   , originateAllowlistedBurnSwap
   , originateAllowlistedSwapWithAdmin
+  , originateAllowlistedBurnSwapWithAdmin
   , mkFA2Assets
   ) where
 
@@ -49,6 +50,13 @@ originateAllowlistedBurnSwap admin = do
   TAddress <$> originateUntypedSimple "swaps"
     (T.untypeValue $ T.toVal $ initAllowlistedBurnSwapStorage admin)
     (T.convertContract allowlistedBurnSwapsContract)
+
+-- | Originate the allowlisted swaps contract and admin for it.
+originateAllowlistedBurnSwapWithAdmin
+  :: MonadNettest caps base m
+  => m (TAddress AllowlistedBurnSwapEntrypoints, Address)
+originateAllowlistedBurnSwapWithAdmin =
+  originateWithAdmin originateAllowlistedBurnSwap
 
 -- | Originate the allowlisted swaps contract and admin for it.
 originateAllowlistedSwapWithAdmin
