@@ -181,7 +181,7 @@ assertingBalanceDeltas fa2 indicedDeltas action = do
   return res
     where
       pullBalance
-        :: MonadNettest base caps m
+        :: MonadNettest caps base m
         => TAddress [FA2.BalanceResponseItem] -> m ()
       pullBalance consumer = do
         let tokenRefs = map fst indicedDeltas
