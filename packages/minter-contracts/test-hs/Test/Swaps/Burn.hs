@@ -344,7 +344,7 @@ test_AllowlistChecks = allowlistSimpleChecks
   }
 
 assertingBurnAddressUnchanged
-  :: (MonadNettest caps base m, HasCallStack)
+  :: (MonadEmulated caps base m, HasCallStack)
   => TAddress AllowlistedBurnSwapEntrypoints
   -> m a
   -> m a
@@ -356,5 +356,5 @@ assertingBurnAddressUnchanged swapContract action = do
   return res
     where
       getBurnAddress swapContract = do 
-        storage <- fromVal @AllowlistedBurnSwapStorage . _ <$> getStorage swapContract
+        storage <- fromVal @AllowlistedBurnSwapStorage <$> getStorage' swapContract
         pure $ (burnAddress . burnSwapStorage) storage
