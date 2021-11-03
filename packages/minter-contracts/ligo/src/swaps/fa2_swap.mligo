@@ -1,5 +1,6 @@
 #include "../../fa2/fa2_interface.mligo"
-
+#include "../../fa2_modules/fa2_allowlist/allowlist_base.mligo"
+#include "../common.mligo"
 (* ==== Types ==== *)
 
 type swap_id = nat
@@ -19,17 +20,28 @@ type fa2_assets =
 type swap_offer =
   [@layout:comb]
   { assets_offered : fa2_assets list
+#if !XTZ_FEE
   ; assets_requested : fa2_assets list
+#else 
+  ; assets_requested : fa2_assets list * tez
+#endif
   }
+
+type swap_offers = 
+  [@layout:comb]
+  {
+    swap_offer : swap_offer;
+    remaining_offers : nat;
+  }  
 
 type swap_info =
   [@layout:comb]
-  { swap_offer : swap_offer
+  { swap_offers : swap_offers
   ; seller : address
   }
 
 type swap_entrypoints =
-  | Start of swap_offer
+  | Start of swap_offers
   | Cancel of swap_id
   | Accept of swap_id
 
@@ -63,24 +75,27 @@ let init_storage : swap_storage =
 [@inline]
 let unexpected_err(err : string) : string = err
 
-let forbid_xtz_transfer : unit =
-  if Tezos.amount = 0tez
-  then unit
-  else failwith "XTZ_TRANSFER"
-
+let forbid_xtz_transfer : unit = 
+#if !XTZ_FEE
+  let u : unit = assert_msg(Tezos.amount = 0tez, "XTZ_TRANSFER") in 
+#else
+  let u : unit = unit in 
+#endif 
+  u
+ 
 let fa2_transfer_entrypoint(fa2, on_invalid_fa2 : address * string)
     : ((transfer list) contract) =
   match (Tezos.get_entrypoint_opt "%transfer" fa2 : (transfer list) contract option) with
   | None -> (failwith on_invalid_fa2 : (transfer list) contract)
   | Some c ->  c
 
-let transfer_asset(from_, to_, on_invalid_fa2 : address * address * string)(asset : fa2_assets)
+let transfer_assets(from_, to_, num_transfers, on_invalid_fa2 : address * address * nat * string)(asset : fa2_assets)
     : operation =
   let transfer_ep = fa2_transfer_entrypoint(asset.fa2_address, on_invalid_fa2) in
   let token_to_tx_dest(token : fa2_token) : transfer_destination =
         { to_ = to_
         ; token_id = token.token_id
-        ; amount = token.amount
+        ; amount = token.amount * num_transfers
         } in
   let param =
         { from_ = from_
@@ -101,24 +116,26 @@ let authorize_seller(swap : swap_info) : unit =
 
 (* ==== Entrypoints ==== *)
 
-let start_swap(swap_offer, storage : swap_offer * swap_storage) : return =
-  let swap_id = storage.next_swap_id in
-  let seller = Tezos.sender in
-  let swap : swap_info =
-    { swap_offer = swap_offer
-    ; seller = seller
-    } in
-  let storage = { storage with
-      next_swap_id = storage.next_swap_id + 1n
-    ; swaps = Big_map.add swap_id swap storage.swaps
-    } in
-
-  let ops =
-        List.map
-        (transfer_asset(seller, Tezos.self_address, "SWAP_OFFERED_FA2_INVALID"))
-        swap_offer.assets_offered in
-
-  ops, storage
+let start_swap(swap_offers, storage : swap_offers * swap_storage) : return = begin
+    assert_msg(swap_offers.remaining_offers > 0n, "OFFERS_MUST_BE_NONZERO");
+    let swap_id = storage.next_swap_id in
+    let seller = Tezos.sender in
+    let swap : swap_info =
+      { swap_offers = swap_offers
+      ; seller = seller
+      } in
+    let storage = { storage with
+        next_swap_id = storage.next_swap_id + 1n
+      ; swaps = Big_map.add swap_id swap storage.swaps
+      } in
+  
+    let ops =
+          List.map
+          (transfer_assets(seller, Tezos.self_address, swap_offers.remaining_offers, "SWAP_OFFERED_FA2_INVALID"))
+          swap_offers.swap_offer.assets_offered in
+  
+    (ops, storage)
+  end
 
 let cancel_swap(swap_id, storage : swap_id * swap_storage) : return = begin
   let swap = get_swap(swap_id, storage) in
@@ -128,38 +145,73 @@ let cancel_swap(swap_id, storage : swap_id * swap_storage) : return = begin
 
   let ops =
         List.map
-        (transfer_asset(Tezos.self_address, swap.seller, unexpected_err "SWAP_OFFERED_FA2_INVALID"))
-        swap.swap_offer.assets_offered in
+        (transfer_assets(Tezos.self_address, swap.seller, swap.swap_offers.remaining_offers, unexpected_err "SWAP_OFFERED_FA2_INVALID"))
+        swap.swap_offers.swap_offer.assets_offered in
 
   (ops, storage)
   end
 
-let accept_swap(swap_id, storage : swap_id * swap_storage) : return =
+let accept_swap(swap_id, storage : swap_id * swap_storage) : return = begin
   let swap = get_swap(swap_id, storage) in
 
-  let storage = { storage with swaps = Big_map.remove swap_id storage.swaps } in
+  let storage = 
+    if swap.swap_offers.remaining_offers > 1n 
+    then {storage with 
+            swaps = Big_map.update swap_id 
+              (Some 
+                { swap with 
+                    swap_offers = 
+                        {swap.swap_offers with 
+                          remaining_offers = abs (swap.swap_offers.remaining_offers - 1n)
+                        }
+                }
+              )
+              storage.swaps
+         }
+    else { storage with swaps = Big_map.remove swap_id storage.swaps }
+    in 
 
-  let ops1 =
+  let ops =
         List.map
-        (transfer_asset(Tezos.self_address, Tezos.sender, unexpected_err "SWAP_OFFERED_FA2_INVALID"))
-        swap.swap_offer.assets_offered in
-  let ops2 =
-        List.map
+        (transfer_assets(Tezos.self_address, Tezos.sender, 1n, unexpected_err "SWAP_OFFERED_FA2_INVALID"))
+        swap.swap_offers.swap_offer.assets_offered in
+  let allOps =
+        List.fold
+        (fun (ops, tokens : operation list * fa2_assets) ->  
 #if !BURN_PAYMENT
-        (transfer_asset(Tezos.sender, swap.seller, "SWAP_REQUESTED_FA2_INVALID"))
+          let transfer = (transfer_assets(Tezos.sender, swap.seller, 1n, "SWAP_REQUESTED_FA2_INVALID")) in 
 #else 
-        (transfer_asset(Tezos.sender, storage.burn_address, "SWAP_REQUESTED_FA2_INVALID"))
+          let transfer = (transfer_assets(Tezos.sender, storage.burn_address, 1n, "SWAP_REQUESTED_FA2_INVALID")) in
 #endif
-        swap.swap_offer.assets_requested in
-  let snoc_ops (l, a : operation list * operation) = a :: l in
-  let allOps = List.fold snoc_ops ops1 ops2 in
+          let op : operation = transfer tokens in 
+          (op :: ops)
+        )
+#if !XTZ_FEE
+        swap.swap_offers.swap_offer.assets_requested 
+#else
+        swap.swap_offers.swap_offer.assets_requested.0
+#endif
+        ops in 
 
-  allOps, storage
+#if XTZ_FEE 
+  let xtz_requested : tez = swap.swap_offers.swap_offer.assets_requested.1 in 
+  assert_msg(Tezos.amount = xtz_requested, "SWAP_REQUESTED_XTZ_INVALID");
+  let allOps = 
+    if xtz_requested = 0mutez 
+    then allOps 
+    else 
+      let xtz_op = transfer_tez(xtz_requested, swap.seller) in  
+      xtz_op :: allOps 
+    in 
+#endif
+
+  (allOps, storage)
+  end
 
 let swaps_main (param, storage : swap_entrypoints * swap_storage) : return = begin
   forbid_xtz_transfer;
   match param with
-    | Start swap_offer -> start_swap(swap_offer, storage)
+    | Start swap_offers -> start_swap(swap_offers, storage)
     | Cancel swap_id -> cancel_swap(swap_id, storage)
     | Accept swap_id -> accept_swap(swap_id, storage)
   end

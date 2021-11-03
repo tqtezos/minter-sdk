@@ -15,7 +15,7 @@ Minter SDK offers a set of packages to bring creation, management, and sales of 
 -   A collection of NFT and marketplace smart contracts with configurable admin permissions
 -   Typescript bindings to enable easy integration into popular web frameworks
 -   A CLI for minting and configuring NFT / marketplace contracts
--   [DIDkit](https://spruceid.dev/docs/didkit/) integration for verified creator credentials
+-   [DIDkit](https://spruceid.dev/docs/didkit) integration for verified creator credentials
 
 ---
 ## Project Organization
