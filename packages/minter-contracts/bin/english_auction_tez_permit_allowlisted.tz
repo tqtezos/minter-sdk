@@ -1030,18 +1030,19 @@
                          SWAP ;
                          EXEC ;
                          IF { SWAP ; DROP ; DIG 4 ; DROP }
-                            { SWAP ;
-                              DUP ;
-                              DUG 2 ;
-                              CAR ;
-                              DIG 2 ;
+                            { PUSH mutez 0 ;
+                              DUP 3 ;
                               CDR ;
                               CAR ;
-                              PAIR ;
-                              DIG 5 ;
+                              SUB ;
+                              PUSH mutez 0 ;
                               SWAP ;
-                              EXEC ;
-                              CONS } ;
+                              DUP ;
+                              DUG 2 ;
+                              COMPARE ;
+                              NEQ ;
+                              IF { DIG 2 ; CAR ; SWAP ; PAIR ; DIG 5 ; SWAP ; EXEC ; CONS }
+                                 { DROP ; SWAP ; DROP ; DIG 4 ; DROP } } ;
                          DUP 3 ;
                          CDR ;
                          CDR ;

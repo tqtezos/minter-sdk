@@ -174,6 +174,7 @@ Besides, the following restriction takes place:
 2. **CAUTION:**   Smart contracts can configure bids. Bidders are encouraged to inspect the code of the selling contract and confirm that the first bid as well as the final reward (upon a call to `Resolve`) will be accepted and not be used to steal gas in the process. See https://www.notion.so/Review-report-for-English-auction-contract-iteration-2-c3610435cc1446d1b6f2b2d60dc86c8e for more details on this.
 3. An auction can be configured with an empty asset list theoretically, although this would be a fruitless auction. This was decided to be as such in order to minimuze the cost of configuring an auction. 
 4. In the tez auction contracts, "tez guards" are only placed on `cancel`, `configure`, and `resolve` to minimize costs. However, only bid is expected to actually receive tez. Admins should not transfer tez to any other entrypoints to avoid it getting stuck in the contract. 
+5. If `round_time` is not desired, it should be set to a value significantly larger than `end_time - start_time`, given that the auction might yet be extended multiple times thought the triggering of  `extend_time`.  
 
 ## Future work
 
@@ -187,9 +188,13 @@ In this version of the NFT English Auction contract, bids are made in some FA2 t
 
 This is an implementation of the auction contract in which the standard `Configure` entrypoint is replaced by one that accepts a batch of optional permits that can be used to configure auctions for accounts different than `SENDER.` This could serve useful for applications looking to allow users without tez to auction off their assets. See [One-step Permit](https://gitlab.com/tzip/tzip/-/merge_requests/151) for reference.
 
-# English Auction with Auction Fee
+# English Auction with Fixed Fee
 
 This is a version of the Auction contract in which an address fixed at contract origination gets a fixed percent of any sale that takes place using the contract. The fee is calculated using normal integer division, which rounds down. Therefore, it is possible even with a positive fee percentage that the fee sent will be 0 if the final price of the item being auctioned off is too low. 
+
+# English Auction with Per Sale Fee
+
+This version is similar to the `FIXED FEE` version above, except for the fact that the fee data is configured per auction, as opposed to at the contract level. This means that different auctions taking place using the contract can have different fee data configured. 
 
 # Cancel only admin extension
 

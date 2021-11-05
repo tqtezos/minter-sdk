@@ -238,6 +238,12 @@ const compileSources: CompileSourceEntry[] = [
     contract: true,
   },
   {
+    srcFile: 'english_auction/english_auction_tez_per_sale_fee.mligo',
+    mainFn: 'english_auction_tez_main',
+    dstFile: 'english_auction_tez_per_sale_fee.tz',
+    contract: true,
+  },
+  {
     srcFile: 'english_auction/english_auction_fa2_fixed_fee.mligo',
     mainFn: 'english_auction_fa2_main',
     dstFile: 'english_auction_fa2_fixed_fee.tz',
