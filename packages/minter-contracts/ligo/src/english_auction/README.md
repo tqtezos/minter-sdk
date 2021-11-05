@@ -77,7 +77,7 @@ An auction can be configured with the parameters specified in `configure_param` 
 
 When the conditions are met, 
  
-`auctions[current_id]` is set with parameter values, `current_bid` is set to `opening_price` and `storage.current_id` is incremented. 
+`auctions[current_id]` is set with parameter values, `current_bid` is set to `opening_price` and `storage.current_id` is incremented. Also, `highest_bidder` is set to `seller`, which is used internally for the contract to know that no bid has yet been placed.
 
 The contract optimistically transfers assets from `SENDER` to itself. That means `SENDER` needed to already have approved the transfer to the auction contract of the assets that they are auctioning. The auction configuration fails if any of these transfers fail.
 
@@ -198,4 +198,10 @@ In the normal english auction contract with admin enabled, admins have sole auth
 
 # Offchain bid extension
 
-This extension adds a new entrypoint, `Offchain_bid` that allows admins to enter new bids received offchain. This functionality is useful for auctions that might involve bids placed by putting holds on credit cards or accepting non-tez payment. After an offchain bid is placed, the auction resumes as if a user placed the bid in tez, with the exception that the bid will not be returned (in tez) to any user after subsequent bids are placed (returning bids is handled offchain presumably).  
+This extension adds a new entrypoint, `Offchain_bid` that allows admins to enter new bids received offchain. This functionality is useful for auctions that might involve bids placed by putting holds on credit cards or accepting non-tez payment. After an offchain bid is placed, the auction resumes as if a user placed the bid in tez, with the exception that the bid will not be returned (in tez) to any user after subsequent bids are placed (returning bids is handled offchain presumably). 
+
+The offchain bid submission uses a mechanism similar to the One-step permit procedure described in [TZIP-17](https://gitlab.com/tezos/tzip/-/blob/master/proposals/tzip-17/tzip-17.md#one-step-permit-entrypoints), with a few important differences. 
+
+- Only the admin can submit the permit
+- The counter is always set to 0. This is a valid simplification of that procedure because admin conducted replay attacks are not possible as both the current bid value as well as the auction id counter as well are strictly increasing. 
+- The `offchain_bid` entrypoint logic is different than the normal `bid` entrypoint logic (e.g. to indicate to the contract that the offchain bid should not be returned to the bidder, as it is assumed payment is handled offchain). 

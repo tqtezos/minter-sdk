@@ -298,9 +298,10 @@ let place_bid_onchain(asset_id, storage : nat * storage) : return = begin
     let bid_amount = Tezos.amount in 
     let bidder = Tezos.sender in 
     let auction : auction = get_auction_data(asset_id, storage) in 
+    let bid_placed_offchain : bool = false in 
     let (ops, new_storage) = place_bid(asset_id, auction, bid_amount, bidder, storage
 #if OFFCHAIN_BID
-      , false
+      , bid_placed_offchain
 #endif
       ) in 
     (ops, new_storage)
@@ -312,7 +313,8 @@ let place_bid_offchain(offchain_bid_data, bidder, storage : offchain_bid_data * 
           bid_amount = bid_amount;
         } = offchain_bid_data in 
     let auction : auction = get_auction_data(asset_id, storage) in
-    let (ops, new_storage) = place_bid(asset_id, auction, bid_amount, bidder, storage, true ) in 
+    let bid_placed_offchain : bool = true in 
+    let (ops, new_storage) = place_bid(asset_id, auction, bid_amount, bidder, storage, bid_placed_offchain ) in 
     (ops, new_storage)
   end
 
