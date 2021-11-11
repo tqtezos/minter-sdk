@@ -21,7 +21,7 @@ type fa2_assets =
 type swap_offer =
   [@layout:comb]
   { assets_offered : fa2_assets list
-  ; assets_requested : set_id list
+  ; assets_requested : set_id list (*Swap offerrer is expected to sort set_ids in descending order*)
   }
 
 type swap_offers = 
@@ -37,18 +37,20 @@ type swap_info =
   ; seller : address
   } 
 
-type set_info = token_id set (*Set data structure enforces uniqueness*)
+type set_info = token_id set (*Set data structure enforces uniqueness of tokens in a given set*)
 
 type accept_param = 
   [@layout:comb]
   {  swap_id : swap_id 
-  ;  tokens : (token_id, unit) map  (*Map enforces that each token in the set is unique, no duplicates.*)
+  ;  tokens : (set_id * token_id) set (*Set data structure enforces uniqueness of set_id, token_id pairs
+                                        Set also sorts in ascending order in expected way*) 
   }
 
 type swap_entrypoints =
   | Start of swap_offers
   | Cancel of swap_id
   | Accept of accept_param
+  | Add_set of set_info
 
 type swap_storage =
   { next_swap_id : swap_id
@@ -159,17 +161,37 @@ let accept_swap(accept_param, storage : accept_param * swap_storage) : return = 
   let {swap_id = swap_id; 
        tokens = tokens;} = accept_param in 
 
+  (*Converts the token set to a list of token_ids, reverses order so that they line up with the assets requested set_id order*) 
   let token_list : token_id list = 
-    Map.fold
-    (fun (token_id_list, (token_id, _) : (token_id list) * (token_id * unit)) -> token_id :: token_id_list)
+    Set.fold
+    (fun (token_id_list, (_ , token_id) : (token_id list) * (set_id * token_id)) -> token_id :: token_id_list)
     tokens
     ([] : token_id list)
     in
 
   let swap = get_swap(swap_id, storage) in
-
+  
+  (*Asserts that the number of tokens sent equals the number requested in the swap*)
   assert_msg(List.length token_list = List.length swap.swap_offers.swap_offer.assets_requested, "NUMBER_OF_TOKENS_SENT_MUST_EQUAL_NUMBER_REQUESTED");
   
+  (*Tests that tokens provided are in the required sets*)
+  let u = ( List.fold
+            (fun (set_ids, token : (set_id list) * token_id ) -> 
+                match set_ids with 
+                  | [] -> (failwith (unexpected_err("INTERNAL_ERROR")) : set_id list)
+                  | set_id :: remaining_ids -> 
+                      let set : set_info = (match Big_map.find_opt set_id storage.sets with 
+                                  | None -> (failwith "INVALID_SET_ID" : set_info)
+                                  | Some set -> set 
+                                ) in 
+                      let u : unit = assert_msg(Set.mem token set, "INVALID_TOKEN") in 
+                      remaining_ids  
+            )
+            token_list
+            swap.swap_offers.swap_offer.assets_requested      
+          ) in
+  
+  (*Updating storage*)
   let storage = 
     if swap.swap_offers.remaining_offers > 1n 
     then {storage with 
@@ -186,34 +208,25 @@ let accept_swap(accept_param, storage : accept_param * swap_storage) : return = 
          }
     else { storage with swaps = Big_map.remove swap_id storage.swaps }
     in 
-
+  
+  (*Transferring the offered assets*)
   let ops =
         List.map
         (transfer_assets(Tezos.self_address, Tezos.sender, 1n, unexpected_err "SWAP_OFFERED_FA2_INVALID"))
         swap.swap_offers.swap_offer.assets_offered in
   
-  
+  (*Transferring the requested assets*)
   let transfer = transfer_unique_assets(Tezos.sender, swap.seller, 1n, "SWAP_REQUESTED_FA2_INVALID", storage.fa2_address) in 
   let op : operation = transfer token_list in 
   let allOps = op :: ops in 
-  
-  (*How does this compare to using List.fold on token_list in terms of gas cost?*)
-  let _ = ( Map.fold
-            (fun (set_ids, (token, _) : (set_id list) * (token_id * unit)) -> 
-                match set_ids with 
-                  | [] -> (failwith "INTERNAL_ERROR" : set_id list)
-                  | set_id :: remaining_ids -> 
-                      let set : set_info = (match Big_map.find_opt set_id storage.sets with 
-                                  | None -> (failwith "INVALID_SET_ID" : set_info)
-                                  | Some set -> set 
-                                ) in 
-                      let u : unit = assert_msg(Set.mem token set, "INVALID_TOKEN") in 
-                      remaining_ids  
-            )
-            tokens 
-            swap.swap_offers.swap_offer.assets_requested      
-          ) in
+
   (allOps, storage)
+  end
+
+let add_set(set_info, storage : set_info * swap_storage) : return = begin 
+    let next_set_id = storage.next_set_id in
+    let new_sets_bm = Big_map.add next_set_id set_info storage.sets in 
+    (([]: operation list), {storage with sets = new_sets_bm; next_set_id = next_set_id + 1n})
   end
 
 let swaps_main (param, storage : swap_entrypoints * swap_storage) : return = begin
@@ -222,4 +235,5 @@ let swaps_main (param, storage : swap_entrypoints * swap_storage) : return = beg
     | Start swap_offers -> start_swap(swap_offers, storage)
     | Cancel swap_id -> cancel_swap(swap_id, storage)
     | Accept swap_id -> accept_swap(swap_id, storage)
+    | Add_set set_info -> add_set(set_info, storage)
   end
