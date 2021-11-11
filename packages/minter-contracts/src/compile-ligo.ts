@@ -184,9 +184,9 @@ const compileSources: CompileSourceEntry[] = [
     contract: true,
   },
   {
-    srcFile: 'swaps/fa2_swap_with_sets.mligo',
+    srcFile: 'swaps/fa2_swap_with_sets_and_burn.mligo',
     mainFn: 'swaps_main',
-    dstFile: 'fa2_swap_with_sets.tz',
+    dstFile: 'fa2_swap_with_sets_and_burn.tz',
     contract: true,
   },
   {

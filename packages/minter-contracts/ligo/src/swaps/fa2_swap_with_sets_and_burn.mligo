@@ -53,7 +53,8 @@ type swap_entrypoints =
   | Add_set of set_info
 
 type swap_storage =
-  { next_swap_id : swap_id
+  { burn_address : address
+  ; next_swap_id : swap_id
   ; next_set_id : set_id
   ; swaps : (swap_id, swap_info) big_map
   ; sets : (set_id, set_info) big_map
@@ -61,6 +62,21 @@ type swap_storage =
   }
 
 type return = operation list * swap_storage
+
+(* ==== Values ==== *)
+
+[@inline] let example_burn_address = ("tz1Ke2h7sDdakHJQh8WX4Z372du1KChsksyU" : address) (*Null address*)
+
+[@inline] let example_fa2_address = ("KT1KUJkqqgfe1AaJMdRfspsyt5diWgYm3eGM" : address) 
+
+let init_storage : swap_storage =
+  { burn_address = example_burn_address
+  ; next_swap_id = 0n
+  ; next_set_id = 0n
+  ; swaps = (Big_map.empty : (swap_id, swap_info) big_map)
+  ; sets = (Big_map.empty : (set_id, set_info) big_map)
+  ; fa2_address = example_fa2_address
+  }
 
 (* ==== Helpers ==== *)
 
@@ -216,7 +232,7 @@ let accept_swap(accept_param, storage : accept_param * swap_storage) : return = 
         swap.swap_offers.swap_offer.assets_offered in
   
   (*Transferring the requested assets*)
-  let transfer = transfer_unique_assets(Tezos.sender, swap.seller, 1n, "SWAP_REQUESTED_FA2_INVALID", storage.fa2_address) in 
+  let transfer = transfer_unique_assets(Tezos.sender, storage.burn_address, 1n, "SWAP_REQUESTED_FA2_INVALID", storage.fa2_address) in 
   let op : operation = transfer token_list in 
   let allOps = op :: ops in 
 

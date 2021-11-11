@@ -8,17 +8,18 @@
                   (list %assets_requested nat))
                (nat %remaining_offers)))) ;
   storage
-    (pair (pair (pair (address %fa2_address) (nat %next_set_id))
-                (pair (nat %next_swap_id) (big_map %sets nat (set nat))))
-          (big_map %swaps
-             nat
-             (pair (pair %swap_offers
-                      (pair %swap_offer
-                         (list %assets_offered
-                            (pair (address %fa2_address) (list %tokens (pair (nat %token_id) (nat %amount)))))
-                         (list %assets_requested nat))
-                      (nat %remaining_offers))
-                   (address %seller)))) ;
+    (pair (pair (pair (address %burn_address) (address %fa2_address))
+                (pair (nat %next_set_id) (nat %next_swap_id)))
+          (pair (big_map %sets nat (set nat))
+                (big_map %swaps
+                   nat
+                   (pair (pair %swap_offers
+                            (pair %swap_offer
+                               (list %assets_offered
+                                  (pair (address %fa2_address) (list %tokens (pair (nat %token_id) (nat %amount)))))
+                               (list %assets_requested nat))
+                            (nat %remaining_offers))
+                         (address %seller))))) ;
   code { LAMBDA
            (pair bool string)
            unit
@@ -139,6 +140,7 @@
                  DUP 3 ;
                  SWAP ;
                  CDR ;
+                 CDR ;
                  SWAP ;
                  GET ;
                  IF_NONE { PUSH string "SWAP_NOT_EXIST" ; FAILWITH } {} ;
@@ -167,9 +169,8 @@
                  ITER { SWAP ;
                         IF_CONS
                           { DUP 7 ;
+                            CDR ;
                             CAR ;
-                            CDR ;
-                            CDR ;
                             SWAP ;
                             GET ;
                             IF_NONE { PUSH string "INVALID_SET_ID" ; FAILWITH } {} ;
@@ -195,6 +196,7 @@
                  GT ;
                  IF { DUP 4 ;
                       CDR ;
+                      CDR ;
                       SWAP ;
                       DUP ;
                       DUG 2 ;
@@ -213,21 +215,28 @@
                       SOME ;
                       DIG 4 ;
                       UPDATE ;
+                      DUP 4 ;
+                      CDR ;
+                      CAR ;
+                      PAIR ;
                       DIG 3 ;
                       CAR ;
                       PAIR }
                     { DUP 4 ;
                       CDR ;
+                      CDR ;
                       DIG 3 ;
                       NONE (pair (pair (pair (list (pair address (list (pair nat nat)))) (list nat)) nat) address) ;
                       SWAP ;
                       UPDATE ;
+                      DUP 4 ;
+                      CDR ;
+                      CAR ;
+                      PAIR ;
                       DIG 3 ;
                       CAR ;
                       PAIR } ;
                  SWAP ;
-                 DUP ;
-                 DUG 2 ;
                  CAR ;
                  CAR ;
                  CAR ;
@@ -238,24 +247,26 @@
                        SELF_ADDRESS ;
                        PAIR ;
                        PAIR ;
-                       DUP 6 ;
+                       DUP 5 ;
                        SWAP ;
                        EXEC ;
                        SWAP ;
                        EXEC } ;
-                 DIG 4 ;
+                 DIG 3 ;
                  DROP ;
                  SWAP ;
                  DUP ;
                  DUG 2 ;
                  CAR ;
                  CAR ;
-                 CAR ;
+                 CDR ;
                  PUSH string "SWAP_REQUESTED_FA2_INVALID" ;
                  PUSH nat 1 ;
                  PAIR ;
-                 DIG 4 ;
-                 CDR ;
+                 DUP 4 ;
+                 CAR ;
+                 CAR ;
+                 CAR ;
                  SENDER ;
                  DIG 2 ;
                  UNPAIR ;
@@ -307,29 +318,23 @@
                  DUP ;
                  DUG 2 ;
                  CAR ;
-                 CAR ;
                  CDR ;
+                 CAR ;
                  DUP 3 ;
                  CDR ;
+                 CDR ;
                  DUP 4 ;
+                 CDR ;
                  CAR ;
-                 CDR ;
-                 CDR ;
                  DIG 3 ;
                  DUP 4 ;
                  SWAP ;
                  SOME ;
                  SWAP ;
                  UPDATE ;
-                 DUP 4 ;
-                 CAR ;
-                 CDR ;
-                 CAR ;
                  PAIR ;
-                 DIG 3 ;
+                 DIG 2 ;
                  CAR ;
-                 CAR ;
-                 PAIR ;
                  PAIR ;
                  DUP ;
                  CDR ;
@@ -338,14 +343,14 @@
                  DUG 2 ;
                  CAR ;
                  CDR ;
+                 CDR ;
                  PUSH nat 1 ;
                  DIG 4 ;
                  ADD ;
-                 DIG 3 ;
-                 CAR ;
-                 CAR ;
-                 CAR ;
                  PAIR ;
+                 DIG 2 ;
+                 CAR ;
+                 CAR ;
                  PAIR ;
                  PAIR ;
                  NIL operation ;
@@ -362,6 +367,7 @@
                  DUP ;
                  DUG 2 ;
                  SWAP ;
+                 CDR ;
                  CDR ;
                  SWAP ;
                  GET ;
@@ -399,10 +405,15 @@
                  DROP ;
                  DUP 3 ;
                  CDR ;
+                 CDR ;
                  DIG 2 ;
                  NONE (pair (pair (pair (list (pair address (list (pair nat nat)))) (list nat)) nat) address) ;
                  SWAP ;
                  UPDATE ;
+                 DUP 3 ;
+                 CDR ;
+                 CAR ;
+                 PAIR ;
                  DIG 2 ;
                  CAR ;
                  PAIR ;
@@ -422,16 +433,16 @@
                  SENDER ;
                  DUP 3 ;
                  CDR ;
-                 DUP 4 ;
-                 CAR ;
-                 CDR ;
-                 CDR ;
                  PUSH nat 1 ;
-                 DUP 6 ;
+                 DUP 5 ;
+                 CAR ;
+                 CDR ;
+                 CDR ;
+                 ADD ;
+                 DUP 5 ;
                  CAR ;
                  CDR ;
                  CAR ;
-                 ADD ;
                  PAIR ;
                  DUP 5 ;
                  CAR ;
@@ -439,6 +450,7 @@
                  PAIR ;
                  PAIR ;
                  DUP 4 ;
+                 CDR ;
                  CDR ;
                  DUP 3 ;
                  DUP 5 ;
@@ -446,11 +458,17 @@
                  DIG 5 ;
                  CAR ;
                  CDR ;
-                 CAR ;
+                 CDR ;
                  SWAP ;
                  SOME ;
                  SWAP ;
                  UPDATE ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CDR ;
+                 CAR ;
+                 PAIR ;
                  SWAP ;
                  CAR ;
                  PAIR ;
