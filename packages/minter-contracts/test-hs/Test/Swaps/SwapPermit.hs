@@ -18,8 +18,8 @@ import Test.Util
 
 import Tezos.Crypto
 
-hprop_Forged_offchain_accept_fails :: Property
-hprop_Forged_offchain_accept_fails =
+hprop_Sending_fake_permit_to_offchain_accept_fails :: Property
+hprop_Sending_fake_permit_to_offchain_accept_fails =
   property $ do
     clevelandProp $ do
       setup <- doFA2Setup
@@ -92,7 +92,7 @@ offchainAccept buyer contract = do
           , signature = signature
           } 
       }
-  where swapId = 0
+  where swapId = 1
 
 offchainAcceptForged :: (HasCallStack, MonadEmulated caps base m) => Address -> TAddress PermitSwapEntrypoints -> m ByteString
 offchainAcceptForged buyer contract = do
@@ -108,4 +108,4 @@ offchainAcceptForged buyer contract = do
           , signature = signature
           } 
       } 
-  where swapId = 0
+  where swapId = 1

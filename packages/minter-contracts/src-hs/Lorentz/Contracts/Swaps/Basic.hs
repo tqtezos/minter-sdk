@@ -74,7 +74,7 @@ deriving anyclass instance HasAnnotation SwapStorage
 
 initSwapStorage :: SwapStorage
 initSwapStorage = SwapStorage
-  { nextSwapId = SwapId 0
+  { nextSwapId = SwapId 1
   , swaps = mempty
   }
 
