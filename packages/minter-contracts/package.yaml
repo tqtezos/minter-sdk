@@ -55,3 +55,4 @@ tests:
       - tasty-hedgehog
       - indexed-traversable
       - morley-client
+      - integer-gmp
