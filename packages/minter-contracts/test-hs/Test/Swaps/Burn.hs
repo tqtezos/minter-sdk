@@ -75,23 +75,24 @@ hprop_Correct_final_balances_on_acceptance =
 
       withSender admin $
         call swap (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
- 
-      assertingBalanceDeltas fa2
-        [ (alice, tokenId1) -: negateInteger (fromIntegral $ token1Offer * numOffers)
-        , (alice, tokenId2) -: negateInteger (fromIntegral $ token2Offer * numOffers)
-        , (nullAddress, tokenId1) -: (fromIntegral $ token1Request)
-        , (nullAddress, tokenId2) -: (fromIntegral $ token2Request)
-        , (bob, tokenId1) -: fromIntegral token1Offer - fromIntegral token1Request
-        , (bob, tokenId2) -: fromIntegral token2Offer - fromIntegral token2Request
-        ] $ do
-          withSender alice $
-            call swap (Call @"Start") $ mkNOffers numOffers SwapOffer
-              { assetsOffered = [mkFA2Assets fa2 [(tokenId1, token1Offer), (tokenId2, token2Offer)]]
-              , assetsRequested = [mkFA2Assets fa2 [(tokenId1, token1Request), (tokenId2, token2Request)]]
-              }
-          withSender bob $
-            call swap (Call @"Accept") initSwapId
-
+      
+      assertingBurnAddressUnchanged swap $ do 
+        assertingBalanceDeltas fa2
+          [ (alice, tokenId1) -: negateInteger (fromIntegral $ token1Offer * numOffers)
+          , (alice, tokenId2) -: negateInteger (fromIntegral $ token2Offer * numOffers)
+          , (nullAddress, tokenId1) -: (fromIntegral $ token1Request)
+          , (nullAddress, tokenId2) -: (fromIntegral $ token2Request)
+          , (bob, tokenId1) -: fromIntegral token1Offer - fromIntegral token1Request
+          , (bob, tokenId2) -: fromIntegral token2Offer - fromIntegral token2Request
+          ] $ do
+            withSender alice $
+              call swap (Call @"Start") $ mkNOffers numOffers SwapOffer
+                { assetsOffered = [mkFA2Assets fa2 [(tokenId1, token1Offer), (tokenId2, token2Offer)]]
+                , assetsRequested = [mkFA2Assets fa2 [(tokenId1, token1Request), (tokenId2, token2Request)]]
+                }
+            withSender bob $
+              call swap (Call @"Accept") (SwapId 0)
+  
 hprop_Correct_final_balances_on_cancel :: Property
 hprop_Correct_final_balances_on_cancel = 
   property $ do
@@ -105,23 +106,24 @@ hprop_Correct_final_balances_on_cancel =
 
       withSender admin $
         call swap (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
-
-      assertingBalanceDeltas fa2
-        [ (alice, tokenId1) -: 0
-        , (alice, tokenId2) -: 0
-        , (bob, tokenId1) -: 0
-        , (bob, tokenId2) -: 0
-        , (nullAddress, tokenId1) -: 0
-        , (nullAddress, tokenId2) -: 0
-        ] $ do
-          withSender alice $
-            call swap (Call @"Start") $ mkNOffers numOffers SwapOffer
-              { assetsOffered = [mkFA2Assets fa2 [(tokenId1, token1Offer), (tokenId2, token2Offer)]]
-              , assetsRequested = [mkFA2Assets fa2 [(tokenId1, token1Request), (tokenId2, token2Request)]]
-              }
-          withSender alice $
-            call swap (Call @"Cancel") initSwapId
-
+      
+      assertingBurnAddressUnchanged swap $ do 
+        assertingBalanceDeltas fa2
+          [ (alice, tokenId1) -: 0
+          , (alice, tokenId2) -: 0
+          , (bob, tokenId1) -: 0
+          , (bob, tokenId2) -: 0
+          , (nullAddress, tokenId1) -: 0
+          , (nullAddress, tokenId2) -: 0
+          ] $ do
+            withSender alice $
+              call swap (Call @"Start") $ mkNOffers numOffers SwapOffer
+                { assetsOffered = [mkFA2Assets fa2 [(tokenId1, token1Offer), (tokenId2, token2Offer)]]
+                , assetsRequested = [mkFA2Assets fa2 [(tokenId1, token1Request), (tokenId2, token2Request)]]
+                }
+            withSender alice $
+              call swap (Call @"Cancel") (SwapId 0)
+  
 hprop_Correct_num_tokens_transferred_to_contract_on_start :: Property
 hprop_Correct_num_tokens_transferred_to_contract_on_start = 
   property $ do
@@ -134,15 +136,17 @@ hprop_Correct_num_tokens_transferred_to_contract_on_start =
      fa2 <- originateFA2 "fa2" setup [swap]
      withSender admin $
         call swap (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
-     assertingBalanceDeltas fa2
-       [ (alice, tokenId1) -: negateInteger (fromIntegral $ token1Offer * numOffers)
-       , (alice, tokenId2) -: negateInteger (fromIntegral $ token2Offer * numOffers)
-       ] $ do
-         withSender alice $
-           call swap (Call @"Start") $ mkNOffers numOffers SwapOffer
-             { assetsOffered = [mkFA2Assets fa2 [(tokenId1, token1Offer), (tokenId2, token2Offer)]]
-             , assetsRequested = [mkFA2Assets fa2 [(tokenId2, 1)]]
-             }
+     
+     assertingBurnAddressUnchanged swap $ do 
+       assertingBalanceDeltas fa2
+         [ (alice, tokenId1) -: negateInteger (fromIntegral $ token1Offer * numOffers)
+         , (alice, tokenId2) -: negateInteger (fromIntegral $ token2Offer * numOffers)
+         ] $ do
+           withSender alice $
+             call swap (Call @"Start") $ mkNOffers numOffers SwapOffer
+               { assetsOffered = [mkFA2Assets fa2 [(tokenId1, token1Offer), (tokenId2, token2Offer)]]
+               , assetsRequested = [mkFA2Assets fa2 [(tokenId2, 1)]]
+               }
 
 hprop_Contract_balance_goes_to_zero_when_sale_concludes :: Property
 hprop_Contract_balance_goes_to_zero_when_sale_concludes = 
@@ -155,20 +159,21 @@ hprop_Contract_balance_goes_to_zero_when_sale_concludes =
      (swap, admin) <- originateAllowlistedBurnSwapWithAdmin
      let swapAddress = toAddress swap
      fa2 <- originateFA2 "fa2" setup [swap]
-     withSender admin $
-        call swap (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
-     assertingBalanceDeltas fa2
-       [ (swapAddress, tokenId1) -: 0
-       , (swapAddress, tokenId2) -: 0
-       ] $ do
-         withSender alice $
-           call swap (Call @"Start") $ mkNOffers numOffers SwapOffer
-             { assetsOffered = [mkFA2Assets fa2 [(tokenId1, token1Offer), (tokenId2, token2Offer)]]
-             , assetsRequested = [mkFA2Assets fa2 [(tokenId1, token1Request), (tokenId2, token2Request)]]
-             }
-         withSender bob $
-            replicateM_ (fromIntegral numOffers) $ do
-              call swap (Call @"Accept") initSwapId
+     assertingBurnAddressUnchanged swap $ do 
+       withSender admin $
+          call swap (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
+       assertingBalanceDeltas fa2
+         [ (swapAddress, tokenId1) -: 0
+         , (swapAddress, tokenId2) -: 0
+         ] $ do
+           withSender alice $
+             call swap (Call @"Start") $ mkNOffers numOffers SwapOffer
+               { assetsOffered = [mkFA2Assets fa2 [(tokenId1, token1Offer), (tokenId2, token2Offer)]]
+               , assetsRequested = [mkFA2Assets fa2 [(tokenId1, token1Request), (tokenId2, token2Request)]]
+               }
+           withSender bob $
+              replicateM_ (fromIntegral numOffers) $ do
+                call swap (Call @"Accept") (SwapId 0)
 
 statusChecks :: TestTree
 statusChecks = testGroup "Statuses"
