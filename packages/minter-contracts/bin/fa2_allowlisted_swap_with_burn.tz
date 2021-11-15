@@ -14,7 +14,7 @@
     (pair (pair (pair %admin (address %admin) (option %pending_admin address))
                 (big_map %allowlist address unit))
           (pair %swap
-             (nat %next_swap_id)
+             (pair (address %burn_address) (nat %next_swap_id))
              (big_map %swaps
                 nat
                 (pair (pair %swap_offers
@@ -265,7 +265,7 @@
                                EXEC ;
                                SWAP ;
                                EXEC } ;
-                         DUP 3 ;
+                         DIG 2 ;
                          CAR ;
                          CAR ;
                          CDR ;
@@ -273,19 +273,18 @@
                                 PUSH string "SWAP_REQUESTED_FA2_INVALID" ;
                                 PUSH nat 1 ;
                                 PAIR ;
-                                DUP 5 ;
-                                CDR ;
+                                DUP 4 ;
+                                CAR ;
+                                CAR ;
+                                DUP 6 ;
+                                PAIR ;
+                                PAIR ;
                                 DUP 7 ;
-                                PAIR ;
-                                PAIR ;
-                                DUP 8 ;
                                 SWAP ;
                                 EXEC ;
                                 DIG 2 ;
                                 EXEC ;
                                 CONS } ;
-                         DIG 2 ;
-                         DROP ;
                          DIG 2 ;
                          DROP ;
                          DIG 3 ;
@@ -363,7 +362,12 @@
                      PUSH nat 1 ;
                      DUP 5 ;
                      CAR ;
+                     CDR ;
                      ADD ;
+                     DUP 5 ;
+                     CAR ;
+                     CAR ;
+                     PAIR ;
                      PAIR ;
                      DUP 4 ;
                      CDR ;
@@ -372,6 +376,7 @@
                      PAIR ;
                      DIG 5 ;
                      CAR ;
+                     CDR ;
                      SWAP ;
                      SOME ;
                      SWAP ;

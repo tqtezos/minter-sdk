@@ -1,25 +1,42 @@
 -- | Tests on the swaps contract.
-module Test.Swaps.Basic where
+module Test.Swaps.Burn where
 
 import Prelude hiding (swap)
 
+import GHC.Exts (fromList)
 import GHC.Integer (negateInteger)
-
-import Test.Tasty (TestTree, testGroup)
-
-import Morley.Nettest
-import Morley.Nettest.Tasty (nettestScenarioCaps)
-import Tezos.Address (unsafeParseAddress)
 
 import Hedgehog (Gen, Property, forAll, property)
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 
+import Test.Tasty (TestTree, testGroup)
+
+import Morley.Nettest
+import Morley.Nettest.Tasty (nettestScenarioCaps)
+
 import Lorentz.Contracts.Swaps.Basic
+import Lorentz.Contracts.Swaps.Burn
+import Lorentz.Contracts.Swaps.Allowlisted
+
+import Test.Allowlisted
+import Tezos.Address (unsafeParseAddress)
+import Test.NonPausableSimpleAdmin
+
 import Lorentz.Test.Consumer
 import Lorentz.Value
+
 import Test.Swaps.Util
 import Test.Util
+
+test_BurnSwap :: TestTree
+test_BurnSwap = testGroup "Basic swap functionality"
+  [ statusChecks
+  , swapIdChecks
+  , authorizationChecks
+  , invalidFA2sChecks
+  , complexCases
+  ]
 
 data TestData = TestData
   { numOffers :: Natural
@@ -45,6 +62,66 @@ genTestData = do
     , token1Request = token1Request
     , token2Request = token2Request }
 
+hprop_Correct_final_balances_on_acceptance :: Property
+hprop_Correct_final_balances_on_acceptance = 
+  property $ do
+   TestData{numOffers, token1Offer, token2Offer, token1Request, token2Request} <- forAll genTestData 
+   clevelandProp  $ do
+      setup <- doFA2Setup
+      let alice ::< bob ::< SNil = sAddresses setup
+      let tokenId1 ::< tokenId2 ::< SNil = sTokens setup
+      (swap, admin) <- originateAllowlistedBurnSwapWithAdmin
+      fa2 <- originateFA2 "fa2" setup [swap]
+
+      withSender admin $
+        call swap (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
+ 
+      assertingBalanceDeltas fa2
+        [ (alice, tokenId1) -: negateInteger (fromIntegral $ token1Offer * numOffers)
+        , (alice, tokenId2) -: negateInteger (fromIntegral $ token2Offer * numOffers)
+        , (nullAddress, tokenId1) -: (fromIntegral $ token1Request)
+        , (nullAddress, tokenId2) -: (fromIntegral $ token2Request)
+        , (bob, tokenId1) -: fromIntegral token1Offer - fromIntegral token1Request
+        , (bob, tokenId2) -: fromIntegral token2Offer - fromIntegral token2Request
+        ] $ do
+          withSender alice $
+            call swap (Call @"Start") $ mkNOffers numOffers SwapOffer
+              { assetsOffered = [mkFA2Assets fa2 [(tokenId1, token1Offer), (tokenId2, token2Offer)]]
+              , assetsRequested = [mkFA2Assets fa2 [(tokenId1, token1Request), (tokenId2, token2Request)]]
+              }
+          withSender bob $
+            call swap (Call @"Accept") initSwapId
+
+hprop_Correct_final_balances_on_cancel :: Property
+hprop_Correct_final_balances_on_cancel = 
+  property $ do
+   TestData{numOffers, token1Offer, token2Offer, token1Request, token2Request} <- forAll genTestData 
+   clevelandProp  $ do
+      setup <- doFA2Setup
+      let alice ::< bob ::< SNil = sAddresses setup
+      let tokenId1 ::< tokenId2 ::< SNil = sTokens setup
+      (swap, admin) <- originateAllowlistedBurnSwapWithAdmin
+      fa2 <- originateFA2 "fa2" setup [swap]
+
+      withSender admin $
+        call swap (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
+
+      assertingBalanceDeltas fa2
+        [ (alice, tokenId1) -: 0
+        , (alice, tokenId2) -: 0
+        , (bob, tokenId1) -: 0
+        , (bob, tokenId2) -: 0
+        , (nullAddress, tokenId1) -: 0
+        , (nullAddress, tokenId2) -: 0
+        ] $ do
+          withSender alice $
+            call swap (Call @"Start") $ mkNOffers numOffers SwapOffer
+              { assetsOffered = [mkFA2Assets fa2 [(tokenId1, token1Offer), (tokenId2, token2Offer)]]
+              , assetsRequested = [mkFA2Assets fa2 [(tokenId1, token1Request), (tokenId2, token2Request)]]
+              }
+          withSender alice $
+            call swap (Call @"Cancel") initSwapId
+
 hprop_Correct_num_tokens_transferred_to_contract_on_start :: Property
 hprop_Correct_num_tokens_transferred_to_contract_on_start = 
   property $ do
@@ -53,8 +130,10 @@ hprop_Correct_num_tokens_transferred_to_contract_on_start =
      setup <- doFA2Setup
      let alice ::< SNil = sAddresses setup
      let tokenId1 ::< tokenId2 ::< SNil = sTokens setup
-     swap <- originateSwap
+     (swap, admin) <- originateAllowlistedBurnSwapWithAdmin
      fa2 <- originateFA2 "fa2" setup [swap]
+     withSender admin $
+        call swap (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
      assertingBalanceDeltas fa2
        [ (alice, tokenId1) -: negateInteger (fromIntegral $ token1Offer * numOffers)
        , (alice, tokenId2) -: negateInteger (fromIntegral $ token2Offer * numOffers)
@@ -73,9 +152,11 @@ hprop_Contract_balance_goes_to_zero_when_sale_concludes =
      setup <- doFA2Setup
      let alice ::< bob ::< SNil = sAddresses setup
      let tokenId1 ::< tokenId2 ::< SNil = sTokens setup
-     swap <- originateSwap
+     (swap, admin) <- originateAllowlistedBurnSwapWithAdmin
      let swapAddress = toAddress swap
      fa2 <- originateFA2 "fa2" setup [swap]
+     withSender admin $
+        call swap (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
      assertingBalanceDeltas fa2
        [ (swapAddress, tokenId1) -: 0
        , (swapAddress, tokenId2) -: 0
@@ -89,65 +170,12 @@ hprop_Contract_balance_goes_to_zero_when_sale_concludes =
             replicateM_ (fromIntegral numOffers) $ do
               call swap (Call @"Accept") initSwapId
 
-test_Swap :: TestTree
-test_Swap = testGroup "Basic swap functionality"
-  [ simpleHappyPaths
-  , statusChecks
-  , swapIdChecks
-  , authorizationChecks
-  , invalidFA2sChecks
-  , complexCases
-  ]
-
-simpleHappyPaths :: TestTree
-simpleHappyPaths = testGroup "Simple happy paths"
-  [ nettestScenarioCaps "Simple accepted swap" $ do
-      setup <- doFA2Setup
-      let alice ::< bob ::< SNil = sAddresses setup
-      let tokenId1 ::< tokenId2 ::< SNil = sTokens setup
-      swap <- originateSwap
-      fa2 <- originateFA2 "fa2" setup [swap]
-
-      assertingBalanceDeltas fa2
-        [ (alice, tokenId1) -: -10
-        , (alice, tokenId2) -: 5
-        , (bob, tokenId1) -: 10
-        , (bob, tokenId2) -: -5
-        ] $ do
-          withSender alice $
-            call swap (Call @"Start") $ mkSingleOffer SwapOffer
-              { assetsOffered = [mkFA2Assets fa2 [(tokenId1, 10)]]
-              , assetsRequested = [mkFA2Assets fa2 [(tokenId2, 5)]]
-              }
-          withSender bob $
-            call swap (Call @"Accept") initSwapId
-
-  , nettestScenarioCaps "Simple cancelled swap" $ do
-      setup <- doFA2Setup
-      let alice ::< SNil = sAddresses setup
-      let tokenId1 ::< tokenId2 ::< SNil = sTokens setup
-      swap <- originateSwap
-      fa2 <- originateFA2 "fa2" setup [swap]
-
-      assertingBalanceDeltas fa2
-        [ (alice, tokenId1) -: 0
-        , (alice, tokenId2) -: 0
-        ] $ do
-          withSender alice $
-            call swap (Call @"Start") $ mkSingleOffer SwapOffer
-              { assetsOffered = [mkFA2Assets fa2 [(tokenId1, 10)]]
-              , assetsRequested = [mkFA2Assets fa2 [(tokenId2, 5)]]
-              }
-          withSender alice $
-            call swap (Call @"Cancel") initSwapId
-  ]
-
 statusChecks :: TestTree
 statusChecks = testGroup "Statuses"
   [ nettestScenarioCaps "Operations with accepted swap fail" $ do
-      swap <- originateSwap
+      (swap, _) <- originateAllowlistedBurnSwapWithAdmin
 
-      call swap (Call @"Start") $ mkSingleOffer $ SwapOffer [] []
+      call swap (Call @"Start") $ mkSingleOffer (SwapOffer [] [])
       call swap (Call @"Accept") initSwapId
 
       call swap (Call @"Accept") initSwapId
@@ -157,9 +185,9 @@ statusChecks = testGroup "Statuses"
         & expectError swap errSwapFinished
 
   , nettestScenarioCaps "Operations with cancelled swap fail" $ do
-      swap <- originateSwap
+      (swap, _) <- originateAllowlistedBurnSwapWithAdmin
 
-      call swap (Call @"Start") $ mkSingleOffer $ SwapOffer [] []
+      call swap (Call @"Start") $ mkSingleOffer (SwapOffer [] [])
       call swap (Call @"Cancel") initSwapId
 
       call swap (Call @"Accept") initSwapId
@@ -167,22 +195,6 @@ statusChecks = testGroup "Statuses"
 
       call swap (Call @"Cancel") initSwapId
         & expectError swap errSwapCancelled
-  ]
-
-remainingOffersChecks :: TestTree
-remainingOffersChecks = testGroup "Statuses"
-  [ nettestScenarioCaps "N+1th acceptance of N offers will fail" $ do
-      swap <- originateSwap
-
-      call swap (Call @"Start") $ mkNOffers 2 $ SwapOffer [] []
-      call swap (Call @"Accept") initSwapId
-      call swap (Call @"Accept") initSwapId
-
-      call swap (Call @"Accept") initSwapId
-        & expectError swap errSwapFinished
-
-      call swap (Call @"Cancel") initSwapId
-        & expectError swap errSwapFinished
   ]
 
 swapIdChecks :: TestTree
@@ -191,8 +203,11 @@ swapIdChecks = testGroup "SwapIds"
       setup <- doFA2Setup
       let alice ::< bob ::< SNil = sAddresses setup
       let tokenId1 ::< tokenId2 ::< tokenId3 ::< SNil = sTokens setup
-      swap <- originateSwap
+      (swap, admin) <- originateAllowlistedBurnSwapWithAdmin
       fa2 <- originateFA2 "fa2" setup [swap]
+
+      withSender admin $
+        call swap (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
 
       withSender alice $
         for_ [tokenId1, tokenId2, tokenId3] $ \tokenId ->
@@ -211,14 +226,14 @@ swapIdChecks = testGroup "SwapIds"
             call swap (Call @"Accept") (incrementSwapId $ incrementSwapId initSwapId)
 
   , nettestScenarioCaps "Accessing non-existing swap fails respectively" $ do
-      swap <- originateSwap
+      (swap, _) <- originateAllowlistedBurnSwapWithAdmin
 
       call swap (Call @"Accept") initSwapId
         & expectError swap errSwapNotExist
       call swap (Call @"Cancel") initSwapId
         & expectError swap errSwapNotExist
 
-      call swap (Call @"Start") $ mkSingleOffer $ SwapOffer [] []
+      call swap (Call @"Start") $ mkSingleOffer (SwapOffer [] [])
 
       call swap (Call @"Accept") (incrementSwapId initSwapId)
         & expectError swap errSwapNotExist
@@ -228,16 +243,17 @@ swapIdChecks = testGroup "SwapIds"
       call swap (Call @"Accept") initSwapId
   ]
 
+
 authorizationChecks :: TestTree
 authorizationChecks = testGroup "Authorization checks"
   [ nettestScenarioCaps "Swap can be cancelled by seller only" $ do
       setup <- doFA2Setup
       let alice ::< bob ::< SNil = sAddresses setup
       let !SNil = sTokens setup
-      swap <- originateSwap
+      (swap, _) <- originateAllowlistedBurnSwapWithAdmin
 
       withSender alice $
-        call swap (Call @"Start") $ mkSingleOffer $ SwapOffer [] []
+        call swap (Call @"Start") $ mkSingleOffer (SwapOffer [] [])
 
       call swap (Call @"Cancel") initSwapId
         & expectError swap errNotSwapSeller
@@ -262,7 +278,10 @@ invalidFA2sChecks = testGroup "Invalid FA2s"
 
       for_ pseudoFa2s $ \(desc, fa2) -> do
         comment $ "Trying " <> desc
-        swap <- originateSwap
+        (swap, admin) <- originateAllowlistedBurnSwapWithAdmin
+
+        withSender admin $
+          call swap (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
 
         comment "Checking offered FA2"
         withSender alice $
@@ -289,14 +308,17 @@ complexCases = testGroup "Complex cases"
       setup <- doFA2Setup
       let alice ::< bob ::< SNil = sAddresses setup
       let tokenId1 ::< tokenId2 ::< tokenId3 ::< SNil = sTokens setup
-      swap <- originateSwap
+      (swap, admin) <- originateAllowlistedBurnSwapWithAdmin
       fa2_1 <- originateFA2 "fa2-1" setup [swap]
       fa2_2 <- originateFA2 "fa2-2" setup [swap]
+
+      withSender admin $
+        call swap (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2_1, fa2_2])
 
       assertingBalanceDeltas fa2_1
         [ (alice, tokenId1) -: -100
         , (alice, tokenId2) -: -50
-        , (alice, tokenId3) -: 1
+        , (nullAddress , tokenId3) -: 1
         , (bob, tokenId1) -: 100
         , (bob, tokenId2) -: 50
         , (bob, tokenId3) -: -1
@@ -326,3 +348,60 @@ complexCases = testGroup "Complex cases"
             call swap (Call @"Accept") initSwapId
 
   ]
+
+test_AdminChecks :: TestTree
+test_AdminChecks =
+  adminOwnershipTransferChecks originateAllowlistedBurnSwap
+
+test_AllowlistUpdateAuthorization :: [TestTree]
+test_AllowlistUpdateAuthorization =
+  allowlistUpdateAuthorizationChecks originateAllowlistedBurnSwap
+
+test_AllowlistChecks :: [TestTree]
+test_AllowlistChecks = allowlistSimpleChecks
+  AllowlistChecksSetup
+  { allowlistCheckSetup = \fa2Setup -> do
+      let alice ::< _ = sAddresses fa2Setup
+      let tokenId ::< _ = sTokens fa2Setup
+      (swap, admin) <- originateAllowlistedBurnSwapWithAdmin
+      return (admin, swap, (alice, tokenId))
+
+  , allowlistRestrictionsCases = fromList
+      [ AllowlistRestrictionCase
+        { allowlistError = errSwapOfferedNotAllowlisted
+        , allowlistRunRestrictedAction = \(alice, tokenId) swap (fa2, _) ->
+            withSender alice $
+              call swap (Call @"Start") $ mkSingleOffer SwapOffer
+                { assetsOffered = [mkFA2Assets fa2 [(tokenId, 1)]]
+                , assetsRequested = []
+                }
+        }
+      , AllowlistRestrictionCase
+        { allowlistError = errSwapRequestedNotAllowlisted
+        , allowlistRunRestrictedAction = \(alice, tokenId) swap (fa2, _) ->
+            withSender alice $
+              call swap (Call @"Start") $ mkSingleOffer SwapOffer
+                { assetsOffered = []
+                , assetsRequested = [mkFA2Assets fa2 [(tokenId, 1)]]
+                }
+        }
+      ]
+
+  , allowlistAlwaysIncluded = \_ -> []
+  }
+
+assertingBurnAddressUnchanged
+  :: (MonadEmulated caps base m, HasCallStack)
+  => TAddress AllowlistedBurnSwapEntrypoints
+  -> m a
+  -> m a
+assertingBurnAddressUnchanged swapContract action = do
+  initBurnAddress <- getBurnAddress swapContract
+  res <- action
+  finalBurnAddress <- getBurnAddress swapContract
+  initBurnAddress @== finalBurnAddress
+  return res
+    where
+      getBurnAddress c = do 
+        storage <- fromVal @AllowlistedBurnSwapStorage <$> getStorage' c
+        pure $ (burnAddress . burnSwapStorage) storage

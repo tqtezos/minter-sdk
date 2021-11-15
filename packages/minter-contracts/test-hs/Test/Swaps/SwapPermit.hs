@@ -36,7 +36,7 @@ hprop_Sending_fake_permit_to_offchain_accept_fails =
       withSender admin $
         call swap (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
       withSender alice $ do 
-        call swap (Call @"Start") SwapOffer
+        call swap (Call @"Start") $ mkSingleOffer SwapOffer
           { assetsOffered = []
           , assetsRequested = [mkFA2Assets fa2 [(tokenId1, 1)]]
           }
@@ -57,7 +57,7 @@ hprop_Offchain_accept_not_admin_submitted_fails =
       withSender admin $
         call swap (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
       withSender alice $ do 
-        call swap (Call @"Start") SwapOffer
+        call swap (Call @"Start") $ mkSingleOffer SwapOffer
           { assetsOffered = []
           , assetsRequested = [mkFA2Assets fa2 [(tokenId1, 1)]]
           }
