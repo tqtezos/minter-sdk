@@ -81,6 +81,6 @@ test_Integrational = testGroup "Integrational"
               , assetsRequested = [mkFA2Assets fa2 [(tokenId, 7)]]
               }
           withSender bob $
-            call swap (Call @"Accept") (SwapId 0)
+            call swap (Call @"Accept") initSwapId
 
   ]

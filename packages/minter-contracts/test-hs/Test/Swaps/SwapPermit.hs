@@ -9,6 +9,7 @@ import Hedgehog (Property, property)
 
 import Michelson.Interpret.Pack 
 
+import Lorentz.Contracts.Swaps.Allowlisted
 import Lorentz.Contracts.Swaps.Basic
 import Lorentz.Contracts.Swaps.SwapPermit
 import Lorentz.Value
@@ -24,8 +25,13 @@ hprop_Sending_fake_permit_to_offchain_accept_fails =
     clevelandProp $ do
       setup <- doFA2Setup
       let alice ::< bob ::< SNil = sAddresses setup
-      let tokenId1 ::< tokenId2 ::< SNil = sTokens setup
+      let tokenId1 ::< SNil = sTokens setup
       (swap, admin) <- originateOffchainSwapWithAdmin
+      swapId <- (\(SwapId n) -> n) . 
+                nextSwapId . 
+                swapStorage <$>
+                fromVal @AllowlistedSwapStorage <$> 
+                getStorage' swap 
       fa2 <- originateFA2 "fa2" setup [swap]
       withSender admin $
         call swap (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
@@ -34,7 +40,7 @@ hprop_Sending_fake_permit_to_offchain_accept_fails =
           { assetsOffered = []
           , assetsRequested = [mkFA2Assets fa2 [(tokenId1, 1)]]
           }
-      missignedBytes <- fst <$> mkPermitToForge 0 swap
+      missignedBytes <- fst <$> mkPermitToForge swapId swap
       withSender admin $ do
         offchainAcceptForged bob swap `expectFailure` failedWith swap
           ([mt|MISSIGNED|], missignedBytes)
@@ -45,7 +51,7 @@ hprop_Offchain_accept_not_admin_submitted_fails =
     clevelandProp $ do
       setup <- doFA2Setup
       let alice ::< bob ::< SNil = sAddresses setup
-      let tokenId1 ::< tokenId2 ::< SNil = sTokens setup
+      let tokenId1 ::< SNil = sTokens setup
       (swap, admin) <- originateOffchainSwapWithAdmin
       fa2 <- originateFA2 "fa2" setup [swap]
       withSender admin $

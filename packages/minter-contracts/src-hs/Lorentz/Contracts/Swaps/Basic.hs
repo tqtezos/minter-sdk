@@ -72,9 +72,15 @@ customGeneric "SwapStorage" ligoLayout
 deriving anyclass instance IsoValue SwapStorage
 deriving anyclass instance HasAnnotation SwapStorage
 
+incrementSwapId :: SwapId -> SwapId 
+incrementSwapId (SwapId n) = SwapId (n + 1)
+
+initSwapId :: SwapId 
+initSwapId = SwapId 1
+
 initSwapStorage :: SwapStorage
 initSwapStorage = SwapStorage
-  { nextSwapId = SwapId 1
+  { nextSwapId = initSwapId
   , swaps = mempty
   }
 
