@@ -23,6 +23,7 @@ import {
   EnglishAuctionTezFixedFeeCode,
   EnglishAuctionFa2FixedFeeCode,
   Fa2MultiFtAssetLimitedCode,
+  EnglishAuctionTezOffchainBidCode,
 } from '../bin-ts';
 
 export interface MintNftParam {
@@ -213,6 +214,14 @@ export async function originateEnglishAuctionTezAdmin(
   const tzAddress = await tz.signer.publicKeyHash();
   const storage = `(Pair (Some (Pair (Pair "${tzAddress}" False) None)) 0 86400 86400 {} Unit)`;
   return originateContract(tz, EnglishAuctionTezCode.code, storage, 'english_auction_tez_admin');
+}
+
+export async function originateEnglishAuctionTezOffchainBid(
+  tz: TezosToolkit,
+): Promise<Contract> {
+  const tzAddress = await tz.signer.publicKeyHash();
+  const storage = `(Pair (Some (Pair (Pair "${tzAddress}" False) None)) 0 86400 86400 {} Unit)`;
+  return originateContract(tz, EnglishAuctionTezOffchainBidCode.code, storage, 'english_auction_tez_offchain_bid');
 }
 
 export async function originateEditionsNftContract(
