@@ -31,7 +31,7 @@ deriving anyclass instance HasAnnotation OffchainAcceptParam
 
 data PermitSwapEntrypoints
   = BaseSwap AllowlistedSwapEntrypoints
-  | Offchain_accept OffchainAcceptParam
+  | Offchain_accept [OffchainAcceptParam]
 
 customGeneric "PermitSwapEntrypoints" ligoLayout
 deriving anyclass instance IsoValue PermitSwapEntrypoints

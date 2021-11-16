@@ -91,7 +91,7 @@ hprop_Correct_final_balances_on_acceptance =
                 , assetsRequested = [mkFA2Assets fa2 [(tokenId1, token1Request), (tokenId2, token2Request)]]
                 }
             withSender bob $
-              call swap (Call @"Accept") (SwapId 0)
+              call swap (Call @"Accept") initSwapId
   
 hprop_Correct_final_balances_on_cancel :: Property
 hprop_Correct_final_balances_on_cancel = 
@@ -122,7 +122,7 @@ hprop_Correct_final_balances_on_cancel =
                 , assetsRequested = [mkFA2Assets fa2 [(tokenId1, token1Request), (tokenId2, token2Request)]]
                 }
             withSender alice $
-              call swap (Call @"Cancel") (SwapId 0)
+              call swap (Call @"Cancel") initSwapId 
   
 hprop_Correct_num_tokens_transferred_to_contract_on_start :: Property
 hprop_Correct_num_tokens_transferred_to_contract_on_start = 
@@ -173,7 +173,7 @@ hprop_Contract_balance_goes_to_zero_when_sale_concludes =
                }
            withSender bob $
               replicateM_ (fromIntegral numOffers) $ do
-                call swap (Call @"Accept") (SwapId 0)
+                call swap (Call @"Accept") initSwapId
 
 statusChecks :: TestTree
 statusChecks = testGroup "Statuses"

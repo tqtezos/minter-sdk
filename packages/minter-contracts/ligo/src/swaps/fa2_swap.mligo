@@ -216,8 +216,8 @@ let accept_swap_update_ops_list(swap, accepter, ops, storage : swap_info * addre
 
 let accept_swap(swap_id, accepter, storage : swap_id * address * swap_storage) : return = 
     let swap = get_swap(swap_id, storage) in
-    let storage = accept_swap_update_storage(swap_id, swap, accepter, storage) in
     let ops = accept_swap_update_ops_list(swap, accepter, ([] : operation list), storage) in
+    let storage = accept_swap_update_storage(swap_id, swap, accepter, storage) in
     (ops, storage)
 
 let swaps_main (param, storage : swap_entrypoints * swap_storage) : return = begin

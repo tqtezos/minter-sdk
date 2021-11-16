@@ -89,7 +89,7 @@ offchainAccept buyer contract = do
   unsigned <- mkPermitToSign swapId contract
   signature <- signBytes unsigned buyer 
   call contract (Call @"Offchain_accept") 
-    OffchainAcceptParam
+    [OffchainAcceptParam
       {
         swapId = swapId
       , permit = Permit
@@ -98,6 +98,7 @@ offchainAccept buyer contract = do
           , signature = signature
           } 
       }
+    ]
   where swapId = 1
 
 offchainAcceptForged :: (HasCallStack, MonadEmulated caps base m) => Address -> TAddress PermitSwapEntrypoints -> m ByteString
@@ -105,7 +106,7 @@ offchainAcceptForged buyer contract = do
   (unsigned, forgedPK) <- mkPermitToForge swapId contract
   signature <- signBytes unsigned buyer 
   (\() -> unsigned) <$> call contract (Call @"Offchain_accept") 
-    OffchainAcceptParam
+    [OffchainAcceptParam
       {
         swapId = swapId
       , permit = Permit
@@ -113,5 +114,6 @@ offchainAcceptForged buyer contract = do
             signerKey = forgedPK
           , signature = signature
           } 
-      } 
+      }
+    ] 
   where swapId = 1
