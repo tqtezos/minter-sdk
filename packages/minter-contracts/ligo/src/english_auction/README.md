@@ -77,7 +77,7 @@ An auction can be configured with the parameters specified in `configure_param` 
 
 When the conditions are met, 
  
-`auctions[current_id]` is set with parameter values, `current_bid` is set to `opening_price` and `storage.current_id` is incremented. 
+`auctions[current_id]` is set with parameter values, `current_bid` is set to `opening_price` and `storage.current_id` is incremented. Also, `highest_bidder` is set to `seller`, which is used internally for the contract to know that no bid has yet been placed.
 
 The contract optimistically transfers assets from `SENDER` to itself. That means `SENDER` needed to already have approved the transfer to the auction contract of the assets that they are auctioning. The auction configuration fails if any of these transfers fail.
 
@@ -144,6 +144,7 @@ If an auction has ended, a call to this entrypoint ought to send the asset to `h
 - `AUCTION_ENDED`: Auction cannot be cancelled if it has ended. 
 - `AUCTION_NOT_ENDED`: Auction cannot be resolved if it has NOT ended. 
 - `BIDDER_NOT_IMPLICIT`: Bidder must be an implicit account
+- `CALLER_NOT_IMPLICIT`: Contract caller must be an implicit account on bids.
 - `NOT_IN_PROGRESS`: An auction must be in progress in order to place a new bid. 
 - `SEllER_CANT_BID`: Seller cannot place a bid on their own item.
 - `NO_SELF_OUTBIDS`: A bidder cannot outbid themself if they were the previous highest bidder.
@@ -194,3 +195,13 @@ This is a version of the Auction contract in which an address fixed at contract 
 # Cancel only admin extension
 
 In the normal english auction contract with admin enabled, admins have sole authority over configuring and cancelling auctions. For some use-cases however it is useful for anyone to have the power to configure an auction, and admins to only have sole authority over cancelling auctions. This is accomplished when the C Macro `CANCEL_ONLY_ADMIN` is defined as in the LIGO files with `cancel_only_admin` in the title.
+
+# Offchain bid extension
+
+This extension adds a new entrypoint, `Offchain_bid` that allows admins to enter new bids received offchain. This functionality is useful for auctions that might involve bids placed by putting holds on credit cards or accepting non-tez payment. After an offchain bid is placed, the auction resumes as if a user placed the bid in tez, with the exception that the bid will not be returned (in tez) to any user after subsequent bids are placed (returning bids is handled offchain presumably). 
+
+The offchain bid submission uses a mechanism similar to the One-step permit procedure described in [TZIP-17](https://gitlab.com/tezos/tzip/-/blob/master/proposals/tzip-17/tzip-17.md#one-step-permit-entrypoints), with a few important differences. 
+
+- Only the admin can submit the permit
+- The counter is always set to 0. This is a valid simplification of that procedure because admin conducted replay attacks are not possible as both the current bid value as well as the auction id counter as well are strictly increasing. 
+- The `offchain_bid` entrypoint logic is different than the normal `bid` entrypoint logic (e.g. to indicate to the contract that the offchain bid should not be returned to the bidder, as it is assumed payment is handled offchain). 

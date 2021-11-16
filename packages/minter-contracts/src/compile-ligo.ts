@@ -160,6 +160,12 @@ const compileSources: CompileSourceEntry[] = [
     contract: true,
   },
   {
+    srcFile: 'english_auction/english_auction_tez_offchain_bid.mligo',
+    mainFn: 'english_auction_tez_main',
+    dstFile: 'english_auction_tez_offchain_bid.tz',
+    contract: true,
+  },
+  {
     srcFile: 'minter_collection/editions/fa2_multi_nft_token_editions.mligo',
     mainFn: 'editions_main',
     dstFile: 'fa2_multi_nft_token_editions.tz',

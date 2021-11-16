@@ -1,9 +1,9 @@
 import { $log } from '@tsed/logger';
 import { BigNumber } from 'bignumber.js';
-import { MichelsonMap } from '@taquito/taquito';
+import { ContractAbstraction, ContractProvider, MichelsonMap, TezosToolkit } from '@taquito/taquito';
 
 import { bootstrap, TestTz } from '../bootstrap-sandbox';
-import { Contract, address, bytes, nat } from '../../src/type-aliases';
+import { Contract, address, bytes, nat, key } from '../../src/type-aliases';
 
 import {
   originateNftFaucet,
@@ -34,6 +34,48 @@ interface ConfirmOrRevokePurchaseParam {
   purchaser : address;
 }
 
+async function createPermit( signerKey : key,
+  saleId : nat,
+  marketplace : ContractAbstraction<ContractProvider>,
+  permitSigner : TezosToolkit,
+  submitter : TezosToolkit,
+): Promise<PermitBuyParam> {
+  const fake_permit : Permit = {
+    signerKey : signerKey,
+    signature : dummy_sig,
+  };
+
+  const fake_permit_buy_param : PermitBuyParam = {
+    sale_id : saleId,
+    permit : fake_permit,
+  };
+
+  // Bob preapplies a transfer with the dummy_sig to extract the bytes_to_sign
+  const transfer_params = marketplace.methods.offchain_buy([fake_permit_buy_param])
+    .toTransferParams({ amount : 0 });
+  const bytes_to_sign = await submitter.estimate.transfer(transfer_params)
+    .catch((e) => errors_to_missigned_bytes(e.errors));
+  $log.info('bytes_to_sign:', bytes_to_sign);
+
+  // Alice sign the parameter
+  const param_sig = await permitSigner.signer.sign(bytes_to_sign).then(s => s.prefixSig);
+
+  const one_step_permit : Permit = {
+    signerKey : signerKey,
+    signature : param_sig,
+  };
+
+  const permit_buy_param : PermitBuyParam = {
+    sale_id : saleId,
+    permit : one_step_permit,
+  };
+
+  // This is what a relayer needs to submit the parameter on the signer's behalf
+  $log.info('permit package:', permit_buy_param);
+
+  return permit_buy_param;
+};
+
 describe.each([originateFixedPriceTezOffchainSale])
 ('marketplace test', (originateMarketplace) => {
   let tezos: TestTz;
@@ -43,6 +85,7 @@ describe.each([originateFixedPriceTezOffchainSale])
   let marketAddress: address;
   let bobAddress: address;
   let aliceAddress: address;
+  let aliceKey: key;
   let tokenId: nat;
   let tokenMetadata: MichelsonMap<string, bytes>;
   let salePrice: nat;
@@ -50,6 +93,7 @@ describe.each([originateFixedPriceTezOffchainSale])
 
   beforeAll(async () => {
     tezos = await bootstrap();
+    aliceKey = await tezos.alice.signer.publicKey();
     aliceAddress = await tezos.alice.signer.publicKeyHash();
     bobAddress = await tezos.bob.signer.publicKeyHash();
     queryBalances = queryBalancesWithLambdaView(tezos.lambdaView);
@@ -96,40 +140,8 @@ describe.each([originateFixedPriceTezOffchainSale])
   });
 
   test('bob makes sale, and alice buys nft with a permit. Bob confirms the purchase', async () => {
-    const aliceKey = await tezos.alice.signer.publicKey();
 
-    const fake_permit : Permit = {
-      signerKey : aliceKey,
-      signature : dummy_sig,
-    };
-
-    const fake_permit_buy_param : PermitBuyParam = {
-      sale_id : saleId,
-      permit : fake_permit,
-    };
-
-    // Bob preapplies a transfer with the dummy_sig to extract the bytes_to_sign
-    const transfer_params = marketplace.methods.offchain_buy([fake_permit_buy_param])
-      .toTransferParams({ amount : 0 });
-    const bytes_to_sign = await tezos.bob.estimate.transfer(transfer_params)
-      .catch((e) => errors_to_missigned_bytes(e.errors));
-    $log.info('bytes_to_sign:', bytes_to_sign);
-
-    // Alice sign the parameter
-    const param_sig = await tezos.alice.signer.sign(bytes_to_sign).then(s => s.prefixSig);
-
-    const one_step_permit : Permit = {
-      signerKey : aliceKey,
-      signature : param_sig,
-    };
-
-    const permit_buy_param : PermitBuyParam = {
-      sale_id : saleId,
-      permit : one_step_permit,
-    };
-
-    // This is what a relayer needs to submit the parameter on the signer's behalf
-    $log.info('permit package:', permit_buy_param);
+    const permit_buy_param = await createPermit(aliceKey, saleId, marketplace, tezos.alice, tezos.bob);
 
 
     // Bob submits the permit to the contract
@@ -155,41 +167,8 @@ describe.each([originateFixedPriceTezOffchainSale])
   });
 
   test('bob makes sale, and alice buys nft with a permit. Bob revokes the purchase', async () => {
-    const aliceKey = await tezos.alice.signer.publicKey();
 
-    const fake_permit : Permit = {
-      signerKey : aliceKey,
-      signature : dummy_sig,
-    };
-
-    const fake_permit_buy_param : PermitBuyParam = {
-      sale_id : saleId,
-      permit : fake_permit,
-    };
-
-    // Bob preapplies a transfer with the dummy_sig to extract the bytes_to_sign
-    const transfer_params = marketplace.methods.offchain_buy([fake_permit_buy_param])
-      .toTransferParams({ amount : 0 });
-    const bytes_to_sign = await tezos.bob.estimate.transfer(transfer_params)
-      .catch((e) => errors_to_missigned_bytes(e.errors));
-    $log.info('bytes_to_sign:', bytes_to_sign);
-
-    // Alice sign the parameter
-    const param_sig = await tezos.alice.signer.sign(bytes_to_sign).then(s => s.prefixSig);
-
-    const one_step_permit : Permit = {
-      signerKey : aliceKey,
-      signature : param_sig,
-    };
-
-    const permit_buy_param : PermitBuyParam = {
-      sale_id : saleId,
-      permit : one_step_permit,
-    };
-
-    // This is what a relayer needs to submit the parameter on the signer's behalf
-    $log.info('permit package:', permit_buy_param);
-
+    const permit_buy_param = await createPermit(aliceKey, saleId, marketplace, tezos.alice, tezos.bob);
 
     // Bob submits the permit to the contract
     const permit_op = await marketplace.methods.offchain_buy([permit_buy_param]).send({ amount: 0 });
