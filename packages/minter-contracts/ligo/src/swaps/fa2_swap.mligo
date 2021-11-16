@@ -151,9 +151,7 @@ let cancel_swap(swap_id, storage : swap_id * swap_storage) : return = begin
   (ops, storage)
   end
 
-let accept_swap(swap_id, accepter, storage : swap_id * address * swap_storage) : return = begin
-  let swap = get_swap(swap_id, storage) in
-
+let accept_swap_update_storage(swap_id, swap, accepter, storage : swap_id * swap_info * address * swap_storage) : swap_storage = 
   let storage = 
     if swap.swap_offers.remaining_offers > 1n 
     then {storage with 
@@ -170,11 +168,19 @@ let accept_swap(swap_id, accepter, storage : swap_id * address * swap_storage) :
          }
     else { storage with swaps = Big_map.remove swap_id storage.swaps }
     in 
+  storage
 
+let accept_swap_update_ops_list(swap, accepter, ops, storage : swap_info * address * operation list * swap_storage) : operation list = begin
   let ops =
-        List.map
-        (transfer_assets(Tezos.self_address, accepter, 1n, unexpected_err "SWAP_OFFERED_FA2_INVALID"))
-        swap.swap_offers.swap_offer.assets_offered in
+        List.fold
+        (fun (ops, tokens : operation list * fa2_assets) ->
+          let transfer = (transfer_assets(Tezos.self_address, accepter, 1n, unexpected_err "SWAP_OFFERED_FA2_INVALID")) in 
+          let op : operation = transfer tokens in 
+          (op :: ops)
+        )
+        swap.swap_offers.swap_offer.assets_offered 
+        ops 
+        in
   let allOps =
         List.fold
         (fun (ops, tokens : operation list * fa2_assets) ->  
@@ -191,7 +197,8 @@ let accept_swap(swap_id, accepter, storage : swap_id * address * swap_storage) :
 #else
         swap.swap_offers.swap_offer.assets_requested.0
 #endif
-        ops in 
+        ops 
+        in 
 
 #if XTZ_FEE 
   let xtz_requested : tez = swap.swap_offers.swap_offer.assets_requested.1 in 
@@ -204,9 +211,14 @@ let accept_swap(swap_id, accepter, storage : swap_id * address * swap_storage) :
       xtz_op :: allOps 
     in 
 #endif
+  allOps
+ end
 
-  (allOps, storage)
-  end
+let accept_swap(swap_id, accepter, storage : swap_id * address * swap_storage) : return = 
+    let swap = get_swap(swap_id, storage) in
+    let storage = accept_swap_update_storage(swap_id, swap, accepter, storage) in
+    let ops = accept_swap_update_ops_list(swap, accepter, ([] : operation list), storage) in
+    (ops, storage)
 
 let swaps_main (param, storage : swap_entrypoints * swap_storage) : return = begin
   forbid_xtz_transfer;
