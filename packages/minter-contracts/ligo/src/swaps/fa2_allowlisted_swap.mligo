@@ -40,6 +40,9 @@ type entrypoints =
   | Swap of swap_entrypoints
   | Admin of admin_entrypoints
   | Update_allowed of allowlist
+#if CHANGE_BURN_ADDRESS
+  | Change_burn_address of address
+#endif
 
 let allowlisted_swaps_main(param, storage : entrypoints * storage)
     : ((operation list) * storage) =
@@ -59,3 +62,9 @@ let allowlisted_swaps_main(param, storage : entrypoints * storage)
       fail_if_not_admin storage.admin;
       (([] : operation list), { storage with allowlist = new_allowed })
       end
+#if CHANGE_BURN_ADDRESS
+  | Change_burn_address new_burn_address -> begin 
+      fail_if_not_admin(storage.admin);
+      (([] : operation list), { storage with swap  = { storage.swap with burn_address = new_burn_address}})
+    end
+#endif

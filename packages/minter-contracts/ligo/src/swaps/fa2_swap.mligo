@@ -48,15 +48,23 @@ type swap_entrypoints =
 type swap_storage =
   { next_swap_id : swap_id
   ; swaps : (swap_id, swap_info) big_map
+#if BURN_PAYMENT
+  ; burn_address : address
+#endif
   }
 
 type return = operation list * swap_storage
 
 (* ==== Values ==== *)
 
+[@inline] let example_burn_address = ("tz1Ke2h7sDdakHJQh8WX4Z372du1KChsksyU" : address)
+
 let init_storage : swap_storage =
   { next_swap_id = 0n
   ; swaps = (Big_map.empty : (swap_id, swap_info) big_map)
+#if BURN_PAYMENT
+  ; burn_address = example_burn_address
+#endif
   }
 
 (* ==== Helpers ==== *)
@@ -170,7 +178,11 @@ let accept_swap(swap_id, storage : swap_id * swap_storage) : return = begin
   let allOps =
         List.fold
         (fun (ops, tokens : operation list * fa2_assets) ->  
-          let transfer = transfer_assets(Tezos.sender, swap.seller, 1n, "SWAP_REQUESTED_FA2_INVALID") in 
+#if !BURN_PAYMENT
+          let transfer = (transfer_assets(Tezos.sender, swap.seller, 1n, "SWAP_REQUESTED_FA2_INVALID")) in 
+#else 
+          let transfer = (transfer_assets(Tezos.sender, storage.burn_address, 1n, "SWAP_REQUESTED_FA2_INVALID")) in
+#endif
           let op : operation = transfer tokens in 
           (op :: ops)
         )
@@ -179,7 +191,7 @@ let accept_swap(swap_id, storage : swap_id * swap_storage) : return = begin
 #else
         swap.swap_offers.swap_offer.assets_requested.0
 #endif
-      ops in 
+        ops in 
 
 #if XTZ_FEE 
   let xtz_requested : tez = swap.swap_offers.swap_offer.assets_requested.1 in 
