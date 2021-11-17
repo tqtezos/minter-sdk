@@ -29,6 +29,9 @@ deriving anyclass instance HasAnnotation BurnSwapStorage
 nullAddress :: Address 
 nullAddress = unsafeParseAddress "tz1Ke2h7sDdakHJQh8WX4Z372du1KChsksyU"
 
+altBurnAddress :: Address 
+altBurnAddress = unsafeParseAddress "tz1burnburnburnburnburnburnburjAYjjX"
+
 initBurnSwapStorage :: BurnSwapStorage
 initBurnSwapStorage = BurnSwapStorage
   { nextSwapId = SwapId 0

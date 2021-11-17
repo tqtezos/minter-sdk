@@ -67,7 +67,7 @@ originateAllowlistedBurnSwapWithAdmin =
 originateChangeBurnAddressSwap
   :: MonadNettest caps base m
   => Address
-  -> m (TAddress AllowlistedBurnSwapEntrypoints)
+  -> m (TAddress ChangeBurnAddressSwapEntrypoints)
 originateChangeBurnAddressSwap admin = do
   TAddress <$> originateUntypedSimple "swaps"
     (T.untypeValue $ T.toVal $ initAllowlistedBurnSwapStorage admin)
@@ -76,7 +76,7 @@ originateChangeBurnAddressSwap admin = do
 -- | Originate the allowlisted burn swaps contract and admin for it.
 originateChangeBurnAddressSwapWithAdmin
   :: MonadNettest caps base m
-  => m (TAddress AllowlistedBurnSwapEntrypoints, Address)
+  => m (TAddress ChangeBurnAddressSwapEntrypoints, Address)
 originateChangeBurnAddressSwapWithAdmin =
   originateWithAdmin originateChangeBurnAddressSwap
 
