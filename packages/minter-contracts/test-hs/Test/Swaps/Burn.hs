@@ -15,9 +15,9 @@ import Test.Tasty (TestTree, testGroup)
 import Morley.Nettest
 import Morley.Nettest.Tasty (nettestScenarioCaps)
 
-import Lorentz.Contracts.Swaps.Basic
+import Lorentz.Contracts.Swaps.Basic hiding (nextSwapId, swaps)
 import Lorentz.Contracts.Swaps.Burn
-import Lorentz.Contracts.Swaps.Allowlisted
+import Lorentz.Contracts.Swaps.Allowlisted hiding (admin, allowlist)
 
 import Test.Allowlisted
 import Tezos.Address (unsafeParseAddress)
@@ -174,6 +174,16 @@ hprop_Contract_balance_goes_to_zero_when_sale_concludes =
            withSender bob $
               replicateM_ (fromIntegral numOffers) $ do
                 call swap (Call @"Accept") initSwapId
+
+hprop_Burn_address_unchanged_correctly_tests_contract_storage :: Property
+hprop_Burn_address_unchanged_correctly_tests_contract_storage  = 
+  property $ do
+    clevelandProp  $ do
+      (swap, admin) <- originateChangeBurnAddressSwapWithAdmin
+      assertingBurnAddressUnchanged swap (pure ())
+      assertingBurnAddressChanged swap $ do 
+         withSender admin $ 
+           call swap (Call @"Change_burn_address") altBurnAddress
 
 statusChecks :: TestTree
 statusChecks = testGroup "Statuses"
@@ -395,18 +405,37 @@ test_AllowlistChecks = allowlistSimpleChecks
   , allowlistAlwaysIncluded = \_ -> []
   }
 
-assertingBurnAddressUnchanged
+-- HELPERS -- 
+
+assertingBurnAddressStatus
   :: (MonadEmulated caps base m, HasCallStack)
-  => TAddress AllowlistedBurnSwapEntrypoints
+  => TAddress b
   -> m a
+  -> (Address -> Address -> m ())
   -> m a
-assertingBurnAddressUnchanged swapContract action = do
+assertingBurnAddressStatus swapContract action changedStatus = do
   initBurnAddress <- getBurnAddress swapContract
   res <- action
   finalBurnAddress <- getBurnAddress swapContract
-  initBurnAddress @== finalBurnAddress
+  initBurnAddress `changedStatus` finalBurnAddress
   return res
     where
       getBurnAddress c = do 
         storage <- fromVal @AllowlistedBurnSwapStorage <$> getStorage' c
         pure $ (burnAddress . burnSwapStorage) storage
+
+assertingBurnAddressUnchanged 
+  :: (MonadEmulated caps base m, HasCallStack)
+  => TAddress b
+  -> m a
+  -> m a 
+assertingBurnAddressUnchanged swapContract action = 
+   assertingBurnAddressStatus swapContract action (@==)
+
+assertingBurnAddressChanged
+  :: (MonadEmulated caps base m, HasCallStack)
+  => TAddress b
+  -> m a
+  -> m a 
+assertingBurnAddressChanged swapContract action = 
+   assertingBurnAddressStatus swapContract action (@/=)

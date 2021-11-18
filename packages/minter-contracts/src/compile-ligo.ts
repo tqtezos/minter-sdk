@@ -160,6 +160,12 @@ const compileSources: CompileSourceEntry[] = [
     contract: true,
   },
   {
+    srcFile: 'english_auction/english_auction_tez_offchain_bid.mligo',
+    mainFn: 'english_auction_tez_main',
+    dstFile: 'english_auction_tez_offchain_bid.tz',
+    contract: true,
+  },
+  {
     srcFile: 'minter_collection/editions/fa2_multi_nft_token_editions.mligo',
     mainFn: 'editions_main',
     dstFile: 'fa2_multi_nft_token_editions.tz',
@@ -187,6 +193,12 @@ const compileSources: CompileSourceEntry[] = [
     srcFile: 'swaps/fa2_allowlisted_swap_with_burn.mligo',
     mainFn: 'allowlisted_swaps_main',
     dstFile: 'fa2_allowlisted_swap_with_burn.tz',
+    contract: true,
+  },
+  {
+    srcFile: 'swaps/fa2_allowlisted_swap_with_change_burn_address.mligo',
+    mainFn: 'allowlisted_swaps_main',
+    dstFile: 'fa2_allowlisted_swap_with_change_burn_address.tz',
     contract: true,
   },
   {

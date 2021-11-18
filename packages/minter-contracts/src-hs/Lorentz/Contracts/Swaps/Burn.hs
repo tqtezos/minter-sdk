@@ -29,6 +29,9 @@ deriving anyclass instance HasAnnotation BurnSwapStorage
 nullAddress :: Address 
 nullAddress = unsafeParseAddress "tz1Ke2h7sDdakHJQh8WX4Z372du1KChsksyU"
 
+altBurnAddress :: Address 
+altBurnAddress = unsafeParseAddress "tz1burnburnburnburnburnburnburjAYjjX"
+
 initBurnSwapStorage :: BurnSwapStorage
 initBurnSwapStorage = BurnSwapStorage
   { nextSwapId = initSwapId
@@ -65,6 +68,20 @@ deriving anyclass instance HasAnnotation AllowlistedBurnSwapEntrypoints
 instance ParameterHasEntrypoints AllowlistedBurnSwapEntrypoints where
   type ParameterEntrypointsDerivation AllowlistedBurnSwapEntrypoints = EpdDelegate
 
+-- Used for testing 
+data ChangeBurnAddressSwapEntrypoints
+  = Swap' SwapEntrypoints
+  | Admin' AdminEntrypoints
+  | Update_allowed' (BigMap Address ())
+  | Change_burn_address Address
+
+customGeneric "ChangeBurnAddressSwapEntrypoints" ligoLayout
+deriving anyclass instance IsoValue ChangeBurnAddressSwapEntrypoints
+deriving anyclass instance HasAnnotation ChangeBurnAddressSwapEntrypoints
+
+instance ParameterHasEntrypoints ChangeBurnAddressSwapEntrypoints where
+  type ParameterEntrypointsDerivation ChangeBurnAddressSwapEntrypoints = EpdDelegate
+
 -- Contract
 ----------------------------------------------------------------------------
 
@@ -72,3 +89,8 @@ allowlistedBurnSwapsContract
   :: T.Contract (ToT AllowlistedBurnSwapEntrypoints) (ToT AllowlistedBurnSwapStorage)
 allowlistedBurnSwapsContract =
   $$(embedContractM (inBinFolder "fa2_allowlisted_swap_with_burn.tz"))
+
+changeBurnAddressSwapsContract
+  :: T.Contract (ToT ChangeBurnAddressSwapEntrypoints) (ToT AllowlistedBurnSwapStorage)
+changeBurnAddressSwapsContract =
+  $$(embedContractM (inBinFolder "fa2_allowlisted_swap_with_change_burn_address.tz"))

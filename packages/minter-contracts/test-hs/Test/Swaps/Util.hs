@@ -10,7 +10,10 @@ module Test.Swaps.Util
   , originateAllowlistedSwapWithAdmin
   , originateOffchainSwap
   , originateOffchainSwapWithAdmin
+  , originateAllowlistedBurnSwap
   , originateAllowlistedBurnSwapWithAdmin
+  , originateChangeBurnAddressSwap
+  , originateChangeBurnAddressSwapWithAdmin
   , mkFA2Assets
   ) where
 
@@ -56,13 +59,32 @@ originateAllowlistedBurnSwap admin = do
     (T.untypeValue $ T.toVal $ initAllowlistedBurnSwapStorage admin)
     (T.convertContract allowlistedBurnSwapsContract)
 
--- | Originate the allowlisted swaps contract and admin for it.
+-- | Originate the allowlisted burn swaps contract and admin for it.
 originateAllowlistedBurnSwapWithAdmin
   :: MonadNettest caps base m
   => m (TAddress AllowlistedBurnSwapEntrypoints, Address)
 originateAllowlistedBurnSwapWithAdmin =
   originateWithAdmin originateAllowlistedBurnSwap
--- | Originate the allowlisted swaps contract with tez fee.
+
+
+-- | Originate the allowlisted burn swaps contract.
+originateChangeBurnAddressSwap
+  :: MonadNettest caps base m
+  => Address
+  -> m (TAddress ChangeBurnAddressSwapEntrypoints)
+originateChangeBurnAddressSwap admin = do
+  TAddress <$> originateUntypedSimple "swaps"
+    (T.untypeValue $ T.toVal $ initAllowlistedBurnSwapStorage admin)
+    (T.convertContract changeBurnAddressSwapsContract)
+
+-- | Originate the allowlisted burn swaps contract and admin for it.
+originateChangeBurnAddressSwapWithAdmin
+  :: MonadNettest caps base m
+  => m (TAddress ChangeBurnAddressSwapEntrypoints, Address)
+originateChangeBurnAddressSwapWithAdmin =
+  originateWithAdmin originateChangeBurnAddressSwap
+
+-- | Originate the allowlisted feeswaps contract with tez fee.
 originateAllowlistedFeeSwap
   :: MonadNettest caps base m
   => Address
