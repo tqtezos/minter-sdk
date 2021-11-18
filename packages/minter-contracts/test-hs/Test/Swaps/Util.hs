@@ -7,12 +7,11 @@ module Test.Swaps.Util
   , originateAllowlistedSwap
   , originateAllowlistedBurnSwap
   , originateAllowlistedFeeSwap
-  , originateAllowlistedSwapWithAdmin
-  , originateOffchainSwap
-  , originateOffchainSwapWithAdmin
-  , originateAllowlistedBurnSwap
-  , originateAllowlistedBurnSwapWithAdmin
   , originateChangeBurnAddressSwap
+  , originateOffchainSwap
+  , originateAllowlistedSwapWithAdmin
+  , originateOffchainSwapWithAdmin
+  , originateAllowlistedBurnSwapWithAdmin
   , originateChangeBurnAddressSwapWithAdmin
   , mkFA2Assets
   ) where
