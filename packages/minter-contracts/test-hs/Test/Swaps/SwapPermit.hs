@@ -109,6 +109,27 @@ hprop_Consecutive_offchain_accept_equals_iterative_accept =
                          getStorage' swap2
         swapStorage1 @== swapStorage2
 
+hprop_Accepting_with_zero_balance_fails :: Property
+hprop_Accepting_with_zero_balance_fails =
+    property $ do
+      clevelandProp $ do
+          setup <- doFA2Setup
+          let alice ::< SNil = sAddresses setup
+          let tokenId1 ::< tokenId2 ::< SNil = sTokens setup
+          (swap, admin) <- originateOffchainSwapWithAdmin
+          fa2 <- originateFA2 "fa2" setup [swap]
+          withSender admin $
+            call swap (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
+          addressWithZeroBalance <- newAddress "test"
+          withSender alice $
+            call swap (Call @"Start") $ mkSingleOffer SwapOffer
+              { assetsOffered = [mkFA2Assets fa2 [(tokenId1, 10)]]
+              , assetsRequested = [mkFA2Assets fa2 [(tokenId2, 5)]]
+              }
+          withSender admin
+            (offchainAccept addressWithZeroBalance swap
+              `expectFailure` failedWith fa2 errSwapRequestedFA2BalanceInvalid)  
+
 ----------------------------------------------------------------------------
 -- Helpers
 ----------------------------------------------------------------------------
