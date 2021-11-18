@@ -6,9 +6,7 @@ import Prelude hiding (swap)
 import GHC.Exts (fromList)
 import GHC.Integer (negateInteger)
 
-import Hedgehog (Gen, Property, forAll, property)
-import qualified Hedgehog.Gen as Gen
-import qualified Hedgehog.Range as Range
+import Hedgehog (Property, forAll, property)
 
 import Test.Tasty (TestTree, testGroup)
 
@@ -22,6 +20,7 @@ import Lorentz.Contracts.Swaps.Allowlisted hiding (admin, allowlist)
 import Test.Allowlisted
 import Tezos.Address (unsafeParseAddress)
 import Test.NonPausableSimpleAdmin
+import Test.Swaps.Basic hiding (statusChecks, swapIdChecks, authorizationChecks, invalidFA2sChecks, complexCases)
 
 import Lorentz.Test.Consumer
 import Lorentz.Value
@@ -37,30 +36,6 @@ test_BurnSwap = testGroup "Basic swap functionality"
   , invalidFA2sChecks
   , complexCases
   ]
-
-data TestData = TestData
-  { numOffers :: Natural
-  , token1Offer :: Natural
-  , token2Offer :: Natural
-  , token1Request :: Natural
-  , token2Request :: Natural
-  }
-  deriving stock (Show)
-
-genTestData :: Gen TestData
-genTestData = do
-  let genNat = Gen.integral (Range.constant 1 20)
-  numOffers <- genNat
-  token1Offer <- genNat
-  token2Offer <- genNat 
-  token1Request <- genNat
-  token2Request <- genNat
-  pure $ TestData
-    { numOffers = numOffers
-    , token1Offer = token1Offer
-    , token2Offer = token2Offer
-    , token1Request = token1Request
-    , token2Request = token2Request }
 
 hprop_Correct_final_balances_on_acceptance :: Property
 hprop_Correct_final_balances_on_acceptance = 

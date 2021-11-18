@@ -3,9 +3,11 @@ module Test.Swaps.SwapPermit where
 
 import Prelude hiding (swap, toStrict)
 
+import qualified Data.Sized as Sized (toList)
+
 import Morley.Nettest
 
-import Hedgehog (Property, property)
+import Hedgehog (Property, property, forAll)
 
 import Michelson.Interpret.Pack 
 
@@ -14,6 +16,7 @@ import Lorentz.Contracts.Swaps.Basic
 import Lorentz.Contracts.Swaps.SwapPermit
 import Lorentz.Value
 
+import Test.Swaps.Basic
 import Test.Swaps.Util
 import Test.Util
 
@@ -64,9 +67,74 @@ hprop_Offchain_accept_not_admin_submitted_fails =
       withSender bob $ do
         offchainAccept bob swap `expectFailure` failedWith swap
           errNotAdmin
+
+hprop_Consecutive_offchain_accept_equals_iterative_accept :: Property
+hprop_Consecutive_offchain_accept_equals_iterative_accept =
+    property $ do
+      TestData{numOffers,token1Offer, token2Offer, token1Request, token2Request} <- forAll genTestData
+      clevelandProp $ do
+        setup <- doFA2Setup @("addresses" :# 50) @("tokens" :# 2)
+        let admin1 ::< admin2 ::< alice ::< remainingAddresses = sAddresses setup
+        let addresses = take (fromIntegral numOffers) (Sized.toList remainingAddresses) 
+        let tokenId1 ::< tokenId2 ::< SNil = sTokens setup
+        swap1 <- originateOffchainSwap admin1
+        swap2 <- originateOffchainSwap admin2
+        fa2_1 <- originateFA2 "fa2_1" setup [swap1]
+        fa2_2 <- originateFA2 "fa2_2" setup [swap2]
+        withSender admin1 $
+          call swap1 (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2_1])
+        withSender admin2 $
+          call swap2 (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2_2])
+        withSender alice $ do 
+          call swap1 (Call @"Start") $ mkNOffers numOffers SwapOffer
+               { assetsOffered = [mkFA2Assets fa2_1 [(tokenId1, token1Offer), (tokenId2, token2Offer)]]
+               , assetsRequested = [mkFA2Assets fa2_1 [(tokenId1, token1Request), (tokenId2, token2Request)]]
+               }
+          call swap2 (Call @"Start") $ mkNOffers numOffers SwapOffer
+               { assetsOffered = [mkFA2Assets fa2_2 [(tokenId1, token1Offer), (tokenId2, token2Offer)]]
+               , assetsRequested = [mkFA2Assets fa2_2 [(tokenId1, token1Request), (tokenId2, token2Request)]]
+               }
+        withSender admin1 $ do
+          offchainAcceptAllConsecutive addresses swap1
+        withSender admin2 $ do
+          offchainAcceptBatch addresses swap2
+      
+        swapStorage1 <-  toVal <$>
+                         swapStorage <$>
+                         fromVal @AllowlistedSwapStorage <$> 
+                         getStorage' swap1
+        swapStorage2 <-  toVal <$>
+                         swapStorage <$>
+                         fromVal @AllowlistedSwapStorage <$> 
+                         getStorage' swap2
+        swapStorage1 @== swapStorage2
+
 ----------------------------------------------------------------------------
 -- Helpers
 ----------------------------------------------------------------------------
+
+-- N addresses accept all N assets in a sale conseutively, and then all N are confirmed
+offchainAcceptAllConsecutive :: (HasCallStack, MonadEmulated caps base m) => [Address] -> TAddress PermitSwapEntrypoints -> m ()
+offchainAcceptAllConsecutive addresses contract = do
+  forM_ addresses $ \buyer -> do
+      offchainAccept buyer contract
+
+offchainAcceptBatch :: (HasCallStack, MonadEmulated caps base m) => [Address] -> TAddress PermitSwapEntrypoints -> m ()
+offchainAcceptBatch buyers contract = do
+  param <- forM buyers $ \buyer -> do
+    buyerPK <- getPublicKey buyer
+    unsigned <- mkPermitToSign swapId contract
+    signature <- signBytes unsigned buyer
+    return OffchainAcceptParam { 
+        swapId = swapId
+      , permit = Permit
+          {
+            signerKey = buyerPK
+          , signature = signature
+          } 
+      } 
+  call contract (Call @"Offchain_accept") (toList param) 
+  where swapId = 1
 
 mkPermitToForge :: (HasCallStack, MonadEmulated caps base m) => Natural -> TAddress PermitSwapEntrypoints -> m (ByteString, PublicKey)
 mkPermitToForge swapId contract = do 
