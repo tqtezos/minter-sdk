@@ -281,7 +281,22 @@ invalidFA2sChecks = testGroup "Invalid FA2s"
 
           call swap (Call @"Accept") initSwapId
             & expectError swap errSwapRequestedFA2Invalid
-  ]
+      , nettestScenarioCaps "Accepter accepting swap with 0 balance of requested token fails" $ do
+          setup <- doFA2Setup
+          let alice ::< SNil = sAddresses setup
+          let tokenId1 ::< tokenId2 ::< SNil = sTokens setup
+          swap <- originateSwap
+          fa2 <- originateFA2 "fa2" setup [swap]
+          addressWithZeroBalance <- newAddress "test"
+          withSender alice $
+            call swap (Call @"Start") $ mkSingleOffer SwapOffer
+              { assetsOffered = [mkFA2Assets fa2 [(tokenId1, 10)]]
+              , assetsRequested = [mkFA2Assets fa2 [(tokenId2, 5)]]
+              }
+          withSender addressWithZeroBalance
+            (call swap (Call @"Accept") initSwapId
+              `expectFailure` failedWith fa2 errSwapRequestedFA2BalanceInvalid)
+  ]    
 
 complexCases :: TestTree
 complexCases = testGroup "Complex cases"
