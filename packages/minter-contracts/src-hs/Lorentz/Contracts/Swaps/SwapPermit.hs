@@ -50,6 +50,3 @@ allowlistedSwapsPermitContract =
 
 -- Errors
 ----------------------------------------------------------------------------
-
-errNotAdmin :: MText
-errNotAdmin = [mt|NOT_AN_ADMIN|]

@@ -141,16 +141,30 @@
                  PAIR ;
                  SWAP ;
                  PAIR }
-               { DIG 4 ;
-                 DROP ;
+               { DUP ;
+                 DIG 2 ;
                  DUP ;
-                 DUP 3 ;
+                 DUP ;
+                 DUG 4 ;
                  CAR ;
                  CDR ;
-                 SWAP ;
+                 DIG 2 ;
                  IF_LEFT
-                   { SWAP ; DROP ; IF_LEFT { DROP ; UNIT } { DROP ; UNIT } }
-                   { DUP ;
+                   { SWAP ;
+                     DROP ;
+                     SWAP ;
+                     DROP ;
+                     DIG 5 ;
+                     DROP ;
+                     IF_LEFT { DROP ; UNIT } { DROP ; UNIT } }
+                   { DIG 2 ;
+                     CAR ;
+                     CAR ;
+                     DIG 7 ;
+                     SWAP ;
+                     EXEC ;
+                     DROP ;
+                     DUP ;
                      CAR ;
                      CAR ;
                      ITER { DUP 3 ;

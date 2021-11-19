@@ -295,16 +295,30 @@
                      PAIR ;
                      SWAP ;
                      PAIR }
-                   { DIG 6 ;
-                     DROP ;
+                   { DUP ;
+                     DIG 2 ;
                      DUP ;
-                     DUP 3 ;
+                     DUP ;
+                     DUG 4 ;
                      CAR ;
                      CDR ;
-                     SWAP ;
+                     DIG 2 ;
                      IF_LEFT
-                       { SWAP ; DROP ; IF_LEFT { DROP ; UNIT } { DROP ; UNIT } }
-                       { DUP ;
+                       { SWAP ;
+                         DROP ;
+                         SWAP ;
+                         DROP ;
+                         DIG 7 ;
+                         DROP ;
+                         IF_LEFT { DROP ; UNIT } { DROP ; UNIT } }
+                       { DIG 2 ;
+                         CAR ;
+                         CAR ;
+                         DIG 9 ;
+                         SWAP ;
+                         EXEC ;
+                         DROP ;
+                         DUP ;
                          CAR ;
                          CAR ;
                          ITER { DUP 3 ;
@@ -545,119 +559,84 @@
              NIL operation ;
              PAIR ;
              SWAP ;
-             PAIR ;
-             LEFT (pair (list operation)
-                        (pair (pair (pair address (option address)) (big_map address unit))
-                              (pair nat
-                                    (big_map
-                                       nat
-                                       (pair (pair (pair (list (pair address (list (pair nat nat)))) (list (pair address (list (pair nat nat)))))
-                                                   nat)
-                                             address))))) ;
-             LOOP_LEFT
-               { UNPAIR ;
-                 SWAP ;
-                 UNPAIR ;
-                 DIG 2 ;
-                 IF_CONS
-                   { DIG 2 ;
-                     DIG 3 ;
-                     DIG 2 ;
-                     SWAP ;
-                     DUP ;
-                     DUG 2 ;
-                     CAR ;
-                     CAR ;
-                     DUP 8 ;
-                     SWAP ;
-                     EXEC ;
-                     DROP ;
-                     DUP ;
-                     CAR ;
-                     PACK ;
-                     BLAKE2B ;
-                     PUSH nat 0 ;
-                     DUP 3 ;
-                     CDR ;
-                     DUG 2 ;
-                     PAIR ;
-                     SELF_ADDRESS ;
-                     CHAIN_ID ;
-                     PAIR ;
-                     PAIR ;
-                     PACK ;
-                     DUP ;
-                     DUP 3 ;
-                     CDR ;
-                     DIG 3 ;
-                     CAR ;
-                     CHECK_SIGNATURE ;
-                     NOT ;
-                     IF { PUSH string "MISSIGNED" ; PAIR ; FAILWITH } { DROP } ;
-                     DUP ;
-                     CDR ;
-                     CAR ;
-                     HASH_KEY ;
-                     IMPLICIT_ACCOUNT ;
-                     ADDRESS ;
-                     DUP 3 ;
-                     CDR ;
-                     DUP 3 ;
-                     CAR ;
-                     SWAP ;
-                     CDR ;
-                     SWAP ;
-                     GET ;
-                     IF_NONE { PUSH string "SWAP_NOT_EXIST" ; FAILWITH } {} ;
-                     DUP 4 ;
-                     CDR ;
-                     DIG 5 ;
-                     PAIR ;
-                     DUP 3 ;
-                     DUP 3 ;
-                     PAIR ;
-                     PAIR ;
-                     DUP 7 ;
-                     SWAP ;
-                     EXEC ;
-                     DUP 5 ;
-                     CDR ;
-                     DIG 3 ;
-                     PAIR ;
-                     DIG 2 ;
-                     DIG 3 ;
-                     CAR ;
-                     PAIR ;
-                     PAIR ;
-                     DUP 6 ;
-                     SWAP ;
-                     EXEC ;
-                     DIG 2 ;
-                     CAR ;
-                     PAIR ;
-                     SWAP ;
-                     PAIR ;
-                     SWAP ;
-                     PAIR ;
-                     LEFT (pair (list operation)
-                                (pair (pair (pair address (option address)) (big_map address unit))
-                                      (pair nat
-                                            (big_map
-                                               nat
-                                               (pair (pair (pair (list (pair address (list (pair nat nat)))) (list (pair address (list (pair nat nat)))))
-                                                           nat)
-                                                     address))))) }
-                   { PAIR ;
-                     RIGHT
-                       (pair (list (pair nat (pair key signature)))
-                             (pair (list operation)
-                                   (pair (pair (pair address (option address)) (big_map address unit))
-                                         (pair nat
-                                               (big_map
-                                                  nat
-                                                  (pair (pair (pair (list (pair address (list (pair nat nat)))) (list (pair address (list (pair nat nat)))))
-                                                              nat)
-                                                        address)))))) } } ;
+             ITER { SWAP ;
+                    UNPAIR ;
+                    SWAP ;
+                    DIG 2 ;
+                    SWAP ;
+                    DUP ;
+                    DUG 2 ;
+                    CAR ;
+                    CAR ;
+                    DUP 7 ;
+                    SWAP ;
+                    EXEC ;
+                    DROP ;
+                    DUP ;
+                    CAR ;
+                    PACK ;
+                    BLAKE2B ;
+                    PUSH nat 0 ;
+                    DUP 3 ;
+                    CDR ;
+                    DUG 2 ;
+                    PAIR ;
+                    SELF_ADDRESS ;
+                    CHAIN_ID ;
+                    PAIR ;
+                    PAIR ;
+                    PACK ;
+                    DUP ;
+                    DUP 3 ;
+                    CDR ;
+                    DIG 3 ;
+                    CAR ;
+                    CHECK_SIGNATURE ;
+                    NOT ;
+                    IF { PUSH string "MISSIGNED" ; PAIR ; FAILWITH } { DROP } ;
+                    DUP ;
+                    CDR ;
+                    CAR ;
+                    HASH_KEY ;
+                    IMPLICIT_ACCOUNT ;
+                    ADDRESS ;
+                    DUP 3 ;
+                    CDR ;
+                    DUP 3 ;
+                    CAR ;
+                    SWAP ;
+                    CDR ;
+                    SWAP ;
+                    GET ;
+                    IF_NONE { PUSH string "SWAP_NOT_EXIST" ; FAILWITH } {} ;
+                    DUP 4 ;
+                    CDR ;
+                    DIG 5 ;
+                    PAIR ;
+                    DUP 3 ;
+                    DUP 3 ;
+                    PAIR ;
+                    PAIR ;
+                    DUP 6 ;
+                    SWAP ;
+                    EXEC ;
+                    DUP 5 ;
+                    CDR ;
+                    DIG 3 ;
+                    PAIR ;
+                    DIG 2 ;
+                    DIG 3 ;
+                    CAR ;
+                    PAIR ;
+                    PAIR ;
+                    DUP 5 ;
+                    SWAP ;
+                    EXEC ;
+                    DIG 2 ;
+                    CAR ;
+                    PAIR ;
+                    SWAP ;
+                    PAIR } ;
              SWAP ;
              DROP ;
              SWAP ;

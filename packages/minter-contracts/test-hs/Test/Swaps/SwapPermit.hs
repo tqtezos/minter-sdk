@@ -27,9 +27,9 @@ hprop_Sending_fake_permit_to_offchain_accept_fails =
   property $ do
     clevelandProp $ do
       setup <- doFA2Setup
-      let alice ::< bob ::< SNil = sAddresses setup
+      let admin ::< alice ::< SNil = sAddresses setup
       let tokenId1 ::< SNil = sTokens setup
-      (swap, admin) <- originateOffchainSwapWithAdmin
+      swap <- originateOffchainSwap admin
       swapId <- (\(SwapId n) -> n) . 
                 nextSwapId . 
                 swapStorage <$>
@@ -38,14 +38,14 @@ hprop_Sending_fake_permit_to_offchain_accept_fails =
       fa2 <- originateFA2 "fa2" setup [swap]
       withSender admin $
         call swap (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
-      withSender alice $ do 
+      withSender admin $ do 
         call swap (Call @"Start") $ mkSingleOffer SwapOffer
           { assetsOffered = []
           , assetsRequested = [mkFA2Assets fa2 [(tokenId1, 1)]]
           }
       missignedBytes <- fst <$> mkPermitToForge swapId swap
       withSender admin $ do
-        offchainAcceptForged bob swap `expectFailure` failedWith swap
+        offchainAcceptForged alice swap `expectFailure` failedWith swap
           ([mt|MISSIGNED|], missignedBytes)
 
 hprop_Offchain_accept_not_admin_submitted_fails :: Property
@@ -53,19 +53,19 @@ hprop_Offchain_accept_not_admin_submitted_fails =
   property $ do
     clevelandProp $ do
       setup <- doFA2Setup
-      let alice ::< bob ::< SNil = sAddresses setup
+      let admin ::< alice ::< SNil = sAddresses setup
       let tokenId1 ::< SNil = sTokens setup
-      (swap, admin) <- originateOffchainSwapWithAdmin
+      swap <- originateOffchainSwap admin
       fa2 <- originateFA2 "fa2" setup [swap]
       withSender admin $
         call swap (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
-      withSender alice $ do 
+      withSender admin $ do 
         call swap (Call @"Start") $ mkSingleOffer SwapOffer
           { assetsOffered = []
           , assetsRequested = [mkFA2Assets fa2 [(tokenId1, 1)]]
           }
-      withSender bob $ do
-        offchainAccept bob swap `expectFailure` failedWith swap
+      withSender alice $ do
+        offchainAccept alice swap `expectFailure` failedWith swap
           errNotAdmin
 
 hprop_Consecutive_offchain_accept_equals_iterative_accept :: Property
@@ -74,7 +74,7 @@ hprop_Consecutive_offchain_accept_equals_iterative_accept =
       TestData{numOffers,token1Offer, token2Offer, token1Request, token2Request} <- forAll genTestData
       clevelandProp $ do
         setup <- doFA2Setup @("addresses" :# 50) @("tokens" :# 2)
-        let admin1 ::< admin2 ::< alice ::< remainingAddresses = sAddresses setup
+        let admin1 ::< admin2 ::< remainingAddresses = sAddresses setup
         let addresses = take (fromIntegral numOffers) (Sized.toList remainingAddresses) 
         let tokenId1 ::< tokenId2 ::< SNil = sTokens setup
         swap1 <- originateOffchainSwap admin1
@@ -85,11 +85,12 @@ hprop_Consecutive_offchain_accept_equals_iterative_accept =
           call swap1 (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2_1])
         withSender admin2 $
           call swap2 (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2_2])
-        withSender alice $ do 
+        withSender admin1 $ do 
           call swap1 (Call @"Start") $ mkNOffers numOffers SwapOffer
                { assetsOffered = [mkFA2Assets fa2_1 [(tokenId1, token1Offer), (tokenId2, token2Offer)]]
                , assetsRequested = [mkFA2Assets fa2_1 [(tokenId1, token1Request), (tokenId2, token2Request)]]
                }
+        withSender admin2 $ do 
           call swap2 (Call @"Start") $ mkNOffers numOffers SwapOffer
                { assetsOffered = [mkFA2Assets fa2_2 [(tokenId1, token1Offer), (tokenId2, token2Offer)]]
                , assetsRequested = [mkFA2Assets fa2_2 [(tokenId1, token1Request), (tokenId2, token2Request)]]
@@ -114,14 +115,14 @@ hprop_Accepting_with_zero_balance_fails =
     property $ do
       clevelandProp $ do
           setup <- doFA2Setup
-          let alice ::< SNil = sAddresses setup
+          let admin ::< SNil = sAddresses setup
           let tokenId1 ::< tokenId2 ::< SNil = sTokens setup
-          (swap, admin) <- originateOffchainSwapWithAdmin
+          swap <- originateOffchainSwap admin
           fa2 <- originateFA2 "fa2" setup [swap]
           withSender admin $
             call swap (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
           addressWithZeroBalance <- newAddress "test"
-          withSender alice $
+          withSender admin $
             call swap (Call @"Start") $ mkSingleOffer SwapOffer
               { assetsOffered = [mkFA2Assets fa2 [(tokenId1, 10)]]
               , assetsRequested = [mkFA2Assets fa2 [(tokenId2, 5)]]
@@ -129,6 +130,23 @@ hprop_Accepting_with_zero_balance_fails =
           withSender admin
             (offchainAccept addressWithZeroBalance swap
               `expectFailure` failedWith fa2 errSwapRequestedFA2BalanceInvalid)  
+
+hprop_Start_callable_by_admin_only :: Property
+hprop_Start_callable_by_admin_only = 
+  property $ do
+   TestData{numOffers, token1Offer, token2Offer, token1Request, token2Request} <- forAll genTestData 
+   clevelandProp $ do
+     setup <- doFA2Setup
+     let admin ::< nonAdmin ::< SNil = sAddresses setup
+     let tokenId1 ::< tokenId2 ::< SNil = sTokens setup
+     swap <- originateOffchainSwap admin
+     fa2 <- originateFA2 "fa2" setup [swap]
+     withSender nonAdmin 
+       (call swap (Call @"Start") (mkNOffers numOffers SwapOffer
+         { assetsOffered = [mkFA2Assets fa2 [(tokenId1, token1Offer), (tokenId2, token2Offer)]]
+         , assetsRequested = [mkFA2Assets fa2 [(tokenId1, token1Request), (tokenId2, token2Request)]]
+         }) & expectError swap errNotAdmin)
+
 
 ----------------------------------------------------------------------------
 -- Helpers
