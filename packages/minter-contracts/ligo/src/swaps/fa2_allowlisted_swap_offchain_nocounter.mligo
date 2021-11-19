@@ -24,13 +24,14 @@ let offchain_accept(p, storage, ops : permit_accept_param * storage * operation 
     (ops, {storage with swap = swap_storage})
   end
 
-let rec offchain_accept_batch_helper(ps, (ops, storage) : permit_accept_param list * (operation list * storage)) 
+let offchain_accept_batch_helper(ps, (ops, storage) : permit_accept_param list * (operation list * storage)) 
   : allowlist_return = 
-    match ps with 
-      | [] -> (ops, storage)
-      | permit :: remaining_permits -> 
-          let (ops, storage) = offchain_accept(permit, storage, ops) in
-          offchain_accept_batch_helper(remaining_permits, (ops, storage))
+    List.fold 
+    (fun (((ops_, storage_), permit) : (operation list * storage) * permit_accept_param) -> 
+        offchain_accept(permit, storage_, ops_)
+    )
+    ps 
+    (ops, storage)
 
 let offchain_accept_batch(ps, storage : permit_accept_param list * storage) 
   : allowlist_return = begin
