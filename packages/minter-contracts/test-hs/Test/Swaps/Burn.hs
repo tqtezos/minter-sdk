@@ -6,9 +6,7 @@ import Prelude hiding (swap)
 import GHC.Exts (fromList)
 import GHC.Integer (negateInteger)
 
-import Hedgehog (Gen, Property, forAll, property)
-import qualified Hedgehog.Gen as Gen
-import qualified Hedgehog.Range as Range
+import Hedgehog (Property, forAll, property)
 
 import Test.Tasty (TestTree, testGroup)
 
@@ -22,6 +20,7 @@ import Lorentz.Contracts.Swaps.Allowlisted hiding (admin, allowlist)
 import Test.Allowlisted
 import Tezos.Address (unsafeParseAddress)
 import Test.NonPausableSimpleAdmin
+import Test.Swaps.Basic hiding (statusChecks, swapIdChecks, authorizationChecks, invalidFA2sChecks, complexCases)
 
 import Lorentz.Test.Consumer
 import Lorentz.Value
@@ -37,30 +36,6 @@ test_BurnSwap = testGroup "Basic swap functionality"
   , invalidFA2sChecks
   , complexCases
   ]
-
-data TestData = TestData
-  { numOffers :: Natural
-  , token1Offer :: Natural
-  , token2Offer :: Natural
-  , token1Request :: Natural
-  , token2Request :: Natural
-  }
-  deriving stock (Show)
-
-genTestData :: Gen TestData
-genTestData = do
-  let genNat = Gen.integral (Range.constant 1 20)
-  numOffers <- genNat
-  token1Offer <- genNat
-  token2Offer <- genNat 
-  token1Request <- genNat
-  token2Request <- genNat
-  pure $ TestData
-    { numOffers = numOffers
-    , token1Offer = token1Offer
-    , token2Offer = token2Offer
-    , token1Request = token1Request
-    , token2Request = token2Request }
 
 hprop_Correct_final_balances_on_acceptance :: Property
 hprop_Correct_final_balances_on_acceptance = 
@@ -91,7 +66,7 @@ hprop_Correct_final_balances_on_acceptance =
                 , assetsRequested = [mkFA2Assets fa2 [(tokenId1, token1Request), (tokenId2, token2Request)]]
                 }
             withSender bob $
-              call swap (Call @"Accept") (SwapId 0)
+              call swap (Call @"Accept") initSwapId
   
 hprop_Correct_final_balances_on_cancel :: Property
 hprop_Correct_final_balances_on_cancel = 
@@ -122,7 +97,7 @@ hprop_Correct_final_balances_on_cancel =
                 , assetsRequested = [mkFA2Assets fa2 [(tokenId1, token1Request), (tokenId2, token2Request)]]
                 }
             withSender alice $
-              call swap (Call @"Cancel") (SwapId 0)
+              call swap (Call @"Cancel") initSwapId 
   
 hprop_Correct_num_tokens_transferred_to_contract_on_start :: Property
 hprop_Correct_num_tokens_transferred_to_contract_on_start = 
@@ -173,7 +148,7 @@ hprop_Contract_balance_goes_to_zero_when_sale_concludes =
                }
            withSender bob $
               replicateM_ (fromIntegral numOffers) $ do
-                call swap (Call @"Accept") (SwapId 0)
+                call swap (Call @"Accept") initSwapId
 
 hprop_Burn_address_unchanged_correctly_tests_contract_storage :: Property
 hprop_Burn_address_unchanged_correctly_tests_contract_storage  = 
@@ -191,24 +166,24 @@ statusChecks = testGroup "Statuses"
       (swap, _) <- originateAllowlistedBurnSwapWithAdmin
 
       call swap (Call @"Start") $ mkSingleOffer (SwapOffer [] [])
-      call swap (Call @"Accept") (SwapId 0)
+      call swap (Call @"Accept") initSwapId
 
-      call swap (Call @"Accept") (SwapId 0)
+      call swap (Call @"Accept") initSwapId
         & expectError swap errSwapFinished
 
-      call swap (Call @"Cancel") (SwapId 0)
+      call swap (Call @"Cancel") initSwapId
         & expectError swap errSwapFinished
 
   , nettestScenarioCaps "Operations with cancelled swap fail" $ do
       (swap, _) <- originateAllowlistedBurnSwapWithAdmin
 
       call swap (Call @"Start") $ mkSingleOffer (SwapOffer [] [])
-      call swap (Call @"Cancel") (SwapId 0)
+      call swap (Call @"Cancel") initSwapId
 
-      call swap (Call @"Accept") (SwapId 0)
+      call swap (Call @"Accept") initSwapId
         & expectError swap errSwapCancelled
 
-      call swap (Call @"Cancel") (SwapId 0)
+      call swap (Call @"Cancel") initSwapId
         & expectError swap errSwapCancelled
   ]
 
@@ -237,25 +212,25 @@ swapIdChecks = testGroup "SwapIds"
         , (bob, tokenId3) -: -1
         ] $ do
           withSender bob $ do
-            call swap (Call @"Accept") (SwapId 0)
-            call swap (Call @"Accept") (SwapId 2)
+            call swap (Call @"Accept") initSwapId
+            call swap (Call @"Accept") (incrementSwapId $ incrementSwapId initSwapId)
 
   , nettestScenarioCaps "Accessing non-existing swap fails respectively" $ do
       (swap, _) <- originateAllowlistedBurnSwapWithAdmin
 
-      call swap (Call @"Accept") (SwapId 0)
+      call swap (Call @"Accept") initSwapId
         & expectError swap errSwapNotExist
-      call swap (Call @"Cancel") (SwapId 0)
+      call swap (Call @"Cancel") initSwapId
         & expectError swap errSwapNotExist
 
       call swap (Call @"Start") $ mkSingleOffer (SwapOffer [] [])
 
-      call swap (Call @"Accept") (SwapId 1)
+      call swap (Call @"Accept") (incrementSwapId initSwapId)
         & expectError swap errSwapNotExist
-      call swap (Call @"Cancel") (SwapId 1)
+      call swap (Call @"Cancel") (incrementSwapId initSwapId)
         & expectError swap errSwapNotExist
 
-      call swap (Call @"Accept") (SwapId 0)
+      call swap (Call @"Accept") initSwapId
   ]
 
 
@@ -270,11 +245,11 @@ authorizationChecks = testGroup "Authorization checks"
       withSender alice $
         call swap (Call @"Start") $ mkSingleOffer (SwapOffer [] [])
 
-      call swap (Call @"Cancel") (SwapId 0)
+      call swap (Call @"Cancel") initSwapId
         & expectError swap errNotSwapSeller
 
       withSender bob $
-        call swap (Call @"Cancel") (SwapId 0)
+        call swap (Call @"Cancel") initSwapId
         & expectError swap errNotSwapSeller
   ]
 
@@ -313,7 +288,7 @@ invalidFA2sChecks = testGroup "Invalid FA2s"
             , assetsRequested = [mkFA2Assets fa2 [(tokenId1, 1)]]
             }
 
-          call swap (Call @"Accept") (SwapId 0)
+          call swap (Call @"Accept") initSwapId
             & expectError swap errSwapRequestedFA2Invalid
   ]
 
@@ -360,7 +335,7 @@ complexCases = testGroup "Complex cases"
                   ]
               }
           withSender bob $
-            call swap (Call @"Accept") (SwapId 0)
+            call swap (Call @"Accept") initSwapId
 
   ]
 

@@ -34,7 +34,7 @@ altBurnAddress = unsafeParseAddress "tz1burnburnburnburnburnburnburjAYjjX"
 
 initBurnSwapStorage :: BurnSwapStorage
 initBurnSwapStorage = BurnSwapStorage
-  { nextSwapId = SwapId 0
+  { nextSwapId = initSwapId
   , swaps = mempty
   , burnAddress = nullAddress
   }

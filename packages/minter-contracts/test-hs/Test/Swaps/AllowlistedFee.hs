@@ -37,7 +37,7 @@ test_Integrational = testGroup "Integrational"
               , assetsRequested = ([mkFA2Assets fa2 [(tokenId, 7)]], 0)
               }
           withSender bob $
-              call swap (Call @"Accept") (SwapId 0)
+              call swap (Call @"Accept") initSwapId
   ]
 
 test_ContractSendsFee :: TestTree
@@ -65,7 +65,7 @@ test_ContractSendsFee = testGroup "Tests that contract sends fee"
             { tdTo = swap
             , tdAmount = amountRequested
             , tdEntrypoint = ep "accept"
-            , tdParameter = SwapId 0
+            , tdParameter = initSwapId
             }
       
       sellerBalanceAfter <- getBalance alice
@@ -98,7 +98,7 @@ test_BuyerMustSendFee = testGroup "Tests that buyer must send fee"
             { tdTo = swap
             , tdAmount = toMutez 0
             , tdEntrypoint = ep "accept"
-            , tdParameter = SwapId 0
+            , tdParameter = initSwapId
             } 
           & expectError swap errNoXtzTransferred
   ]

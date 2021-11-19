@@ -81,9 +81,15 @@ customGeneric "SwapStorage" ligoLayout
 deriving anyclass instance IsoValue SwapStorage
 deriving anyclass instance HasAnnotation SwapStorage
 
+incrementSwapId :: SwapId -> SwapId 
+incrementSwapId (SwapId n) = SwapId (n + 1)
+
+initSwapId :: SwapId 
+initSwapId = SwapId 1
+
 initSwapStorage :: SwapStorage
 initSwapStorage = SwapStorage
-  { nextSwapId = SwapId 0
+  { nextSwapId = initSwapId
   , swaps = mempty
   }
 
@@ -114,6 +120,9 @@ errSwapOfferedFA2Invalid = [mt|SWAP_OFFERED_FA2_INVALID|]
 
 errSwapRequestedFA2Invalid :: MText
 errSwapRequestedFA2Invalid = [mt|SWAP_REQUESTED_FA2_INVALID|]
+
+errSwapRequestedFA2BalanceInvalid :: (MText, ()) 
+errSwapRequestedFA2BalanceInvalid = ([mt|FA2_NOT_OPERATOR|], ())
 
 -- Helpers
 ----------------------------------------------------------------------------

@@ -36,6 +36,8 @@ type storage =
   ; allowlist : allowlist
   }
 
+type allowlist_return = ((operation list) * storage)
+
 type entrypoints =
   | Swap of swap_entrypoints
   | Admin of admin_entrypoints
@@ -45,7 +47,7 @@ type entrypoints =
 #endif
 
 let allowlisted_swaps_main(param, storage : entrypoints * storage)
-    : ((operation list) * storage) =
+    : allowlist_return =
   let swap_storage = storage.swap in
   let allowlist = storage.allowlist in
 

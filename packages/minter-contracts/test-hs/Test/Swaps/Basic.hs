@@ -87,7 +87,7 @@ hprop_Contract_balance_goes_to_zero_when_sale_concludes =
              }
          withSender bob $
             replicateM_ (fromIntegral numOffers) $ do
-              call swap (Call @"Accept") (SwapId 0)
+              call swap (Call @"Accept") initSwapId
 
 test_Swap :: TestTree
 test_Swap = testGroup "Basic swap functionality"
@@ -120,7 +120,7 @@ simpleHappyPaths = testGroup "Simple happy paths"
               , assetsRequested = [mkFA2Assets fa2 [(tokenId2, 5)]]
               }
           withSender bob $
-            call swap (Call @"Accept") (SwapId 0)
+            call swap (Call @"Accept") initSwapId
 
   , nettestScenarioCaps "Simple cancelled swap" $ do
       setup <- doFA2Setup
@@ -139,7 +139,7 @@ simpleHappyPaths = testGroup "Simple happy paths"
               , assetsRequested = [mkFA2Assets fa2 [(tokenId2, 5)]]
               }
           withSender alice $
-            call swap (Call @"Cancel") (SwapId 0)
+            call swap (Call @"Cancel") initSwapId
   ]
 
 statusChecks :: TestTree
@@ -148,24 +148,24 @@ statusChecks = testGroup "Statuses"
       swap <- originateSwap
 
       call swap (Call @"Start") $ mkSingleOffer $ SwapOffer [] []
-      call swap (Call @"Accept") (SwapId 0)
+      call swap (Call @"Accept") initSwapId
 
-      call swap (Call @"Accept") (SwapId 0)
+      call swap (Call @"Accept") initSwapId
         & expectError swap errSwapFinished
 
-      call swap (Call @"Cancel") (SwapId 0)
+      call swap (Call @"Cancel") initSwapId
         & expectError swap errSwapFinished
 
   , nettestScenarioCaps "Operations with cancelled swap fail" $ do
       swap <- originateSwap
 
       call swap (Call @"Start") $ mkSingleOffer $ SwapOffer [] []
-      call swap (Call @"Cancel") (SwapId 0)
+      call swap (Call @"Cancel") initSwapId
 
-      call swap (Call @"Accept") (SwapId 0)
+      call swap (Call @"Accept") initSwapId
         & expectError swap errSwapCancelled
 
-      call swap (Call @"Cancel") (SwapId 0)
+      call swap (Call @"Cancel") initSwapId
         & expectError swap errSwapCancelled
   ]
 
@@ -175,13 +175,13 @@ remainingOffersChecks = testGroup "Statuses"
       swap <- originateSwap
 
       call swap (Call @"Start") $ mkNOffers 2 $ SwapOffer [] []
-      call swap (Call @"Accept") (SwapId 0)
-      call swap (Call @"Accept") (SwapId 0)
+      call swap (Call @"Accept") initSwapId
+      call swap (Call @"Accept") initSwapId
 
-      call swap (Call @"Accept") (SwapId 0)
+      call swap (Call @"Accept") initSwapId
         & expectError swap errSwapFinished
 
-      call swap (Call @"Cancel") (SwapId 0)
+      call swap (Call @"Cancel") initSwapId
         & expectError swap errSwapFinished
   ]
 
@@ -207,25 +207,25 @@ swapIdChecks = testGroup "SwapIds"
         , (bob, tokenId3) -: -1
         ] $ do
           withSender bob $ do
-            call swap (Call @"Accept") (SwapId 0)
-            call swap (Call @"Accept") (SwapId 2)
+            call swap (Call @"Accept") initSwapId
+            call swap (Call @"Accept") (incrementSwapId $ incrementSwapId initSwapId)
 
   , nettestScenarioCaps "Accessing non-existing swap fails respectively" $ do
       swap <- originateSwap
 
-      call swap (Call @"Accept") (SwapId 0)
+      call swap (Call @"Accept") initSwapId
         & expectError swap errSwapNotExist
-      call swap (Call @"Cancel") (SwapId 0)
+      call swap (Call @"Cancel") initSwapId
         & expectError swap errSwapNotExist
 
       call swap (Call @"Start") $ mkSingleOffer $ SwapOffer [] []
 
-      call swap (Call @"Accept") (SwapId 1)
+      call swap (Call @"Accept") (incrementSwapId initSwapId)
         & expectError swap errSwapNotExist
-      call swap (Call @"Cancel") (SwapId 1)
+      call swap (Call @"Cancel") (incrementSwapId initSwapId)
         & expectError swap errSwapNotExist
 
-      call swap (Call @"Accept") (SwapId 0)
+      call swap (Call @"Accept") initSwapId
   ]
 
 authorizationChecks :: TestTree
@@ -239,11 +239,11 @@ authorizationChecks = testGroup "Authorization checks"
       withSender alice $
         call swap (Call @"Start") $ mkSingleOffer $ SwapOffer [] []
 
-      call swap (Call @"Cancel") (SwapId 0)
+      call swap (Call @"Cancel") initSwapId
         & expectError swap errNotSwapSeller
 
       withSender bob $
-        call swap (Call @"Cancel") (SwapId 0)
+        call swap (Call @"Cancel") initSwapId
         & expectError swap errNotSwapSeller
   ]
 
@@ -279,9 +279,24 @@ invalidFA2sChecks = testGroup "Invalid FA2s"
             , assetsRequested = [mkFA2Assets fa2 [(tokenId1, 1)]]
             }
 
-          call swap (Call @"Accept") (SwapId 0)
+          call swap (Call @"Accept") initSwapId
             & expectError swap errSwapRequestedFA2Invalid
-  ]
+      , nettestScenarioCaps "Accepter accepting swap with 0 balance of requested token fails" $ do
+          setup <- doFA2Setup
+          let alice ::< SNil = sAddresses setup
+          let tokenId1 ::< tokenId2 ::< SNil = sTokens setup
+          swap <- originateSwap
+          fa2 <- originateFA2 "fa2" setup [swap]
+          addressWithZeroBalance <- newAddress "test"
+          withSender alice $
+            call swap (Call @"Start") $ mkSingleOffer SwapOffer
+              { assetsOffered = [mkFA2Assets fa2 [(tokenId1, 10)]]
+              , assetsRequested = [mkFA2Assets fa2 [(tokenId2, 5)]]
+              }
+          withSender addressWithZeroBalance
+            (call swap (Call @"Accept") initSwapId
+              `expectFailure` failedWith fa2 errSwapRequestedFA2BalanceInvalid)
+  ]    
 
 complexCases :: TestTree
 complexCases = testGroup "Complex cases"
@@ -323,6 +338,6 @@ complexCases = testGroup "Complex cases"
                   ]
               }
           withSender bob $
-            call swap (Call @"Accept") (SwapId 0)
+            call swap (Call @"Accept") initSwapId
 
   ]
