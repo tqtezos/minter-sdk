@@ -200,6 +200,7 @@ let accept_swap_update_ops_list(swap, accepter, ops, storage : swap_info * addre
         ops 
         in 
 
+#if !OFFCHAIN_SWAP
 #if XTZ_FEE 
   let xtz_requested : tez = swap.swap_offers.swap_offer.assets_requested.1 in 
   assert_msg(Tezos.amount = xtz_requested, "SWAP_REQUESTED_XTZ_INVALID");
@@ -210,6 +211,7 @@ let accept_swap_update_ops_list(swap, accepter, ops, storage : swap_info * addre
       let xtz_op = transfer_tez(xtz_requested, swap.seller) in  
       xtz_op :: allOps 
     in 
+#endif
 #endif
   allOps
  end

@@ -1,3 +1,6 @@
+#if !OFFCHAIN_SWAP 
+#define OFFCHAIN_SWAP
+
 #include "fa2_allowlisted_swap.mligo"
 #include "../common.mligo"
 
@@ -45,3 +48,5 @@ let allowlisted_swaps_offchain_main(param, storage : offchain_swap_entry_points 
       | BaseSwap entrypoints -> allowlisted_swaps_main(entrypoints, storage)
       | Offchain_accept permits -> offchain_accept_batch(permits, storage)
   end
+
+#endif
