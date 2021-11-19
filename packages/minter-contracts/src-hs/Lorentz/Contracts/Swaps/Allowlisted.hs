@@ -60,3 +60,6 @@ errSwapOfferedNotAllowlisted = [mt|SWAP_OFFERED_FA2_NOT_ALLOWLISTED|]
 
 errSwapRequestedNotAllowlisted :: MText
 errSwapRequestedNotAllowlisted = [mt|SWAP_REQUESTED_FA2_NOT_ALLOWLISTED|]
+
+errNotAdmin :: MText
+errNotAdmin = [mt|NOT_AN_ADMIN|]

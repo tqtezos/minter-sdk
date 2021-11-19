@@ -29,16 +29,16 @@ test_AllowlistChecks :: [TestTree]
 test_AllowlistChecks = allowlistSimpleChecks
   AllowlistChecksSetup
   { allowlistCheckSetup = \fa2Setup -> do
-      let alice ::< _ = sAddresses fa2Setup
+      let admin ::< _ = sAddresses fa2Setup
       let tokenId ::< _ = sTokens fa2Setup
-      (swap, admin) <- originateAllowlistedSwapWithAdmin
-      return (admin, swap, (alice, tokenId))
+      swap <- originateAllowlistedSwap admin
+      return (admin, swap, (admin, tokenId))
 
   , allowlistRestrictionsCases = fromList
       [ AllowlistRestrictionCase
         { allowlistError = errSwapOfferedNotAllowlisted
-        , allowlistRunRestrictedAction = \(alice, tokenId) swap (fa2, _) ->
-            withSender alice $
+        , allowlistRunRestrictedAction = \(admin, tokenId) swap (fa2, _) ->
+            withSender admin $
               call swap (Call @"Start") $ mkSingleOffer SwapOffer
                 { assetsOffered = [mkFA2Assets fa2 [(tokenId, 1)]]
                 , assetsRequested = []
@@ -46,8 +46,8 @@ test_AllowlistChecks = allowlistSimpleChecks
         }
       , AllowlistRestrictionCase
         { allowlistError = errSwapRequestedNotAllowlisted
-        , allowlistRunRestrictedAction = \(alice, tokenId) swap (fa2, _) ->
-            withSender alice $
+        , allowlistRunRestrictedAction = \(admin, tokenId) swap (fa2, _) ->
+            withSender admin $
               call swap (Call @"Start") $ mkSingleOffer SwapOffer
                 { assetsOffered = []
                 , assetsRequested = [mkFA2Assets fa2 [(tokenId, 1)]]
@@ -63,24 +63,23 @@ test_Integrational = testGroup "Integrational"
   [ -- Check that storage updates work
     nettestScenarioCaps "Simple accepted swap" $ do
       setup <- doFA2Setup
-      let alice ::< bob ::< SNil = sAddresses setup
+      let admin ::< alice ::< SNil = sAddresses setup
       let tokenId ::< SNil = sTokens setup
-      (swap, admin) <- originateWithAdmin originateAllowlistedSwap
+      swap <- originateAllowlistedSwap admin
       fa2 <- originateFA2 "fa2" setup [swap]
 
       withSender admin $
         call swap (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
 
       assertingBalanceDeltas fa2
-        [ (alice, tokenId) -: -3
-        , (bob, tokenId) -: 3
+        [ (admin, tokenId) -: -3
+        , (alice, tokenId) -: 3
         ] $ do
-          withSender alice $
+          withSender admin $
             call swap (Call @"Start") $ mkSingleOffer SwapOffer
               { assetsOffered = [mkFA2Assets fa2 [(tokenId, 10)]]
               , assetsRequested = [mkFA2Assets fa2 [(tokenId, 7)]]
               }
-          withSender bob $
+          withSender alice $
             call swap (Call @"Accept") initSwapId
-
   ]
