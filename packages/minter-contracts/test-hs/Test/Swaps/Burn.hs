@@ -105,7 +105,7 @@ hprop_Correct_num_tokens_transferred_to_contract_on_start =
    TestData{numOffers, token1Offer, token2Offer} <- forAll genTestData 
    clevelandProp  $ do
      setup <- doFA2Setup
-     let admin ::< alice ::< SNil = sAddresses setup
+     let admin ::< SNil = sAddresses setup
      let tokenId1 ::< tokenId2 ::< SNil = sTokens setup
      swap <- originateAllowlistedBurnSwap admin
      fa2 <- originateFA2 "fa2" setup [swap]
@@ -123,13 +123,30 @@ hprop_Correct_num_tokens_transferred_to_contract_on_start =
                , assetsRequested = [mkFA2Assets fa2 [(tokenId2, 1)]]
                }
 
+hprop_Start_callable_by_admin_only :: Property
+hprop_Start_callable_by_admin_only = 
+  property $ do
+   TestData{numOffers, token1Offer, token2Offer, token1Request, token2Request} <- forAll genTestData 
+   clevelandProp  $ do
+     setup <- doFA2Setup
+     let admin ::< nonAdmin ::< SNil = sAddresses setup
+     let tokenId1 ::< tokenId2 ::< SNil = sTokens setup
+     swap <- originateAllowlistedBurnSwap admin
+     fa2 <- originateFA2 "fa2" setup [swap]
+     withSender nonAdmin 
+       (call swap (Call @"Start") (mkNOffers numOffers SwapOffer
+         { assetsOffered = [mkFA2Assets fa2 [(tokenId1, token1Offer), (tokenId2, token2Offer)]]
+         , assetsRequested = [mkFA2Assets fa2 [(tokenId1, token1Request), (tokenId2, token2Request)]]
+         }) & expectError swap errNotAdmin)
+
+
 hprop_Contract_balance_goes_to_zero_when_sale_concludes :: Property
 hprop_Contract_balance_goes_to_zero_when_sale_concludes = 
   property $ do
    TestData{numOffers, token1Offer, token2Offer, token1Request, token2Request} <- forAll genTestData 
    clevelandProp  $ do
      setup <- doFA2Setup
-     let admin ::< alice ::< SNil = sAddresses setup
+     let admin ::< SNil = sAddresses setup
      let tokenId1 ::< tokenId2 ::< SNil = sTokens setup
      swap <- originateAllowlistedBurnSwap admin
      let swapAddress = toAddress swap
@@ -267,7 +284,7 @@ invalidFA2sChecks :: TestTree
 invalidFA2sChecks = testGroup "Invalid FA2s"
   [ nettestScenarioCaps "Swap can be cancelled by seller only" $ do
       setup <- doFA2Setup
-      let admin ::< alice ::< SNil = sAddresses setup
+      let admin ::< SNil = sAddresses setup
       let tokenId1 ::< SNil = sTokens setup
 
       fakeFa2 <-

@@ -74,7 +74,7 @@ hprop_Consecutive_offchain_accept_equals_iterative_accept =
       TestData{numOffers,token1Offer, token2Offer, token1Request, token2Request} <- forAll genTestData
       clevelandProp $ do
         setup <- doFA2Setup @("addresses" :# 50) @("tokens" :# 2)
-        let admin1 ::< admin2 ::< alice ::< remainingAddresses = sAddresses setup
+        let admin1 ::< admin2 ::< remainingAddresses = sAddresses setup
         let addresses = take (fromIntegral numOffers) (Sized.toList remainingAddresses) 
         let tokenId1 ::< tokenId2 ::< SNil = sTokens setup
         swap1 <- originateOffchainSwap admin1
@@ -130,6 +130,23 @@ hprop_Accepting_with_zero_balance_fails =
           withSender admin
             (offchainAccept addressWithZeroBalance swap
               `expectFailure` failedWith fa2 errSwapRequestedFA2BalanceInvalid)  
+
+hprop_Start_callable_by_admin_only :: Property
+hprop_Start_callable_by_admin_only = 
+  property $ do
+   TestData{numOffers, token1Offer, token2Offer, token1Request, token2Request} <- forAll genTestData 
+   clevelandProp $ do
+     setup <- doFA2Setup
+     let admin ::< nonAdmin ::< SNil = sAddresses setup
+     let tokenId1 ::< tokenId2 ::< SNil = sTokens setup
+     swap <- originateOffchainSwap admin
+     fa2 <- originateFA2 "fa2" setup [swap]
+     withSender nonAdmin 
+       (call swap (Call @"Start") (mkNOffers numOffers SwapOffer
+         { assetsOffered = [mkFA2Assets fa2 [(tokenId1, token1Offer), (tokenId2, token2Offer)]]
+         , assetsRequested = [mkFA2Assets fa2 [(tokenId1, token1Request), (tokenId2, token2Request)]]
+         }) & expectError swap errNotAdmin)
+
 
 ----------------------------------------------------------------------------
 -- Helpers
