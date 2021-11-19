@@ -2,13 +2,29 @@
 #include "../../fa2_modules/fa2_allowlist/allowlist_simple.mligo"
 #include "fa2_swap.mligo"
 
+(* ==== Types ==== *)
+type storage =
+  { swap : swap_storage
+  ; admin : admin_storage
+  ; allowlist : allowlist
+  }
+
+type entrypoints =
+  | Swap of swap_entrypoints
+  | Admin of admin_entrypoints
+  | Update_allowed of allowlist
+#if CHANGE_BURN_ADDRESS
+  | Change_burn_address of address
+#endif
+
+type allowlist_return = ((operation list) * storage)
+
 (* ======== Swaps allowlist component ======== *)
 
-(* ==== Types ==== *)
-
-let swap_check_allowlist(allowlist, swap_param : allowlist * swap_entrypoints) : unit =
+let swap_check_allowlist(allowlist, storage, swap_param : allowlist * storage * swap_entrypoints) : unit =
   match swap_param with
     Start swap_offers -> begin
+      fail_if_not_admin(storage.admin);
       [@inline]
       let check_asset(on_err : string)(assets : fa2_assets) : unit =
         match Big_map.find_opt assets.fa2_address allowlist with
@@ -30,22 +46,6 @@ let swap_check_allowlist(allowlist, swap_param : allowlist * swap_entrypoints) :
 
 (* ======== Swaps allowlisted contract ======== *)
 
-type storage =
-  { swap : swap_storage
-  ; admin : admin_storage
-  ; allowlist : allowlist
-  }
-
-type allowlist_return = ((operation list) * storage)
-
-type entrypoints =
-  | Swap of swap_entrypoints
-  | Admin of admin_entrypoints
-  | Update_allowed of allowlist
-#if CHANGE_BURN_ADDRESS
-  | Change_burn_address of address
-#endif
-
 let allowlisted_swaps_main(param, storage : entrypoints * storage)
     : allowlist_return =
   let swap_storage = storage.swap in
@@ -53,7 +53,7 @@ let allowlisted_swaps_main(param, storage : entrypoints * storage)
 
   match param with
     Swap swap_param -> begin
-      swap_check_allowlist(allowlist, swap_param);
+      swap_check_allowlist(allowlist, storage, swap_param);
       let (ops, swap_storage) = swaps_main(swap_param, swap_storage) in
       (ops, { storage with swap = swap_storage })
       end
