@@ -13,17 +13,13 @@ type fa2_token =
   ; amount : nat
   }
 
-type fa2_assets =
-  [@layout:comb]
-  { fa2_address : address
-  ; tokens : fa2_token list
-  }
+type tokens = fa2_token list 
 
 type set_info = token_id set (*Set data structure enforces uniqueness of tokens in a given set*)
 
 type swap_offer =
   [@layout:comb]
-  { assets_offered : fa2_assets list
+  { assets_offered : tokens
   ; assets_requested : set_id list (*Swap offerrer is expected to sort set_ids in descending order*)
   }
 
@@ -61,7 +57,7 @@ type swap_storage =
   ; swaps : (swap_id, swap_info) big_map
   ; burn_address : address
   ; sets : (set_id, set_info) big_map
-  ; fa2_address : address
+  ; fa2_address : address (*Every token this contract interacts with must be defined in this FA2*)
   }
 
 type return = operation list * swap_storage
@@ -99,7 +95,7 @@ let fa2_transfer_entrypoint(fa2, on_invalid_fa2 : address * string)
   | None -> (failwith on_invalid_fa2 : (transfer list) contract)
   | Some c ->  c
 
-let transfer_assets_uncurried(from_, to_, num_transfers, on_invalid_fa2, fa2_address : 
+let transfer_tokens_uncurried(from_, to_, num_transfers, on_invalid_fa2, fa2_address : 
                     address * address * nat * string * address) (tokens : fa2_token list) 
                     : operation =
   let transfer_ep = fa2_transfer_entrypoint(fa2_address, on_invalid_fa2) in
@@ -114,7 +110,7 @@ let transfer_assets_uncurried(from_, to_, num_transfers, on_invalid_fa2, fa2_add
         } in
   Tezos.transaction [param] 0mutez transfer_ep                     
 
-let transfer_unique_assets(from_, to_, num_transfers, on_invalid_fa2, fa2_address : 
+let transfer_single_tokens(from_, to_, num_transfers, on_invalid_fa2, fa2_address : 
                     address * address * nat * string * address) (tokens : token_id list) 
                     : operation =
     let unique_token_to_fa2_token(token_id : token_id) : fa2_token = 
@@ -122,11 +118,11 @@ let transfer_unique_assets(from_, to_, num_transfers, on_invalid_fa2, fa2_addres
       ; amount = 1n
       } in 
     let fa2_tokens = List.map unique_token_to_fa2_token tokens in 
-    transfer_assets_uncurried(from_, to_, num_transfers, on_invalid_fa2, fa2_address)(fa2_tokens)
+    transfer_tokens_uncurried(from_, to_, num_transfers, on_invalid_fa2, fa2_address)(fa2_tokens)
 
-let transfer_assets(from_, to_, num_transfers, on_invalid_fa2 : address * address * nat * string)(asset : fa2_assets)
+let transfer_tokens(from_, to_, num_transfers, fa2_address, on_invalid_fa2 : address * address * nat * address * string)(tokens : tokens)
     : operation =
-  (transfer_assets_uncurried(from_, to_, num_transfers, on_invalid_fa2, asset.fa2_address) asset.tokens)
+  (transfer_tokens_uncurried(from_, to_, num_transfers, on_invalid_fa2, fa2_address) tokens)
 
 [@inline]
 let get_swap(id, storage : swap_id * swap_storage) : swap_info =
@@ -154,12 +150,11 @@ let start_swap(swap_offers, storage : swap_offers * swap_storage) : return = beg
       ; swaps = Big_map.add swap_id swap storage.swaps
       } in
   
-    let ops =
-          List.map
-          (transfer_assets(seller, Tezos.self_address, swap_offers.remaining_offers, "SWAP_OFFERED_FA2_INVALID"))
+    let op =
+          (transfer_tokens(seller, Tezos.self_address, swap_offers.remaining_offers, storage.fa2_address, "SWAP_OFFERED_FA2_INVALID"))
           swap_offers.swap_offer.assets_offered in
   
-    (ops, storage)
+    ([op], storage)
   end
 
 let cancel_swap(swap_id, storage : swap_id * swap_storage) : return = begin
@@ -168,12 +163,11 @@ let cancel_swap(swap_id, storage : swap_id * swap_storage) : return = begin
 
   let storage = { storage with swaps = Big_map.remove swap_id storage.swaps } in
 
-  let ops =
-        List.map
-        (transfer_assets(Tezos.self_address, swap.seller, swap.swap_offers.remaining_offers, unexpected_err "SWAP_OFFERED_FA2_INVALID"))
+  let op =
+        (transfer_tokens(Tezos.self_address, swap.seller, swap.swap_offers.remaining_offers, storage.fa2_address, unexpected_err "SWAP_OFFERED_FA2_INVALID"))
         swap.swap_offers.swap_offer.assets_offered in
 
-  (ops, storage)
+  ([op], storage)
   end
 
 let accept_swap_update_storage(swap_id, swap, accepter, storage : swap_id * swap_info * address * swap_storage) : swap_storage = 
@@ -225,25 +219,23 @@ let accept_swap_update_ops_list(swap, tokens, accepter, bid_offchain, ops, stora
             swap.swap_offers.swap_offer.assets_requested      
           ) in
 
-  (*Transferring the offered assets*)
-  let ops =
-        List.map
-        (transfer_assets(Tezos.self_address, Tezos.sender, 1n, unexpected_err "SWAP_OFFERED_FA2_INVALID"))
+  (*Transferring the offered tokens*)
+  let transfer_offered_op =
+        (transfer_tokens(Tezos.self_address, Tezos.sender, 1n, storage.fa2_address, unexpected_err "SWAP_OFFERED_FA2_INVALID"))
         swap.swap_offers.swap_offer.assets_offered in
   
-  (*Transferring the requested assets*)
-  let transfer = transfer_unique_assets(Tezos.sender, storage.burn_address, 1n, "SWAP_REQUESTED_FA2_INVALID", storage.fa2_address) in 
-  let op : operation = transfer token_list in 
-  let allOps = op :: ops in 
-  allOps
+  (*Transferring the requested tokens*)
+  let transfer = transfer_single_tokens(Tezos.sender, storage.burn_address, 1n, "SWAP_REQUESTED_FA2_INVALID", storage.fa2_address) in 
+  let transfer_requested_op : operation = transfer token_list in 
+  [transfer_offered_op; transfer_requested_op;]
  end
 
 let accept_swap(accept_param, accepter, storage : accept_param * address * swap_storage) : return = 
-    let {swap_id : swap_id ;
-         tokens : tokens} in 
+    let {swap_id = swap_id ;
+         tokens = tokens} = accept_param in 
     let swap = get_swap(swap_id, storage) in
     let bid_offchain = false in 
-    let ops = accept_swap_update_ops_list(swap, tokens accepter, bid_offchain, ([] : operation list), storage) in
+    let ops = accept_swap_update_ops_list(swap, tokens, accepter, bid_offchain, ([] : operation list), storage) in
     let storage = accept_swap_update_storage(swap_id, swap, accepter, storage) in
     (ops, storage)
 
