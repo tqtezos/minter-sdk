@@ -1,4 +1,5 @@
 #include "../../fa2/fa2_interface.mligo"
+#include "../../fa2_modules/admin/non_pausable_simple_admin.mligo"
 #include "../../fa2_modules/fa2_allowlist/allowlist_base.mligo"
 #include "../common.mligo"
 (* ==== Types ==== *)
@@ -50,6 +51,7 @@ type swap_entrypoints =
   | Cancel of swap_id
   | Accept of accept_param
   | Add_set of set_info
+  | Admin of admin_entrypoints
 
 type swap_storage =
   { next_swap_id : swap_id
@@ -58,6 +60,7 @@ type swap_storage =
   ; burn_address : address
   ; sets : (set_id, set_info) big_map
   ; fa2_address : address (*Every token this contract interacts with must be defined in this FA2*)
+  ; admin : admin_storage
   }
 
 type return = operation list * swap_storage
@@ -65,17 +68,6 @@ type return = operation list * swap_storage
 (* ==== Values ==== *)
 
 [@inline] let example_burn_address = ("tz1Ke2h7sDdakHJQh8WX4Z372du1KChsksyU" : address)
-
-[@inline] let example_fa2_address = ("KT1KUJkqqgfe1AaJMdRfspsyt5diWgYm3eGM" : address) 
-
-let init_storage : swap_storage =
-  { burn_address = example_burn_address
-  ; next_swap_id = 0n
-  ; next_set_id = 0n
-  ; swaps = (Big_map.empty : (swap_id, swap_info) big_map)
-  ; sets = (Big_map.empty : (set_id, set_info) big_map)
-  ; fa2_address = example_fa2_address
-  }
 
 (* ==== Helpers ==== *)
 
@@ -130,14 +122,10 @@ let get_swap(id, storage : swap_id * swap_storage) : swap_info =
   | None -> (failwith "SWAP_NOT_EXIST" : swap_info)
   | Some s -> s
 
-let authorize_seller(swap : swap_info) : unit =
-  if swap.seller = Tezos.sender
-  then unit
-  else failwith "NOT_SWAP_SELLER"
-
 (* ==== Entrypoints ==== *)
 
 let start_swap(swap_offers, storage : swap_offers * swap_storage) : return = begin
+    fail_if_not_admin(storage.admin);
     assert_msg(swap_offers.remaining_offers > 0n, "OFFERS_MUST_BE_NONZERO");
     let swap_id = storage.next_swap_id in
     let seller = Tezos.sender in
@@ -158,8 +146,8 @@ let start_swap(swap_offers, storage : swap_offers * swap_storage) : return = beg
   end
 
 let cancel_swap(swap_id, storage : swap_id * swap_storage) : return = begin
+  fail_if_not_admin(storage.admin);
   let swap = get_swap(swap_id, storage) in
-  authorize_seller(swap);
 
   let storage = { storage with swaps = Big_map.remove swap_id storage.swaps } in
 
@@ -252,4 +240,7 @@ let swaps_main (param, storage : swap_entrypoints * swap_storage) : return = beg
     | Cancel swap_id -> cancel_swap(swap_id, storage)
     | Accept swap_id -> accept_swap(swap_id, Tezos.sender, storage)
     | Add_set set_info -> add_set(set_info, storage)
+    | Admin admin_param ->
+      let (ops, admin_storage) = admin_main(admin_param, storage.admin) in
+      (ops, { storage with admin = admin_storage })
   end
