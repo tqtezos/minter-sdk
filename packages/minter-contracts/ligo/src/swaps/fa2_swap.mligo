@@ -170,7 +170,7 @@ let accept_swap_update_storage(swap_id, swap, accepter, storage : swap_id * swap
     in 
   storage
 
-let accept_swap_update_ops_list(swap, accepter, ops, storage : swap_info * address * operation list * swap_storage) : operation list = begin
+let accept_swap_update_ops_list(swap, accepter, bid_offchain, ops, storage : swap_info * address * bool * operation list * swap_storage) : operation list = begin
   let ops =
         List.fold
         (fun (ops, tokens : operation list * fa2_assets) ->
@@ -200,25 +200,27 @@ let accept_swap_update_ops_list(swap, accepter, ops, storage : swap_info * addre
         ops 
         in 
 
-#if !OFFCHAIN_SWAP
 #if XTZ_FEE 
-  let xtz_requested : tez = swap.swap_offers.swap_offer.assets_requested.1 in 
-  assert_msg(Tezos.amount = xtz_requested, "SWAP_REQUESTED_XTZ_INVALID");
-  let allOps = 
-    if xtz_requested = 0mutez 
-    then allOps 
-    else 
-      let xtz_op = transfer_tez(xtz_requested, swap.seller) in  
-      xtz_op :: allOps 
+  let allOps =
+    ( if bid_offchain then allOps 
+      else 
+        let xtz_requested : tez = swap.swap_offers.swap_offer.assets_requested.1 in 
+        let u : unit = assert_msg(Tezos.amount = xtz_requested, "SWAP_REQUESTED_XTZ_INVALID") in
+        if xtz_requested = 0mutez 
+        then allOps 
+        else 
+          let xtz_op = transfer_tez(xtz_requested, swap.seller) in  
+          xtz_op :: allOps 
+    )
     in 
-#endif
 #endif
   allOps
  end
 
 let accept_swap(swap_id, accepter, storage : swap_id * address * swap_storage) : return = 
     let swap = get_swap(swap_id, storage) in
-    let ops = accept_swap_update_ops_list(swap, accepter, ([] : operation list), storage) in
+    let bid_offchain = false in 
+    let ops = accept_swap_update_ops_list(swap, accepter, bid_offchain, ([] : operation list), storage) in
     let storage = accept_swap_update_storage(swap_id, swap, accepter, storage) in
     (ops, storage)
 

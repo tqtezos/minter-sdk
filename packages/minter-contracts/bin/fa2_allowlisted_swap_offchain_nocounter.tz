@@ -171,24 +171,25 @@
            (pair (lambda
                     (pair (pair address address) (pair nat string))
                     (lambda (pair address (list (pair nat nat))) operation))
-                 (pair (pair (pair (pair (pair (list (pair address (list (pair nat nat)))) (list (pair address (list (pair nat nat)))))
-                                         nat)
+                 (pair (pair (pair (pair (pair (pair (list (pair address (list (pair nat nat)))) (list (pair address (list (pair nat nat)))))
+                                               nat)
+                                         address)
                                    address)
-                             address)
-                       (pair (list operation)
-                             (pair nat
-                                   (big_map
-                                      nat
-                                      (pair (pair (pair (list (pair address (list (pair nat nat)))) (list (pair address (list (pair nat nat)))))
-                                                  nat)
-                                            address))))))
+                             (pair bool (list operation)))
+                       (pair nat
+                             (big_map
+                                nat
+                                (pair (pair (pair (list (pair address (list (pair nat nat)))) (list (pair address (list (pair nat nat)))))
+                                            nat)
+                                      address)))))
            (list operation)
            { UNPAIR ;
              SWAP ;
+             CAR ;
              UNPAIR ;
              UNPAIR ;
              DIG 2 ;
-             CAR ;
+             CDR ;
              SWAP ;
              DUP ;
              DUG 2 ;
@@ -367,9 +368,11 @@
                              IF_NONE { PUSH string "SWAP_NOT_EXIST" ; FAILWITH } {} ;
                              DUP 4 ;
                              NIL operation ;
+                             PUSH bool False ;
                              PAIR ;
+                             DUP 5 ;
                              DUP 4 ;
-                             DUP 3 ;
+                             PAIR ;
                              PAIR ;
                              PAIR ;
                              DIG 6 ;
@@ -612,9 +615,11 @@
                     DUP 4 ;
                     CDR ;
                     DIG 5 ;
+                    PUSH bool True ;
                     PAIR ;
-                    DUP 3 ;
-                    DUP 3 ;
+                    DUP 4 ;
+                    DUP 4 ;
+                    PAIR ;
                     PAIR ;
                     PAIR ;
                     DUP 6 ;
