@@ -12,7 +12,6 @@ import Lorentz.Contracts.Swaps.Basic
 import Lorentz.Contracts.Swaps.Burn
 import Lorentz.Contracts.Swaps.SwapPermit
 import Lorentz.Contracts.Swaps.AllowlistedFee as AllowlistedFee 
-import Lorentz.Contracts.Swaps.Allowlisted
 -- Types
 ----------------------------------------------------------------------------
 
