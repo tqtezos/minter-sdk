@@ -261,7 +261,9 @@ type permit =
     signature: signature;
   }
 
-``` in order to accept a given `swap_id` for a user offchain. 
+``` 
+
+in order to accept a given `swap_id` for a user offchain. 
 
 When `XTZ_FEE` is activated at the same time, it is no longer necessary for the admin to send the requested `tez` to the contract as it is assumed payment is handled off chain. When `BURN_PAYMENT` is activated, the FA2 tokens will be burned to the `burn_adddress` as expected. 
 
