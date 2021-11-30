@@ -21,7 +21,7 @@ type set_info = token_id set (*Set data structure enforces uniqueness of tokens 
 type swap_offer =
   [@layout:comb]
   { assets_offered : tokens
-  ; assets_requested : set_id list (*Swap offerrer is expected to sort set_ids in descending order*)
+  ; assets_requested : set_id list (*Swap offerrer is expected to sort set_ids in ascending order*)
   }
 
 type swap_offers = 
@@ -37,13 +37,13 @@ type swap_info =
   ; seller : address
   }
 
-type tokens_desc = (set_id * token_id) set (*Set data structure enforces uniqueness of set_id, token_id pairs
+type tokens_descriptor = (set_id * token_id) set (*Set data structure enforces uniqueness of set_id, token_id pairs
                                              Set also sorts in ascending order in expected way*) 
 
 type accept_param = 
   [@layout:comb]
   {  swap_id : swap_id 
-  ;  tokens : tokens_desc
+  ;  tokens : tokens_descriptor
   } 
 
 type swap_entrypoints =
@@ -85,11 +85,10 @@ let fa2_transfer_entrypoint(fa2, on_invalid_fa2 : address * string)
     : ((transfer list) contract) =
   match (Tezos.get_entrypoint_opt "%transfer" fa2 : (transfer list) contract option) with
   | None -> (failwith on_invalid_fa2 : (transfer list) contract)
-  | Some c ->  c
+  | Some c ->  c      
 
-let transfer_tokens_uncurried(from_, to_, num_transfers, on_invalid_fa2, fa2_address : 
-                    address * address * nat * string * address) (tokens : fa2_token list) 
-                    : operation =
+let transfer_tokens(from_, to_, num_transfers, fa2_address, on_invalid_fa2 : address * address * nat * address * string)(tokens : tokens)
+    : operation =
   let transfer_ep = fa2_transfer_entrypoint(fa2_address, on_invalid_fa2) in
   let token_to_tx_dest(token : fa2_token) : transfer_destination =
         { to_ = to_
@@ -100,21 +99,22 @@ let transfer_tokens_uncurried(from_, to_, num_transfers, on_invalid_fa2, fa2_add
         { from_ = from_
         ; txs = List.map token_to_tx_dest tokens
         } in
-  Tezos.transaction [param] 0mutez transfer_ep                     
+  Tezos.transaction [param] 0mutez transfer_ep              
 
-let transfer_single_tokens(from_, to_, num_transfers, on_invalid_fa2, fa2_address : 
-                    address * address * nat * string * address) (tokens : token_id list) 
+let transfer_single_tokens_from_set(from_, to_, num_transfers, fa2_address, on_invalid_fa2 : 
+                    address * address * nat * address * string) (tokens : tokens_descriptor) 
                     : operation =
-    let unique_token_to_fa2_token(token_id : token_id) : fa2_token = 
-      { token_id = token_id 
-      ; amount = 1n
-      } in 
-    let fa2_tokens = List.map unique_token_to_fa2_token tokens in 
-    transfer_tokens_uncurried(from_, to_, num_transfers, on_invalid_fa2, fa2_address)(fa2_tokens)
+  let unique_token_to_fa2_token(token_id : token_id) : fa2_token = 
+    { token_id = token_id 
+    ; amount = 1n
+    } in 
+  let fa2_tokens = Set.fold 
+                   ( fun (token_list, (_, token_id) : tokens * (set_id * token_id)) -> unique_token_to_fa2_token(token_id) :: token_list) 
+                   tokens 
+                   ([] : tokens)
+                   in 
+  transfer_tokens(from_, to_, num_transfers, fa2_address, on_invalid_fa2)(fa2_tokens)
 
-let transfer_tokens(from_, to_, num_transfers, fa2_address, on_invalid_fa2 : address * address * nat * address * string)(tokens : tokens)
-    : operation =
-  (transfer_tokens_uncurried(from_, to_, num_transfers, on_invalid_fa2, fa2_address) tokens)
 
 [@inline]
 let get_swap(id, storage : swap_id * swap_storage) : swap_info =
@@ -177,24 +177,13 @@ let accept_swap_update_storage(swap_id, swap, accepter, storage : swap_id * swap
     in 
   storage
 
-let accept_swap_update_ops_list(swap, tokens, accepter, bid_offchain, ops, storage : swap_info * tokens_desc * address * bool * operation list * swap_storage) : operation list = begin
+let accept_swap_update_ops_list(swap, tokens, accepter, bid_offchain, ops, storage : swap_info * tokens_descriptor * address * bool * operation list * swap_storage) : operation list = begin
 
-  (*Converts the token set to a list of token_ids, reverses order so that they line up with the assets requested set_id order*) 
-  let token_list : token_id list = 
-    Set.fold
-    (fun (token_id_list, (_ , token_id) : (token_id list) * (set_id * token_id)) -> token_id :: token_id_list)
-    tokens
-    ([] : token_id list)
-    in
-  
-  (*Asserts that the number of tokens sent equals the number requested in the swap*)
-  assert_msg(List.length token_list = List.length swap.swap_offers.swap_offer.assets_requested, "NUMBER_OF_TOKENS_SENT_MUST_EQUAL_NUMBER_REQUESTED");
-  
   (*Tests that tokens provided are in the required sets*)
-  let u = ( List.fold
-            (fun (set_ids, token : (set_id list) * token_id ) -> 
+  let u = ( Set.fold
+            (fun (set_ids, (_, token) : (set_id list) * (set_id * token_id) ) -> 
                 match set_ids with 
-                  | [] -> (failwith (unexpected_err("INTERNAL_ERROR")) : set_id list)
+                  | [] -> (failwith (unexpected_err("TOKENS_SENT_INVALID")) : set_id list)
                   | set_id :: remaining_ids -> 
                       let set : set_info = (match Big_map.find_opt set_id storage.sets with 
                                   | None -> (failwith "INVALID_SET_ID" : set_info)
@@ -203,7 +192,7 @@ let accept_swap_update_ops_list(swap, tokens, accepter, bid_offchain, ops, stora
                       let u : unit = assert_msg(Set.mem token set, "INVALID_TOKEN") in 
                       remaining_ids  
             )
-            token_list
+            tokens
             swap.swap_offers.swap_offer.assets_requested      
           ) in
 
@@ -213,8 +202,8 @@ let accept_swap_update_ops_list(swap, tokens, accepter, bid_offchain, ops, stora
         swap.swap_offers.swap_offer.assets_offered in
   
   (*Transferring the requested tokens*)
-  let transfer = transfer_single_tokens(Tezos.sender, storage.burn_address, 1n, "SWAP_REQUESTED_FA2_INVALID", storage.fa2_address) in 
-  let transfer_requested_op : operation = transfer token_list in 
+  let transfer = transfer_single_tokens_from_set(Tezos.sender, storage.burn_address, 1n, storage.fa2_address, "SWAP_REQUESTED_FA2_INVALID") in 
+  let transfer_requested_op : operation = transfer tokens in 
   [transfer_offered_op; transfer_requested_op;]
  end
 
