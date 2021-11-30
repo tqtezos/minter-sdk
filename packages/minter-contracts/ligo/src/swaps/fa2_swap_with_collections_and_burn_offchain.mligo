@@ -1,7 +1,7 @@
 #if !OFFCHAIN_SWAP 
 #define OFFCHAIN_SWAP
 
-#include "fa2_swap_with_sets_and_burn.mligo"
+#include "fa2_swap_with_collections_and_burn.mligo"
 #include "../common.mligo"
 
 type permit_accept_param = 
