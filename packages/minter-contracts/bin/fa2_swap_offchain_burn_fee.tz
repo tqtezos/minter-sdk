@@ -7,8 +7,9 @@
                      (pair %swap_offer
                         (list %assets_offered
                            (pair (address %fa2_address) (list %tokens (pair (nat %token_id) (nat %amount)))))
-                        (list %assets_requested
-                           (pair (address %fa2_address) (list %tokens (pair (nat %token_id) (nat %amount))))))
+                        (pair %assets_requested
+                           (list (pair (address %fa2_address) (list %tokens (pair (nat %token_id) (nat %amount)))))
+                           mutez))
                      (nat %remaining_offers))))
            (big_map %update_allowed address unit))
         (list %offchain_accept
@@ -17,15 +18,16 @@
     (pair (pair (pair %admin (address %admin) (option %pending_admin address))
                 (big_map %allowlist address unit))
           (pair %swap
-             (nat %next_swap_id)
+             (pair (address %burn_address) (nat %next_swap_id))
              (big_map %swaps
                 nat
                 (pair (pair %swap_offers
                          (pair %swap_offer
                             (list %assets_offered
                                (pair (address %fa2_address) (list %tokens (pair (nat %token_id) (nat %amount)))))
-                            (list %assets_requested
-                               (pair (address %fa2_address) (list %tokens (pair (nat %token_id) (nat %amount))))))
+                            (pair %assets_requested
+                               (list (pair (address %fa2_address) (list %tokens (pair (nat %token_id) (nat %amount)))))
+                               mutez))
                          (nat %remaining_offers))
                       (address %seller))))) ;
   code { LAMBDA
@@ -40,18 +42,6 @@
            (pair bool string)
            unit
            { UNPAIR ; NOT ; IF { FAILWITH } { DROP ; UNIT } } ;
-         PUSH string "XTZ_TRANSFER" ;
-         PUSH mutez 0 ;
-         AMOUNT ;
-         COMPARE ;
-         EQ ;
-         PAIR ;
-         SWAP ;
-         DUP ;
-         DUG 2 ;
-         SWAP ;
-         EXEC ;
-         DROP ;
          LAMBDA
            (pair (pair address address) (pair nat string))
            (lambda (pair address (list (pair nat nat))) operation)
@@ -104,20 +94,23 @@
              APPLY } ;
          LAMBDA
            (pair (pair nat
-                       (pair (pair (pair (list (pair address (list (pair nat nat)))) (list (pair address (list (pair nat nat)))))
+                       (pair (pair (pair (list (pair address (list (pair nat nat))))
+                                         (pair (list (pair address (list (pair nat nat)))) mutez))
                                    nat)
                              address))
                  (pair address
-                       (pair nat
+                       (pair (pair address nat)
                              (big_map
                                 nat
-                                (pair (pair (pair (list (pair address (list (pair nat nat)))) (list (pair address (list (pair nat nat)))))
+                                (pair (pair (pair (list (pair address (list (pair nat nat))))
+                                                  (pair (list (pair address (list (pair nat nat)))) mutez))
                                             nat)
                                       address)))))
-           (pair nat
+           (pair (pair address nat)
                  (big_map
                     nat
-                    (pair (pair (pair (list (pair address (list (pair nat nat)))) (list (pair address (list (pair nat nat)))))
+                    (pair (pair (pair (list (pair address (list (pair nat nat))))
+                                      (pair (list (pair address (list (pair nat nat)))) mutez))
                                 nat)
                           address)))
            { UNPAIR ;
@@ -156,7 +149,8 @@
                   DUP ;
                   CDR ;
                   DIG 2 ;
-                  NONE (pair (pair (pair (list (pair address (list (pair nat nat)))) (list (pair address (list (pair nat nat)))))
+                  NONE (pair (pair (pair (list (pair address (list (pair nat nat))))
+                                         (pair (list (pair address (list (pair nat nat)))) mutez))
                                    nat)
                              address) ;
                   SWAP ;
@@ -164,35 +158,38 @@
                   SWAP ;
                   CAR ;
                   PAIR } } ;
-         SWAP ;
-         DUP ;
-         DUG 2 ;
+         DUP 3 ;
+         DUP 3 ;
+         PAIR ;
          LAMBDA
-           (pair (lambda
-                    (pair (pair address address) (pair nat string))
-                    (lambda (pair address (list (pair nat nat))) operation))
-                 (pair (pair (pair (pair (pair (pair (list (pair address (list (pair nat nat)))) (list (pair address (list (pair nat nat)))))
+           (pair (pair (lambda
+                          (pair (pair address address) (pair nat string))
+                          (lambda (pair address (list (pair nat nat))) operation))
+                       (lambda (pair bool string) unit))
+                 (pair (pair (pair (pair (pair (pair (list (pair address (list (pair nat nat))))
+                                                     (pair (list (pair address (list (pair nat nat)))) mutez))
                                                nat)
                                          address)
                                    address)
                              (pair bool (list operation)))
-                       (pair nat
+                       (pair (pair address nat)
                              (big_map
                                 nat
-                                (pair (pair (pair (list (pair address (list (pair nat nat)))) (list (pair address (list (pair nat nat)))))
+                                (pair (pair (pair (list (pair address (list (pair nat nat))))
+                                                  (pair (list (pair address (list (pair nat nat)))) mutez))
                                             nat)
                                       address)))))
            (list operation)
            { UNPAIR ;
-             SWAP ;
-             CAR ;
+             UNPAIR ;
+             DIG 2 ;
+             UNPAIR ;
              UNPAIR ;
              UNPAIR ;
              DIG 2 ;
-             CDR ;
+             UNPAIR ;
              SWAP ;
-             DUP ;
-             DUG 2 ;
+             DUP 3 ;
              CAR ;
              CAR ;
              CAR ;
@@ -200,43 +197,79 @@
                     PUSH string "SWAP_OFFERED_FA2_INVALID" ;
                     PUSH nat 1 ;
                     PAIR ;
-                    DUP 5 ;
+                    DUP 6 ;
                     SELF_ADDRESS ;
                     PAIR ;
                     PAIR ;
-                    DUP 6 ;
+                    DUP 8 ;
                     SWAP ;
                     EXEC ;
                     DIG 2 ;
                     EXEC ;
                     CONS } ;
-             SWAP ;
-             DUP ;
-             DUG 2 ;
+             DUP 3 ;
              CAR ;
              CAR ;
              CDR ;
+             CAR ;
              ITER { SWAP ;
                     PUSH string "SWAP_REQUESTED_FA2_INVALID" ;
                     PUSH nat 1 ;
                     PAIR ;
-                    DUP 4 ;
-                    CDR ;
-                    DUP 6 ;
+                    DUP 7 ;
+                    CAR ;
+                    CAR ;
+                    DUP 7 ;
                     PAIR ;
                     PAIR ;
-                    DUP 6 ;
+                    DUP 8 ;
                     SWAP ;
                     EXEC ;
                     DIG 2 ;
                     EXEC ;
                     CONS } ;
-             SWAP ;
+             DIG 3 ;
+             DROP ;
+             DIG 3 ;
+             DROP ;
+             DIG 3 ;
              DROP ;
              SWAP ;
-             DROP ;
-             SWAP ;
-             DROP } ;
+             IF { SWAP ; DROP ; SWAP ; DROP }
+                { SWAP ;
+                  DUP ;
+                  DUG 2 ;
+                  CAR ;
+                  CAR ;
+                  CDR ;
+                  CDR ;
+                  PUSH string "SWAP_REQUESTED_XTZ_INVALID" ;
+                  SWAP ;
+                  DUP ;
+                  DUG 2 ;
+                  AMOUNT ;
+                  COMPARE ;
+                  EQ ;
+                  PAIR ;
+                  DIG 4 ;
+                  SWAP ;
+                  EXEC ;
+                  DROP ;
+                  PUSH mutez 0 ;
+                  SWAP ;
+                  DUP ;
+                  DUG 2 ;
+                  COMPARE ;
+                  EQ ;
+                  IF { DROP ; SWAP ; DROP }
+                     { DIG 2 ;
+                       CDR ;
+                       CONTRACT unit ;
+                       IF_NONE { PUSH string "ADDRESS_DOES_NOT_RESOLVE" ; FAILWITH } {} ;
+                       SWAP ;
+                       PUSH unit Unit ;
+                       TRANSFER_TOKENS ;
+                       CONS } } } ;
          SWAP ;
          APPLY ;
          DIG 5 ;
@@ -331,6 +364,7 @@
                                   { DROP } } ;
                          CAR ;
                          CDR ;
+                         CAR ;
                          ITER { SWAP ;
                                 DUP ;
                                 DUG 2 ;
@@ -439,7 +473,8 @@
                              DUP 3 ;
                              CDR ;
                              DIG 2 ;
-                             NONE (pair (pair (pair (list (pair address (list (pair nat nat)))) (list (pair address (list (pair nat nat)))))
+                             NONE (pair (pair (pair (list (pair address (list (pair nat nat))))
+                                                    (pair (list (pair address (list (pair nat nat)))) mutez))
                                               nat)
                                         address) ;
                              SWAP ;
@@ -470,7 +505,12 @@
                          PUSH nat 1 ;
                          DUP 5 ;
                          CAR ;
+                         CDR ;
                          ADD ;
+                         DUP 5 ;
+                         CAR ;
+                         CAR ;
+                         PAIR ;
                          PAIR ;
                          DUP 4 ;
                          CDR ;
@@ -479,6 +519,7 @@
                          PAIR ;
                          DIG 5 ;
                          CAR ;
+                         CDR ;
                          SWAP ;
                          SOME ;
                          SWAP ;

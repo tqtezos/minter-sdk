@@ -87,6 +87,9 @@ incrementSwapId (SwapId n) = SwapId (n + 1)
 initSwapId :: SwapId 
 initSwapId = SwapId 1
 
+getSwapId :: SwapId -> Natural 
+getSwapId (SwapId n) = n
+
 initSwapStorage :: SwapStorage
 initSwapStorage = SwapStorage
   { nextSwapId = initSwapId

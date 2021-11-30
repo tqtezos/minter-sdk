@@ -202,6 +202,12 @@ const compileSources: CompileSourceEntry[] = [
     contract: true,
   },
   {
+    srcFile: 'swaps/fa2_swap_offchain_burn_fee.mligo',
+    mainFn: 'allowlisted_swaps_offchain_main',
+    dstFile: 'fa2_swap_offchain_burn_fee.tz',
+    contract: true,
+  },
+  {
     srcFile: 'swaps/fa2_fee_allowlisted_swap.mligo',
     mainFn: 'allowlisted_swaps_main',
     dstFile: 'fa2_fee_allowlisted_swap.tz',
