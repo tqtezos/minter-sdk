@@ -60,14 +60,22 @@ type fa2_assets =
 
 Note that we expect that provided list of tokens will be grouped by FA2 contracts the tokens belong to. Despite the more complicated interface, this lets us require fewer `get_entrypoint_opt` calls and make use of FA2 batched transfers and thus be much more efficient.
 
-A `swap_offer` type contains all the data provided at swap creation.
+A `swap_offers` type contains all the data provided at swap creation.
 
 ```ocaml
+type swap_offers = 
+  [@layout:comb]
+  {
+    swap_offer : swap_offer;
+    remaining_offers : nat;
+  }  
+
 type swap_offer =
   [@layout:comb]
   { assets_offered : fa2_assets list
   ; assets_requested : fa2_assets list
   }
+
 ```
 
 A `swap_info` type represents all the full information stored about a single swap.
@@ -75,7 +83,7 @@ A `swap_info` type represents all the full information stored about a single swa
 ```ocaml
 type swap_info =
   [@layout:comb]
-  { swap_offer : swap_offer
+  { swap_offers : swap_offers
   ; seller : address
   }
 ```
@@ -136,11 +144,10 @@ This
 1. Transfers the offered assets from our contract to the `sender`;
 2. Transfers the requested assets from the `sender` to the `seller`.
 
-Marks the swap as finished by the current `sender`. Further operations with this swap won't be possible.
+If there are remaining swap offers left (`remaining_offers` >= 1), contract storage will be updated to reflect 1 less remaining offer (i.e. decrement `remaining_offers`). Otherwise, the swap gets removed from big_map, any further operation for this swap will raise `SWAP_NOT_EXIST`.
 
 This can be called by *any* address.
 
-The swap gets removed from big_map, any further operation for this swap will raise `SWAP_NOT_EXIST`.
 
 In case some of `assets_requested.fa2_address` refer to an invalid FA2 contract (not originated or without `transfer` entrypoint), `SWAP_REQUESTED_FA2_INVALID` is raised. This error normally should not happen, as the client is supposed to validate `assets_requested` on swap start.
 
@@ -228,3 +235,103 @@ Not updated.
 #### Accept swap entrypoint
 
 Not updated.
+
+### Contract Extension Macros
+
+#### XTZ_FEE
+
+When the `XTZ_FEE` macro is activated, the `assets_requested` data in `swap_offers` is changed to a tuple, with the second element in the tuple encoding some amount in tez that must be included along with the requested set of tokens when the swap is accepted. Like the requested tokens, the fee sent in tez is sent to the user who proposed the swap. If the correct amount is not sent to the contract, it will fail with `SWAP_REQUESTED_XTZ_INVALID`.
+
+```ocaml
+type swap_offer =
+  [@layout:comb]
+  { assets_offered : fa2_assets list
+  ; assets_requested : fa2_assets list * tez
+  }
+```
+
+#### BURN_PAYMENT
+
+When `BURN_PAYMENT` macro is activated, the contract storage is modified to include a `burn_address`. Furthermore, upon acceptance of a swap, all FA2 tokens in `assets_requested` will be sent to the `burn_address` by the contract instead of being sent to the seller. This macro is useful in versions of the contract in which the buyer is expected to "pay" for a swap with some tokens that are to be destroyed at the conclusion of the transaction. Note, When `XTZ_FEE` is activated at the same time, the tez fee is NOT sent to the `burn_address` but to the seller as expected. 
+
+```ocaml
+type swap_storage =
+  { next_swap_id : swap_id
+  ; swaps : (swap_id, swap_info) big_map
+#if BURN_PAYMENT
+  ; burn_address : address
+#endif
+  }
+```
+
+#### OFFCHAIN_SWAP
+
+This macro defines a new entrypoint `Offchain_accept` to which a contract admin can send a list of `permit_accept_param`s where 
+
+```ocaml
+type permit_accept_param = 
+  [@layout:comb]
+  {
+    swap_id : nat;
+    permit : permit;
+  }
+```
+and
+
+```ocaml
+type permit = 
+  [@layout:comb]
+  {
+    signerKey: key;
+    signature: signature;
+  }
+
+``` 
+
+in order to accept a given `swap_id` for a user offchain. 
+
+When `XTZ_FEE` is activated at the same time, it is no longer necessary for the admin to send the requested `tez` to the contract as it is assumed payment is handled off chain. When `BURN_PAYMENT` is activated, the FA2 tokens will be burned to the `burn_adddress` as expected. 
+
+### Alternative Contract Versions
+
+#### Offchain Swap with Burn and Fee
+
+- [ligo](fa2_swap_offchain_burn_fee.mligo)
+- [Michelson](../../../bin/fa2_swap_offchain_burn_fee.tz)
+
+This contract activates `XTZ_FEE`, `OFFCHAIN_SWAP`, and `BURN_PAYMENT`. It is intended to be compiled with the main function as `allowlisted_swaps_offchain_main`, which adds the new `Offchain_accept` entrypoint to the modified base swap contract with allowlist extension as well as burn and xtz-fee features. 
+
+```
+{ parameter
+    (or (or %baseSwap
+           (or (or %admin (unit %confirm_admin) (address %set_admin))
+               (or %swap
+                  (or (nat %accept) (nat %cancel))
+                  (pair %start
+                     (pair %swap_offer
+                        (list %assets_offered
+                           (pair (address %fa2_address) (list %tokens (pair (nat %token_id) (nat %amount)))))
+                        (pair %assets_requested
+                           (list (pair (address %fa2_address) (list %tokens (pair (nat %token_id) (nat %amount)))))
+                           mutez))
+                     (nat %remaining_offers))))
+           (big_map %update_allowed address unit))
+        (list %offchain_accept
+           (pair (nat %swap_id) (pair %permit (key %signerKey) (signature %signature))))) ;
+  storage
+    (pair (pair (pair %admin (address %admin) (option %pending_admin address))
+                (big_map %allowlist address unit))
+          (pair %swap
+             (pair (address %burn_address) (nat %next_swap_id))
+             (big_map %swaps
+                nat
+                (pair (pair %swap_offers
+                         (pair %swap_offer
+                            (list %assets_offered
+                               (pair (address %fa2_address) (list %tokens (pair (nat %token_id) (nat %amount)))))
+                            (pair %assets_requested
+                               (list (pair (address %fa2_address) (list %tokens (pair (nat %token_id) (nat %amount)))))
+                               mutez))
+                         (nat %remaining_offers))
+                      (address %seller))))) ;
+```
