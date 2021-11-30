@@ -4,7 +4,7 @@
 #include "../common.mligo"
 (* ==== Types ==== *)
 
-type set_id = nat
+type collection_id = nat
 
 type swap_id = nat
 
@@ -16,12 +16,12 @@ type fa2_token =
 
 type tokens = fa2_token list 
 
-type set_info = token_id set (*Set data structure enforces uniqueness of tokens in a given set*)
+type collection_info = token_id set (*Set data structure enforces uniqueness of tokens in a given set*)
 
 type swap_offer =
   [@layout:comb]
   { assets_offered : tokens
-  ; assets_requested : set_id list (*Swap offerrer is expected to sort set_ids in ascending order*)
+  ; assets_requested : collection_id list (*Swap offerrer is expected to sort set_ids in ascending order*)
   }
 
 type swap_offers = 
@@ -37,28 +37,28 @@ type swap_info =
   ; seller : address
   }
 
-type tokens_descriptor = (set_id * token_id) set (*Set data structure enforces uniqueness of set_id, token_id pairs
-                                             Set also sorts in ascending order in expected way*) 
+type tokens_sent = (collection_id * token_id) set (*Set data structure enforces uniqueness of collection_id, token_id pairs
+                                                          Set also sorts in ascending order in expected way*) 
 
 type accept_param = 
   [@layout:comb]
   {  swap_id : swap_id 
-  ;  tokens : tokens_descriptor
+  ;  tokens : tokens_sent
   } 
 
 type swap_entrypoints =
   | Start of swap_offers
   | Cancel of swap_id
   | Accept of accept_param
-  | Add_set of set_info
+  | Add_collection of collection_info
   | Admin of admin_entrypoints
 
 type swap_storage =
   { next_swap_id : swap_id
-  ; next_set_id : set_id
+  ; next_collection_id : collection_id
   ; swaps : (swap_id, swap_info) big_map
   ; burn_address : address
-  ; sets : (set_id, set_info) big_map
+  ; collections : (collection_id, collection_info) big_map
   ; fa2_address : address (*Every token this contract interacts with must be defined in this FA2*)
   ; admin : admin_storage
   }
@@ -87,7 +87,7 @@ let fa2_transfer_entrypoint(fa2, on_invalid_fa2 : address * string)
   | None -> (failwith on_invalid_fa2 : (transfer list) contract)
   | Some c ->  c      
 
-let transfer_tokens(from_, to_, num_transfers, fa2_address, on_invalid_fa2 : address * address * nat * address * string)(tokens : tokens)
+let transfer_tokens(from_, to_, num_transfers, fa2_address, on_invalid_fa2, tokens : address * address * nat * address * string * tokens)
     : operation =
   let transfer_ep = fa2_transfer_entrypoint(fa2_address, on_invalid_fa2) in
   let token_to_tx_dest(token : fa2_token) : transfer_destination =
@@ -101,19 +101,19 @@ let transfer_tokens(from_, to_, num_transfers, fa2_address, on_invalid_fa2 : add
         } in
   Tezos.transaction [param] 0mutez transfer_ep              
 
-let transfer_single_tokens_from_set(from_, to_, num_transfers, fa2_address, on_invalid_fa2 : 
-                    address * address * nat * address * string) (tokens : tokens_descriptor) 
+let transfer_tokens_sent(from_, to_, num_transfers, fa2_address, on_invalid_fa2, tokens : 
+                    address * address * nat * address * string * tokens_sent) 
                     : operation =
   let unique_token_to_fa2_token(token_id : token_id) : fa2_token = 
     { token_id = token_id 
     ; amount = 1n
     } in 
   let fa2_tokens = Set.fold 
-                   ( fun (token_list, (_, token_id) : tokens * (set_id * token_id)) -> unique_token_to_fa2_token(token_id) :: token_list) 
+                   ( fun (token_list, (_, token_id) : tokens * (collection_id * token_id)) -> unique_token_to_fa2_token(token_id) :: token_list) 
                    tokens 
                    ([] : tokens)
                    in 
-  transfer_tokens(from_, to_, num_transfers, fa2_address, on_invalid_fa2)(fa2_tokens)
+  transfer_tokens(from_, to_, num_transfers, fa2_address, on_invalid_fa2, fa2_tokens)
 
 
 [@inline]
@@ -139,8 +139,7 @@ let start_swap(swap_offers, storage : swap_offers * swap_storage) : return = beg
       } in
   
     let op =
-          (transfer_tokens(seller, Tezos.self_address, swap_offers.remaining_offers, storage.fa2_address, "SWAP_OFFERED_FA2_INVALID"))
-          swap_offers.swap_offer.assets_offered in
+          transfer_tokens(seller, Tezos.self_address, swap_offers.remaining_offers, storage.fa2_address, "SWAP_OFFERED_FA2_INVALID", swap_offers.swap_offer.assets_offered) in
   
     ([op], storage)
   end
@@ -152,8 +151,7 @@ let cancel_swap(swap_id, storage : swap_id * swap_storage) : return = begin
   let storage = { storage with swaps = Big_map.remove swap_id storage.swaps } in
 
   let op =
-        (transfer_tokens(Tezos.self_address, swap.seller, swap.swap_offers.remaining_offers, storage.fa2_address, unexpected_err "SWAP_OFFERED_FA2_INVALID"))
-        swap.swap_offers.swap_offer.assets_offered in
+        transfer_tokens(Tezos.self_address, swap.seller, swap.swap_offers.remaining_offers, storage.fa2_address, unexpected_err "SWAP_OFFERED_FA2_INVALID", swap.swap_offers.swap_offer.assets_offered) in
 
   ([op], storage)
   end
@@ -177,19 +175,19 @@ let accept_swap_update_storage(swap_id, swap, accepter, storage : swap_id * swap
     in 
   storage
 
-let accept_swap_update_ops_list(swap, tokens, accepter, bid_offchain, ops, storage : swap_info * tokens_descriptor * address * bool * operation list * swap_storage) : operation list = begin
+let accept_swap_update_ops_list(swap, tokens, accepter, bid_offchain, ops, storage : swap_info * tokens_sent * address * bool * operation list * swap_storage) : operation list = begin
 
-  (*Tests that tokens provided are in the required sets*)
+  (*Tests that tokens provided are in the required collections*)
   let u = ( Set.fold
-            (fun (set_ids, (_, token) : (set_id list) * (set_id * token_id) ) -> 
+            (fun (set_ids, (_, token) : (collection_id list) * (collection_id * token_id) ) -> 
                 match set_ids with 
-                  | [] -> (failwith (unexpected_err("TOKENS_SENT_INVALID")) : set_id list)
-                  | set_id :: remaining_ids -> 
-                      let set : set_info = (match Big_map.find_opt set_id storage.sets with 
-                                  | None -> (failwith "INVALID_SET_ID" : set_info)
-                                  | Some set -> set 
+                  | [] -> (failwith ("TOKENS_SENT_INVALID") : collection_id list)
+                  | collection_id :: remaining_ids -> 
+                      let collection : collection_info = (match Big_map.find_opt collection_id storage.collections with 
+                                  | None -> (failwith "INVALID_SET_ID" : collection_info)
+                                  | Some collection -> collection 
                                 ) in 
-                      let u : unit = assert_msg(Set.mem token set, "INVALID_TOKEN") in 
+                      let u : unit = assert_msg(Set.mem token collection, "INVALID_TOKEN") in 
                       remaining_ids  
             )
             tokens
@@ -198,12 +196,10 @@ let accept_swap_update_ops_list(swap, tokens, accepter, bid_offchain, ops, stora
 
   (*Transferring the offered tokens*)
   let transfer_offered_op =
-        (transfer_tokens(Tezos.self_address, Tezos.sender, 1n, storage.fa2_address, unexpected_err "SWAP_OFFERED_FA2_INVALID"))
-        swap.swap_offers.swap_offer.assets_offered in
+        transfer_tokens(Tezos.self_address, Tezos.sender, 1n, storage.fa2_address, unexpected_err("SWAP_OFFERED_FA2_INVALID"), swap.swap_offers.swap_offer.assets_offered) in
   
   (*Transferring the requested tokens*)
-  let transfer = transfer_single_tokens_from_set(Tezos.sender, storage.burn_address, 1n, storage.fa2_address, "SWAP_REQUESTED_FA2_INVALID") in 
-  let transfer_requested_op : operation = transfer tokens in 
+  let transfer_requested_op = transfer_tokens_sent(Tezos.sender, storage.burn_address, 1n, storage.fa2_address, "SWAP_REQUESTED_FA2_INVALID", tokens) in 
   [transfer_offered_op; transfer_requested_op;]
  end
 
@@ -216,10 +212,10 @@ let accept_swap(accept_param, accepter, storage : accept_param * address * swap_
     let storage = accept_swap_update_storage(swap_id, swap, accepter, storage) in
     (ops, storage)
 
-let add_set(set_info, storage : set_info * swap_storage) : return = begin 
-    let next_set_id = storage.next_set_id in
-    let new_sets_bm = Big_map.add next_set_id set_info storage.sets in 
-    (([]: operation list), {storage with sets = new_sets_bm; next_set_id = next_set_id + 1n})
+let add_collection(collection_info, storage : collection_info * swap_storage) : return = begin 
+    let next_collection_id = storage.next_collection_id in
+    let new_collections_bm = Big_map.add next_collection_id collection_info storage.collections in 
+    (([]: operation list), {storage with collections = new_collections_bm; next_collection_id = next_collection_id + 1n})
   end
 
 let swaps_main (param, storage : swap_entrypoints * swap_storage) : return = begin
@@ -228,7 +224,7 @@ let swaps_main (param, storage : swap_entrypoints * swap_storage) : return = beg
     | Start swap_offers -> start_swap(swap_offers, storage)
     | Cancel swap_id -> cancel_swap(swap_id, storage)
     | Accept swap_id -> accept_swap(swap_id, Tezos.sender, storage)
-    | Add_set set_info -> add_set(set_info, storage)
+    | Add_collection collection_info -> add_collection(collection_info, storage)
     | Admin admin_param ->
       let (ops, admin_storage) = admin_main(admin_param, storage.admin) in
       (ops, { storage with admin = admin_storage })
