@@ -8,8 +8,10 @@ module Test.Swaps.Util
   , originateAllowlistedBurnSwap
   , originateAllowlistedFeeSwap
   , originateChangeBurnAddressSwap
+  , originateOffchainCollections
   , originateOffchainSwap
   , originateOffchainSwapBurnFee
+  --, originateOffchainCollectionsWithAdmin
   , originateAllowlistedSwapWithAdmin
   , originateOffchainSwapWithAdmin
   , originateAllowlistedBurnSwapWithAdmin
@@ -30,6 +32,7 @@ import Lorentz.Contracts.Swaps.SwapPermit
 import Lorentz.Contracts.Swaps.Burn
 import Lorentz.Contracts.Swaps.AllowlistedFee
 
+import Lorentz.Contracts.Swaps.Collections
 import Lorentz.Contracts.Swaps.SwapPermitBurnFee
 import Test.Util
 
@@ -123,6 +126,18 @@ originateOffchainSwap admin = do
     (T.untypeValue $ T.toVal $ initAllowlistedSwapStorage admin)
     (T.convertContract allowlistedSwapsPermitContract)
 
+-- | Originate the offchain collections contract
+originateOffchainCollections
+  :: MonadNettest caps base m
+  => Address
+  -> Address
+  -> m (TAddress OffchainCollectionsEntrypoints)
+originateOffchainCollections admin fa2 = do
+  TAddress <$> originateUntypedSimple "swaps"
+    (T.untypeValue $ T.toVal $ initCollectionsStorage admin fa2)
+    (T.convertContract offchainCollectionsContract)
+
+
 -- | Originate the swaps contract with offchain_accept entrypoint.
 originateOffchainSwapBurnFee
   :: MonadNettest caps base m
@@ -139,6 +154,13 @@ originateOffchainSwapWithAdmin
   => m (TAddress PermitSwapEntrypoints, Address)
 originateOffchainSwapWithAdmin =
   originateWithAdmin originateOffchainSwap
+
+---- | Originate the offchain collections contract
+--originateOffchainCollectionsWithAdmin
+--  :: MonadNettest caps base m
+--  => m (TAddress OffchainCollectionsEntrypoints, Address)
+--originateOffchainCollectionsWithAdmin = 
+--  originateWithAdmin originateOffchainCollections
 
 -- | Construct 'FA2Assets' from a simplified representation.
 mkFA2Assets :: TAddress fa2Param -> [(FA2.TokenId, Natural)] -> FA2Assets
