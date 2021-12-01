@@ -204,8 +204,17 @@
                         EXEC ;
                         DROP }
                       { DROP ; PUSH string "TOKENS_SENT_INVALID" ; FAILWITH } } ;
+             PUSH string "TOKENS_SENT_INVALID" ;
+             PUSH nat 0 ;
+             DIG 2 ;
+             SIZE ;
+             COMPARE ;
+             EQ ;
+             PAIR ;
              DIG 5 ;
-             DROP 2 ;
+             SWAP ;
+             EXEC ;
+             DROP ;
              SWAP ;
              CAR ;
              CAR ;

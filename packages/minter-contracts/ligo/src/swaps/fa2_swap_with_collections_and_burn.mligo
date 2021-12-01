@@ -178,7 +178,8 @@ let accept_swap_update_storage(swap_id, swap, accepter, storage : swap_id * swap
 let accept_swap_update_ops_list(swap, tokens, accepter, bid_offchain, ops, storage : swap_info * tokens_sent * address * bool * operation list * swap_storage) : operation list = begin
 
   (*Tests that tokens provided are in the required collections*)
-  let u = ( Set.fold
+  let remaining_ids : (collection_id list)= 
+         ( Set.fold
             (fun (set_ids, (_, token) : (collection_id list) * (collection_id * token_id) ) -> 
                 match set_ids with 
                   | [] -> (failwith ("TOKENS_SENT_INVALID") : collection_id list)
@@ -193,6 +194,8 @@ let accept_swap_update_ops_list(swap, tokens, accepter, bid_offchain, ops, stora
             tokens
             swap.swap_offers.swap_offer.assets_requested      
           ) in
+  
+  assert_msg(List.length remaining_ids = 0n, "TOKENS_SENT_INVALID");
 
   (*Transferring the offered tokens*)
   let transfer_offered_op =
