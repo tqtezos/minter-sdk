@@ -113,16 +113,14 @@
                      DIG 4 ;
                      DUP 4 ;
                      DIG 2 ;
-                     DROP ;
-                     DIG 2 ;
+                     CAR ;
+                     DIG 3 ;
                      CDR ;
-                     SWAP ;
-                     DUP ;
-                     DUG 2 ;
+                     DUP 3 ;
                      CAR ;
                      CAR ;
                      CDR ;
-                     DUP 4 ;
+                     DUP 5 ;
                      ITER { CDR ;
                             SWAP ;
                             IF_CONS
@@ -138,7 +136,7 @@
                                 DIG 3 ;
                                 MEM ;
                                 PAIR ;
-                                DUP 11 ;
+                                DUP 12 ;
                                 SWAP ;
                                 EXEC ;
                                 DROP }
@@ -150,11 +148,11 @@
                      COMPARE ;
                      EQ ;
                      PAIR ;
-                     DIG 9 ;
+                     DIG 10 ;
                      SWAP ;
                      EXEC ;
                      DROP ;
-                     SWAP ;
+                     DIG 2 ;
                      CAR ;
                      CAR ;
                      CAR ;
@@ -168,15 +166,15 @@
                      CDR ;
                      PUSH nat 1 ;
                      PAIR ;
-                     SENDER ;
+                     DUP 4 ;
                      SELF_ADDRESS ;
                      PAIR ;
                      PAIR ;
                      PAIR ;
-                     DUP 8 ;
+                     DUP 9 ;
                      SWAP ;
                      EXEC ;
-                     DIG 2 ;
+                     DIG 3 ;
                      PUSH string "SWAP_REQUESTED_FA2_INVALID" ;
                      PAIR ;
                      DUP 3 ;
@@ -189,7 +187,7 @@
                      CAR ;
                      CAR ;
                      CDR ;
-                     SENDER ;
+                     DIG 4 ;
                      DIG 2 ;
                      UNPAIR ;
                      DIG 4 ;

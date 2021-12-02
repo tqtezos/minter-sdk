@@ -199,10 +199,10 @@ let accept_swap_update_ops_list(swap, tokens, accepter, bid_offchain, ops, stora
 
   (*Transferring the offered tokens*)
   let transfer_offered_op =
-        transfer_tokens(Tezos.self_address, Tezos.sender, 1n, storage.fa2_address, unexpected_err("SWAP_OFFERED_FA2_INVALID"), swap.swap_offers.swap_offer.assets_offered) in
+        transfer_tokens(Tezos.self_address, accepter, 1n, storage.fa2_address, unexpected_err("SWAP_OFFERED_FA2_INVALID"), swap.swap_offers.swap_offer.assets_offered) in
   
   (*Transferring the requested tokens*)
-  let transfer_requested_op = transfer_tokens_sent(Tezos.sender, storage.burn_address, 1n, storage.fa2_address, "SWAP_REQUESTED_FA2_INVALID", tokens) in 
+  let transfer_requested_op = transfer_tokens_sent(accepter, storage.burn_address, 1n, storage.fa2_address, "SWAP_REQUESTED_FA2_INVALID", tokens) in 
   [transfer_offered_op; transfer_requested_op;]
  end
 
