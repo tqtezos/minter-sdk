@@ -66,6 +66,9 @@ deriving anyclass instance HasAnnotation Permit
 nullAddress :: Address 
 nullAddress = unsafeParseAddress "tz1Ke2h7sDdakHJQh8WX4Z372du1KChsksyU"
 
+exampleFA2Address :: Address 
+exampleFA2Address = unsafeParseAddress "KT1T7ShxhtSRuhvhHeug6Sjc7W8irLmswEt7"
+
 data CollectionsStorage = CollectionsStorage
   { nextSwapId :: SwapId
   , nextCollectionId :: CollectionId
@@ -169,8 +172,11 @@ errSwapOfferedFA2Invalid = [mt|SWAP_OFFERED_FA2_INVALID|]
 errSwapRequestedFA2Invalid :: MText
 errSwapRequestedFA2Invalid = [mt|SWAP_REQUESTED_FA2_INVALID|]
 
-errSwapRequestedFA2BalanceInvalid :: (MText, ()) 
-errSwapRequestedFA2BalanceInvalid = ([mt|FA2_NOT_OPERATOR|], ())
+errSwapRequestedFA2BalanceInvalid :: Natural -> Natural -> (MText, Natural, Natural) 
+errSwapRequestedFA2BalanceInvalid requested actual = ([mt|FA2_INSUFFICIENT_BALANCE|], requested, actual)
+
+errNotAdmin :: MText
+errNotAdmin = [mt|NOT_AN_ADMIN|]
 
 -- Helpers
 ----------------------------------------------------------------------------

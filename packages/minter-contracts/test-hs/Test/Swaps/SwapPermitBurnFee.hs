@@ -12,6 +12,8 @@ import Michelson.Interpret.Pack
 import GHC.Exts (fromList)
 import GHC.Integer (negateInteger)
 
+import qualified Lorentz.Contracts.Spec.FA2Interface as FA2I
+
 import Test.Tasty (TestTree, testGroup)
 
 import Morley.Nettest
@@ -144,6 +146,15 @@ hprop_Accepting_with_zero_balance_fails =
           withSender admin $
             call swap (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
           addressWithZeroBalance <- newAddress "test"
+          withSender addressWithZeroBalance $ 
+            call fa2 (Call @"Update_operators")     
+              [
+                FA2I.AddOperator FA2I.OperatorParam
+                  { opOwner = addressWithZeroBalance
+                  , opOperator = toAddress swap
+                  , opTokenId = tokenId2
+                  }
+              ]
           withSender admin $
             call swap (Call @"Start") $ mkSingleOffer SwapOffer
               { assetsOffered = [mkFA2Assets fa2 [(tokenId1, 10)]]
@@ -151,7 +162,7 @@ hprop_Accepting_with_zero_balance_fails =
               }
           withSender admin
             (offchainAccept addressWithZeroBalance swap
-              `expectFailure` failedWith fa2 errSwapRequestedFA2BalanceInvalid)  
+              `expectFailure` failedWith fa2 (errSwapRequestedFA2BalanceInvalid 5 0))  
 
 hprop_Start_callable_by_admin_only :: Property
 hprop_Start_callable_by_admin_only = 
