@@ -284,10 +284,10 @@
                  IF_LEFT
                    { DIG 4 ;
                      DROP ;
-                     DIG 4 ;
-                     DROP ;
                      IF_LEFT
-                       { SWAP ;
+                       { DIG 4 ;
+                         DROP ;
+                         SWAP ;
                          SENDER ;
                          DIG 2 ;
                          UNPAIR ;
@@ -330,6 +330,16 @@
                        { DIG 2 ;
                          DROP ;
                          DIG 2 ;
+                         DROP ;
+                         SWAP ;
+                         DUP ;
+                         DUG 2 ;
+                         CAR ;
+                         CAR ;
+                         CAR ;
+                         DIG 3 ;
+                         SWAP ;
+                         EXEC ;
                          DROP ;
                          SWAP ;
                          DUP ;

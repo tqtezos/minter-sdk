@@ -216,6 +216,7 @@ let accept_swap(accept_param, accepter, storage : accept_param * address * swap_
     (ops, storage)
 
 let add_collection(collection_info, storage : collection_info * swap_storage) : return = begin 
+    fail_if_not_admin(storage.admin);
     let next_collection_id = storage.next_collection_id in
     let new_collections_bm = Big_map.add next_collection_id collection_info storage.collections in 
     (([]: operation list), {storage with collections = new_collections_bm; next_collection_id = next_collection_id + 1n})
@@ -226,9 +227,10 @@ let swaps_main (param, storage : swap_entrypoints * swap_storage) : return = beg
   match param with
     | Start swap_offers -> start_swap(swap_offers, storage)
     | Cancel swap_id -> cancel_swap(swap_id, storage)
-    | Accept swap_id -> accept_swap(swap_id, Tezos.sender, storage)
+    | Accept accept_param -> accept_swap(accept_param, Tezos.sender, storage)
     | Add_collection collection_info -> add_collection(collection_info, storage)
     | Admin admin_param ->
+      (*admin_main already admin checks entrypoint*)
       let (ops, admin_storage) = admin_main(admin_param, storage.admin) in
       (ops, { storage with admin = admin_storage })
   end

@@ -335,3 +335,93 @@ This contract activates `XTZ_FEE`, `OFFCHAIN_SWAP`, and `BURN_PAYMENT`. It is in
                          (nat %remaining_offers))
                       (address %seller))))) ;
 ```
+
+#### Swap with Collections and Burn (and Offchain Accept)
+
+- [ligo](fa2_swap_with_collections_and_burn.mligo) 
+- [Offchain ligo](fa2_swap_with_collections_and_burn_offchain.mligo) 
+- [Michelson](../../../bin/fa2_swap_with_collections_and_burn.tz)
+- [Offchain Michelson](../../../bin/fa2_swap_with_collections_and_burn_offchain.tz)
+
+This contract adds a notion of `collections` to the base swap contract.  A `collection` is simply a set of `token_id`s from a given FA2.  The contract stores a list of collections (more precisely a `Big_map` mapping a `collection_id` to a `collection`). An admin can also add new collections to the contract through
+ the `Add_collection` entrypoint. Now, the swap proposer  must specify a list of `collection_id`s in the `assets_requested` field as opposed to a list of `token_id`s. Accordingly, the swap accepter can accept the swap by sending a _unique_ token from each of the `collections` specified in `assets_requested`. This contract also activates the `Offchain_accept` and `Burn` features which behave similarly to above with the exception that the user must sign the entire `accept_param` provided to the `Accept` entrypoint, which now includes both the 
+`swap_id` as well as the list of tokens `tokens_sent` the swap accepter would like to use in accepting the swap. 
+
+The new entrypoint structure of the Collections contract without `Offchain_accept` is as follows: 
+
+```ocaml
+type swap_entrypoints =
+  | Start of swap_offers
+  | Cancel of swap_id
+  | Accept of accept_param
+  | Add_collection of collection_info
+  | Admin of admin_entrypoints
+
+where 
+
+type collection_id = nat
+
+type swap_id = nat
+
+type fa2_token =
+  [@layout:comb]
+  { token_id : token_id
+  ; amount : nat
+  }
+
+type tokens = fa2_token list 
+
+type tokens_sent = (collection_id * token_id) set (*Set data structure enforces uniqueness of tokens sent to satisfy a collection*)
+
+type accept_param = 
+  [@layout:comb]
+  {  swap_id : swap_id 
+  ;  tokens : tokens_sent
+  } 
+
+type collection_info = token_id set (*Set data structure enforces uniqueness of tokens in a given set*)
+
+type swap_offer =
+  [@layout:comb]
+  { assets_offered : tokens
+  ; assets_requested : collection_id list (*Swap offerrer is expected to sort set_ids in ascending order*)
+  }
+
+type swap_offers = 
+  [@layout:comb]
+  {
+    swap_offer : swap_offer;
+    remaining_offers : nat;
+  }  
+```
+and the remaining types are the same as the base swap contract. When the `Collections` contract is extended in the `Offchain` version, a new `Offchain_accept` entrypoint is added as follows: 
+
+```ocaml
+type offchain_swap_entry_points =
+  | BaseSwap of swap_entrypoints
+  | Offchain_accept of permit_accept_param list
+``` 
+and the contrct is intended to be compiled with `swaps_offchain_main` as the main function.
+
+A few things to make note of about the entrypoints. 
+
+ 1. The `collection_id`s in `assets_requested` must be sorted in ascending order. For example, if the swap proposer would like to receive 4 tokens from collection 1 and 2 tokens from collection 4, they would submit the `assets_requested` list as `[1, 1, 1, 1, 4, 4]`. The operation may still succeed if they do not sort the list, but behavior of the swap will be unpredictable. 
+
+ 2. `tokens_sent` is a `set` of the tuple `(collection_id * token_id)`. For each entry in `tokens_sent` the accepter specifies the `token_id` they would like to send to satisfy the request for a `collection_id` listed in `assets_requested`. The `set` data structure enforces uniqueness so a consequence is that a user cannot use the same token multiple times to satisfy a collection. Another consequence of this is that if the swap proposer requests more tokens from a given collection than the size of that collection, the swap will be unsatisfiable. 
+
+3. As the type of `collection_info` is also a `set` of `token_id`s, a `collection` can only contain unique `token_id`s. 
+
+The new storage is as follows:
+
+```ocaml
+type swap_storage =
+  { next_swap_id : swap_id
+  ; next_collection_id : collection_id
+  ; swaps : (swap_id, swap_info) big_map
+  ; burn_address : address
+  ; collections : (collection_id, collection_info) big_map
+  ; fa2_address : address (*Every token this contract interacts with must be defined in this FA2*)
+  ; admin : admin_storage
+  }
+```
+A key point to make note of is that `fa2_address` is a storage variable and is used in contract logic. As such, `assets_offered` and `collection_info` for example do not contain any data about the FA2 contract of the tokens they reference, because it is assumed that every token referenced is defined in the FA2 at `fa2_address`. In this version of the contract then, it is not possible to swap FA2 tokens from multiple FA2 contracts.
