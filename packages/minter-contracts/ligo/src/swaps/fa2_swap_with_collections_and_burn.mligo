@@ -101,8 +101,8 @@ let transfer_tokens(from_, to_, num_transfers, fa2_address, on_invalid_fa2, toke
         } in
   Tezos.transaction [param] 0mutez transfer_ep              
 
-let transfer_tokens_sent(from_, to_, num_transfers, fa2_address, on_invalid_fa2, tokens : 
-                    address * address * nat * address * string * tokens_sent) 
+let transfer_tokens_sent(from_, to_, fa2_address, on_invalid_fa2, tokens : 
+                    address * address * address * string * tokens_sent) 
                     : operation =
   let unique_token_to_fa2_token(token_id : token_id) : fa2_token = 
     { token_id = token_id 
@@ -113,7 +113,8 @@ let transfer_tokens_sent(from_, to_, num_transfers, fa2_address, on_invalid_fa2,
                    tokens 
                    ([] : tokens)
                    in 
-  transfer_tokens(from_, to_, num_transfers, fa2_address, on_invalid_fa2, fa2_tokens)
+  let num_transfers = 1n in
+  transfer_tokens(from_, to_, 1n, fa2_address, on_invalid_fa2, fa2_tokens)
 
 
 [@inline]
@@ -138,10 +139,14 @@ let start_swap(swap_offers, storage : swap_offers * swap_storage) : return = beg
       ; swaps = Big_map.add swap_id swap storage.swaps
       } in
   
-    let op =
-          transfer_tokens(seller, Tezos.self_address, swap_offers.remaining_offers, storage.fa2_address, "SWAP_OFFERED_FA2_INVALID", swap_offers.swap_offer.assets_offered) in
-  
-    ([op], storage)
+    let op_list =
+          if List.length swap.swap_offers.swap_offer.assets_offered = 0n 
+          then ([] : operation list)
+          else 
+            let transfer_op = transfer_tokens(seller, Tezos.self_address, swap_offers.remaining_offers, storage.fa2_address, "SWAP_OFFERED_FA2_INVALID", swap_offers.swap_offer.assets_offered) in
+            [transfer_op]
+          in
+    (op_list, storage)
   end
 
 let cancel_swap(swap_id, storage : swap_id * swap_storage) : return = begin
@@ -150,10 +155,14 @@ let cancel_swap(swap_id, storage : swap_id * swap_storage) : return = begin
 
   let storage = { storage with swaps = Big_map.remove swap_id storage.swaps } in
 
-  let op =
-        transfer_tokens(Tezos.self_address, swap.seller, swap.swap_offers.remaining_offers, storage.fa2_address, unexpected_err "SWAP_OFFERED_FA2_INVALID", swap.swap_offers.swap_offer.assets_offered) in
-
-  ([op], storage)
+  let op_list =
+        if List.length swap.swap_offers.swap_offer.assets_offered = 0n 
+        then ([] : operation list)
+        else 
+          let transfer_op =  transfer_tokens(Tezos.self_address, swap.seller, swap.swap_offers.remaining_offers, storage.fa2_address, unexpected_err "SWAP_OFFERED_FA2_INVALID", swap.swap_offers.swap_offer.assets_offered) in
+          [transfer_op]
+        in
+  (op_list, storage)
   end
 
 let accept_swap_update_storage(swap_id, swap, accepter, storage : swap_id * swap_info * address * swap_storage) : swap_storage = 
@@ -197,13 +206,25 @@ let accept_swap_update_ops_list(swap, tokens, accepter, bid_offchain, ops, stora
   
   assert_msg(List.length remaining_ids = 0n, "TOKENS_SENT_INVALID");
 
-  (*Transferring the offered tokens*)
-  let transfer_offered_op =
-        transfer_tokens(Tezos.self_address, accepter, 1n, storage.fa2_address, unexpected_err("SWAP_OFFERED_FA2_INVALID"), swap.swap_offers.swap_offer.assets_offered) in
-  
-  (*Transferring the requested tokens*)
-  let transfer_requested_op = transfer_tokens_sent(accepter, storage.burn_address, 1n, storage.fa2_address, "SWAP_REQUESTED_FA2_INVALID", tokens) in 
-  [transfer_offered_op; transfer_requested_op;]
+  let op_list = ([] : operation list) in 
+  let op_list = 
+    if List.length swap.swap_offers.swap_offer.assets_offered = 0n 
+    then op_list 
+    else  
+         (*Transferring the offered tokens*)
+         let transfer_offered_op =
+               transfer_tokens(Tezos.self_address, accepter, 1n, storage.fa2_address, unexpected_err("SWAP_OFFERED_FA2_INVALID"), swap.swap_offers.swap_offer.assets_offered) in
+         transfer_offered_op :: op_list 
+    in 
+  let op_list = 
+    if List.length swap.swap_offers.swap_offer.assets_requested = 0n 
+    then op_list 
+    else 
+         (*Transferring the requested tokens*)
+         let transfer_requested_op = transfer_tokens_sent(accepter, storage.burn_address, storage.fa2_address, "SWAP_REQUESTED_FA2_INVALID", tokens) in 
+         transfer_requested_op :: op_list 
+    in 
+  op_list
  end
 
 let accept_swap(accept_param, accepter, storage : accept_param * address * swap_storage) : return = 

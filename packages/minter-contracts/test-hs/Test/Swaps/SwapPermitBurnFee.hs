@@ -28,7 +28,7 @@ import qualified Lorentz.Contracts.Swaps.SwapPermitBurnFee as SPBF
 import Lorentz.Value
 import Lorentz.Test (contractConsumer)
 
-import Test.Swaps.Basic
+import qualified Test.Swaps.Basic as TestBasic
 
 import Test.Swaps.Util
 import Test.Allowlisted
@@ -91,7 +91,7 @@ hprop_Offchain_accept_not_admin_submitted_fails =
 hprop_Consecutive_offchain_accept_equals_iterative_accept :: Property
 hprop_Consecutive_offchain_accept_equals_iterative_accept =
     property $ do
-      TestData{numOffers,token1Offer, token2Offer, token1Request, token2Request} <- forAll genTestData
+      TestBasic.TestData{numOffers,token1Offer, token2Offer, token1Request, token2Request} <- forAll TestBasic.genTestData
       clevelandProp $ do
         setup <- doFA2Setup @("addresses" :# 50) @("tokens" :# 2)
         let admin1 ::< admin2 ::< remainingAddresses = sAddresses setup
@@ -167,7 +167,7 @@ hprop_Accepting_with_zero_balance_fails =
 hprop_Start_callable_by_admin_only :: Property
 hprop_Start_callable_by_admin_only = 
   property $ do
-   TestData{numOffers, token1Offer, token2Offer, token1Request, token2Request} <- forAll genTestData 
+   TestBasic.TestData{numOffers, token1Offer, token2Offer, token1Request, token2Request} <- forAll TestBasic.genTestData 
    clevelandProp $ do
      setup <- doFA2Setup
      let admin ::< nonAdmin ::< SNil = sAddresses setup
@@ -183,7 +183,7 @@ hprop_Start_callable_by_admin_only =
 hprop_Correct_final_balances_on_acceptance :: Property
 hprop_Correct_final_balances_on_acceptance = 
   property $ do
-   TestData{numOffers, token1Offer, token2Offer, token1Request, token2Request} <- forAll genTestData 
+   TestBasic.TestData{numOffers, token1Offer, token2Offer, token1Request, token2Request} <- forAll TestBasic.genTestData 
    clevelandProp  $ do
       setup <- doFA2Setup
       let admin ::< alice ::< SNil = sAddresses setup
@@ -214,7 +214,7 @@ hprop_Correct_final_balances_on_acceptance =
 hprop_Correct_final_balances_on_cancel :: Property
 hprop_Correct_final_balances_on_cancel = 
   property $ do
-   TestData{numOffers, token1Offer, token2Offer, token1Request, token2Request} <- forAll genTestData 
+   TestBasic.TestData{numOffers, token1Offer, token2Offer, token1Request, token2Request} <- forAll TestBasic.genTestData 
    clevelandProp  $ do
       setup <- doFA2Setup
       let admin ::< alice ::< SNil = sAddresses setup
@@ -245,7 +245,7 @@ hprop_Correct_final_balances_on_cancel =
 hprop_Correct_num_tokens_transferred_to_contract_on_start :: Property
 hprop_Correct_num_tokens_transferred_to_contract_on_start = 
   property $ do
-   TestData{numOffers, token1Offer, token2Offer} <- forAll genTestData 
+   TestBasic.TestData{numOffers, token1Offer, token2Offer} <- forAll TestBasic.genTestData 
    clevelandProp  $ do
      setup <- doFA2Setup
      let admin ::< SNil = sAddresses setup
@@ -269,7 +269,7 @@ hprop_Correct_num_tokens_transferred_to_contract_on_start =
 hprop_Contract_balance_goes_to_zero_when_sale_concludes :: Property
 hprop_Contract_balance_goes_to_zero_when_sale_concludes = 
   property $ do
-   TestData{numOffers, token1Offer, token2Offer, token1Request, token2Request} <- forAll genTestData 
+   TestBasic.TestData{numOffers, token1Offer, token2Offer, token1Request, token2Request} <- forAll TestBasic.genTestData 
    clevelandProp  $ do
      setup <- doFA2Setup
      let admin ::< alice ::< SNil = sAddresses setup
@@ -292,6 +292,16 @@ hprop_Contract_balance_goes_to_zero_when_sale_concludes =
            withSender admin $
               replicateM_ (fromIntegral numOffers) $ do
                 offchainAccept alice swap 
+
+test_SwapPermitBurnFeeIntegrational :: TestTree
+test_SwapPermitBurnFeeIntegrational = testGroup "Basic swap functionality"
+  [ statusChecks
+  , swapIdChecks
+  , authorizationChecks
+  , invalidFA2sChecks
+  , complexCases
+  ]
+
 
 statusChecks :: TestTree
 statusChecks = testGroup "Statuses"
@@ -355,7 +365,7 @@ swapIdChecks = testGroup "SwapIds"
         , (alice, tokenId2) -:  0
         , (alice, tokenId3) -: -1
         ] $ do
-          withSender alice $ do
+          withSender admin $ do
             (\swapId -> offchainAcceptSwapId' swapId alice swap) (getSwapId initSwapId)
             (\swapId -> offchainAcceptSwapId' swapId alice swap) (getSwapId $ incrementSwapId $ incrementSwapId initSwapId)
 
@@ -378,7 +388,7 @@ swapIdChecks = testGroup "SwapIds"
         (\swapId -> offchainAcceptSwapId' swapId alice swap) (getSwapId $ incrementSwapId initSwapId)
           & expectError swap errSwapNotExist
 
-        call swap (Call @"Cancel") initSwapId
+        call swap (Call @"Cancel") (incrementSwapId initSwapId)
           & expectError swap errSwapNotExist
 
         (\swapId -> offchainAcceptSwapId' swapId alice swap) (getSwapId initSwapId)

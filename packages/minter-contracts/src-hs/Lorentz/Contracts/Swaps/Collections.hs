@@ -163,9 +163,6 @@ errSwapCancelled :: MText
 errSwapCancelled = [mt|SWAP_NOT_EXIST|]
 -- ↑ The contract does not actually distinguish these cases
 
-errNotSwapSeller :: MText
-errNotSwapSeller = [mt|NOT_SWAP_SELLER|]
-
 errSwapOfferedFA2Invalid :: MText
 errSwapOfferedFA2Invalid = [mt|SWAP_OFFERED_FA2_INVALID|]
 

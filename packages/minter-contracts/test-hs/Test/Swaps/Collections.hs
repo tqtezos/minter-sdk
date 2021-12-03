@@ -30,8 +30,6 @@ import Lorentz.Test (contractConsumer)
 
 import Lorentz.Contracts.Spec.FA2Interface (TokenId(..))
 
-import Test.Swaps.Basic
-
 import Test.Swaps.Util
 import Test.Util
 import Test.NonPausableSimpleAdmin
@@ -314,44 +312,54 @@ hprop_Accepting_with_zero_balance_fails =
 --           withSender admin $
 --              replicateM_ (fromIntegral numOffers) $ do
 --                offchainAccept alice swap 
---
---statusChecks :: TestTree
---statusChecks = testGroup "Statuses"
---  [ nettestScenarioCaps "Operations with accepted swap fail" $ do
---      (swap, admin) <- originateOffchainSwapBurnFeeWithAdmin
---      setup <- doFA2Setup
---      let alice ::< SNil = sAddresses setup
---      let !SNil = sTokens setup
---      withSender admin $ do
---        call swap (Call @"Start") $ mkSingleOffer (SwapOffer [] ([], 0))
---        offchainAccept' alice swap
---      
---      withSender admin $
---        offchainAccept' alice swap
---        & expectError swap errSwapFinished
---      
---      withSender admin $
---        offchainAccept' alice swap
---        & expectError swap errSwapFinished
---
---  , nettestScenarioCaps "Operations with cancelled swap fail" $ do
---      (swap, admin) <- originateOffchainSwapBurnFeeWithAdmin
---      setup <- doFA2Setup
---      let alice ::< SNil = sAddresses setup
---      let !SNil = sTokens setup
---      withSender admin $
---        call swap (Call @"Start") $ mkSingleOffer (SwapOffer [] ([], 0))
---      withSender admin $
---        call swap (Call @"Cancel") Basic.initSwapId
---
---      withSender admin $
---        offchainAccept' alice swap
---        & expectError swap errSwapCancelled
---      
---      withSender admin $
---        call swap (Call @"Cancel") Basic.initSwapId
---          & expectError swap errSwapCancelled
---  ]
+
+test_CollectionsIntegrational :: TestTree
+test_CollectionsIntegrational = testGroup "Basic colections functionality"
+  [ statusChecks
+--  , swapIdChecks
+  , authorizationChecks
+  , invalidFA2sChecks
+--  , complexCases
+  ]
+
+statusChecks :: TestTree
+statusChecks = testGroup "Statuses"
+  [ nettestScenarioCaps "Operations with accepted swap fail" $ do
+      setup <- doFA2Setup
+      let admin ::< alice ::< SNil = sAddresses setup
+      let !SNil = sTokens setup
+      fa2 <- originateFA2 "fa2" setup []
+      let fa2Address = toAddress fa2
+      swap <- originateOffchainCollections admin fa2Address
+      withSender admin $ do
+        call swap (Call @"Start") $ mkSingleOffer $ SwapOffer [] []
+        let tokensSent = Set.empty 
+        offchainAccept' tokensSent alice swap
+      
+        offchainAccept' tokensSent alice swap
+          & expectError swap errSwapFinished
+      
+        offchainAccept' tokensSent alice swap
+          & expectError swap errSwapFinished
+
+  , nettestScenarioCaps "Operations with cancelled swap fail" $ do
+      setup <- doFA2Setup
+      let admin ::< alice ::< SNil = sAddresses setup
+      let !SNil = sTokens setup
+      fa2 <- originateFA2 "fa2" setup []
+      let fa2Address = toAddress fa2
+      swap <- originateOffchainCollections admin fa2Address
+      withSender admin $ do  
+        call swap (Call @"Start") $ mkSingleOffer $ SwapOffer [] []
+        let tokensSent = Set.empty
+        call swap (Call @"Cancel") Basic.initSwapId
+
+        offchainAccept' tokensSent alice swap
+          & expectError swap errSwapCancelled
+
+        call swap (Call @"Cancel") Basic.initSwapId
+          & expectError swap errSwapCancelled
+  ]
 --
 --swapIdChecks :: TestTree
 --swapIdChecks = testGroup "SwapIds"
@@ -403,65 +411,68 @@ hprop_Accepting_with_zero_balance_fails =
 --        (\swapId -> offchainAcceptSwapId' swapId alice swap) (getSwapId Basic.initSwapId)
 --  ]
 --
---
---authorizationChecks :: TestTree
---authorizationChecks = testGroup "Authorization checks"
---  [ nettestScenarioCaps "Swap can be cancelled by seller only" $ do
---      setup <- doFA2Setup
---      let admin ::< alice ::< SNil = sAddresses setup
---      let !SNil = sTokens setup
---      swap <- originateOffchainCollections admin
---
---      withSender admin $
---        call swap (Call @"Start") $ mkSingleOffer (SwapOffer [] ([], 0))
---
---      call swap (Call @"Cancel") Basic.initSwapId
---        & expectError swap errNotSwapSeller
---
---      withSender alice $
---        call swap (Call @"Cancel") Basic.initSwapId
---        & expectError swap errNotSwapSeller
---  ]
---
---invalidFA2sChecks :: TestTree
---invalidFA2sChecks = testGroup "Invalid FA2s"
---  [ nettestScenarioCaps "Swap can be cancelled by seller only" $ do
---      setup <- doFA2Setup
---      let admin ::< alice ::< SNil = sAddresses setup
---      let tokenId1 ::< SNil = sTokens setup
---
---      fakeFa2 <-
---        TAddress . unTAddress <$>
---        originateSimple "fake-fa2" ([] :: [Integer]) contractConsumer
---      let nonExistingFa2 = TAddress $ unsafeParseAddress "tz1b7p3PPBd3vxmMHZkvtC61C7ttYE6g683F"
---      let pseudoFa2s = [("fake FA2", fakeFa2), ("non existing FA2", nonExistingFa2)]
---
---      for_ pseudoFa2s $ \(desc, fa2) -> do
---        comment $ "Trying " <> desc
---        swap <- originateOffchainCollections admin
---
---        withSender admin $
---          call swap (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
---
---        comment "Checking offered FA2"
---        withSender admin $
---          call swap (Call @"Start") (mkSingleOffer SwapOffer
---            { assetsOffered = Basic.tokens  $ mkFA2Assets fa2 [(tokenId1, 1)]
---            , assetsRequested = []
---            })
---            & expectError swap errSwapOfferedFA2Invalid
---
---        comment "Checking requested FA2"
---        withSender admin $ do
---          call swap (Call @"Start") $ mkSingleOffer SwapOffer
---            { assetsOffered = []
---            , assetsRequested = [mkFA2Assets fa2 [(tokenId1, 1)]]
---            }
---
---          withSender admin
---            (offchainAccept' alice swap)
---            & expectError swap errSwapRequestedFA2Invalid
---  ]
+
+authorizationChecks :: TestTree
+authorizationChecks = testGroup "Authorization checks"
+  [ nettestScenarioCaps "Swap can be cancelled by seller only" $ do
+      setup <- doFA2Setup
+      let admin ::< alice ::< SNil = sAddresses setup
+      let !SNil = sTokens setup
+      fa2 <- originateFA2 "fa2" setup []
+      let fa2Address = toAddress fa2
+      swap <- originateOffchainCollections admin fa2Address
+
+      withSender admin $
+        call swap (Call @"Start") $ mkSingleOffer $ SwapOffer [] []
+
+      call swap (Call @"Cancel") Basic.initSwapId
+        & expectError swap errNotAdmin
+
+      withSender alice $
+        call swap (Call @"Cancel") Basic.initSwapId
+        & expectError swap errNotAdmin
+  ]
+
+invalidFA2sChecks :: TestTree
+invalidFA2sChecks = testGroup "Invalid FA2s"
+  [ nettestScenarioCaps "Swap can be cancelled by seller only" $ do
+      setup <- doFA2Setup
+      let admin ::< alice ::< SNil = sAddresses setup
+      let tokenId1 ::< SNil = sTokens setup
+
+      fakeFa2 <-
+        TAddress . unTAddress <$>
+        originateSimple "fake-fa2" ([] :: [Integer]) contractConsumer
+      let nonExistingFa2 = TAddress $ unsafeParseAddress "tz1b7p3PPBd3vxmMHZkvtC61C7ttYE6g683F"
+      let pseudoFa2s = [("fake FA2", fakeFa2), ("non existing FA2", nonExistingFa2)]
+
+      for_ pseudoFa2s $ \(desc, fa2) -> do
+        comment $ "Trying " <> desc
+        let fa2Address = toAddress fa2
+
+        swap <- originateOffchainCollections admin fa2Address
+        withSender admin $
+          addCollection' (Set.fromList [tokenId1]) swap
+
+        comment "Checking offered FA2"
+        withSender admin $
+          call swap (Call @"Start") (mkSingleOffer SwapOffer
+            { assetsOffered = Basic.tokens $ mkFA2Assets fa2 [(tokenId1, 1)]
+            , assetsRequested = []
+            })
+            & expectError swap errSwapOfferedFA2Invalid
+
+        comment "Checking requested FA2"
+        withSender admin $ do
+          call swap (Call @"Start") $ mkSingleOffer SwapOffer
+            { assetsOffered = []
+            , assetsRequested = [initCollectionId]
+            }
+        let tokensSent = Set.fromList [(initCollectionId , tokenId1)]
+        withSender admin
+          (offchainAccept' tokensSent alice swap)
+          & expectError swap errSwapRequestedFA2Invalid
+  ]
 --
 --complexCases :: TestTree
 --complexCases = testGroup "Complex cases"
@@ -639,6 +650,14 @@ mkPermitToSign acceptParam contract = do
   where acceptParamHash = blake2b $ packValue' $ toVal acceptParam
         contractAddress = toAddress contract
 
+mkPermitToSign' :: (HasCallStack, MonadNettest caps base m) => AcceptParam -> TAddress OffchainCollectionsEntrypoints -> m ByteString
+mkPermitToSign' acceptParam contract = do 
+  marketplaceChainId <- getChainId
+  let unsigned = packValue' $ toVal ((marketplaceChainId, contractAddress), (0 :: Natural, acceptParamHash))
+  pure unsigned
+  where acceptParamHash = blake2b $ packValue' $ toVal acceptParam
+        contractAddress = toAddress contract
+
 offchainAcceptSwapId :: (HasCallStack, MonadEmulated caps base m) => AcceptParam -> Address -> TAddress OffchainCollectionsEntrypoints -> m ()
 offchainAcceptSwapId acceptParam buyer contract = do
   buyerPK <- getPublicKey buyer
@@ -656,42 +675,35 @@ offchainAcceptSwapId acceptParam buyer contract = do
       }
     ]
 
+offchainAcceptSwapId' :: (HasCallStack, MonadNettest caps base m) => AcceptParam -> Address -> TAddress OffchainCollectionsEntrypoints -> m ()
+offchainAcceptSwapId' acceptParam buyer contract = do
+  buyerPK <- getPublicKey buyer
+  unsigned <- mkPermitToSign' acceptParam contract
+  signature <- signBytes unsigned buyer 
+  call contract (Call @"Offchain_accept") 
+    [OffchainAcceptParam
+      {
+        acceptParam = acceptParam
+      , permit = Permit
+          {
+            signerKey = buyerPK
+          , signature = signature
+          } 
+      }
+    ]
 
 offchainAccept :: (HasCallStack, MonadEmulated caps base m) => Set (CollectionId, TokenId) -> Address -> TAddress OffchainCollectionsEntrypoints -> m ()
 offchainAccept tokensSent = offchainAcceptSwapId AcceptParam {
     swapId = Basic.initSwapId, 
     tokensSent = tokensSent
   }
---
---mkPermitToSign' :: (HasCallStack, MonadNettest caps base m) => Natural -> TAddress PermitSwapBurnFeeEntrypoints -> m ByteString
---mkPermitToSign' swapId contract = do 
---  marketplaceChainId <- getChainId
---  let unsigned = packValue' $ toVal ((marketplaceChainId, contractAddress), (0 :: Natural, swapIdHash))
---  pure unsigned
---  where swapIdHash = blake2b $ packValue' $ toVal swapId 
---        contractAddress = toAddress contract
---
---offchainAcceptSwapId' :: (HasCallStack, MonadNettest caps base m) => Natural -> Address -> TAddress PermitSwapBurnFeeEntrypoints -> m ()
---offchainAcceptSwapId' swapId buyer contract = do
---  buyerPK <- getPublicKey buyer
---  unsigned <- mkPermitToSign' swapId contract
---  signature <- signBytes unsigned buyer 
---  call contract (Call @"Offchain_accept") 
---    [OffchainAcceptParam
---      {
---        swapId = swapId
---      , permit = Permit
---          {
---            signerKey = buyerPK
---          , signature = signature
---          } 
---      }
---    ]
---
---offchainAccept' :: (HasCallStack, MonadNettest caps base m) => Address -> TAddress PermitSwapBurnFeeEntrypoints -> m ()
---offchainAccept' = offchainAcceptSwapId' 1
---
---
+
+offchainAccept' :: (HasCallStack, MonadNettest caps base m) => Set (CollectionId, TokenId) -> Address -> TAddress OffchainCollectionsEntrypoints -> m ()
+offchainAccept' tokensSent = offchainAcceptSwapId' AcceptParam {
+    swapId = Basic.initSwapId, 
+    tokensSent = tokensSent
+  }
+
 offchainAcceptForged :: (HasCallStack, MonadEmulated caps base m) => AcceptParam -> Address -> TAddress OffchainCollectionsEntrypoints -> m ByteString
 offchainAcceptForged acceptParam buyer contract = do
   (unsigned, forgedPK) <- mkPermitToForge acceptParam contract

@@ -411,6 +411,8 @@ A few things to make note of about the entrypoints.
 
 3. As the type of `collection_info` is also a `set` of `token_id`s, a `collection` can only contain unique `token_id`s. 
 
+4. The `Cancel` entrypoint can only be called by an admin, and fails with `NOT_AN_ADMIN` if it is not. 
+
 The new storage is as follows:
 
 ```ocaml
