@@ -22,8 +22,7 @@ let offchain_accept(p, storage, ops : permit_accept_param * swap_storage * opera
     check_permit (p.permit, 0n, param_hash);
     let swap_accepter = address_from_key (p.permit.signerKey) in
     let swap = get_swap(p.accept_param.swap_id, storage) in
-    let bid_offchain = true in 
-    let ops = accept_swap_update_ops_list(swap, p.accept_param.tokens, swap_accepter, bid_offchain, ops, storage) in
+    let ops = accept_swap_update_ops_list(swap, p.accept_param.tokens, swap_accepter, ops, storage) in
     let new_storage = accept_swap_update_storage(p.accept_param.swap_id, swap, swap_accepter, storage) in
     (ops, new_storage)
   end

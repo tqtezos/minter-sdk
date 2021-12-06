@@ -184,7 +184,7 @@ let accept_swap_update_storage(swap_id, swap, accepter, storage : swap_id * swap
     in 
   storage
 
-let accept_swap_update_ops_list(swap, tokens, accepter, bid_offchain, ops, storage : swap_info * tokens_sent * address * bool * operation list * swap_storage) : operation list = begin
+let accept_swap_update_ops_list(swap, tokens, accepter, ops, storage : swap_info * tokens_sent * address * operation list * swap_storage) : operation list = begin
 
   (*Tests that tokens provided are in the required collections*)
   let remaining_ids : (collection_id list)= 
@@ -231,8 +231,7 @@ let accept_swap(accept_param, accepter, storage : accept_param * address * swap_
     let {swap_id = swap_id ;
          tokens = tokens} = accept_param in 
     let swap = get_swap(swap_id, storage) in
-    let bid_offchain = false in 
-    let ops = accept_swap_update_ops_list(swap, tokens, accepter, bid_offchain, ([] : operation list), storage) in
+    let ops = accept_swap_update_ops_list(swap, tokens, accepter, ([] : operation list), storage) in
     let storage = accept_swap_update_storage(swap_id, swap, accepter, storage) in
     (ops, storage)
 
