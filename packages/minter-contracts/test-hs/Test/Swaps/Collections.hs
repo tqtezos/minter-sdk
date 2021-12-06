@@ -15,7 +15,6 @@ import qualified Lorentz.Contracts.Spec.FA2Interface as FA2I
 import qualified Indigo.Contracts.FA2Sample as FA2
 import Michelson.Interpret.Pack 
 
-import GHC.Exts (fromList)
 import GHC.Integer (negateInteger)
 
 import Test.Tasty (TestTree, testGroup)
@@ -73,10 +72,6 @@ hprop_Sending_fake_permit_to_offchain_accept_fails =
       fa2 <- originateFA2 "fa2" setup []
       let fa2Address = toAddress fa2
       swap <- originateOffchainCollections admin fa2Address
-      swapId <- (\(Basic.SwapId n) -> n) . 
-                nextSwapId . 
-                fromVal @CollectionsStorage <$> 
-                getStorage' swap 
       withSender admin $
         addCollection (Set.fromList tokensList) swap
       withSender alice $ 
@@ -217,61 +212,76 @@ hprop_Start_callable_by_admin_only =
          , assetsRequested = []
          }) & expectError swap errNotAdmin)
 
---hprop_Correct_final_balances_on_acceptance :: Property
---hprop_Correct_final_balances_on_acceptance = 
---  property $ do
---   TestData{numOffers, token1Offer, token2Offer, token1Request, token2Request} <- forAll genTestData 
---   clevelandProp  $ do
---      setup <- doFA2Setup
---      let admin ::< alice ::< SNil = sAddresses setup
---      let tokenId1 ::< tokenId2 ::< SNil = sTokens setup
---      swap <- originateOffchainCollections admin
---      fa2 <- originateFA2 "fa2" setup [swap]
---      
---      assertingBurnAddressUnchanged swap $ do 
---        assertingBalanceDeltas fa2
---          [ (admin, tokenId1) -: negateInteger (fromIntegral $ token1Offer * numOffers)
---          , (admin, tokenId2) -: negateInteger (fromIntegral $ token2Offer * numOffers)
---          , (nullAddress, tokenId1) -: (fromIntegral $ token1Request)
---          , (nullAddress, tokenId2) -: (fromIntegral $ token2Request)
---          , (alice, tokenId1) -: fromIntegral token1Offer - fromIntegral token1Request
---          , (alice, tokenId2) -: fromIntegral token2Offer - fromIntegral token2Request
---          ] $ do
---            withSender admin $
---              call swap (Call @"Start") $ mkNOffers numOffers SwapOffer
---                { assetsOffered = Basic.tokens  $ mkFA2Assets fa2 [(tokenId1, token1Offer), (tokenId2, token2Offer)]
---                , assetsRequested = [mkFA2Assets fa2 [(tokenId1, token1Request), (tokenId2, token2Request)]]
---                }
---            withSender admin $
---              offchainAccept alice swap
---  
---hprop_Correct_final_balances_on_cancel :: Property
---hprop_Correct_final_balances_on_cancel = 
---  property $ do
---   TestData{numOffers, token1Offer, token2Offer, token1Request, token2Request} <- forAll genTestData 
---   clevelandProp  $ do
---      setup <- doFA2Setup
---      let admin ::< alice ::< SNil = sAddresses setup
---      let tokenId1 ::< tokenId2 ::< SNil = sTokens setup
---      swap <- originateOffchainCollections admin
---      fa2 <- originateFA2 "fa2" setup [swap]
---
---      assertingBurnAddressUnchanged swap $ do 
---        assertingBalanceDeltas fa2
---          [ (admin, tokenId1) -: 0
---          , (admin, tokenId2) -: 0
---          , (alice, tokenId1) -: 0
---          , (alice, tokenId2) -: 0
---          , (nullAddress, tokenId1) -: 0
---          , (nullAddress, tokenId2) -: 0
---          ] $ do
---            withSender admin $
---              call swap (Call @"Start") $ mkNOffers numOffers SwapOffer
---                { assetsOffered = Basic.tokens  $ mkFA2Assets fa2 [(tokenId1, token1Offer), (tokenId2, token2Offer)]
---                , assetsRequested = [mkFA2Assets fa2 [(tokenId1, token1Request), (tokenId2, token2Request)]]
---                }
---            withSender admin $
---              call swap (Call @"Cancel") Basic.initSwapId
+hprop_Correct_final_balances_on_acceptance :: Property
+hprop_Correct_final_balances_on_acceptance = 
+  property $ do
+   TestData{numOffers, token1Offer, token2Offer} <- forAll genTestData 
+   clevelandProp  $ do
+      setup <- doFA2Setup
+      let admin ::< alice ::< SNil = sAddresses setup
+      let tokenId1 ::< tokenId2 ::< tokenId3 ::< tokenId4 ::< SNil = sTokens setup
+      fa2 <- originateFA2 "fa2" setup []
+      let fa2Address = toAddress fa2
+      swap <- originateOffchainCollections admin fa2Address
+      withSender alice $ 
+       addOperatorOnTokens' [tokenId1, tokenId2] (toAddress swap) alice fa2
+      withSender admin $ do
+       addOperatorOnTokens' [tokenId1, tokenId2] (toAddress swap) admin fa2
+       addCollection' (Set.fromList [tokenId1, tokenId2]) swap
+       addCollection' (Set.fromList [tokenId3, tokenId4]) swap
+    
+      assertingBurnAddressUnchanged swap $ do 
+        assertingBalanceDeltas fa2
+          [ (admin, tokenId1) -: negateInteger (fromIntegral $ token1Offer * numOffers)
+          , (admin, tokenId2) -: negateInteger (fromIntegral $ token2Offer * numOffers)
+          , (nullAddress, tokenId1) -: 1
+          , (nullAddress, tokenId2) -: 1
+          , (nullAddress, tokenId3) -: 1
+          , (nullAddress, tokenId4) -: 1
+          , (alice, tokenId1) -: fromIntegral (token1Offer - 1)
+          , (alice, tokenId2) -: fromIntegral (token2Offer - 1)
+          ] $ do
+            withSender admin $
+              call swap (Call @"Start") $ mkNOffers numOffers SwapOffer
+                { assetsOffered = Basic.tokens  $ mkFA2Assets fa2 [(tokenId1, token1Offer), (tokenId2, token2Offer)]
+                , assetsRequested = [initCollectionId, initCollectionId, incrementCollectionId initCollectionId, incrementCollectionId initCollectionId]
+                }
+            let tokensSent = Set.fromList [(initCollectionId, tokenId1), (initCollectionId, tokenId2), 
+                                           (incrementCollectionId initCollectionId, tokenId3), 
+                                           (incrementCollectionId initCollectionId, tokenId4)]
+            withSender admin $
+              offchainAccept tokensSent alice swap
+  
+hprop_Correct_final_balances_on_cancel :: Property
+hprop_Correct_final_balances_on_cancel = 
+  property $ do
+   TestData{numOffers, token1Offer, token2Offer} <- forAll genTestData 
+   clevelandProp  $ do
+      setup <- doFA2Setup
+      let admin ::< alice ::< SNil = sAddresses setup
+      let tokenId1 ::< tokenId2 ::< SNil = sTokens setup
+      fa2 <- originateFA2 "fa2" setup []
+      let fa2Address = toAddress fa2
+      swap <- originateOffchainCollections admin fa2Address
+      withSender admin $ 
+       addOperatorOnTokens' [tokenId1, tokenId2] (toAddress swap) admin fa2
+
+      assertingBurnAddressUnchanged swap $ do 
+        assertingBalanceDeltas fa2
+          [ (admin, tokenId1) -: 0
+          , (admin, tokenId2) -: 0
+          , (alice, tokenId1) -: 0
+          , (alice, tokenId2) -: 0
+          , (nullAddress, tokenId1) -: 0
+          , (nullAddress, tokenId2) -: 0
+          ] $ do
+            withSender admin $
+              call swap (Call @"Start") $ mkNOffers numOffers SwapOffer
+                { assetsOffered = Basic.tokens  $ mkFA2Assets fa2 [(tokenId1, token1Offer), (tokenId2, token2Offer)]
+                , assetsRequested = []
+                }
+            withSender admin $
+              call swap (Call @"Cancel") Basic.initSwapId
 --  
 hprop_Correct_num_tokens_transferred_to_contract_on_start :: Property
 hprop_Correct_num_tokens_transferred_to_contract_on_start = 
