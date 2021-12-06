@@ -191,8 +191,8 @@
                         CAR ;
                         SWAP ;
                         GET ;
-                        IF_NONE { PUSH string "INVALID_SET_ID" ; FAILWITH } {} ;
-                        PUSH string "INVALID_TOKEN" ;
+                        IF_NONE { PUSH string "INVALID_COLLECTION_ID" ; FAILWITH } {} ;
+                        PUSH string "TOKENS_SENT_INVALID" ;
                         SWAP ;
                         DIG 3 ;
                         MEM ;

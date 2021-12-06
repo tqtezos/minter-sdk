@@ -194,10 +194,10 @@ let accept_swap_update_ops_list(swap, tokens, accepter, bid_offchain, ops, stora
                   | [] -> (failwith ("TOKENS_SENT_INVALID") : collection_id list)
                   | collection_id :: remaining_ids -> 
                       let collection : collection_info = (match Big_map.find_opt collection_id storage.collections with 
-                                  | None -> (failwith "INVALID_SET_ID" : collection_info)
+                                  | None -> (failwith "INVALID_COLLECTION_ID" : collection_info)
                                   | Some collection -> collection 
                                 ) in 
-                      let u : unit = assert_msg(Set.mem token collection, "INVALID_TOKEN") in 
+                      let u : unit = assert_msg(Set.mem token collection, "TOKENS_SENT_INVALID") in 
                       remaining_ids  
             )
             tokens
