@@ -12,7 +12,14 @@ helper functions
 (owner, operator, token_id) -> unit
 To be part of FA2 storage to manage permitted operators
 *)
+
 type operator_storage = ((address * (address * token_id)), unit) big_map
+
+#if CONTRACT_OPERATOR
+
+type contract_operator_storage = address set
+
+#endif
 
 (** 
   Updates operator storage using an `update_operator` command.
@@ -54,13 +61,20 @@ let fa2_update_operators (updates, storage
 (** 
   owner * operator * token_id * ops_storage -> unit
 *)
+
+#if !CONTRACT_OPERATOR
 type operator_validator = (address * address * token_id * operator_storage)-> unit
+#else 
+type operator_validator = (address * address * token_id * operator_storage * contract_operator_storage)-> unit
+#endif
 
 (**
 Create an operator validator function based on provided operator policy.
 @param tx_policy operator_transfer_policy defining the constrains on who can transfer.
 @return (owner, operator, token_id, ops_storage) -> unit
  *)
+
+#if !CONTRACT_OPERATOR
 let make_operator_validator (tx_policy : operator_transfer_policy) : operator_validator =
   let can_owner_tx, can_operator_tx = match tx_policy with
   | No_transfer -> (failwith fa2_tx_denied : bool * bool)
@@ -105,4 +119,25 @@ let validate_operator (tx_policy, txs, ops_storage
     ) tx.txs
   ) txs
 
+#endif
+
+
+(**
+Custom implementation of the operator validation function in which `Contract_operator`
+can perform transfer of any token in the contract.
+The default implicit `operator_transfer_policy` value is `Owner_or_operator_transfer`
+ *)
+#if CONTRACT_OPERATOR
+let contract_operator_validator : operator_validator =
+  (fun (owner, operator, token_id, ops_storage, contract_ops_storage
+      : address * address * token_id * operator_storage * contract_operator_storage) ->
+    if owner = operator
+    then unit (* transfer by the owner *)
+    else if Big_map.mem (owner, (operator, token_id)) ops_storage
+    then unit (* the operator is permitted for the token_id *)
+    else if Set.mem operator contract_ops_storage
+    then unit (* the operator is in fact a contract operator *)
+    else failwith fa2_not_operator (* the operator is not permitted for the token_id *)
+  )
+#endif
 #endif
