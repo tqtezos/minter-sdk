@@ -117,9 +117,8 @@
              IF_LEFT
                { IF_LEFT
                    { DIG 3 ;
-                     DROP ;
-                     DIG 3 ;
-                     DROP ;
+                     DIG 4 ;
+                     DROP 2 ;
                      SWAP ;
                      DUP ;
                      DUG 2 ;
@@ -139,15 +138,25 @@
                            MEM ;
                            NOT ;
                            IF { DROP ; DUP 7 ; FAILWITH }
-                              { DUP 3 ; SWAP ; DUP ; DUG 2 ; PAIR ; DUP 8 ; SWAP ; EXEC ; SWAP ; PAIR } } ;
+                              { DUP 3 ;
+                                SWAP ;
+                                DUP ;
+                                DUG 2 ;
+                                CDR ;
+                                DUP 3 ;
+                                CAR ;
+                                PAIR ;
+                                PAIR ;
+                                DUP 8 ;
+                                SWAP ;
+                                EXEC ;
+                                SWAP ;
+                                PAIR } } ;
                      DIG 2 ;
-                     DROP ;
-                     DIG 2 ;
-                     DROP ;
-                     DIG 4 ;
-                     DROP ;
-                     DIG 4 ;
-                     DROP ;
+                     DIG 3 ;
+                     DIG 6 ;
+                     DIG 7 ;
+                     DROP 4 ;
                      SWAP ;
                      CDR ;
                      PUSH mutez 0 ;
@@ -194,8 +203,7 @@
                                    CDR ;
                                    CAR ;
                                    DUP 3 ;
-                                   CDR ;
-                                   CAR ;
+                                   GET 3 ;
                                    MEM ;
                                    NOT ;
                                    IF { DROP 2 ; DUP 8 ; FAILWITH }
@@ -203,8 +211,7 @@
                                         CAR ;
                                         CDR ;
                                         DUP 3 ;
-                                        CDR ;
-                                        CAR ;
+                                        GET 3 ;
                                         PAIR ;
                                         SENDER ;
                                         DUP 5 ;
@@ -218,14 +225,12 @@
                                         SWAP ;
                                         DUP ;
                                         DUG 2 ;
-                                        CDR ;
-                                        CDR ;
+                                        GET 4 ;
                                         PAIR ;
                                         SWAP ;
                                         DUP ;
                                         DUG 2 ;
-                                        CDR ;
-                                        CAR ;
+                                        GET 3 ;
                                         DUP 4 ;
                                         CAR ;
                                         PAIR ;
@@ -236,14 +241,12 @@
                                         SWAP ;
                                         DUP ;
                                         DUG 2 ;
-                                        CDR ;
-                                        CDR ;
+                                        GET 4 ;
                                         PAIR ;
                                         SWAP ;
                                         DUP ;
                                         DUG 2 ;
-                                        CDR ;
-                                        CAR ;
+                                        GET 3 ;
                                         DIG 2 ;
                                         CAR ;
                                         PAIR ;
@@ -254,15 +257,11 @@
                             SWAP ;
                             DROP } ;
                      SWAP ;
-                     DROP ;
-                     SWAP ;
-                     DROP ;
-                     DIG 3 ;
-                     DROP ;
-                     DIG 3 ;
-                     DROP ;
-                     DIG 3 ;
-                     DROP ;
+                     DIG 2 ;
+                     DIG 5 ;
+                     DIG 6 ;
+                     DIG 7 ;
+                     DROP 5 ;
                      SWAP ;
                      DUP ;
                      DUG 2 ;
@@ -276,13 +275,10 @@
                      NIL operation ;
                      PAIR } }
                { DIG 3 ;
-                 DROP ;
-                 DIG 3 ;
-                 DROP ;
-                 DIG 3 ;
-                 DROP ;
-                 DIG 3 ;
-                 DROP ;
+                 DIG 4 ;
+                 DIG 5 ;
+                 DIG 6 ;
+                 DROP 4 ;
                  SWAP ;
                  DUP ;
                  DUG 2 ;
@@ -305,11 +301,9 @@
                             UNIT ;
                             SOME ;
                             DUP 3 ;
-                            CDR ;
-                            CDR ;
+                            GET 4 ;
                             DUP 4 ;
-                            CDR ;
-                            CAR ;
+                            GET 3 ;
                             PAIR ;
                             DIG 3 ;
                             CAR ;
@@ -317,11 +311,9 @@
                             UPDATE }
                           { DUP ;
                             DUG 2 ;
-                            CDR ;
-                            CDR ;
+                            GET 4 ;
                             DUP 3 ;
-                            CDR ;
-                            CAR ;
+                            GET 3 ;
                             PAIR ;
                             DIG 2 ;
                             CAR ;
@@ -371,14 +363,12 @@
                      DUG 2 ;
                      ITER { DUP ;
                             DUG 2 ;
-                            CDR ;
-                            CDR ;
+                            GET 4 ;
                             PAIR ;
                             SWAP ;
                             DUP ;
                             DUG 2 ;
-                            CDR ;
-                            CAR ;
+                            GET 3 ;
                             DIG 2 ;
                             CAR ;
                             PAIR ;
@@ -395,27 +385,23 @@
                      ITER { SWAP ;
                             DUP ;
                             DUP 3 ;
-                            CDR ;
-                            CAR ;
+                            GET 3 ;
                             GET ;
                             IF_NONE
                               { DROP 2 ; DUP 5 ; FAILWITH }
                               { DUP 3 ;
-                                CDR ;
-                                CDR ;
+                                GET 4 ;
                                 SWAP ;
                                 SUB ;
                                 ISNAT ;
                                 IF_NONE { DUP 6 ; FAILWITH } {} ;
                                 SOME ;
                                 DIG 2 ;
-                                CDR ;
-                                CAR ;
+                                GET 3 ;
                                 UPDATE } } ;
                      DIG 4 ;
-                     DROP ;
-                     DIG 4 ;
-                     DROP ;
+                     DIG 5 ;
+                     DROP 2 ;
                      DUP 3 ;
                      CDR ;
                      DIG 3 ;
@@ -435,11 +421,9 @@
                      NIL operation ;
                      PAIR }
                    { DIG 3 ;
-                     DROP ;
-                     DIG 3 ;
-                     DROP ;
-                     DIG 3 ;
-                     DROP ;
+                     DIG 4 ;
+                     DIG 5 ;
+                     DROP 3 ;
                      DUP ;
                      CAR ;
                      DUP 3 ;
@@ -488,9 +472,8 @@
                      NIL operation ;
                      PAIR } }
                { DIG 3 ;
-                 DROP ;
-                 DIG 4 ;
-                 DROP ;
+                 DIG 5 ;
+                 DROP 2 ;
                  SWAP ;
                  DUP ;
                  DUG 2 ;
@@ -501,14 +484,12 @@
                  DUG 2 ;
                  ITER { DUP ;
                         DUG 2 ;
-                        CDR ;
-                        CDR ;
+                        GET 4 ;
                         PAIR ;
                         SWAP ;
                         DUP ;
                         DUG 2 ;
-                        CDR ;
-                        CAR ;
+                        GET 3 ;
                         DIG 2 ;
                         CAR ;
                         PAIR ;
@@ -525,12 +506,11 @@
                  ITER { SWAP ;
                         DUP ;
                         DUP 3 ;
-                        CDR ;
-                        CAR ;
+                        GET 3 ;
                         GET ;
                         IF_NONE
                           { DROP 2 ; DUP 4 ; FAILWITH }
-                          { DUP 3 ; CDR ; CDR ; ADD ; SOME ; DIG 2 ; CDR ; CAR ; UPDATE } } ;
+                          { DUP 3 ; GET 4 ; ADD ; SOME ; DIG 2 ; GET 3 ; UPDATE } } ;
                  DIG 4 ;
                  DROP ;
                  DUP 3 ;

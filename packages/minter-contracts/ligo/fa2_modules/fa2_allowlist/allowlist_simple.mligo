@@ -13,7 +13,7 @@ type allowlist = (address, unit) big_map
 
 type allowlist_entrypoints = allowlist
 
-let init_allowlist : allowlist = []
+let init_allowlist : allowlist = (Big_map.empty : allowlist)
 
 let update_allowed (param, allowlist : allowlist_entrypoints * allowlist) : allowlist =
   param

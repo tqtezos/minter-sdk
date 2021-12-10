@@ -26,7 +26,7 @@ type allowlist_update =
 
 type allowlist_entrypoints = allowlist_update
 
-let init_allowlist : allowlist = []
+let init_allowlist : allowlist = (Big_map.empty : allowlist)
 
 let update_allowed (param, allowlist : allowlist_entrypoints * allowlist) : allowlist =
   let allowlist =

@@ -55,7 +55,14 @@ Tokens minted using the `Mint` entrypoint are similar to those created by the ed
            (pair (address %owner) (pair (nat %amount) (map %token_info string bytes))))
 ```
 
+### CONTRACT_OPERATOR
 
+When the `CONTRACT_OPERATOR` macro is activated, an alternative transfer policy is used in the contract, to allow a set of addresses that we call `Contract_operator`s to perform transfers on any token in the contract. A `Contract_operator` is essentially an `operator` for any token/owner combination in the contract. Therefore, the admin ought to take great care in adding the correct address as a `Contract_operator`. The macro also adds a new entrypoint `Update_contract_operators` that takes an argument of type `address set` to update the entire set of addresses the contract ought to consider as `Contract_operators`. The entrypoint is admin checked as expected, so only the admin is allowed to update the `contract_operators` set, otherwise failing with `NOT_AN_ADMIN`. This extension is especially useful for adding a smart contract as a `contract_operator`-- such as the swap contract which must have the authority to transfer tokens on a users behalf. 
+
+As an example, see the `CONTRACT_OPERATOR` activated in the FT Limited Asset contract. 
+
+- [Ligo](fa2_multi_ft_asset_limited_simple_admin_contract_operator.mligo)
+- [Michelson](../../../../bin/fa2_multi_ft_asset_limited_contract_operator.tz)
 ## [FA2 Multi FT Faucet](fa2_multi_ft_faucet.mligo) (FAUCET)
 
 FAUCET simply combines the functionality provided by TOKEN and MANAGER. That is, it provides the normal FA2 token operations as well as the ability to create/mint and burn fungible tokens. It provides no admin capabilities so when compiled, any user can call the resulting contract to create/mint and burn tokens. It is also impossible to set a new admin or pause the contract.

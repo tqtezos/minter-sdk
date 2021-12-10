@@ -41,8 +41,8 @@ let swap_check_allowlist(allowlist, storage, swap_param : allowlist * storage * 
 #endif
       unit
       end
-  | Accept -> unit
-  | Cancel -> unit
+  | Accept a -> unit
+  | Cancel a -> unit
 
 (* ======== Swaps allowlisted contract ======== *)
 
