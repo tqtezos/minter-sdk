@@ -25,7 +25,7 @@ export class LigoEnv {
   }
 }
 
-const ligoVersion  = '0.12.0';
+const ligoVersion  = '0.31.0';
 export const ligoImage : string = 'docker run --rm -v $PWD:$PWD -w $PWD ligolang/ligo:' + ligoVersion;
 export const defaultEnv: LigoEnv = defaultLigoEnv();
 
