@@ -9,6 +9,7 @@ module Test.Util
   , FA2Setup (..)
   , doFA2Setup
   , originateFA2
+  , originateFA2WithContractOperators
   , assertingBalanceDeltas
   , balanceOf
   , mkAllowlistSimpleParam
@@ -35,13 +36,20 @@ import GHC.TypeLits (Symbol)
 import GHC.TypeNats (Nat, type (+))
 import Hedgehog (Gen, MonadTest, Range)
 import qualified Hedgehog.Gen as Gen
+import Data.Maybe
 
 import Lorentz.Test.Consumer
 import Lorentz.Value
 import Tezos.Core (unMutez, unsafeMkMutez)
+import qualified Michelson.Typed as T
 
 import qualified Indigo.Contracts.FA2Sample as FA2
+import Lorentz.Contracts.FA2
 import qualified Lorentz.Contracts.Spec.FA2Interface as FA2
+
+import qualified Lorentz.Contracts.MinterCollection.Ft.Asset as FtAsset
+import qualified Lorentz.Contracts.MinterCollection.Ft.Token as FtToken
+import qualified Lorentz.Contracts.PausableAdminOption as PausableAdminOption
 import Morley.Nettest
 import Morley.Nettest.Pure (PureM, runEmulated)
 
@@ -147,6 +155,42 @@ originateFA2 name FA2Setup{..} contracts = do
       { FA2.cAllowedTokenIds = F.toList sTokens
       }
     )
+  return fa2
+
+originateFA2WithContractOperators
+  :: MonadNettest caps base m
+  => AliasHint
+  -> FA2Setup addrsNum tokensNum
+  -> Set Address
+  -> Address
+  -> [TAddress contractParam]
+  -> m (TAddress FtAsset.LimitedWithContractOperatorsEntrypoints)
+originateFA2WithContractOperators name FA2Setup{..} contractOperators admin contracts = do
+  fa2 <- TAddress <$> originateUntypedSimple name
+    (T.untypeValue $ T.toVal $
+    FtAsset.LimitedStorageWithContractOperators
+    {
+      assets = FtToken.LimitedStorageWithContractOperators
+        { 
+        ledger = BigMap $ Map.fromList do
+          -- put money on several tokenIds for each given address
+          addr <- F.toList sAddresses
+          tokenId <- F.toList sTokens
+          pure ((addr, tokenId), 1000)
+        , operators = BigMap $ Map.fromList do
+          owner <- F.toList sAddresses
+          operator <- contracts
+          tokenId <- F.toList sTokens 
+          pure ((OperatorKey owner (toAddress operator) tokenId), ())
+        , tokenMetadata = mempty
+        , contractOperators = contractOperators
+        , nextTokenId = 0 
+        , totalTokenSupply = mempty
+        }, 
+      metadata = mempty, 
+      admin = fromJust $ PausableAdminOption.initAdminStorage admin
+    })
+    (T.convertContract FtAsset.limitedWithContractOperatorsContract)
   return fa2
 
 -- | Given a FA2 contract address, checks that balances of the given
