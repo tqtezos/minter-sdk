@@ -166,8 +166,7 @@ originateFA2WithContractOperators
   -> [TAddress contractParam]
   -> m (TAddress FtAsset.LimitedWithContractOperatorsEntrypoints)
 originateFA2WithContractOperators name FA2Setup{..} contractOperators admin contracts = do
-  fa2 <- TAddress <$> originateUntypedSimple name
-    (T.untypeValue $ T.toVal $
+  fa2 <- originateTypedSimple name
     FtAsset.LimitedStorageWithContractOperators
     {
       assets = FtToken.LimitedStorageWithContractOperators
@@ -189,8 +188,8 @@ originateFA2WithContractOperators name FA2Setup{..} contractOperators admin cont
         }, 
       metadata = mempty, 
       admin = fromJust $ PausableAdminOption.initAdminStorage admin
-    })
-    (T.convertContract FtAsset.limitedWithContractOperatorsContract)
+    }
+    (FtAsset.limitedWithContractOperatorsContract)
   return fa2
 
 -- | Given a FA2 contract address, checks that balances of the given

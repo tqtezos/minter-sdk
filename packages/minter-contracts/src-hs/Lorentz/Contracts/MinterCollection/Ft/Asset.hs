@@ -37,6 +37,9 @@ customGeneric "LimitedWithContractOperatorsEntrypoints" ligoLayout
 deriving anyclass instance IsoValue LimitedWithContractOperatorsEntrypoints
 deriving anyclass instance HasAnnotation LimitedWithContractOperatorsEntrypoints
 
+instance ParameterHasEntrypoints LimitedWithContractOperatorsEntrypoints where
+  type ParameterEntrypointsDerivation LimitedWithContractOperatorsEntrypoints = EpdDelegate
+
 -- Note: Hardcoded to use 'PausableAdminOption' (Simple admin),
 -- but should be generalized to work with any admin.
 data LimitedStorageWithContractOperators = LimitedStorageWithContractOperators

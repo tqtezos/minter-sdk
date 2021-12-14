@@ -644,6 +644,33 @@ test_Integrational = testGroup "Integrational"
               }
   ]
 
+test_IntegrationalWithFA2ContractOperators :: TestTree
+test_IntegrationalWithFA2ContractOperators = testGroup "Integrational"
+  [ -- Check that storage updates work
+    nettestScenarioCaps "Simple accepted swap" $ do
+      setup <- doFA2Setup
+      let admin ::< alice ::< SNil = sAddresses setup
+      let adminToken ::< tokenId1 ::< tokenId2 ::< tokenId3 ::< tokenId4 ::< tokenId5 ::< SNil = sTokens setup
+      fa2 <- originateFA2WithContractOperators "fa2" setup Set.empty admin []
+      let fa2Address = toAddress fa2
+      swap <- originateOffchainCollections admin fa2Address
+      withSender admin $
+        call fa2 (Call @"Update_contract_operators") (one $ toAddress swap)
+      withSender admin $ do  
+        addCollection' (Set.fromList [tokenId1, tokenId2, tokenId3, tokenId4, tokenId5]) swap
+        addCollection' (Set.fromList [tokenId1, tokenId4, tokenId5]) swap
+        call swap (Call @"Start") $ mkSingleOffer SwapOffer
+          { assetsOffered = Basic.tokens  $ mkFA2Assets fa2 [(adminToken, 10)]
+          , assetsRequested = [initCollectionId, initCollectionId, incrementCollectionId initCollectionId]
+          }
+      withSender alice $
+        call swap (Call @"Accept") AcceptParam 
+          {
+            swapId = Basic.initSwapId , 
+            tokensSent = Set.fromList [(initCollectionId, tokenId1), (initCollectionId, tokenId2), (incrementCollectionId initCollectionId, tokenId5)] 
+          }
+  ]
+
 ----------------------------------------------------------------------------
 -- Admin Checks 
 ----------------------------------------------------------------------------
