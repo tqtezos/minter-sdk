@@ -181,7 +181,9 @@ originateFA2WithContractOperators name FA2Setup{..} contractOperators admin cont
           operator <- contracts
           tokenId <- F.toList sTokens 
           pure ((OperatorKey owner (toAddress operator) tokenId), ())
-        , tokenMetadata = mempty
+        , tokenMetadata = BigMap $ Map.fromList do 
+          tokenId <- F.toList sTokens
+          pure (tokenId, (TokenMetadata tokenId mempty))
         , contractOperators = contractOperators
         , nextTokenId = 0 
         , totalTokenSupply = mempty
