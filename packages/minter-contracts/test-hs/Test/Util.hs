@@ -11,6 +11,7 @@ module Test.Util
   , originateFA2
   , originateFA2WithContractOperators
   , assertingBalanceDeltas
+  , assertingBalanceDeltas'
   , balanceOf
   , mkAllowlistSimpleParam
   , originateWithAdmin
@@ -203,6 +204,47 @@ assertingBalanceDeltas
   -> m a
   -> m a
 assertingBalanceDeltas fa2 indicedDeltas action = do
+  consumer <- originateSimple "consumer" [] contractConsumer
+
+  pullBalance consumer
+  res <- action
+  pullBalance consumer
+
+  balancesRes <- map (map FA2.briBalance) . fromVal <$>
+    getStorage consumer
+  (balancesAfter, balancesBefore) <- case balancesRes of
+    [balancesAfter, balancesBefore] ->
+      return (balancesAfter, balancesBefore)
+    other -> failure $ "Unexpected consumer storage: " +| other |+ ""
+
+  forM_ (zip3 indicedDeltas balancesBefore balancesAfter) $
+    \(((addr, tokenId), expected), actualBefore, actualAfter) -> do
+      let actual = toInteger actualAfter - toInteger actualBefore
+      assert (expected == actual) $
+        "For address " +| addr |+ "\n(token id = " +| tokenId |+ ")\n\
+        \got unexpected balance delta: \
+        \expected " +| expected |+ ", got " +| actual |+ ""
+  return res
+    where
+      pullBalance
+        :: MonadNettest base caps m
+        => TAddress [FA2.BalanceResponseItem] -> m ()
+      pullBalance consumer = do
+        let tokenRefs = map fst indicedDeltas
+        call fa2 (Call @"Balance_of") $
+          FA2.mkFA2View
+            (uncurry FA2.BalanceRequestItem <$> tokenRefs)
+            consumer
+
+-- | Given a FA2 contract address, checks that balances of the given
+-- address/token_ids change by the specified delta values.
+assertingBalanceDeltas'
+  :: (MonadNettest caps base m, HasCallStack)
+  => TAddress FtAsset.LimitedWithContractOperatorsEntrypoints
+  -> [((Address, FA2.TokenId), Integer)]
+  -> m a
+  -> m a
+assertingBalanceDeltas' fa2 indicedDeltas action = do
   consumer <- originateSimple "consumer" [] contractConsumer
 
   pullBalance consumer
