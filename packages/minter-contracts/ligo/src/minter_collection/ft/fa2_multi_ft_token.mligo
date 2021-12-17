@@ -66,9 +66,9 @@ let transfer (txs, validate_op, storage
         then (failwith fa2_token_undefined : ledger)
         else
 #if !CONTRACT_OPERATOR
-          let u = validate_op (tx.from_, Tezos.sender, dst.token_id, storage.operators) in
+          let u : unit = validate_op (tx.from_, Tezos.sender, dst.token_id, storage.operators) in
 #else 
-          let u = validate_op (tx.from_, Tezos.sender, dst.token_id, storage.operators, storage.contract_operators) in 
+          let u : unit = validate_op (tx.from_, Tezos.sender, dst.token_id, storage.operators, storage.contract_operators) in 
 #endif
           let lll = dec_balance (tx.from_, dst.token_id, dst.amount, ll) in
           inc_balance(dst.to_, dst.token_id, dst.amount, lll)
@@ -95,21 +95,7 @@ let fa2_main (param, storage : fa2_entry_points * multi_ft_token_storage)
     : (operation  list) * multi_ft_token_storage =
   match param with
   | Transfer txs ->
-
-#if !CONTRACT_OPERATOR
-    (*
-    will validate that a sender is either `from_` parameter of each transfer
-    or a permitted operator for the owner `from_` address.
-    *)
-    let operator_validator = default_operator_validator in 
-#else 
-    (*
-    will validate that a sender is either `from_` parameter of each transfer
-    or a permitted operator for the owner `from_` address or a contract operator.
-    *)
-    let operator_validator = contract_operator_validator in 
-#endif
-    let new_ledger = transfer (txs, operator_validator, storage) in
+    let new_ledger = transfer (txs, default_operator_validator, storage) in
     let new_storage = { storage with ledger = new_ledger; }
     in ([] : operation list), new_storage
 
