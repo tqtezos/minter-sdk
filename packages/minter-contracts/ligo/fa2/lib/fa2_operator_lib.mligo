@@ -15,9 +15,9 @@ To be part of FA2 storage to manage permitted operators
 
 type operator_storage = ((address * (address * token_id)), unit) big_map
 
-#if CONTRACT_OPERATOR
+#if GLOBAL_OPERATOR
 
-type contract_operator_storage = address set
+type global_operator_storage = address set
 
 #endif
 
@@ -62,10 +62,10 @@ let fa2_update_operators (updates, storage
   owner * operator * token_id * ops_storage -> unit
 *)
 
-#if !CONTRACT_OPERATOR
+#if !GLOBAL_OPERATOR
 type operator_params = address * address * token_id * operator_storage
 #else 
-type operator_params = address * address * token_id * operator_storage * contract_operator_storage
+type operator_params = address * address * token_id * operator_storage * global_operator_storage
 #endif
 
 type operator_validator = operator_params -> unit
@@ -77,7 +77,7 @@ The default implicit `operator_transfer_policy` value is `Owner_or_operator_tran
 let default_operator_validator : operator_validator =
   (fun 
     (owner, operator, token_id, ops_storage 
-#if CONTRACT_OPERATOR
+#if GLOBAL_OPERATOR
     , contract_ops_storage
 #endif
      : operator_params) ->
@@ -85,7 +85,7 @@ let default_operator_validator : operator_validator =
     then unit (* transfer by the owner *)
     else if Big_map.mem (owner, (operator, token_id)) ops_storage
     then unit (* the operator is permitted for the token_id *)
-#if CONTRACT_OPERATOR
+#if GLOBAL_OPERATOR
     else if Set.mem operator contract_ops_storage
     then unit (* the operator is in fact a contract operator *)
 #endif
@@ -98,7 +98,7 @@ Create an operator validator function based on provided operator policy.
 @return (owner, operator, token_id, ops_storage) -> unit
  *)
 
-#if !CONTRACT_OPERATOR
+#if !GLOBAL_OPERATOR
 let make_operator_validator (tx_policy : operator_transfer_policy) : operator_validator =
   let can_owner_tx, can_operator_tx = match tx_policy with
   | No_transfer -> (failwith fa2_tx_denied : bool * bool)

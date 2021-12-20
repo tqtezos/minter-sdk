@@ -13,11 +13,11 @@
                       (pair %remove_operator (address %owner) (pair (address %operator) (nat %token_id)))))))
         (or (list %mint
                (pair (address %owner) (pair (nat %amount) (map %token_info string bytes))))
-            (set %update_contract_operators address))) ;
+            (set %update_global_operators address))) ;
   storage
     (pair (pair (pair %admin (pair (address %admin) (bool %paused)) (option %pending_admin address))
                 (pair %assets
-                   (pair (pair (set %contract_operators address) (big_map %ledger (pair address nat) nat))
+                   (pair (pair (set %global_operators address) (big_map %ledger (pair address nat) nat))
                          (pair (nat %next_token_id) (big_map %operators (pair address (pair address nat)) unit)))
                    (pair (big_map %token_metadata nat (pair (nat %token_id) (map %token_info string bytes)))
                          (big_map %token_total_supply nat nat))))

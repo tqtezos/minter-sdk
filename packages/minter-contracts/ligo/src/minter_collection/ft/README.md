@@ -55,11 +55,11 @@ Tokens minted using the `Mint` entrypoint are similar to those created by the ed
            (pair (address %owner) (pair (nat %amount) (map %token_info string bytes))))
 ```
 
-### CONTRACT_OPERATOR
+### GLOBAL_OPERATOR
 
-When the `CONTRACT_OPERATOR` macro is activated, an alternative transfer policy is used in the contract, to allow a set of addresses that we call `Contract_operator`s to perform transfers on any token in the contract. A `Contract_operator` is essentially an `operator` for any token/owner combination in the contract. Therefore, the admin ought to take great care in adding the correct address as a `Contract_operator`. The macro also adds a new entrypoint `Update_contract_operators` that takes an argument of type `address set` to update the entire set of addresses the contract ought to consider as `Contract_operators`. The entrypoint is admin checked as expected, so only the admin is allowed to update the `contract_operators` set, otherwise failing with `NOT_AN_ADMIN`. This extension is especially useful for adding a smart contract as a `contract_operator`-- such as the swap contract which must have the authority to transfer tokens on a users behalf. 
+When the `GLOBAL_OPERATOR` macro is activated, an alternative transfer policy is used in the contract, to allow a set of addresses that we call `global_operator`s to perform transfers on any token in the contract. A `global_operator` is essentially an `operator` for any token/owner combination in the contract. Therefore, the admin ought to take great care in adding the correct address as a `global_operator`. The macro also adds a new entrypoint `Update_global_operators` that takes an argument of type `address set` to update the entire set of addresses the contract ought to consider as `global_operator`s. The entrypoint is admin checked as expected, so only the admin is allowed to update the `global_operator`s set, otherwise failing with `NOT_AN_ADMIN`. This extension is especially useful for adding a smart contract as a `global_operator`-- such as the swap contract which must have the authority to transfer tokens on a users behalf. 
 
-As an example, see the `CONTRACT_OPERATOR` activated in the FT Limited Asset contract. 
+As an example, see the `GLOBAL_OPERATOR` activated in the FT Limited Asset contract. 
 
 - [Ligo](fa2_multi_ft_asset_limited_simple_admin_contract_operator.mligo)
 - [Michelson](../../../../bin/fa2_multi_ft_asset_limited_contract_operator.tz)

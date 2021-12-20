@@ -14,8 +14,8 @@ type token_total_supply = (token_id, nat) big_map
 type multi_ft_token_storage = {
   ledger : ledger;
   operators : operator_storage;
-#if CONTRACT_OPERATOR
-  contract_operators : contract_operator_storage;
+#if GLOBAL_OPERATOR
+  global_operators : global_operator_storage;
 #endif
   token_total_supply : token_total_supply;
   token_metadata : token_metadata_storage;
@@ -65,10 +65,10 @@ let transfer (txs, validate_op, storage
         if not Big_map.mem (tx.from_, dst.token_id) ll
         then (failwith fa2_token_undefined : ledger)
         else
-#if !CONTRACT_OPERATOR
+#if !GLOBAL_OPERATOR
           let u : unit = validate_op (tx.from_, Tezos.sender, dst.token_id, storage.operators) in
 #else 
-          let u : unit = validate_op (tx.from_, Tezos.sender, dst.token_id, storage.operators, storage.contract_operators) in 
+          let u : unit = validate_op (tx.from_, Tezos.sender, dst.token_id, storage.operators, storage.global_operators) in 
 #endif
           let lll = dec_balance (tx.from_, dst.token_id, dst.amount, ll) in
           inc_balance(dst.to_, dst.token_id, dst.amount, lll)

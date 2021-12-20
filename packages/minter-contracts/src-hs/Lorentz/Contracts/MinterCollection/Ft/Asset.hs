@@ -1,8 +1,8 @@
 -- | Lorentz bindings for @minter_collection/ft/fa2_multi_ft_asset.mligo@
 module Lorentz.Contracts.MinterCollection.Ft.Asset
-  ( LimitedWithContractOperatorsEntrypoints(..)
-  , LimitedStorageWithContractOperators(..)
-  , limitedWithContractOperatorsContract
+  ( LimitedWithGlobalOperatorsEntrypoints(..)
+  , LimitedStorageWithGlobalOperators(..)
+  , limitedWithGlobalOperatorsContract
   ) where
 
 import Lorentz
@@ -27,30 +27,30 @@ customGeneric "MintLimitedParam" rightComb
 deriving anyclass instance IsoValue MintLimitedParam
 deriving anyclass instance HasAnnotation MintLimitedParam
 
-data LimitedWithContractOperatorsEntrypoints
+data LimitedWithGlobalOperatorsEntrypoints
   = Assets FA2.Parameter
   | Admin Admin.AdminEntrypoints
-  | Update_contract_operators (Set Address)
+  | Update_global_operators (Set Address)
   | Mint [MintLimitedParam]
   deriving stock (Show, Eq)
-customGeneric "LimitedWithContractOperatorsEntrypoints" ligoLayout
-deriving anyclass instance IsoValue LimitedWithContractOperatorsEntrypoints
-deriving anyclass instance HasAnnotation LimitedWithContractOperatorsEntrypoints
+customGeneric "LimitedWithGlobalOperatorsEntrypoints" ligoLayout
+deriving anyclass instance IsoValue LimitedWithGlobalOperatorsEntrypoints
+deriving anyclass instance HasAnnotation LimitedWithGlobalOperatorsEntrypoints
 
-instance ParameterHasEntrypoints LimitedWithContractOperatorsEntrypoints where
-  type ParameterEntrypointsDerivation LimitedWithContractOperatorsEntrypoints = EpdDelegate
+instance ParameterHasEntrypoints LimitedWithGlobalOperatorsEntrypoints where
+  type ParameterEntrypointsDerivation LimitedWithGlobalOperatorsEntrypoints = EpdDelegate
 
 -- Note: Hardcoded to use 'PausableAdminOption' (Simple admin),
 -- but should be generalized to work with any admin.
-data LimitedStorageWithContractOperators = LimitedStorageWithContractOperators
-  { assets :: FtToken.LimitedStorageWithContractOperators
+data LimitedStorageWithGlobalOperators = LimitedStorageWithGlobalOperators
+  { assets :: FtToken.LimitedStorageWithGlobalOperators
   , admin :: Admin.AdminStorageRecord
   , metadata :: BigMap MText ByteString
   }
   deriving stock (Show, Eq)
-customGeneric "LimitedStorageWithContractOperators" ligoLayout
-deriving anyclass instance IsoValue LimitedStorageWithContractOperators
-deriving anyclass instance HasAnnotation LimitedStorageWithContractOperators
+customGeneric "LimitedStorageWithGlobalOperators" ligoLayout
+deriving anyclass instance IsoValue LimitedStorageWithGlobalOperators
+deriving anyclass instance HasAnnotation LimitedStorageWithGlobalOperators
 
-limitedWithContractOperatorsContract :: T.Contract (ToT LimitedWithContractOperatorsEntrypoints) (ToT LimitedStorageWithContractOperators)
-limitedWithContractOperatorsContract = $$(embedContractM (inBinFolder "fa2_multi_ft_asset_limited_contract_operator.tz"))
+limitedWithGlobalOperatorsContract :: T.Contract (ToT LimitedWithGlobalOperatorsEntrypoints) (ToT LimitedStorageWithGlobalOperators)
+limitedWithGlobalOperatorsContract = $$(embedContractM (inBinFolder "fa2_multi_ft_asset_limited_contract_operator.tz"))

@@ -26,8 +26,8 @@ type multi_ft_asset_param =
   | [@annot:mint] Tokens of token_manager
 #endif
 
-#if CONTRACT_OPERATOR
-  | Update_contract_operators of address set
+#if GLOBAL_OPERATOR
+  | Update_global_operators of address set
 #endif
 
 let multi_ft_asset_main
@@ -54,9 +54,9 @@ let multi_ft_asset_main
       let new_s = { s with assets = assets } in
       (ops, new_s)
   
-#if CONTRACT_OPERATOR
-  | Update_contract_operators contract_ops -> 
+#if GLOBAL_OPERATOR
+  | Update_global_operators global_operators -> 
       let u : unit = fail_if_not_admin s.admin in 
-      let new_s = {s with assets = {s.assets with contract_operators = contract_ops}} in 
+      let new_s = {s with assets = {s.assets with global_operators = global_operators}} in 
       (([] : operation list), new_s) 
 #endif

@@ -9,7 +9,7 @@ module Test.Util
   , FA2Setup (..)
   , doFA2Setup
   , originateFA2
-  , originateFA2WithContractOperators
+  , originateFA2WithGlobalOperators
   , assertingBalanceDeltas
   , assertingBalanceDeltas'
   , balanceOf
@@ -157,19 +157,19 @@ originateFA2 name FA2Setup{..} contracts = do
     )
   return fa2
 
-originateFA2WithContractOperators
+originateFA2WithGlobalOperators
   :: MonadNettest caps base m
   => AliasHint
   -> FA2Setup addrsNum tokensNum
   -> Set Address
   -> Address
   -> [TAddress contractParam]
-  -> m (TAddress FtAsset.LimitedWithContractOperatorsEntrypoints)
-originateFA2WithContractOperators name FA2Setup{..} contractOperators admin contracts = do
+  -> m (TAddress FtAsset.LimitedWithGlobalOperatorsEntrypoints)
+originateFA2WithGlobalOperators name FA2Setup{..} globalOperators admin contracts = do
   fa2 <- originateTypedSimple name
-    FtAsset.LimitedStorageWithContractOperators
+    FtAsset.LimitedStorageWithGlobalOperators
     {
-      assets = FtToken.LimitedStorageWithContractOperators
+      assets = FtToken.LimitedStorageWithGlobalOperators
         { 
         ledger = BigMap $ Map.fromList do
           -- put money on several tokenIds for each given address
@@ -184,14 +184,14 @@ originateFA2WithContractOperators name FA2Setup{..} contractOperators admin cont
         , tokenMetadata = BigMap $ Map.fromList do 
           tokenId <- F.toList sTokens
           pure (tokenId, (TokenMetadata tokenId mempty))
-        , contractOperators = contractOperators
+        , globalOperators = globalOperators
         , nextTokenId = 0 
         , totalTokenSupply = mempty
         }, 
       metadata = mempty, 
       admin = fromJust $ PausableAdminOption.initAdminStorage admin
     }
-    (FtAsset.limitedWithContractOperatorsContract)
+    (FtAsset.limitedWithGlobalOperatorsContract)
   return fa2
 
 -- | Given a FA2 contract address, checks that balances of the given
@@ -239,7 +239,7 @@ assertingBalanceDeltas fa2 indicedDeltas action = do
 -- address/token_ids change by the specified delta values.
 assertingBalanceDeltas'
   :: (MonadNettest caps base m, HasCallStack)
-  => TAddress FtAsset.LimitedWithContractOperatorsEntrypoints
+  => TAddress FtAsset.LimitedWithGlobalOperatorsEntrypoints
   -> [((Address, FA2.TokenId), Integer)]
   -> m a
   -> m a

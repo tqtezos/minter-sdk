@@ -644,18 +644,18 @@ test_Integrational = testGroup "Integrational"
               }
   ]
 
-test_IntegrationalWithFA2ContractOperators :: TestTree
-test_IntegrationalWithFA2ContractOperators = testGroup "Integrational"
+test_IntegrationalWithFA2GlobalOperators :: TestTree
+test_IntegrationalWithFA2GlobalOperators = testGroup "Integrational"
   [ -- Check that storage updates work
     nettestScenarioCaps "Simple accepted swap" $ do
       setup <- doFA2Setup
       let admin ::< alice ::< SNil = sAddresses setup
       let adminToken ::< tokenId1 ::< tokenId2 ::< tokenId3 ::< tokenId4 ::< tokenId5 ::< SNil = sTokens setup
-      fa2 <- originateFA2WithContractOperators "fa2" setup Set.empty admin []
+      fa2 <- originateFA2WithGlobalOperators "fa2" setup Set.empty admin []
       let fa2Address = toAddress fa2
       swap <- originateOffchainCollections admin fa2Address
       withSender admin $
-        call fa2 (Call @"Update_contract_operators") (one $ toAddress swap)
+        call fa2 (Call @"Update_global_operators") (one $ toAddress swap)
       assertingBalanceDeltas' fa2
         [ (admin, adminToken) -: -10
         , (admin, tokenId1) -: 0
