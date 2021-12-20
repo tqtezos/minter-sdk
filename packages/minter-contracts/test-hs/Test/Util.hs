@@ -42,7 +42,6 @@ import Data.Maybe
 import Lorentz.Test.Consumer
 import Lorentz.Value
 import Tezos.Core (unMutez, unsafeMkMutez)
-import qualified Michelson.Typed as T
 
 import qualified Indigo.Contracts.FA2Sample as FA2
 import Lorentz.Contracts.FA2
