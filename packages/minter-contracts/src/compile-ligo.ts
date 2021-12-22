@@ -458,6 +458,12 @@ const compileSources: CompileSourceEntry[] = [
     dstFile: 'fixed_price_sale_market_per_sale_fee_offchain.tz',
     contract: true,
   },
+  {
+    srcFile: 'pausable_wallet.mligo', 
+    mainFn: 'wallet_main',
+    dstFile: 'pausable_wallet.tz', 
+    contract: true, 
+  }
 ];
 
 const filterSources = (sources: CompileSourceEntry[]): CompileSourceEntry[] => {
