@@ -11,26 +11,18 @@ type ledger = ((address * token_id), nat) big_map
 (* token_id -> total_supply *)
 type token_total_supply = (token_id, nat) big_map
 
-#if !LIMITED_TOKEN_MANAGER
-
 type multi_ft_token_storage = {
   ledger : ledger;
   operators : operator_storage;
-  token_total_supply : token_total_supply;
-  token_metadata : token_metadata_storage;
-}
-
-#else 
-
-type multi_ft_token_storage = {
-  ledger : ledger;
-  operators : operator_storage;
-  token_total_supply : token_total_supply;
-  token_metadata : token_metadata_storage;
-  next_token_id : token_id;
-}
-
+#if GLOBAL_OPERATOR
+  global_operators : global_operator_storage;
 #endif
+  token_total_supply : token_total_supply;
+  token_metadata : token_metadata_storage;
+#if LIMITED_TOKEN_MANAGER
+  next_token_id : token_id;
+#endif
+}
 
 let get_balance_amt (key, ledger : (address * nat) * ledger) : nat =
   let bal_opt = Big_map.find_opt key ledger in
@@ -73,7 +65,11 @@ let transfer (txs, validate_op, storage
         if not Big_map.mem dst.token_id storage.token_metadata
         then (failwith fa2_token_undefined : ledger)
         else
-          let u = validate_op (tx.from_, Tezos.sender, dst.token_id, storage.operators) in
+#if !GLOBAL_OPERATOR
+          let u : unit = validate_op (tx.from_, Tezos.sender, dst.token_id, storage.operators) in
+#else 
+          let u : unit = validate_op (tx.from_, Tezos.sender, dst.token_id, storage.operators, storage.global_operators) in 
+#endif
           let lll = dec_balance (tx.from_, dst.token_id, dst.amount, ll) in
           inc_balance(dst.to_, dst.token_id, dst.amount, lll)
       ) tx.txs l
@@ -99,10 +95,6 @@ let fa2_main (param, storage : fa2_entry_points * multi_ft_token_storage)
     : (operation  list) * multi_ft_token_storage =
   match param with
   | Transfer txs ->
-    (*
-    will validate that a sender is either `from_` parameter of each transfer
-    or a permitted operator for the owner `from_` address.
-    *)
     let new_ledger = transfer (txs, default_operator_validator, storage) in
     let new_storage = { storage with ledger = new_ledger; }
     in ([] : operation list), new_storage

@@ -26,6 +26,10 @@ type multi_ft_asset_param =
   | [@annot:mint] Tokens of token_manager
 #endif
 
+#if GLOBAL_OPERATOR
+  | Update_global_operators of address set
+#endif
+
 let multi_ft_asset_main
     (param, s : multi_ft_asset_param * multi_ft_asset_storage)
     : (operation list) * multi_ft_asset_storage =
@@ -36,7 +40,7 @@ let multi_ft_asset_main
       (ops, new_s)
 
   | Tokens p ->
-      let u1 = fail_if_not_admin s.admin in
+      let u : unit = fail_if_not_admin s.admin in
       let ops, assets = ft_token_manager (p, s.assets) in
       let new_s = { s with
         assets = assets
@@ -44,8 +48,15 @@ let multi_ft_asset_main
       (ops, new_s)
 
   | Assets p ->
-      let u2 = fail_if_paused s.admin in
+      let u : unit = fail_if_paused s.admin in
 
       let ops, assets = fa2_main (p, s.assets) in
       let new_s = { s with assets = assets } in
       (ops, new_s)
+  
+#if GLOBAL_OPERATOR
+  | Update_global_operators global_operators -> 
+      let u : unit = fail_if_not_admin s.admin in 
+      let new_s = {s with assets = {s.assets with global_operators = global_operators}} in 
+      (([] : operation list), new_s) 
+#endif

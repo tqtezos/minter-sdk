@@ -644,6 +644,44 @@ test_Integrational = testGroup "Integrational"
               }
   ]
 
+test_IntegrationalWithFA2GlobalOperators :: TestTree
+test_IntegrationalWithFA2GlobalOperators = testGroup "Integrational"
+  [ -- Check that storage updates work
+    nettestScenarioCaps "Simple accepted swap" $ do
+      setup <- doFA2Setup
+      let admin ::< alice ::< SNil = sAddresses setup
+      let adminToken ::< tokenId1 ::< tokenId2 ::< tokenId3 ::< tokenId4 ::< tokenId5 ::< SNil = sTokens setup
+      fa2 <- originateFA2WithGlobalOperators "fa2" setup Set.empty admin []
+      let fa2Address = toAddress fa2
+      swap <- originateOffchainCollections admin fa2Address
+      withSender admin $
+        call fa2 (Call @"Update_global_operators") (one $ toAddress swap)
+      assertingBalanceDeltas' fa2
+        [ (admin, adminToken) -: -10
+        , (admin, tokenId1) -: 0
+        , (admin, tokenId2) -: 0
+        , (nullAddress, tokenId1) -: 1
+        , (nullAddress, tokenId2) -: 1
+        , (nullAddress, adminToken) -: 0
+        , (alice, tokenId1) -: -1
+        , (alice, tokenId2) -: -1
+        , (alice, adminToken) -: 10
+        ] $ do
+          withSender admin $ do  
+            addCollection' (Set.fromList [tokenId1, tokenId2, tokenId3, tokenId4, tokenId5]) swap
+            addCollection' (Set.fromList [tokenId1, tokenId4, tokenId5]) swap
+            call swap (Call @"Start") $ mkSingleOffer SwapOffer
+              { assetsOffered = Basic.tokens  $ mkFA2Assets fa2 [(adminToken, 10)]
+              , assetsRequested = [initCollectionId, initCollectionId, incrementCollectionId initCollectionId]
+              }
+          withSender alice $
+            call swap (Call @"Accept") AcceptParam 
+              {
+                swapId = Basic.initSwapId  
+              , tokensSent = Set.fromList [(initCollectionId, tokenId1), (initCollectionId, tokenId2), (incrementCollectionId initCollectionId, tokenId5)] 
+              }
+  ]
+
 ----------------------------------------------------------------------------
 -- Admin Checks 
 ----------------------------------------------------------------------------
