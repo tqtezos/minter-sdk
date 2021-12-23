@@ -459,11 +459,11 @@ const compileSources: CompileSourceEntry[] = [
     contract: true,
   },
   {
-    srcFile: 'pausable_wallet.mligo', 
+    srcFile: 'pausable_wallet.mligo',
     mainFn: 'wallet_main',
-    dstFile: 'pausable_wallet.tz', 
-    contract: true, 
-  }
+    dstFile: 'pausable_wallet.tz',
+    contract: true,
+  },
 ];
 
 const filterSources = (sources: CompileSourceEntry[]): CompileSourceEntry[] => {
