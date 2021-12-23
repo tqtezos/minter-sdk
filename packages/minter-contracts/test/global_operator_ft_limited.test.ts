@@ -159,20 +159,20 @@ describe('Limited Fungible Token Contract', () => {
     await mintLimitedFtTokens(ftLimitedBob, [tokensBob, tokensAlice]);
 
     await transfer(ftLimitedAddress, tezos.alice, [
-        {
-          from_: bobAddress,
-          txs: [{ to_: aliceAddress, token_id: token0, amount: token0FixedSupply }],
-        },
-      ]);
-    
+      {
+        from_: bobAddress,
+        txs: [{ to_: aliceAddress, token_id: token0, amount: token0FixedSupply }],
+      },
+    ]);
+
     const [bobBalanceToken0, aliceBalanceToken0,
       bobBalanceToken1, aliceBalanceToken1] = await getBalances([
-      { owner: bobAddress, token_id: token0},
+      { owner: bobAddress, token_id: token0 },
       { owner: aliceAddress, token_id: token0 },
-      { owner: bobAddress, token_id: token1},
+      { owner: bobAddress, token_id: token1 },
       { owner: aliceAddress, token_id: token1 },
     ], queryBalances, ftLimitedBob);
-    
+
     //TEST BALANCES
     expect(bobBalanceToken0.isEqualTo(0)).toBe(true);
     expect(aliceBalanceToken0.isEqualTo(token0FixedSupply)).toBe(true);
@@ -200,21 +200,21 @@ describe('Limited Fungible Token Contract', () => {
       token_info : token_info_alice,
     };
     await mintLimitedFtTokens(ftLimitedBob, [tokensBob, tokensAlice]);
-   
+
     const op = await ftLimitedBob.methods
       .update_global_operators([])
       .send();
     await op.confirmation(3);
 
     const transferOp = transfer(ftLimitedAddress, tezos.alice, [
-        {
-          from_: bobAddress,
-          txs: [{ to_: aliceAddress, token_id: token0, amount: token0FixedSupply }],
-        },
-      ]);
+      {
+        from_: bobAddress,
+        txs: [{ to_: aliceAddress, token_id: token0, amount: token0FixedSupply }],
+      },
+    ]);
 
     return expect(transferOp).rejects.toHaveProperty('message', 'FA2_INSUFFICIENT_BALANCE');
-    
+
   });
 
   test('global operator transfer succeeds after removing and readding global operator', async () => {
@@ -230,7 +230,7 @@ describe('Limited Fungible Token Contract', () => {
       token_info : token_info_alice,
     };
     await mintLimitedFtTokens(ftLimitedBob, [tokensBob, tokensAlice]);
-   
+
     const op1 = await ftLimitedBob.methods
       .update_global_operators([])
       .send();
@@ -242,20 +242,20 @@ describe('Limited Fungible Token Contract', () => {
     await op2.confirmation(3);
 
     await transfer(ftLimitedAddress, tezos.alice, [
-        {
-          from_: bobAddress,
-          txs: [{ to_: aliceAddress, token_id: token0, amount: token0FixedSupply }],
-        },
-      ]);
+      {
+        from_: bobAddress,
+        txs: [{ to_: aliceAddress, token_id: token0, amount: token0FixedSupply }],
+      },
+    ]);
 
     const [bobBalanceToken0, aliceBalanceToken0,
       bobBalanceToken1, aliceBalanceToken1] = await getBalances([
-      { owner: bobAddress, token_id: token0},
+      { owner: bobAddress, token_id: token0 },
       { owner: aliceAddress, token_id: token0 },
-      { owner: bobAddress, token_id: token1},
+      { owner: bobAddress, token_id: token1 },
       { owner: aliceAddress, token_id: token1 },
     ], queryBalances, ftLimitedBob);
-    
+
     //TEST BALANCES
     expect(bobBalanceToken0.isEqualTo(0)).toBe(true);
     expect(aliceBalanceToken0.isEqualTo(token0FixedSupply)).toBe(true);
@@ -267,11 +267,11 @@ describe('Limited Fungible Token Contract', () => {
     const token1TotalSupply = await getTokenTotalSupply(ftLimitedAddress, tezos.bob, token1);
     expect(token0TotalSupply).toStrictEqual(token0FixedSupply);
     expect(token1TotalSupply).toStrictEqual(token1FixedSupply);
-    
+
   });
 
   test('global operator update is admin checked', async () => {
-    
+
     const ftLimitedAlice = await tezos.alice.contract.at(ftLimitedBob.address);
     const op = ftLimitedAlice.methods
       .update_global_operators([])

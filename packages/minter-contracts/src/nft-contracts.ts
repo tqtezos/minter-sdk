@@ -159,10 +159,8 @@ export async function originateFtLimited(
 export async function originateFtLimitedGlobalOperators(
   tz: TezosToolkit,
   admin: address,
-  globalOperator: address
+  globalOperator: address,
 ): Promise<Contract> {
-  const meta_content = char2Bytes(JSON.stringify(sample_metadata, null, 2));
-
   const storage =
     `(Pair (Pair (Pair (Pair "${admin}" False) None)
                 (Pair
