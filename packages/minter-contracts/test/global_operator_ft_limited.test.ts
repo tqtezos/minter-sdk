@@ -213,7 +213,7 @@ describe('Limited Fungible Token Contract', () => {
       },
     ]);
 
-    return expect(transferOp).rejects.toHaveProperty('message', 'FA2_INSUFFICIENT_BALANCE');
+    return expect(transferOp).rejects.toHaveProperty('message', 'FA2_NOT_OPERATOR');
 
   });
 
