@@ -52,7 +52,7 @@ describe('Limited Fungible Token Contract', () => {
   beforeEach(async () => {
     ftLimitedBob = await originateFtLimitedGlobalOperators(tezos.bob, bobAddress, aliceAddress);
     ftLimitedAddress = ftLimitedBob.address;
-  })
+  });
 
   test('mint limited ft', async () => {
     $log.info("Mint limited fts");
