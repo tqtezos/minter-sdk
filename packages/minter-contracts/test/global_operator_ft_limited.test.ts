@@ -29,8 +29,6 @@ describe('Limited Fungible Token Contract', () => {
     queryBalances = queryBalancesWithLambdaView(tezos.lambdaView);
     bobAddress = await tezos.bob.signer.publicKeyHash();
     aliceAddress = await tezos.alice.signer.publicKeyHash();
-    ftLimitedBob = await originateFtLimitedGlobalOperators(tezos.bob, bobAddress, aliceAddress);
-    ftLimitedAddress = ftLimitedBob.address;
 
     token0 = new BigNumber(0);
     token1 = new BigNumber(1);
@@ -49,8 +47,12 @@ describe('Limited Fungible Token Contract', () => {
     token_info_alice.set('description', char2Bytes('description'));
     token_info_alice.set('ipfs_hash_image', char2Bytes('ipfs_hash_image'));
     token_info_alice.set('symbol', char2Bytes('TK1'));
-
   });
+
+  beforeEach(async () => {
+    ftLimitedBob = await originateFtLimitedGlobalOperators(tezos.bob, bobAddress, aliceAddress);
+    ftLimitedAddress = ftLimitedBob.address;
+  })
 
   test('mint limited ft', async () => {
     $log.info("Mint limited fts");
