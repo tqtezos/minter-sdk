@@ -1,6 +1,4 @@
 #include "../fa2_modules/admin/simple_admin.mligo"
-#include "../fa2/fa2_interface.mligo"
-#include "../fa2_modules/fa2_allowlist/allowlist_base.mligo"
 #include "common.mligo"
 
 type wallet_storage = admin_storage
