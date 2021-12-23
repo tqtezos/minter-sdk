@@ -12,17 +12,11 @@
              COMPARE ;
              NEQ ;
              IF { PUSH string "NOT_AN_ADMIN" ; FAILWITH } { UNIT } } ;
-         LAMBDA
-           (pair (pair address bool) (option address))
-           unit
-           { CAR ; CDR ; IF { PUSH string "PAUSED" ; FAILWITH } { UNIT } } ;
-         DIG 2 ;
+         SWAP ;
          UNPAIR ;
          IF_LEFT
            { IF_LEFT
-               { DIG 2 ;
-                 DROP ;
-                 SWAP ;
+               { SWAP ;
                  DUP ;
                  DUG 2 ;
                  DUP 4 ;
@@ -78,31 +72,21 @@
                      NIL operation ;
                      PAIR } }
                { DROP ;
-                 DIG 2 ;
+                 SWAP ;
                  DROP ;
                  DUP ;
-                 DIG 2 ;
-                 SWAP ;
-                 EXEC ;
-                 DROP ;
+                 CAR ;
+                 CDR ;
+                 IF { PUSH string "PAUSED" ; FAILWITH } {} ;
                  NIL operation ;
                  PAIR } }
-           { DIG 3 ;
-             DROP ;
-             SWAP ;
+           { SWAP ;
              DUP ;
              DUG 2 ;
              DIG 3 ;
              SWAP ;
              EXEC ;
              DROP ;
-             PUSH string "INSUFFICIENT_BALANCE" ;
-             BALANCE ;
-             DUP 3 ;
-             COMPARE ;
-             LE ;
-             NOT ;
-             IF { FAILWITH } { DROP } ;
              SWAP ;
              DUP ;
              DUG 2 ;
