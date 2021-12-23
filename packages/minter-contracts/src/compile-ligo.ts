@@ -178,6 +178,18 @@ const compileSources: CompileSourceEntry[] = [
     contract: true,
   },
   {
+    srcFile: 'swaps/fa2_swap_with_collections_and_burn.mligo',
+    mainFn: 'swaps_main',
+    dstFile: 'fa2_swap_with_collections_and_burn.tz',
+    contract: true,
+  },
+  {
+    srcFile: 'swaps/fa2_swap_with_collections_and_burn_offchain.mligo',
+    mainFn: 'swaps_offchain_main',
+    dstFile: 'fa2_swap_with_collections_and_burn_offchain.tz',
+    contract: true,
+  },
+  {
     srcFile: 'swaps/fa2_allowlisted_swap.mligo',
     mainFn: 'allowlisted_swaps_main',
     dstFile: 'fa2_allowlisted_swap.tz',

@@ -15,6 +15,8 @@ import Hedgehog (Gen, Property, forAll, property)
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 
+import qualified Lorentz.Contracts.Spec.FA2Interface as FA2I
+
 import Lorentz.Contracts.Swaps.Basic
 import Lorentz.Test.Consumer
 import Lorentz.Value
@@ -288,6 +290,15 @@ invalidFA2sChecks = testGroup "Invalid FA2s"
           swap <- originateSwap
           fa2 <- originateFA2 "fa2" setup [swap]
           addressWithZeroBalance <- newAddress "test"
+          withSender addressWithZeroBalance $ 
+            call fa2 (Call @"Update_operators")     
+              [
+                FA2I.AddOperator FA2I.OperatorParam
+                  { opOwner = addressWithZeroBalance
+                  , opOperator = toAddress swap
+                  , opTokenId = tokenId2
+                  }
+              ]
           withSender alice $
             call swap (Call @"Start") $ mkSingleOffer SwapOffer
               { assetsOffered = [mkFA2Assets fa2 [(tokenId1, 10)]]
@@ -295,7 +306,7 @@ invalidFA2sChecks = testGroup "Invalid FA2s"
               }
           withSender addressWithZeroBalance
             (call swap (Call @"Accept") initSwapId
-              `expectFailure` failedWith fa2 errSwapRequestedFA2BalanceInvalid)
+              `expectFailure` failedWith fa2 (errSwapRequestedFA2BalanceInvalid 5 0))
   ]    
 
 complexCases :: TestTree
