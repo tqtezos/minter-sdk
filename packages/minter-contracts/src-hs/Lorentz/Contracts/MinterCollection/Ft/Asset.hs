@@ -53,4 +53,4 @@ deriving anyclass instance IsoValue LimitedStorageWithGlobalOperators
 deriving anyclass instance HasAnnotation LimitedStorageWithGlobalOperators
 
 limitedWithGlobalOperatorsContract :: T.Contract (ToT LimitedWithGlobalOperatorsEntrypoints) (ToT LimitedStorageWithGlobalOperators)
-limitedWithGlobalOperatorsContract = $$(embedContractM (inBinFolder "fa2_multi_ft_asset_limited_contract_operator.tz"))
+limitedWithGlobalOperatorsContract = $$(embedContractM (inBinFolder "fa2_multi_ft_asset_limited_global_operator.tz"))

@@ -12,6 +12,8 @@ This directory contains various flavors of a Multi-Asset Fungible Token variant 
 
 The code in this file manages the aspects of the contract described by the [FA2 Token Standard](https://gitlab.com/tzip/tzip/-/blob/master/proposals/tzip-12/tzip-12.md). These include the entrypoints `transfer`, `balance_of`, `update_operators`.  Refer to this standard for more details. 
 
+- NOTE: The `transfer` entrypoint assumes that tokens are minted as they are in the `Mint_tokens` entrypoint, with updates to `token_metadata`. If tokens are to be minted manually at contract origination, the contract originator has to take care to update the `token_metadata` big_map with the minted tokens on top of updating the ledger. 
+
 ## [FA2 Multi FT Token Manager](fa2_multi_ft_token_manager.mligo) (MANAGER)
 
 ### TOKEN_MANAGER
@@ -48,7 +50,7 @@ This is an alternative implementation of TOKEN_MANAGER used to mint a fixed supp
 
 This token manager implementation is used in [fa2_multi_ft_asset_limited.tz](../../../../bin/fa2_multi_ft_asset_limited.tz) which corresponds to the LIGO contract [fa2_multi_ft_asset_limited.mligo](fa2_multi_ft_asset_limited.mligo). This contract also adds the `next_token_id` storage variable to the normal FT Asset storage and mints tokens incrementally instead of requiring users to pass the `token_id` they would like to mint to. 
 
-Tokens minted using the `Mint` entrypoint are similar to those created by the editions contract [Edition set](../editions/README.md) in that both have guarantees of a fixed supply. However, they have an important difference in that tokens of the same type minted with the `limited_ft` contract share the same `token_id`, as opposed to those minted with the `editions` contract. In that sense, tokens of the same type mintd with `limited_ft` are indeed fungible.
+Tokens minted using the `Mint` entrypoint are similar to those created by the editions contract [Edition set](../editions/README.md) in that both have guarantees of a fixed supply (as such, there is no `Burn_tokens` entrypoint). However, they have an important difference in that tokens of the same type minted with the `limited_ft` contract share the same `token_id`, as opposed to those minted with the `editions` contract. In that sense, tokens of the same type mintd with `limited_ft` are indeed fungible.
 
 ```
 (list %mint
@@ -61,8 +63,8 @@ When the `GLOBAL_OPERATOR` macro is activated, an alternative transfer policy is
 
 As an example, see the `GLOBAL_OPERATOR` activated in the FT Limited Asset contract. 
 
-- [Ligo](fa2_multi_ft_asset_limited_simple_admin_contract_operator.mligo)
-- [Michelson](../../../../bin/fa2_multi_ft_asset_limited_contract_operator.tz)
+- [Ligo](fa2_multi_ft_asset_limited_simple_admin_global_operator.mligo)
+- [Michelson](../../../../bin/fa2_multi_ft_asset_limited_global_operator.tz)
 ## [FA2 Multi FT Faucet](fa2_multi_ft_faucet.mligo) (FAUCET)
 
 FAUCET simply combines the functionality provided by TOKEN and MANAGER. That is, it provides the normal FA2 token operations as well as the ability to create/mint and burn fungible tokens. It provides no admin capabilities so when compiled, any user can call the resulting contract to create/mint and burn tokens. It is also impossible to set a new admin or pause the contract.

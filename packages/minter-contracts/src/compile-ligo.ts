@@ -435,9 +435,9 @@ const compileSources: CompileSourceEntry[] = [
     contract : true,
   },
   {
-    srcFile: 'minter_collection/ft/fa2_multi_ft_asset_limited_simple_admin_contract_operator.mligo',
+    srcFile: 'minter_collection/ft/fa2_multi_ft_asset_limited_simple_admin_global_operator.mligo',
     mainFn: 'multi_ft_asset_main',
-    dstFile: 'fa2_multi_ft_asset_limited_contract_operator.tz',
+    dstFile: 'fa2_multi_ft_asset_limited_global_operator.tz',
     contract : true,
   },
   {

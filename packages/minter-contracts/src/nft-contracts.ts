@@ -18,6 +18,7 @@ import {
   FixedPriceSaleMarketOffchainCode,
   EnglishAuctionTezCode,
   Fa2MultiNftTokenEditionsCode,
+  Fa2MultiFtAssetLimitedGlobalOperatorCode,
   EnglishAuctionFa2Code,
   EnglishAuctionTezPermitCode,
   EnglishAuctionTezFixedFeeCode,
@@ -153,6 +154,25 @@ export async function originateFtLimited(
     { Elt "" 0x${meta_uri} ; Elt "content" 0x${meta_content} })`;
 
   return originateContract(tz, Fa2MultiFtAssetLimitedCode.code, storage, 'ftLimited');
+}
+
+export async function originateFtLimitedGlobalOperators(
+  tz: TezosToolkit,
+  admin: address,
+  globalOperator: address
+): Promise<Contract> {
+  const meta_content = char2Bytes(JSON.stringify(sample_metadata, null, 2));
+
+  const storage =
+    `(Pair (Pair (Pair (Pair "${admin}" False) None)
+                (Pair
+                   (Pair (Pair {"${globalOperator}"} {})
+                         (Pair 0 {}))
+                   (Pair {}
+                         {})))
+          {})` ;
+
+  return originateContract(tz, Fa2MultiFtAssetLimitedGlobalOperatorCode.code, storage, 'ftLimitedGlobalOperator');
 }
 
 export async function originateFixedPriceSale(

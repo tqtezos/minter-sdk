@@ -256,13 +256,12 @@
                                 DUG 2 ;
                                 CDR ;
                                 ITER { SWAP ;
-                                       DUP ;
+                                       DUP 5 ;
+                                       CDR ;
+                                       CAR ;
                                        DUP 3 ;
                                        CDR ;
                                        CAR ;
-                                       DUP 5 ;
-                                       CAR ;
-                                       PAIR ;
                                        MEM ;
                                        NOT ;
                                        IF { DROP 2 ; DUP 8 ; FAILWITH }

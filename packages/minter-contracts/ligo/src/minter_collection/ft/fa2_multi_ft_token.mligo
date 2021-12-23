@@ -62,7 +62,7 @@ let transfer (txs, validate_op, storage
   let make_transfer = fun (l, tx : ledger * transfer) ->
     List.fold
       (fun (ll, dst : ledger * transfer_destination) ->
-        if not Big_map.mem (tx.from_, dst.token_id) ll
+        if not Big_map.mem dst.token_id storage.token_metadata
         then (failwith fa2_token_undefined : ledger)
         else
 #if !GLOBAL_OPERATOR
