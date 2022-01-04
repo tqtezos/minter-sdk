@@ -1,6 +1,8 @@
 #if !COMMON
 #define COMMON
 
+#include "../fa2/fa2_interface.mligo"
+
 (*TYPES*)
 
 type sale_id = nat
@@ -112,7 +114,7 @@ let address_to_contract_transfer_entrypoint(add : address) : ((transfer list) co
     None -> (failwith "ADDRESS_DOES_NOT_RESOLVE" : (transfer list) contract)
   | Some c ->  c
 
-let resolve_contract (add : address) : unit contract =
+let resolve_address (add : address) : unit contract =
   match ((Tezos.get_contract_opt add) : (unit contract) option) with
       None -> (failwith "ADDRESS_DOES_NOT_RESOLVE" : unit contract)
     | Some c -> c
@@ -134,37 +136,8 @@ let transfer_fa2(fa2_address, token_id, amount_, from, to_: address * token_id *
  in transfer_op
 
 let transfer_tez (qty, to_ : tez * address) : operation =
-  let destination : unit contract = resolve_contract (to_) in
+  let destination : unit contract = resolve_address (to_) in
   Tezos.transaction () qty destination
-
-let check_tokens_allowed
-    (tokens, allowlist, err : tokens * allowlist * string) : unit =
-
-#if !ALLOWLIST_ENABLED
-  unit
-
-#elif ALLOWLIST_SIMPLE
-  check_address_allowed(tokens.fa2_address, allowlist, err)
-
-#elif ALLOWLIST_TOKEN
-  begin match Big_map.find_opt tokens.fa2_address allowlist with
-  | None -> failwith err
-  | Some m_tokens_allowlist -> begin match m_tokens_allowlist with
-    | All_token_ids_allowed -> unit
-    | Token_ids_allowed token_ids_allowlist ->
-        List.iter
-          (fun (token : fa2_tokens) ->
-            if Set.mem token.token_id token_ids_allowlist
-              then unit
-              else failwith err
-          )
-          tokens.fa2_batch
-    end
-  end
-
-#else
-<No check_tokens_allowed implementation>
-#endif
 
 let address_from_key (key : key) : address =
   let a = Tezos.address (Tezos.implicit_account (Crypto.hash_key key)) in

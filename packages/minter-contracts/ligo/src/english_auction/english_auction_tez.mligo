@@ -1,6 +1,7 @@
 #include "../../fa2/fa2_interface.mligo"
 #include "../../fa2_modules/pauseable_admin_option.mligo"
 #include "../../fa2_modules/fa2_allowlist/allowlist_base.mligo"
+#include "../allowlist_common.mligo"
 #include "../common.mligo"
 
 type auction =
