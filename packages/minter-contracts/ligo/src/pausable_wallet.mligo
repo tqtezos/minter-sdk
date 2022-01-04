@@ -1,3 +1,10 @@
+(*
+  A basic wallet contract to which funds can be sent and stored, integrated with the simple-admin module to 
+  provide locking capability to the default entrypoint. Funds can be sent to the %defualt entrypoint of the contract 
+  if and only if the contract is unlocked. The contract admin can send a specified amount of the wallet's balance to themselves 
+  by calling the %send entrypoint of the contract along with the amount in tez they would like to send themselves. 
+ *)
+
 #include "../fa2_modules/admin/simple_admin.mligo"
 #include "common.mligo"
 
