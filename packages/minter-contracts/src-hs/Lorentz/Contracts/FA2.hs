@@ -29,6 +29,7 @@ data TokenMetadata = TokenMetadata
   { tokenId :: FA2I.TokenId
   , tokenInfo :: FA2I.TokenMetadata
   }
+  deriving stock (Show, Eq)
 
 customGeneric "TokenMetadata" rightComb
 deriving anyclass instance IsoValue TokenMetadata
@@ -46,3 +47,6 @@ data Parameter
 customGeneric "Parameter" ligoLayout
 deriving anyclass instance IsoValue Parameter
 deriving anyclass instance HasAnnotation Parameter
+
+instance ParameterHasEntrypoints Parameter where
+  type ParameterEntrypointsDerivation Parameter = EpdDelegate

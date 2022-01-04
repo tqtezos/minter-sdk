@@ -9,7 +9,9 @@ module Test.Util
   , FA2Setup (..)
   , doFA2Setup
   , originateFA2
+  , originateFA2WithGlobalOperators
   , assertingBalanceDeltas
+  , assertingBalanceDeltas'
   , balanceOf
   , mkAllowlistSimpleParam
   , originateWithAdmin
@@ -35,13 +37,19 @@ import GHC.TypeLits (Symbol)
 import GHC.TypeNats (Nat, type (+))
 import Hedgehog (Gen, MonadTest, Range)
 import qualified Hedgehog.Gen as Gen
+import Data.Maybe
 
 import Lorentz.Test.Consumer
 import Lorentz.Value
 import Tezos.Core (unMutez, unsafeMkMutez)
 
 import qualified Indigo.Contracts.FA2Sample as FA2
+import Lorentz.Contracts.FA2
 import qualified Lorentz.Contracts.Spec.FA2Interface as FA2
+
+import qualified Lorentz.Contracts.MinterCollection.Ft.Asset as FtAsset
+import qualified Lorentz.Contracts.MinterCollection.Ft.Token as FtToken
+import qualified Lorentz.Contracts.PausableAdminOption as PausableAdminOption
 import Morley.Nettest
 import Morley.Nettest.Pure (PureM, runEmulated)
 
@@ -149,6 +157,43 @@ originateFA2 name FA2Setup{..} contracts = do
     )
   return fa2
 
+originateFA2WithGlobalOperators
+  :: MonadNettest caps base m
+  => AliasHint
+  -> FA2Setup addrsNum tokensNum
+  -> Set Address
+  -> Address
+  -> [TAddress contractParam]
+  -> m (TAddress FtAsset.LimitedWithGlobalOperatorsEntrypoints)
+originateFA2WithGlobalOperators name FA2Setup{..} globalOperators admin contracts = do
+  fa2 <- originateTypedSimple name
+    FtAsset.LimitedStorageWithGlobalOperators
+    {
+      assets = FtToken.LimitedStorageWithGlobalOperators
+        { 
+        ledger = BigMap $ Map.fromList do
+          -- put money on several tokenIds for each given address
+          addr <- F.toList sAddresses
+          tokenId <- F.toList sTokens
+          pure ((addr, tokenId), 1000)
+        , operators = BigMap $ Map.fromList do
+          owner <- F.toList sAddresses
+          operator <- contracts
+          tokenId <- F.toList sTokens 
+          pure ((OperatorKey owner (toAddress operator) tokenId), ())
+        , tokenMetadata = BigMap $ Map.fromList do 
+          tokenId <- F.toList sTokens
+          pure (tokenId, (TokenMetadata tokenId mempty))
+        , globalOperators = globalOperators
+        , nextTokenId = 0 
+        , totalTokenSupply = mempty
+        }, 
+      metadata = mempty, 
+      admin = fromJust $ PausableAdminOption.initAdminStorage admin
+    }
+    (FtAsset.limitedWithGlobalOperatorsContract)
+  return fa2
+
 -- | Given a FA2 contract address, checks that balances of the given
 -- address/token_ids change by the specified delta values.
 assertingBalanceDeltas
@@ -158,6 +203,47 @@ assertingBalanceDeltas
   -> m a
   -> m a
 assertingBalanceDeltas fa2 indicedDeltas action = do
+  consumer <- originateSimple "consumer" [] contractConsumer
+
+  pullBalance consumer
+  res <- action
+  pullBalance consumer
+
+  balancesRes <- map (map FA2.briBalance) . fromVal <$>
+    getStorage consumer
+  (balancesAfter, balancesBefore) <- case balancesRes of
+    [balancesAfter, balancesBefore] ->
+      return (balancesAfter, balancesBefore)
+    other -> failure $ "Unexpected consumer storage: " +| other |+ ""
+
+  forM_ (zip3 indicedDeltas balancesBefore balancesAfter) $
+    \(((addr, tokenId), expected), actualBefore, actualAfter) -> do
+      let actual = toInteger actualAfter - toInteger actualBefore
+      assert (expected == actual) $
+        "For address " +| addr |+ "\n(token id = " +| tokenId |+ ")\n\
+        \got unexpected balance delta: \
+        \expected " +| expected |+ ", got " +| actual |+ ""
+  return res
+    where
+      pullBalance
+        :: MonadNettest base caps m
+        => TAddress [FA2.BalanceResponseItem] -> m ()
+      pullBalance consumer = do
+        let tokenRefs = map fst indicedDeltas
+        call fa2 (Call @"Balance_of") $
+          FA2.mkFA2View
+            (uncurry FA2.BalanceRequestItem <$> tokenRefs)
+            consumer
+
+-- | Given a FA2 contract address, checks that balances of the given
+-- address/token_ids change by the specified delta values.
+assertingBalanceDeltas'
+  :: (MonadNettest caps base m, HasCallStack)
+  => TAddress FtAsset.LimitedWithGlobalOperatorsEntrypoints
+  -> [((Address, FA2.TokenId), Integer)]
+  -> m a
+  -> m a
+assertingBalanceDeltas' fa2 indicedDeltas action = do
   consumer <- originateSimple "consumer" [] contractConsumer
 
   pullBalance consumer
