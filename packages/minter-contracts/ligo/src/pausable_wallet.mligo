@@ -15,8 +15,8 @@ let wallet_main (param, s : wallet_entrypoints * wallet_storage) : return = begi
     | Send amt -> 
       let u : unit = fail_if_not_admin(s) in (*Only admin can send funds*)
       let admin : unit contract = resolve_address(s.admin) in 
-      let empty_wallet_op : operation = Tezos.transaction () amt admin in 
-      ([empty_wallet_op], s)
+      let send_op : operation = Tezos.transaction () amt admin in 
+      ([send_op], s)
     | Default -> 
       let u : unit = fail_if_paused(s) in (*Wallet cannot receive funds from extrernal users when the contract is paused*)
       (([] : operation list), s)
