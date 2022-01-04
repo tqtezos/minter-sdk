@@ -16,14 +16,7 @@
          UNPAIR ;
          IF_LEFT
            { IF_LEFT
-               { SWAP ;
-                 DUP ;
-                 DUG 2 ;
-                 DUP 4 ;
-                 SWAP ;
-                 EXEC ;
-                 DROP ;
-                 IF_LEFT
+               { IF_LEFT
                    { IF_LEFT
                        { DROP ;
                          SWAP ;

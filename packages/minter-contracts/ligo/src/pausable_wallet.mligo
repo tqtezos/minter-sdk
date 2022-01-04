@@ -21,7 +21,6 @@ let wallet_main (param, s : wallet_entrypoints * wallet_storage) : return = begi
       let u : unit = fail_if_paused(s) in (*Wallet cannot receive funds from extrernal users when the contract is paused*)
       (([] : operation list), s)
     | Admin a ->
-      let u : unit = fail_if_not_admin(s) in
       let (ops, new_admin) = admin_main (a, s) in
       (ops, new_admin)
   end
