@@ -4,7 +4,7 @@
 #include "../allowlist_common.mligo"
 #include "../common.mligo"
 
-type consolation_winner_array = { size : nat ; bid_index : nat; content : (nat , address) map }
+type consolation_winner_array = { size : nat ; bid_index : nat; content : (nat , address) map } (*Acts as bounded queue*)
 
 type auction =
   [@layout:comb]
@@ -23,6 +23,7 @@ type auction =
 #if CONSOLATION_AUCTION
     consolation_winners : consolation_winner_array;
     consolation_token : global_token_id;
+    max_consolation_winners : nat;
 #endif
 #if OFFCHAIN_BID
     last_bid_offchain : bool;
@@ -42,6 +43,7 @@ type configure_param =
     end_time : timestamp;
 #if CONSOLATION_AUCTION
     consolation_token : global_token_id;
+    max_consolation_winners : nat;
 #endif
   }
 
@@ -73,9 +75,6 @@ type storage =
     allowlist : allowlist;
 #if FEE
     fee : fee_data;
-#endif
-#if CONSOLATION_AUCTION
-    max_consolation_winners : nat;
 #endif
   }
 
@@ -206,6 +205,7 @@ let configure_auction_storage(configure_param, seller, storage : configure_param
 #if CONSOLATION_AUCTION
       consolation_winners = empty_consolation_winner_array;
       consolation_token = configure_param.consolation_token;
+      max_consolation_winners = configure_param.max_consolation_winners;
 #endif
     } in
     let updated_auctions : (nat, auction) big_map = Big_map.update storage.current_id (Some auction_data) storage.auctions in
@@ -314,17 +314,17 @@ let place_bid(  asset_id
       [return_bid] in
 #if CONSOLATION_AUCTION
     let new_consolation_winners : consolation_winner_array = 
-        if (auction.consolation_winners.size < storage.max_consolation_winners) 
+        if (auction.consolation_winners.size < auction.max_consolation_winners) 
         then 
              (if first_bid(auction)
               then auction.consolation_winners
               else append_to_consolation_winner_array(auction.highest_bidder, auction.consolation_winners)
              )
-        else 
+        else (*Queue is full*)
              (if first_bid(auction)
               then auction.consolation_winners
               else 
-                   let remove_bidder_index : nat = abs(storage.max_consolation_winners - auction.consolation_winners.bid_index) in (*Should always be positive*)
+                   let remove_bidder_index : nat = abs(auction.consolation_winners.bid_index - auction.max_consolation_winners) in (*Should always be positive*)
                    let updated_array : consolation_winner_array = remove_from_consolation_winner_array(remove_bidder_index, auction.consolation_winners) in
                    append_to_consolation_winner_array(auction.highest_bidder, auction.consolation_winners)
              )

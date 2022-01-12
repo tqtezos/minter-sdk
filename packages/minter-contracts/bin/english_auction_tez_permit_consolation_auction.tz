@@ -15,7 +15,8 @@
                                                      (pair (address %fa2_address) (list %fa2_batch (pair (nat %token_id) (nat %amount)))))
                                                   (pair (timestamp %start_time)
                                                         (pair (timestamp %end_time)
-                                                              (pair %consolation_token (address %fa2_address) (nat %token_id))))))))))
+                                                              (pair (pair %consolation_token (address %fa2_address) (nat %token_id))
+                                                                    (nat %max_consolation_winners))))))))))
                  (option %optional_permit (pair (key %signerKey) (signature %signature)))))) ;
   storage
     (pair (pair %auction_storage
@@ -41,8 +42,9 @@
                                                                                                           (pair (pair %consolation_winners
                                                                                                                    (pair (nat %bid_index) (map %content nat address))
                                                                                                                    (nat %size))
-                                                                                                                (pair %consolation_token (address %fa2_address) (nat %token_id)))))))))))))))
-                                     (pair (unit %allowlist) (nat %max_consolation_winners)))))))
+                                                                                                                (pair (pair %consolation_token (address %fa2_address) (nat %token_id))
+                                                                                                                      (nat %max_consolation_winners)))))))))))))))
+                                     (unit %allowlist))))))
           (nat %counter)) ;
   code { LAMBDA
            (option (pair (pair address bool) (option address)))
@@ -226,8 +228,8 @@
                                                                                             (pair nat
                                                                                                   (pair mutez
                                                                                                         (pair timestamp
-                                                                                                              (pair address (pair (pair (pair nat (map nat address)) nat) (pair address nat))))))))))))))
-                                               (pair unit nat)))))))
+                                                                                                              (pair address (pair (pair (pair nat (map nat address)) nat) (pair (pair address nat) nat))))))))))))))
+                                               unit))))))
            (pair address
                  (pair mutez
                        (pair timestamp
@@ -238,7 +240,7 @@
                                                      (pair nat
                                                            (pair mutez
                                                                  (pair timestamp
-                                                                       (pair address (pair (pair (pair nat (map nat address)) nat) (pair address nat)))))))))))))
+                                                                       (pair address (pair (pair (pair nat (map nat address)) nat) (pair (pair address nat) nat)))))))))))))
            { UNPAIR ;
              SWAP ;
              CDR ;
@@ -260,7 +262,7 @@
                                                      (pair nat
                                                            (pair mutez
                                                                  (pair timestamp
-                                                                       (pair address (pair (pair (pair nat (map nat address)) nat) (pair address nat)))))))))))))
+                                                                       (pair address (pair (pair (pair nat (map nat address)) nat) (pair (pair address nat) nat)))))))))))))
            bool
            { DUP ;
              CDR ;
@@ -305,7 +307,7 @@
                                                      (pair nat
                                                            (pair mutez
                                                                  (pair timestamp
-                                                                       (pair address (pair (pair (pair nat (map nat address)) nat) (pair address nat)))))))))))))
+                                                                       (pair address (pair (pair (pair nat (map nat address)) nat) (pair (pair address nat) nat)))))))))))))
            bool
            { DUP ;
              CAR ;
@@ -336,7 +338,7 @@
                                                               (pair nat
                                                                     (pair mutez
                                                                           (pair timestamp
-                                                                                (pair address (pair (pair (pair nat (map nat address)) nat) (pair address nat)))))))))))))
+                                                                                (pair address (pair (pair (pair nat (map nat address)) nat) (pair (pair address nat) nat)))))))))))))
                     bool)
                  (pair address
                        (pair mutez
@@ -348,7 +350,7 @@
                                                            (pair nat
                                                                  (pair mutez
                                                                        (pair timestamp
-                                                                             (pair address (pair (pair (pair nat (map nat address)) nat) (pair address nat))))))))))))))
+                                                                             (pair address (pair (pair (pair nat (map nat address)) nat) (pair (pair address nat) nat))))))))))))))
            bool
            { UNPAIR ; SWAP ; EXEC } ;
          SWAP ;
@@ -659,7 +661,14 @@
                               NIL operation ;
                               SWAP ;
                               CONS } ;
-                         DUP 6 ;
+                         DUP 5 ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
                          CDR ;
                          CDR ;
                          CDR ;
@@ -765,16 +774,23 @@
                                    CDR ;
                                    CDR ;
                                    CDR ;
+                                   CDR ;
+                                   CDR ;
+                                   DUP 6 ;
+                                   CDR ;
+                                   CDR ;
+                                   CDR ;
+                                   CDR ;
+                                   CDR ;
+                                   CDR ;
+                                   CDR ;
+                                   CDR ;
+                                   CDR ;
+                                   CDR ;
+                                   CDR ;
                                    CAR ;
                                    CAR ;
                                    CAR ;
-                                   DUP 7 ;
-                                   CDR ;
-                                   CDR ;
-                                   CDR ;
-                                   CDR ;
-                                   CDR ;
-                                   CDR ;
                                    SUB ;
                                    ABS ;
                                    DUP 6 ;
@@ -1371,7 +1387,7 @@
                                                                         (pair nat
                                                                               (pair mutez
                                                                                     (pair timestamp
-                                                                                          (pair address (pair (pair (pair nat (map nat address)) nat) (pair address nat))))))))))))) ;
+                                                                                          (pair address (pair (pair (pair nat (map nat address)) nat) (pair (pair address nat) nat))))))))))))) ;
                          SWAP ;
                          UPDATE ;
                          PAIR ;
@@ -1521,7 +1537,7 @@
                                                                         (pair nat
                                                                               (pair mutez
                                                                                     (pair timestamp
-                                                                                          (pair address (pair (pair (pair nat (map nat address)) nat) (pair address nat))))))))))))) ;
+                                                                                          (pair address (pair (pair (pair nat (map nat address)) nat) (pair (pair address nat) nat))))))))))))) ;
                          SWAP ;
                          UPDATE ;
                          PAIR ;
@@ -1636,6 +1652,7 @@
                             CDR ;
                             CDR ;
                             CDR ;
+                            CAR ;
                             CDR ;
                             PAIR ;
                             DIG 3 ;
@@ -1663,6 +1680,7 @@
                      CDR ;
                      CDR ;
                      CDR ;
+                     CAR ;
                      CAR ;
                      DIG 7 ;
                      SWAP ;
@@ -1868,8 +1886,8 @@
                                                                                                          (pair nat
                                                                                                                (pair mutez
                                                                                                                      (pair timestamp
-                                                                                                                           (pair address (pair (pair (pair nat (map nat address)) nat) (pair address nat))))))))))))))
-                                                            (pair unit nat))))))
+                                                                                                                           (pair address (pair (pair (pair nat (map nat address)) nat) (pair (pair address nat) nat))))))))))))))
+                                                            unit)))))
                               nat)) ;
              LOOP_LEFT
                { UNPAIR ;
@@ -1883,7 +1901,7 @@
                                                   (pair nat
                                                         (pair nat
                                                               (pair (list (pair address (list (pair nat nat))))
-                                                                    (pair timestamp (pair timestamp (pair address nat)))))))))
+                                                                    (pair timestamp (pair timestamp (pair (pair address nat) nat)))))))))
                                 (option (pair key signature))) } ;
                  IF_NONE
                    { DROP ;
@@ -1896,7 +1914,7 @@
                                                                  (pair nat
                                                                        (pair nat
                                                                              (pair (list (pair address (list (pair nat nat))))
-                                                                                   (pair timestamp (pair timestamp (pair address nat)))))))))
+                                                                                   (pair timestamp (pair timestamp (pair (pair address nat) nat)))))))))
                                                (option (pair key signature))))
                                    (pair (pair (option (pair (pair address bool) (option address)))
                                                (pair nat
@@ -1914,8 +1932,8 @@
                                                                                                                     (pair nat
                                                                                                                           (pair mutez
                                                                                                                                 (pair timestamp
-                                                                                                                                      (pair address (pair (pair (pair nat (map nat address)) nat) (pair address nat))))))))))))))
-                                                                       (pair unit nat))))))
+                                                                                                                                      (pair address (pair (pair (pair nat (map nat address)) nat) (pair (pair address nat) nat))))))))))))))
+                                                                       unit)))))
                                          nat))
                              (list operation)) }
                    { DIG 2 ;
@@ -1977,7 +1995,6 @@
                      CDR ;
                      CDR ;
                      CDR ;
-                     CAR ;
                      SWAP ;
                      DUP ;
                      DUG 2 ;
@@ -2159,6 +2176,18 @@
                      CDR ;
                      CDR ;
                      CDR ;
+                     CDR ;
+                     DUP 4 ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     CAR ;
+                     PAIR ;
                      PUSH nat 0 ;
                      EMPTY_MAP nat address ;
                      PUSH nat 0 ;
@@ -2339,7 +2368,7 @@
                                                             (pair nat
                                                                   (pair nat
                                                                         (pair (list (pair address (list (pair nat nat))))
-                                                                              (pair timestamp (pair timestamp (pair address nat)))))))))
+                                                                              (pair timestamp (pair timestamp (pair (pair address nat) nat)))))))))
                                           (option (pair key signature)))) } ;
                      IF_NONE
                        { DROP 2 ; PUSH string "INTERNAL_ERROR" ; FAILWITH }
@@ -2364,8 +2393,8 @@
                                                                                                                      (pair nat
                                                                                                                            (pair mutez
                                                                                                                                  (pair timestamp
-                                                                                                                                       (pair address (pair (pair (pair nat (map nat address)) nat) (pair address nat))))))))))))))
-                                                                        (pair unit nat))))))
+                                                                                                                                       (pair address (pair (pair (pair nat (map nat address)) nat) (pair (pair address nat) nat))))))))))))))
+                                                                        unit)))))
                                           nat)) } } } ;
              SWAP ;
              DROP ;
