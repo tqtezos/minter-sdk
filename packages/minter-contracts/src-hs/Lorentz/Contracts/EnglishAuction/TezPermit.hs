@@ -10,6 +10,7 @@ import qualified Lorentz.Contracts.NoAllowlist as NoAllowlist
 import Lorentz.Contracts.PausableAdminOption
 import Michelson.Test.Import (embedContractM)
 import qualified Michelson.Typed as T
+import Fmt (Buildable(..), genericF)
 
 import Lorentz.Contracts.EnglishAuction.Tez
 
@@ -19,11 +20,12 @@ import Lorentz.Contracts.EnglishAuction.Tez
 data Permit = Permit
   { signerKey :: PublicKey
   , signature :: Signature
-  }
+  } deriving stock (Eq, Ord)
 
 customGeneric "Permit" ligoCombLayout
 deriving anyclass instance IsoValue Permit
 deriving anyclass instance HasAnnotation Permit
+instance Buildable Permit where build = genericF
 
 data PermitAuctionStorage al = PermitAuctionStorage
   { auctionStorage :: AuctionStorage al

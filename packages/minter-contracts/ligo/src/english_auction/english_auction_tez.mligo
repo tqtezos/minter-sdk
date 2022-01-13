@@ -4,7 +4,12 @@
 #include "../allowlist_common.mligo"
 #include "../common.mligo"
 
-type consolation_winner_array = { size : nat ; bid_index : nat; content : (nat , address) map } (*Acts as bounded queue*)
+type consolation_winner_array = 
+  [@layout:comb]
+  { size : nat ; 
+    bid_index : nat; 
+    content : (nat , address) map 
+  } (*Acts as bounded queue*)
 
 type auction =
   [@layout:comb]
