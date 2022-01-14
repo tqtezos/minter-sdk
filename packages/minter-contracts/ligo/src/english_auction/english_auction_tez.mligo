@@ -223,6 +223,15 @@ let configure_auction(configure_param, storage : configure_param * storage) : re
 #endif
   let new_storage = configure_auction_storage(configure_param, Tezos.sender, storage) in
   let fa2_transfers : operation list = transfer_tokens(configure_param.asset, Tezos.sender, Tezos.self_address) in
+#if CONSOLATION_AUCTION
+  let consolation_transfer : operation = 
+    transfer_tokens_in_single_contract Tezos.sender Tezos.self_address 
+                                      ({fa2_address = configure_param.consolation_token.fa2_address;
+                                        fa2_batch = [{token_id = configure_param.consolation_token.token_id;
+                                                      amount = configure_param.max_consolation_winners;}]
+                                       }) in 
+  let fa2_transfers = consolation_transfer :: fa2_transfers in 
+#endif 
   (fa2_transfers, new_storage)
 
 
@@ -319,14 +328,14 @@ let place_bid(  asset_id
       [return_bid] in
 #if CONSOLATION_AUCTION
     let new_consolation_winners : consolation_winner_array = 
-        if (auction.consolation_winners.size < auction.max_consolation_winners) 
+        if auction.consolation_winners.size < auction.max_consolation_winners 
         then 
              (if first_bid(auction)
               then auction.consolation_winners
               else append_to_consolation_winner_array(auction.highest_bidder, auction.consolation_winners)
              )
         else (*Queue is full*)
-             (if first_bid(auction)
+             (if first_bid(auction) || auction.max_consolation_winners = 0n
               then auction.consolation_winners
               else 
                    let remove_bidder_index : nat = abs(auction.consolation_winners.bid_index - auction.max_consolation_winners) in (*Should always be positive*)

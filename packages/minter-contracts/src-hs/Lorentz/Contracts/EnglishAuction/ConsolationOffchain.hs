@@ -137,6 +137,13 @@ customGeneric "AuctionEntrypoints" ligoLayout
 deriving anyclass instance IsoValue al => IsoValue (AuctionEntrypoints al)
 deriving anyclass instance HasAnnotation al => HasAnnotation (AuctionEntrypoints al)
 
+instance
+  ( RequireAllUniqueEntrypoints (AuctionEntrypoints al), IsoValue al
+  , EntrypointsDerivation EpdDelegate (AuctionEntrypoints al)
+  ) =>
+    ParameterHasEntrypoints (AuctionEntrypoints al) where
+  type ParameterEntrypointsDerivation (AuctionEntrypoints al) = EpdDelegate
+
 
 -- Contract
 ----------------------------------------------------------------------------
