@@ -236,8 +236,8 @@ minRaisePercentOfBid TestData{testMinRaisePercent} bid =
 genConsolationWinners :: Natural -> Natural -> [Natural]
 genConsolationWinners numBids maxConsolationWinners 
     | numBids <= 1 || maxConsolationWinners == 0 = [] 
-    | maxConsolationWinners > numBids = [0 .. fromIntegral (numBids - 2)]
-    | otherwise = [ fromIntegral (numBids - maxConsolationWinners - 1) .. fromIntegral (numBids - 2)]
+    | maxConsolationWinners + 1 >= numBids = [0 .. fromIntegral (numBids - 2)]
+    | otherwise = [ fromIntegral (numBids - maxConsolationWinners) .. fromIntegral (numBids - 2)]
 
 ----------------------------------------------------------------------------
 -- Call entrypoints

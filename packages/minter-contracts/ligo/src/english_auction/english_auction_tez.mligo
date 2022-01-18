@@ -239,9 +239,6 @@ let resolve_auction(asset_id, storage : nat * storage) : return = begin
     (fail_if_paused storage.admin);
     let auction : auction = get_auction_data(asset_id, storage) in
     assert_msg (auction_ended(auction) , "AUCTION_NOT_ENDED");
-#if CONSOLATION_AUCTION
-    assert_msg (auction.consolation_winners.size = 0n, "CONSOLATION_NOT_SENT");
-#endif
     tez_stuck_guard("RESOLVE");
 
     let fa2_transfers : operation list = transfer_tokens(auction.asset, Tezos.self_address, auction.highest_bidder) in
@@ -274,6 +271,26 @@ let resolve_auction(asset_id, storage : nat * storage) : return = begin
       op_list 
     in 
 #endif
+
+#if CONSOLATION_AUCTION
+    assert_msg (auction.consolation_winners.size = 0n, "CONSOLATION_NOT_SENT");
+    let oplist = 
+      if auction.consolation_winners.bid_index >= auction.max_consolation_winners ||
+         auction.max_consolation_winners = 0n
+      then oplist 
+      else 
+          let remaining_consolation_tokens : nat = 
+            abs (auction.max_consolation_winners - auction.consolation_winners.bid_index) in 
+          let send_consolation_tokens : operation = 
+            transfer_tokens_in_single_contract Tezos.self_address auction.seller
+                  ({fa2_address = auction.consolation_token.fa2_address;
+                    fa2_batch = [{token_id = auction.consolation_token.token_id;
+                                  amount = remaining_consolation_tokens;}]
+                   }) in
+          send_consolation_tokens :: oplist    
+    in       
+#endif
+
     let updated_auctions = Big_map.remove asset_id storage.auctions in
     (oplist, {storage with auctions = updated_auctions})
   end
