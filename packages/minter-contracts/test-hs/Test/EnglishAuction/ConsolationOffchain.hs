@@ -32,7 +32,7 @@ hprop_Assets_are_transferred_to_highest_bidder_after_consolation_tokens_sent =
     bids <- forAll $ genSomeBids testData
 
     clevelandProp $ do
-      setup@Setup{seller, contract, fa2Contracts} <- testSetup testData
+      setup@Setup{seller, contract, fa2Contracts, consolationFa2Contract} <- testSetup testData
       bidders <- mkBidders bids
       let numBids = length (toList bids) 
       withSender seller $ configureAuction testData setup
@@ -46,9 +46,11 @@ hprop_Assets_are_transferred_to_highest_bidder_after_consolation_tokens_sent =
 
       -- Wait for the auction to end.
       advanceTime (sec $ fromIntegral $ testAuctionDuration `max` testExtendTime)
+
+      let consolationReceivers = genConsolationWinners (fromIntegral numBids) (fromIntegral testMaxConsolationWinners)
       
       withSender seller $ 
-        sendConsolation (genConsolationWinners (fromIntegral numBids) (fromIntegral testMaxConsolationWinners)) contract
+        sendConsolation consolationReceivers contract
 
       withSender seller $
         resolveAuction contract
@@ -68,6 +70,14 @@ hprop_Assets_are_transferred_to_highest_bidder_after_consolation_tokens_sent =
           contractBalance @== 0
           winnerBalance <- balanceOf fa2Contract tokenId winner
           winnerBalance @== expectedBalance
+
+      -- Tests consolation tokens are received    
+      forM_ (toList bidders `zip` [0 .. length (toList bidders) - 1]) \(bidder, bidIndex) -> do 
+          consolationBalance <- balanceOf consolationFa2Contract (FA2I.TokenId 0) bidder
+          if (fromIntegral bidIndex) `elem` consolationReceivers  
+              then consolationBalance @== 1 
+          else consolationBalance @== 0 
+          
 
 hprop_Resolve_auction_fails_if_not_all_consolation_tokens_sent :: Property
 hprop_Resolve_auction_fails_if_not_all_consolation_tokens_sent =
