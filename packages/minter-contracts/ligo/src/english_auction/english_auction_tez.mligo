@@ -309,6 +309,17 @@ let cancel_auction(asset_id, storage : nat * storage) : return = begin
       fa2_transfers else
       let return_bid : operation = transfer_tez(auction.current_bid, auction.highest_bidder) in 
       (return_bid :: fa2_transfers) in
+#if CONSOLATION_AUCTION
+    let op_list = 
+        let return_consolation_tokens : operation = 
+          transfer_tokens_in_single_contract Tezos.self_address auction.seller
+                ({fa2_address = auction.consolation_token.fa2_address;
+                  fa2_batch = [{token_id = auction.consolation_token.token_id;
+                                amount = auction.max_consolation_winners;}]
+                 }) in
+        return_consolation_tokens :: op_list    
+    in       
+#endif
     let updated_auctions = Big_map.remove asset_id storage.auctions in
     (op_list, {storage with auctions = updated_auctions})
   end
