@@ -69,6 +69,36 @@ hprop_Assets_are_transferred_to_highest_bidder_after_consolation_tokens_sent =
           winnerBalance <- balanceOf fa2Contract tokenId winner
           winnerBalance @== expectedBalance
 
+hprop_Resolve_auction_fails_if_not_all_consolation_tokens_sent :: Property
+hprop_Resolve_auction_fails_if_not_all_consolation_tokens_sent =
+  property $ do
+    testData@TestData{testExtendTime, testAuctionDuration, testTokenBatches, testMaxConsolationWinners} <- forAll genTestData
+    bids <- forAll $ genMultipleBids testData
+
+    clevelandProp $ do
+      setup@Setup{seller, contract, fa2Contracts} <- testSetup testData
+      bidders <- mkBidders bids
+      let numBids = length (toList bids)
+      -- Ensures testMaxConsolationWinners is at least 1  
+      withSender seller $ configureAuction (testData {testMaxConsolationWinners = testMaxConsolationWinners + 1}) setup
+
+      -- Wait for the auction to start.
+      waitForAuctionToStart testData
+
+      forM_ (toList bids `zip` toList bidders) \(bid, bidder) -> do
+        withSender bidder $
+          placeBid contract bid
+
+      -- Wait for the auction to end.
+      advanceTime (sec $ fromIntegral $ testAuctionDuration `max` testExtendTime)
+      
+      withSender seller $ 
+        sendConsolation (genIncompleteConsolationWinners (fromIntegral numBids) (fromIntegral testMaxConsolationWinners + 1)) contract
+
+      withSender seller
+        (resolveAuction contract `expectFailure` failedWith contract [mt|CONSOLATION_NOT_SENT|])
+
+
 ----------------------------------------------------------------------------
 -- Generators
 ----------------------------------------------------------------------------
@@ -129,6 +159,14 @@ genSomeBids testData = do
   moreBids <- iterateM len (genBid testData) firstBid
   pure $ firstBid :| moreBids
 
+-- | Generates a list with 2 or more valid bids
+genMultipleBids :: TestData -> Gen (NonEmpty Mutez)
+genMultipleBids testData = do
+  len <- Gen.int (Range.linear 1 5)
+  firstBid <- genBid testData (testOpeningPrice testData)
+  moreBids <- iterateM len (genBid testData) firstBid
+  pure $ firstBid :| moreBids
+
 -- | Generates a list with 0 or more valid bids
 genManyBids :: TestData -> Gen [Mutez]
 genManyBids testData = do
@@ -148,6 +186,10 @@ genBid testData@TestData{testMinRaise} previousBid = do
 ----------------------------------------------------------------------------
 -- Helpers
 ----------------------------------------------------------------------------
+
+tailSafe :: [a] -> [a]
+tailSafe [] = [] 
+tailSafe (x:xs) = xs 
 
 data Setup = Setup
   { contract :: TAddress (ConsolationOffchain.AuctionEntrypoints NoAllowlist.Entrypoints)
@@ -238,6 +280,9 @@ genConsolationWinners numBids maxConsolationWinners
     | numBids <= 1 || maxConsolationWinners == 0 = [] 
     | maxConsolationWinners + 1 >= numBids = [0 .. (numBids - 2)]
     | otherwise = [ (numBids - maxConsolationWinners - 1) .. (numBids - 2)]
+
+genIncompleteConsolationWinners :: Natural -> Natural -> [Natural]
+genIncompleteConsolationWinners numBids maxConsolationWinners = tailSafe $ genConsolationWinners numBids maxConsolationWinners
 
 ----------------------------------------------------------------------------
 -- Call entrypoints
