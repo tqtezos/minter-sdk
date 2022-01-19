@@ -357,7 +357,7 @@ let place_bid(  asset_id
               else 
                    let remove_bidder_index : nat = abs(auction.consolation_winners.bid_index - auction.max_consolation_winners) in (*Should always be positive*)
                    let updated_array : consolation_winner_array = remove_from_consolation_winner_array(remove_bidder_index, auction.consolation_winners) in
-                   append_to_consolation_winner_array(auction.highest_bidder, auction.consolation_winners)
+                   append_to_consolation_winner_array(auction.highest_bidder, updated_array)
              )
     in 
 #endif
