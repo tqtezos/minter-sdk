@@ -442,6 +442,7 @@ let update_allowed(allowlist_param, storage : allowlist_entrypoints * storage) :
 let send_consolation(asset_id, bidders, storage : nat * nat list * storage) : return = begin
   fail_if_not_admin(storage.admin);
   let auction : auction = get_auction_data(asset_id, storage) in
+  assert_msg(auction_ended(auction), "AUCTION_NOT_ENDED");
   let (transfers, remaining_consolation_winners) : transfer_destination list * consolation_winner_array = 
     List.fold_left
     (fun ((txs, consolation_winners), bidder : (transfer_destination list * consolation_winner_array) * nat) ->
