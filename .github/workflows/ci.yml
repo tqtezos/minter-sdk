@@ -126,7 +126,7 @@ jobs:
     - uses: actions/setup-haskell@v1.1.4
       name: Setup Haskell Stack
       with:
-        ghc-version: 8.10.5
+        ghc-version: 8.10.7
         stack-version: 2.3
     
     - uses: actions/download-artifact@v2
