@@ -5,25 +5,79 @@ import qualified Data.List as List
 import qualified Data.Map as Map
 import Data.Traversable.WithIndex (TraversableWithIndex, ifor)
 import Fmt ((+|), (|+))
-import Hedgehog (Gen, Property, forAll, label, property)
+import Hedgehog (Gen, Property, forAll, property)
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import qualified Indigo.Contracts.FA2Sample as FA2
 import Lorentz hiding (amount, contract, now)
 import Lorentz.Contracts.EnglishAuction.Common
-import Lorentz.Contracts.EnglishAuction.TezFixedFee hiding (testSetup)
-import Lorentz.Contracts.MinterSdk
+import Lorentz.Contracts.EnglishAuction.TezFixedFee 
 import qualified Lorentz.Contracts.NoAllowlist as NoAllowlist
 import Lorentz.Contracts.Spec.FA2Interface (TokenId(..))
 import Michelson.Typed (convertContract, untypeValue)
 import Morley.Nettest
 import Test.Util (balanceOf, clevelandProp, genMutez', iterateM)
 import Tezos.Core (timestampPlusSeconds)
-import qualified Test.EnglishAuction.TezFixedFee as Tez
 import qualified Lorentz.Contracts.EnglishAuction.ConsolationOffchain as ConsolationOffchain
 import Test.EnglishAuction.Util
 import qualified Lorentz.Contracts.EnglishAuction.Consolation as Consolation
 import qualified Lorentz.Contracts.Spec.FA2Interface as FA2I
+
+hprop_Send_consolation_admin_checked :: Property
+hprop_Send_consolation_admin_checked =
+  property $ do
+    testData@TestData{testExtendTime, testAuctionDuration, testMaxConsolationWinners} <- forAll genTestData
+    bids <- forAll $ genSomeBids testData
+
+    clevelandProp $ do
+      setup@Setup{seller, contract} <- testSetup testData
+      bidders <- mkBidders bids
+      let numBids = length (toList bids) 
+      withSender seller $ configureAuction testData setup
+
+      -- Wait for the auction to start.
+      waitForAuctionToStart testData
+
+      forM_ (toList bids `zip` toList bidders) \(bid, bidder) -> do
+        withSender bidder $
+          placeBid contract bid
+
+      -- Wait for the auction to end.
+      advanceTime (sec $ fromIntegral $ testAuctionDuration `max` testExtendTime)
+
+      let consolationReceivers = genConsolationWinners (fromIntegral numBids) (fromIntegral testMaxConsolationWinners)
+      
+      user <- newAddress "user"
+      withSender user $
+        sendConsolation consolationReceivers contract
+        & expectError contract ConsolationOffchain.errNotAdmin
+
+hprop_Send_consolation_fails_if_auction_not_ended :: Property
+hprop_Send_consolation_fails_if_auction_not_ended =
+  property $ do
+    testData@TestData{testExtendTime, testAuctionDuration, testMaxConsolationWinners} <- forAll genTestData
+    bids <- forAll $ genSomeBids testData
+
+    clevelandProp $ do
+      setup@Setup{seller, contract} <- testSetup testData
+      bidders <- mkBidders bids
+      let numBids = length (toList bids) 
+      withSender seller $ configureAuction testData setup
+
+      -- Wait for the auction to start.
+      waitForAuctionToStart testData
+
+      forM_ (toList bids `zip` toList bidders) \(bid, bidder) -> do
+        withSender bidder $
+          placeBid contract bid
+
+      -- Auction not ended
+
+      let consolationReceivers = genConsolationWinners (fromIntegral numBids) (fromIntegral testMaxConsolationWinners)
+
+      withSender seller $
+        sendConsolation consolationReceivers contract
+        & expectError contract ConsolationOffchain.errAuctionNotEnded
 
 hprop_Assets_are_transferred_to_highest_bidder_after_consolation_tokens_sent :: Property
 hprop_Assets_are_transferred_to_highest_bidder_after_consolation_tokens_sent =
@@ -82,11 +136,11 @@ hprop_Assets_are_transferred_to_highest_bidder_after_consolation_tokens_sent =
 hprop_Resolve_auction_fails_if_not_all_consolation_tokens_sent :: Property
 hprop_Resolve_auction_fails_if_not_all_consolation_tokens_sent =
   property $ do
-    testData@TestData{testExtendTime, testAuctionDuration, testTokenBatches, testMaxConsolationWinners} <- forAll genTestData
+    testData@TestData{testExtendTime, testAuctionDuration, testMaxConsolationWinners} <- forAll genTestData
     bids <- forAll $ genMultipleBids testData
 
     clevelandProp $ do
-      setup@Setup{seller, contract, fa2Contracts} <- testSetup testData
+      setup@Setup{seller, contract} <- testSetup testData
       bidders <- mkBidders bids
       let numBids = length (toList bids)
       -- Ensures testMaxConsolationWinners is at least 1  
@@ -199,7 +253,7 @@ genBid testData@TestData{testMinRaise} previousBid = do
 
 tailSafe :: [a] -> [a]
 tailSafe [] = [] 
-tailSafe (x:xs) = xs 
+tailSafe (_:xs) = xs 
 
 data Setup = Setup
   { contract :: TAddress (ConsolationOffchain.AuctionEntrypoints NoAllowlist.Entrypoints)

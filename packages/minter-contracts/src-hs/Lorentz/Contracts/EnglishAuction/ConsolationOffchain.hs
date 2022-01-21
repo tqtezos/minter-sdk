@@ -154,3 +154,12 @@ consolationAuctionTezContract
       (ToT (AuctionStorage NoAllowlist.Allowlist))
 consolationAuctionTezContract =
   $$(embedContractM (inBinFolder "english_auction_tez_offchain_bid_consolation_auction.tz"))
+
+-- Errors
+----------------------------------------------------------------------------
+
+errNotAdmin :: MText
+errNotAdmin = [mt|NOT_AN_ADMIN|]
+
+errAuctionNotEnded :: MText 
+errAuctionNotEnded = [mt|AUCTION_NOT_ENDED|]
