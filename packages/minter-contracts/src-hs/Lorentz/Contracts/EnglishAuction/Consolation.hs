@@ -4,14 +4,8 @@ module Lorentz.Contracts.EnglishAuction.Consolation where
 import Lorentz
 
 import Fmt (Buildable(..), genericF)
-import qualified Lorentz.Contracts.AllowlistSimple as AllowlistSimple
-import qualified Lorentz.Contracts.AllowlistToken as AllowlistToken
 import Lorentz.Contracts.EnglishAuction.Common
-import Lorentz.Contracts.MinterSdk
-import qualified Lorentz.Contracts.NoAllowlist as NoAllowlist
 import Lorentz.Contracts.PausableAdminOption
-import Michelson.Test.Import (embedContractM)
-import qualified Michelson.Typed as T
 import qualified Lorentz.Contracts.Spec.FA2Interface as FA2I
 import Tezos.Address (unsafeParseAddress)
 -- Types

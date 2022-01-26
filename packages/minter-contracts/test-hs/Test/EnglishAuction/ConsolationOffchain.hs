@@ -55,7 +55,7 @@ hprop_Send_consolation_admin_checked =
 hprop_Send_consolation_fails_if_auction_not_ended :: Property
 hprop_Send_consolation_fails_if_auction_not_ended =
   property $ do
-    testData@TestData{testExtendTime, testAuctionDuration, testMaxConsolationWinners} <- forAll genTestData
+    testData@TestData{testMaxConsolationWinners} <- forAll genTestData
     bids <- forAll $ genSomeBids testData
 
     clevelandProp $ do
