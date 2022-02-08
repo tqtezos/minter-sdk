@@ -24,7 +24,7 @@ data Auction = Auction
   , minRaise :: Mutez
   , endTime :: Timestamp
   , highestBidder :: Address
-  , consolationWinners :: Consolation.ConsolationWinnerArray
+  , consolationWinners :: Consolation.ConsolationWinnerData
   , consolationToken :: Consolation.GlobalTokenId
   , maxConsolationWinners :: Natural
   , lastBidOffchain :: Bool

@@ -71,7 +71,7 @@ hprop_Send_consolation_fails_if_auction_not_ended =
         withSender bidder $
           placeBid contract bid
 
-      -- Auction not ended
+      -- Auction not ended as we don't advance time
 
       let consolationReceivers = genConsolationWinners (fromIntegral numBids) (fromIntegral testMaxConsolationWinners)
 

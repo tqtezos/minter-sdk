@@ -6,7 +6,7 @@
                    (pair %offchain_bid
                       (pair %offchain_bid_data (nat %asset_id) (mutez %bid_amount))
                       (pair %permit (key %signerKey) (signature %signature)))))
-           (or (or (nat %resolve) (pair %send_consolation nat (list nat))) (never %update_allowed)))
+           (or (or (nat %resolve) (pair %send_consolation nat nat)) (never %update_allowed)))
         (pair %configure
            (mutez %opening_price)
            (pair (nat %min_raise_percent)
@@ -39,12 +39,14 @@
                                                                                      (pair (mutez %min_raise)
                                                                                            (pair (timestamp %end_time)
                                                                                                  (pair (address %highest_bidder)
-                                                                                                       (pair (pair %consolation_winners
-                                                                                                                (nat %size)
-                                                                                                                (pair (nat %bid_index) (map %content nat address)))
-                                                                                                             (pair (pair %consolation_token (address %fa2_address) (nat %token_id))
-                                                                                                                   (pair (nat %max_consolation_winners) (bool %last_bid_offchain))))))))))))))))
-                                  (unit %allowlist)))))) ;
+                                                                                                       (pair (nat %consolation_index)
+                                                                                                             (pair (nat %num_losing_bidders)
+                                                                                                                   (pair (nat %consolation_tokens_sent)
+                                                                                                                         (pair (pair %consolation_token (address %fa2_address) (nat %token_id))
+                                                                                                                               (pair (nat %max_consolation_winners) (bool %last_bid_offchain))))))))))))))))))
+                                  (pair (unit %allowlist)
+                                        (pair (big_map %consolation_queue (pair nat nat) address)
+                                              (big_map %consolation_receivers (pair nat address) unit)))))))) ;
   code { LAMBDA
            (option (pair (pair address bool) (option address)))
            unit
@@ -99,82 +101,9 @@
              SWAP ;
              PUSH unit Unit ;
              TRANSFER_TOKENS } ;
-         LAMBDA
-           (pair address (pair nat (pair nat (map nat address))))
-           (pair nat (pair nat (map nat address)))
-           { UNPAIR ;
-             SWAP ;
-             DUP ;
-             DUG 2 ;
-             CDR ;
-             PUSH nat 1 ;
-             DUP 4 ;
-             CAR ;
-             ADD ;
-             PAIR ;
-             DUP ;
-             CDR ;
-             CDR ;
-             PUSH nat 1 ;
-             DUP 5 ;
-             CDR ;
-             CAR ;
-             ADD ;
-             PAIR ;
-             SWAP ;
-             CAR ;
-             PAIR ;
-             DUP 3 ;
-             CDR ;
-             CDR ;
-             DIG 2 ;
-             DIG 3 ;
-             CDR ;
-             CAR ;
-             SWAP ;
-             SOME ;
-             SWAP ;
-             UPDATE ;
-             SWAP ;
-             DUP ;
-             DUG 2 ;
-             CDR ;
-             CAR ;
-             PAIR ;
-             SWAP ;
-             CAR ;
-             PAIR } ;
-         LAMBDA
-           (pair nat (pair nat (pair nat (map nat address))))
-           (pair nat (pair nat (map nat address)))
-           { UNPAIR ;
-             SWAP ;
-             DUP ;
-             DUG 2 ;
-             CDR ;
-             PUSH nat 1 ;
-             DUP 4 ;
-             CAR ;
-             SUB ;
-             ABS ;
-             PAIR ;
-             DIG 2 ;
-             CDR ;
-             CDR ;
-             DIG 2 ;
-             NONE address ;
-             SWAP ;
-             UPDATE ;
-             SWAP ;
-             DUP ;
-             DUG 2 ;
-             CDR ;
-             CAR ;
-             PAIR ;
-             SWAP ;
-             CAR ;
-             PAIR } ;
-         DUP 4 ;
+         SWAP ;
+         DUP ;
+         DUG 2 ;
          LAMBDA
            (pair (lambda address (contract (list (pair address (list (pair address (pair nat nat)))))))
                  (pair address (pair address (pair address (list (pair nat nat))))))
@@ -239,9 +168,8 @@
                                                                                             (pair nat
                                                                                                   (pair mutez
                                                                                                         (pair timestamp
-                                                                                                              (pair address
-                                                                                                                    (pair (pair nat (pair nat (map nat address))) (pair (pair address nat) (pair nat bool)))))))))))))))
-                                               unit))))))
+                                                                                                              (pair address (pair nat (pair nat (pair nat (pair (pair address nat) (pair nat bool)))))))))))))))))
+                                               (pair unit (pair (big_map (pair nat nat) address) (big_map (pair nat address) unit)))))))))
            (pair address
                  (pair mutez
                        (pair timestamp
@@ -252,8 +180,7 @@
                                                      (pair nat
                                                            (pair mutez
                                                                  (pair timestamp
-                                                                       (pair address
-                                                                             (pair (pair nat (pair nat (map nat address))) (pair (pair address nat) (pair nat bool))))))))))))))
+                                                                       (pair address (pair nat (pair nat (pair nat (pair (pair address nat) (pair nat bool))))))))))))))))
            { UNPAIR ;
              SWAP ;
              CDR ;
@@ -275,8 +202,7 @@
                                                      (pair nat
                                                            (pair mutez
                                                                  (pair timestamp
-                                                                       (pair address
-                                                                             (pair (pair nat (pair nat (map nat address))) (pair (pair address nat) (pair nat bool))))))))))))))
+                                                                       (pair address (pair nat (pair nat (pair nat (pair (pair address nat) (pair nat bool))))))))))))))))
            bool
            { DUP ;
              CDR ;
@@ -321,8 +247,7 @@
                                                      (pair nat
                                                            (pair mutez
                                                                  (pair timestamp
-                                                                       (pair address
-                                                                             (pair (pair nat (pair nat (map nat address))) (pair (pair address nat) (pair nat bool))))))))))))))
+                                                                       (pair address (pair nat (pair nat (pair nat (pair (pair address nat) (pair nat bool))))))))))))))))
            bool
            { DUP ;
              CAR ;
@@ -353,8 +278,7 @@
                                                               (pair nat
                                                                     (pair mutez
                                                                           (pair timestamp
-                                                                                (pair address
-                                                                                      (pair (pair nat (pair nat (map nat address))) (pair (pair address nat) (pair nat bool))))))))))))))
+                                                                                (pair address (pair nat (pair nat (pair nat (pair (pair address nat) (pair nat bool))))))))))))))))
                     bool)
                  (pair address
                        (pair mutez
@@ -366,12 +290,13 @@
                                                            (pair nat
                                                                  (pair mutez
                                                                        (pair timestamp
-                                                                             (pair address
-                                                                                   (pair (pair nat (pair nat (map nat address))) (pair (pair address nat) (pair nat bool)))))))))))))))
+                                                                             (pair address (pair nat (pair nat (pair nat (pair (pair address nat) (pair nat bool)))))))))))))))))
            bool
            { UNPAIR ;
              SWAP ;
              DUP ;
+             CDR ;
+             CDR ;
              CDR ;
              CDR ;
              CDR ;
@@ -393,15 +318,13 @@
              OR } ;
          SWAP ;
          APPLY ;
-         DUP 13 ;
-         DUP 13 ;
          DUP 11 ;
-         DIG 10 ;
          DUP 11 ;
-         DUP 8 ;
-         DIG 7 ;
-         DUP 8 ;
-         PAIR 8 ;
+         DUP 9 ;
+         DUP 6 ;
+         DIG 5 ;
+         DUP 6 ;
+         PAIR 6 ;
          LAMBDA
            (pair (pair (lambda
                           (pair address
@@ -414,8 +337,7 @@
                                                                     (pair nat
                                                                           (pair mutez
                                                                                 (pair timestamp
-                                                                                      (pair address
-                                                                                            (pair (pair nat (pair nat (map nat address))) (pair (pair address nat) (pair nat bool))))))))))))))
+                                                                                      (pair address (pair nat (pair nat (pair nat (pair (pair address nat) (pair nat bool))))))))))))))))
                           bool)
                        (pair (lambda
                                 (pair address
@@ -428,8 +350,7 @@
                                                                           (pair nat
                                                                                 (pair mutez
                                                                                       (pair timestamp
-                                                                                            (pair address
-                                                                                                  (pair (pair nat (pair nat (map nat address))) (pair (pair address nat) (pair nat bool))))))))))))))
+                                                                                            (pair address (pair nat (pair nat (pair nat (pair (pair address nat) (pair nat bool))))))))))))))))
                                 bool)
                              (pair (lambda
                                       (pair address
@@ -442,18 +363,11 @@
                                                                                 (pair nat
                                                                                       (pair mutez
                                                                                             (pair timestamp
-                                                                                                  (pair address
-                                                                                                        (pair (pair nat (pair nat (map nat address))) (pair (pair address nat) (pair nat bool))))))))))))))
+                                                                                                  (pair address (pair nat (pair nat (pair nat (pair (pair address nat) (pair nat bool))))))))))))))))
                                       bool)
-                                   (pair (lambda
-                                            (pair nat (pair nat (pair nat (map nat address))))
-                                            (pair nat (pair nat (map nat address))))
-                                         (pair (lambda
-                                                  (pair address (pair nat (pair nat (map nat address))))
-                                                  (pair nat (pair nat (map nat address))))
-                                               (pair (lambda (pair mutez address) operation)
-                                                     (pair (lambda (pair bool string) unit)
-                                                           (lambda (option (pair (pair address bool) (option address))) unit))))))))
+                                   (pair (lambda (pair mutez address) operation)
+                                         (pair (lambda (pair bool string) unit)
+                                               (lambda (option (pair (pair address bool) (option address))) unit))))))
                  (pair (pair (pair nat
                                    (pair address
                                          (pair mutez
@@ -465,8 +379,7 @@
                                                                              (pair nat
                                                                                    (pair mutez
                                                                                          (pair timestamp
-                                                                                               (pair address
-                                                                                                     (pair (pair nat (pair nat (map nat address))) (pair (pair address nat) (pair nat bool)))))))))))))))
+                                                                                               (pair address (pair nat (pair nat (pair nat (pair (pair address nat) (pair nat bool)))))))))))))))))
                              (pair mutez address))
                        (pair (pair (option (pair (pair address bool) (option address)))
                                    (pair nat
@@ -484,9 +397,8 @@
                                                                                                         (pair nat
                                                                                                               (pair mutez
                                                                                                                     (pair timestamp
-                                                                                                                          (pair address
-                                                                                                                                (pair (pair nat (pair nat (map nat address))) (pair (pair address nat) (pair nat bool)))))))))))))))
-                                                           unit)))))
+                                                                                                                          (pair address (pair nat (pair nat (pair nat (pair (pair address nat) (pair nat bool)))))))))))))))))
+                                                           (pair unit (pair (big_map (pair nat nat) address) (big_map (pair nat address) unit))))))))
                              bool)))
            (pair (list operation)
                  (pair (option (pair (pair address bool) (option address)))
@@ -505,12 +417,11 @@
                                                                                             (pair nat
                                                                                                   (pair mutez
                                                                                                         (pair timestamp
-                                                                                                              (pair address
-                                                                                                                    (pair (pair nat (pair nat (map nat address))) (pair (pair address nat) (pair nat bool)))))))))))))))
-                                               unit))))))
+                                                                                                              (pair address (pair nat (pair nat (pair nat (pair (pair address nat) (pair nat bool)))))))))))))))))
+                                               (pair unit (pair (big_map (pair nat nat) address) (big_map (pair nat address) unit)))))))))
            { UNPAIR ;
-             UNPAIR 8 ;
-             DIG 8 ;
+             UNPAIR 6 ;
+             DIG 6 ;
              UNPAIR ;
              UNPAIR ;
              UNPAIR ;
@@ -524,13 +435,13 @@
              COMPARE ;
              EQ ;
              PAIR ;
-             DUP 14 ;
+             DUP 12 ;
              SWAP ;
              EXEC ;
              DROP ;
              DUP ;
              CAR ;
-             DIG 14 ;
+             DIG 12 ;
              SWAP ;
              EXEC ;
              DROP ;
@@ -549,7 +460,7 @@
              GE ;
              AND ;
              PAIR ;
-             DUP 13 ;
+             DUP 11 ;
              SWAP ;
              EXEC ;
              DROP ;
@@ -560,7 +471,7 @@
              COMPARE ;
              NEQ ;
              PAIR ;
-             DUP 13 ;
+             DUP 11 ;
              SWAP ;
              EXEC ;
              DROP ;
@@ -581,7 +492,7 @@
              COMPARE ;
              NEQ ;
              PAIR ;
-             DIG 12 ;
+             DIG 10 ;
              SWAP ;
              EXEC ;
              DROP ;
@@ -688,7 +599,7 @@
              DIG 7 ;
              SWAP ;
              EXEC ;
-             IF { DIG 9 ; DROP ; NIL operation }
+             IF { DIG 7 ; DROP ; NIL operation }
                 { DUP 6 ;
                   CDR ;
                   CDR ;
@@ -705,97 +616,32 @@
                   CDR ;
                   CAR ;
                   PAIR ;
-                  DIG 10 ;
+                  DIG 8 ;
                   SWAP ;
                   EXEC ;
                   NIL operation ;
                   SWAP ;
                   CONS } ;
              DUP 7 ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CAR ;
-             DUP 8 ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CAR ;
-             CAR ;
-             COMPARE ;
-             LT ;
-             IF { DIG 8 ;
-                  DROP ;
+             DIG 8 ;
+             SWAP ;
+             EXEC ;
+             IF { SWAP ; DIG 6 ; PAIR }
+                { SWAP ;
                   DUP 7 ;
-                  DIG 8 ;
-                  SWAP ;
-                  EXEC ;
-                  IF { DIG 7 ;
-                       DROP ;
-                       DUP 7 ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CAR }
-                     { DUP 7 ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CAR ;
-                       DUP 8 ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CAR ;
-                       PAIR ;
-                       DIG 8 ;
-                       SWAP ;
-                       EXEC } }
-                { PUSH nat 0 ;
-                  DUP 8 ;
                   CDR ;
                   CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CAR ;
+                  PAIR ;
+                  DUP 7 ;
                   CDR ;
                   CDR ;
                   CDR ;
@@ -808,18 +654,153 @@
                   CDR ;
                   CDR ;
                   CAR ;
-                  COMPARE ;
-                  EQ ;
-                  DUP 8 ;
-                  DIG 9 ;
+                  DUP 7 ;
+                  DIG 2 ;
+                  UNPAIR ;
                   SWAP ;
-                  EXEC ;
-                  OR ;
-                  IF { DIG 7 ;
-                       DROP ;
-                       DIG 7 ;
-                       DROP ;
-                       DUP 7 ;
+                  DUP ;
+                  DUG 2 ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  SWAP ;
+                  DUP ;
+                  DUG 2 ;
+                  DUP 5 ;
+                  PAIR ;
+                  MEM ;
+                  NOT ;
+                  DUP 3 ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  DUP 4 ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CAR ;
+                  DUP 4 ;
+                  SOME ;
+                  DIG 7 ;
+                  DUP 8 ;
+                  PAIR ;
+                  UPDATE ;
+                  PAIR ;
+                  DUP 4 ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CAR ;
+                  PAIR ;
+                  DUP 4 ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CAR ;
+                  PAIR ;
+                  DUP 4 ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CAR ;
+                  PAIR ;
+                  DUP 4 ;
+                  CDR ;
+                  CDR ;
+                  CAR ;
+                  PAIR ;
+                  DUP 4 ;
+                  CDR ;
+                  CAR ;
+                  PAIR ;
+                  DUP 4 ;
+                  CAR ;
+                  PAIR ;
+                  DIG 3 ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  UNIT ;
+                  SOME ;
+                  DIG 4 ;
+                  DIG 5 ;
+                  PAIR ;
+                  UPDATE ;
+                  SWAP ;
+                  DUP ;
+                  DUG 2 ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CAR ;
+                  PAIR ;
+                  SWAP ;
+                  DUP ;
+                  DUG 2 ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CAR ;
+                  PAIR ;
+                  SWAP ;
+                  DUP ;
+                  DUG 2 ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CAR ;
+                  PAIR ;
+                  SWAP ;
+                  DUP ;
+                  DUG 2 ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CAR ;
+                  PAIR ;
+                  SWAP ;
+                  DUP ;
+                  DUG 2 ;
+                  CDR ;
+                  CDR ;
+                  CAR ;
+                  PAIR ;
+                  SWAP ;
+                  DUP ;
+                  DUG 2 ;
+                  CDR ;
+                  CAR ;
+                  PAIR ;
+                  SWAP ;
+                  CAR ;
+                  PAIR ;
+                  SWAP ;
+                  IF { PUSH nat 1 ;
+                       DUP 8 ;
                        CDR ;
                        CDR ;
                        CDR ;
@@ -831,7 +812,9 @@
                        CDR ;
                        CDR ;
                        CDR ;
-                       CAR }
+                       CDR ;
+                       CAR ;
+                       ADD }
                      { DUP 7 ;
                        CDR ;
                        CDR ;
@@ -845,60 +828,267 @@
                        CDR ;
                        CDR ;
                        CDR ;
-                       CDR ;
-                       CAR ;
-                       DUP 8 ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CAR ;
-                       CDR ;
-                       CAR ;
-                       SUB ;
-                       ABS ;
-                       DUP 8 ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CAR ;
-                       SWAP ;
-                       PAIR ;
-                       DIG 8 ;
-                       SWAP ;
-                       EXEC ;
-                       DUP 8 ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CDR ;
-                       CAR ;
-                       PAIR ;
-                       DIG 8 ;
-                       SWAP ;
-                       EXEC } } ;
-             DUP 8 ;
+                       CAR } ;
+                  DUP 8 ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  PUSH nat 1 ;
+                  DUP 10 ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CAR ;
+                  ADD ;
+                  PAIR ;
+                  DUP 9 ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CAR ;
+                  PAIR ;
+                  DUP 9 ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CAR ;
+                  PAIR ;
+                  DUP 9 ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CAR ;
+                  PAIR ;
+                  DUP 9 ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CAR ;
+                  PAIR ;
+                  DUP 9 ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CAR ;
+                  PAIR ;
+                  DUP 9 ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CAR ;
+                  PAIR ;
+                  DUP 9 ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CAR ;
+                  PAIR ;
+                  DUP 9 ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CAR ;
+                  PAIR ;
+                  DUP 9 ;
+                  CDR ;
+                  CDR ;
+                  CAR ;
+                  PAIR ;
+                  DUP 9 ;
+                  CDR ;
+                  CAR ;
+                  PAIR ;
+                  DIG 8 ;
+                  CAR ;
+                  PAIR ;
+                  DUP ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  DIG 2 ;
+                  PAIR ;
+                  SWAP ;
+                  DUP ;
+                  DUG 2 ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CAR ;
+                  PAIR ;
+                  SWAP ;
+                  DUP ;
+                  DUG 2 ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CAR ;
+                  PAIR ;
+                  SWAP ;
+                  DUP ;
+                  DUG 2 ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CAR ;
+                  PAIR ;
+                  SWAP ;
+                  DUP ;
+                  DUG 2 ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CAR ;
+                  PAIR ;
+                  SWAP ;
+                  DUP ;
+                  DUG 2 ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CAR ;
+                  PAIR ;
+                  SWAP ;
+                  DUP ;
+                  DUG 2 ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CAR ;
+                  PAIR ;
+                  SWAP ;
+                  DUP ;
+                  DUG 2 ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CAR ;
+                  PAIR ;
+                  SWAP ;
+                  DUP ;
+                  DUG 2 ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CAR ;
+                  PAIR ;
+                  SWAP ;
+                  DUP ;
+                  DUG 2 ;
+                  CDR ;
+                  CDR ;
+                  CDR ;
+                  CAR ;
+                  PAIR ;
+                  SWAP ;
+                  DUP ;
+                  DUG 2 ;
+                  CDR ;
+                  CDR ;
+                  CAR ;
+                  PAIR ;
+                  SWAP ;
+                  DUP ;
+                  DUG 2 ;
+                  CDR ;
+                  CAR ;
+                  PAIR ;
+                  SWAP ;
+                  CAR ;
+                  PAIR ;
+                  PAIR } ;
+             UNPAIR ;
+             DUP ;
              CDR ;
              CDR ;
              CDR ;
@@ -906,7 +1096,7 @@
              CDR ;
              CAR ;
              NOW ;
-             DUP 10 ;
+             DUP 3 ;
              CDR ;
              CDR ;
              CDR ;
@@ -920,14 +1110,16 @@
              SUB ;
              COMPARE ;
              LE ;
-             IF { DUP 8 ; CDR ; CDR ; CDR ; CDR ; CDR ; CAR ; NOW ; ADD }
-                { DUP 8 ; CDR ; CDR ; CDR ; CDR ; CDR ; CDR ; CDR ; CDR ; CDR ; CAR } ;
-             DUP 9 ;
+             IF { DUP ; CDR ; CDR ; CDR ; CDR ; CDR ; CAR ; NOW ; ADD }
+                { DUP ; CDR ; CDR ; CDR ; CDR ; CDR ; CDR ; CDR ; CDR ; CDR ; CAR } ;
+             SWAP ;
+             DUP ;
+             DUG 2 ;
              CDR ;
              CDR ;
              DIG 6 ;
              PAIR ;
-             DIG 8 ;
+             DIG 2 ;
              CAR ;
              PAIR ;
              DUP ;
@@ -942,7 +1134,7 @@
              CDR ;
              CDR ;
              CDR ;
-             DIG 7 ;
+             DIG 6 ;
              PAIR ;
              SWAP ;
              DUP ;
@@ -1152,7 +1344,46 @@
              SWAP ;
              CAR ;
              PAIR ;
-             DIG 4 ;
+             DIG 3 ;
+             SWAP ;
+             DUP ;
+             DUG 2 ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CAR ;
+             PAIR ;
+             SWAP ;
+             DUP ;
+             DUG 2 ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CAR ;
+             PAIR ;
              SWAP ;
              DUP ;
              DUG 2 ;
@@ -1312,21 +1543,6 @@
              SWAP ;
              CAR ;
              PAIR ;
-             DUP ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             DIG 2 ;
-             PAIR ;
              SWAP ;
              DUP ;
              DUG 2 ;
@@ -1335,113 +1551,7 @@
              CDR ;
              CDR ;
              CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CAR ;
-             PAIR ;
-             SWAP ;
-             DUP ;
-             DUG 2 ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CAR ;
-             PAIR ;
-             SWAP ;
-             DUP ;
-             DUG 2 ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CAR ;
-             PAIR ;
-             SWAP ;
-             DUP ;
-             DUG 2 ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CAR ;
-             PAIR ;
-             SWAP ;
-             DUP ;
-             DUG 2 ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CAR ;
-             PAIR ;
-             SWAP ;
-             DUP ;
-             DUG 2 ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CAR ;
-             PAIR ;
-             SWAP ;
-             DUP ;
-             DUG 2 ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CAR ;
-             PAIR ;
-             SWAP ;
-             DUP ;
-             DUG 2 ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CAR ;
-             PAIR ;
-             SWAP ;
-             DUP ;
-             DUG 2 ;
-             CDR ;
-             CDR ;
-             CAR ;
-             PAIR ;
-             SWAP ;
-             DUP ;
-             DUG 2 ;
-             CDR ;
-             CAR ;
-             PAIR ;
-             SWAP ;
-             CAR ;
-             PAIR ;
              DUP 3 ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             DUP 4 ;
              CDR ;
              CDR ;
              CDR ;
@@ -1452,35 +1562,39 @@
              DIG 5 ;
              UPDATE ;
              PAIR ;
-             DUP 3 ;
+             SWAP ;
+             DUP ;
+             DUG 2 ;
              CDR ;
              CDR ;
              CDR ;
              CAR ;
              PAIR ;
-             DUP 3 ;
+             SWAP ;
+             DUP ;
+             DUG 2 ;
              CDR ;
              CDR ;
              CAR ;
              PAIR ;
-             DUP 3 ;
+             SWAP ;
+             DUP ;
+             DUG 2 ;
              CDR ;
              CAR ;
              PAIR ;
-             DIG 2 ;
+             SWAP ;
              CAR ;
              PAIR ;
              SWAP ;
              PAIR } ;
          SWAP ;
          APPLY ;
-         DIG 13 ;
+         DIG 12 ;
          UNPAIR ;
          IF_LEFT
            { IF_LEFT
-               { DIG 8 ;
-                 DROP ;
-                 DIG 9 ;
+               { DIG 9 ;
                  DROP ;
                  IF_LEFT
                    { DIG 3 ;
@@ -1702,8 +1816,12 @@
                          CDR ;
                          CDR ;
                          CDR ;
+                         CDR ;
+                         CDR ;
                          CAR ;
                          DUP 4 ;
+                         CDR ;
+                         CDR ;
                          CDR ;
                          CDR ;
                          CDR ;
@@ -1721,6 +1839,8 @@
                          PAIR ;
                          CONS ;
                          DUP 3 ;
+                         CDR ;
+                         CDR ;
                          CDR ;
                          CDR ;
                          CDR ;
@@ -1768,8 +1888,7 @@
                                                                         (pair nat
                                                                               (pair mutez
                                                                                     (pair timestamp
-                                                                                          (pair address
-                                                                                                (pair (pair nat (pair nat (map nat address))) (pair (pair address nat) (pair nat bool)))))))))))))) ;
+                                                                                          (pair address (pair nat (pair nat (pair nat (pair (pair address nat) (pair nat bool)))))))))))))))) ;
                          SWAP ;
                          UPDATE ;
                          PAIR ;
@@ -1873,9 +1992,7 @@
                  DROP ;
                  IF_LEFT
                    { IF_LEFT
-                       { DIG 7 ;
-                         DROP ;
-                         DIG 8 ;
+                       { DIG 8 ;
                          DROP ;
                          DIG 11 ;
                          DROP ;
@@ -1960,7 +2077,23 @@
                               EXEC ;
                               CONS } ;
                          PUSH string "CONSOLATION_NOT_SENT" ;
-                         PUSH nat 0 ;
+                         DUP 3 ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CAR ;
                          DUP 4 ;
                          CDR ;
                          CDR ;
@@ -1973,16 +2106,67 @@
                          CDR ;
                          CDR ;
                          CDR ;
-                         CAR ;
+                         CDR ;
+                         CDR ;
                          CAR ;
                          COMPARE ;
                          EQ ;
+                         DUP 4 ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CAR ;
+                         DUP 5 ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CAR ;
+                         COMPARE ;
+                         EQ ;
+                         OR ;
                          PAIR ;
                          DIG 6 ;
                          SWAP ;
                          EXEC ;
                          DROP ;
-                         PUSH nat 0 ;
+                         SWAP ;
+                         DUP ;
+                         DUG 2 ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CAR ;
                          DUP 3 ;
                          CDR ;
                          CDR ;
@@ -1996,43 +2180,10 @@
                          CDR ;
                          CDR ;
                          CDR ;
-                         CDR ;
-                         CAR ;
-                         COMPARE ;
-                         EQ ;
-                         DUP 3 ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CAR ;
-                         DUP 4 ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CAR ;
                          CDR ;
                          CAR ;
                          COMPARE ;
                          GE ;
-                         OR ;
                          IF { SWAP ; DROP ; DIG 3 ; DROP }
                             { SWAP ;
                               DUP ;
@@ -2048,10 +2199,12 @@
                               CDR ;
                               CDR ;
                               CDR ;
-                              CAR ;
+                              CDR ;
                               CDR ;
                               CAR ;
                               DUP 3 ;
+                              CDR ;
+                              CDR ;
                               CDR ;
                               CDR ;
                               CDR ;
@@ -2083,11 +2236,15 @@
                               CDR ;
                               CDR ;
                               CDR ;
+                              CDR ;
+                              CDR ;
                               CAR ;
                               CDR ;
                               PAIR ;
                               CONS ;
                               DUP 3 ;
+                              CDR ;
+                              CDR ;
                               CDR ;
                               CDR ;
                               CDR ;
@@ -2135,8 +2292,7 @@
                                                                         (pair nat
                                                                               (pair mutez
                                                                                     (pair timestamp
-                                                                                          (pair address
-                                                                                                (pair (pair nat (pair nat (map nat address))) (pair (pair address nat) (pair nat bool)))))))))))))) ;
+                                                                                          (pair address (pair nat (pair nat (pair nat (pair (pair address nat) (pair nat bool)))))))))))))))) ;
                          SWAP ;
                          UPDATE ;
                          PAIR ;
@@ -2166,16 +2322,16 @@
                          DROP ;
                          DIG 4 ;
                          DROP ;
+                         DIG 4 ;
+                         DROP ;
                          DIG 5 ;
                          DROP ;
                          DIG 6 ;
                          DROP ;
-                         DIG 7 ;
-                         DROP ;
                          UNPAIR ;
                          DUP 3 ;
                          CAR ;
-                         DIG 9 ;
+                         DIG 8 ;
                          SWAP ;
                          EXEC ;
                          DROP ;
@@ -2195,10 +2351,528 @@
                          SWAP ;
                          EXEC ;
                          PAIR ;
-                         DIG 7 ;
+                         DUP 7 ;
                          SWAP ;
                          EXEC ;
                          DROP ;
+                         DUP 4 ;
+                         PUSH nat 0 ;
+                         DIG 4 ;
+                         PAIR ;
+                         PAIR ;
+                         SWAP ;
+                         DUP ;
+                         DUG 2 ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CAR ;
+                         DUP 3 ;
+                         PAIR ;
+                         DUP 4 ;
+                         NIL (pair address (pair nat nat)) ;
+                         PAIR ;
+                         PAIR ;
+                         PAIR ;
+                         LEFT (pair (pair (list (pair address (pair nat nat))) nat)
+                                    (pair nat
+                                          (pair (option (pair (pair address bool) (option address)))
+                                                (pair nat
+                                                      (pair nat
+                                                            (pair nat
+                                                                  (pair (big_map
+                                                                           nat
+                                                                           (pair address
+                                                                                 (pair mutez
+                                                                                       (pair timestamp
+                                                                                             (pair timestamp
+                                                                                                   (pair int
+                                                                                                         (pair int
+                                                                                                               (pair (list (pair address (list (pair nat nat))))
+                                                                                                                     (pair nat
+                                                                                                                           (pair mutez
+                                                                                                                                 (pair timestamp
+                                                                                                                                       (pair address (pair nat (pair nat (pair nat (pair (pair address nat) (pair nat bool)))))))))))))))))
+                                                                        (pair unit (pair (big_map (pair nat nat) address) (big_map (pair nat address) unit)))))))))) ;
+                         LOOP_LEFT
+                           { UNPAIR ;
+                             UNPAIR ;
+                             UNPAIR ;
+                             DIG 2 ;
+                             UNPAIR ;
+                             DIG 4 ;
+                             UNPAIR ;
+                             UNPAIR ;
+                             PUSH string "INVALID_SEND_QTY" ;
+                             PUSH nat 0 ;
+                             DUP 3 ;
+                             COMPARE ;
+                             GT ;
+                             PAIR ;
+                             DUP 13 ;
+                             SWAP ;
+                             EXEC ;
+                             DROP ;
+                             DUP 3 ;
+                             CDR ;
+                             CDR ;
+                             CDR ;
+                             CDR ;
+                             CDR ;
+                             CDR ;
+                             CAR ;
+                             DUP 6 ;
+                             DUP 9 ;
+                             PAIR ;
+                             GET ;
+                             IF_NONE { PUSH string "INVALID_CONSOLATION_ID" ; FAILWITH } {} ;
+                             DUP 4 ;
+                             CDR ;
+                             CDR ;
+                             CDR ;
+                             CDR ;
+                             CDR ;
+                             CDR ;
+                             CDR ;
+                             SWAP ;
+                             DUP ;
+                             DUG 2 ;
+                             DUP 10 ;
+                             PAIR ;
+                             MEM ;
+                             NOT ;
+                             IF { DIG 2 ; DIG 6 ; PAIR }
+                                { PUSH nat 1 ;
+                                  DIG 3 ;
+                                  ADD ;
+                                  DIG 6 ;
+                                  PUSH nat 1 ;
+                                  DUP 7 ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CAR ;
+                                  CDR ;
+                                  PAIR ;
+                                  DUP 4 ;
+                                  PAIR ;
+                                  CONS ;
+                                  PAIR } ;
+                             UNPAIR ;
+                             PUSH int 1 ;
+                             DUP 8 ;
+                             INT ;
+                             SUB ;
+                             PUSH int 0 ;
+                             SWAP ;
+                             DUP ;
+                             DUG 2 ;
+                             COMPARE ;
+                             LE ;
+                             DUP 6 ;
+                             DUP 5 ;
+                             COMPARE ;
+                             EQ ;
+                             OR ;
+                             IF { DIG 3 ;
+                                  DROP ;
+                                  DIG 3 ;
+                                  DROP ;
+                                  DIG 4 ;
+                                  DROP ;
+                                  DIG 4 ;
+                                  DROP ;
+                                  DIG 4 ;
+                                  DROP ;
+                                  DIG 3 ;
+                                  SWAP ;
+                                  ABS ;
+                                  PAIR ;
+                                  DUG 2 ;
+                                  PAIR ;
+                                  PAIR ;
+                                  RIGHT
+                                    (pair (pair (pair (list (pair address (pair nat nat))) nat)
+                                                (pair (pair address
+                                                            (pair mutez
+                                                                  (pair timestamp
+                                                                        (pair timestamp
+                                                                              (pair int
+                                                                                    (pair int
+                                                                                          (pair (list (pair address (list (pair nat nat))))
+                                                                                                (pair nat
+                                                                                                      (pair mutez
+                                                                                                            (pair timestamp
+                                                                                                                  (pair address (pair nat (pair nat (pair nat (pair (pair address nat) (pair nat bool))))))))))))))))
+                                                      nat))
+                                          (pair (pair nat nat)
+                                                (pair (option (pair (pair address bool) (option address)))
+                                                      (pair nat
+                                                            (pair nat
+                                                                  (pair nat
+                                                                        (pair (big_map
+                                                                                 nat
+                                                                                 (pair address
+                                                                                       (pair mutez
+                                                                                             (pair timestamp
+                                                                                                   (pair timestamp
+                                                                                                         (pair int
+                                                                                                               (pair int
+                                                                                                                     (pair (list (pair address (list (pair nat nat))))
+                                                                                                                           (pair nat
+                                                                                                                                 (pair mutez
+                                                                                                                                       (pair timestamp
+                                                                                                                                             (pair address (pair nat (pair nat (pair nat (pair (pair address nat) (pair nat bool)))))))))))))))))
+                                                                              (pair unit (pair (big_map (pair nat nat) address) (big_map (pair nat address) unit)))))))))) }
+                                { DIG 5 ;
+                                  DIG 4 ;
+                                  PAIR ;
+                                  DIG 6 ;
+                                  DUP 8 ;
+                                  DIG 2 ;
+                                  UNPAIR ;
+                                  SWAP ;
+                                  DUP ;
+                                  DUG 2 ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  DUP 3 ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CAR ;
+                                  NONE address ;
+                                  DIG 6 ;
+                                  DUP 7 ;
+                                  PAIR ;
+                                  UPDATE ;
+                                  PAIR ;
+                                  DUP 3 ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CAR ;
+                                  PAIR ;
+                                  DUP 3 ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CAR ;
+                                  PAIR ;
+                                  DUP 3 ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CAR ;
+                                  PAIR ;
+                                  DUP 3 ;
+                                  CDR ;
+                                  CDR ;
+                                  CAR ;
+                                  PAIR ;
+                                  DUP 3 ;
+                                  CDR ;
+                                  CAR ;
+                                  PAIR ;
+                                  DUP 3 ;
+                                  CAR ;
+                                  PAIR ;
+                                  DIG 2 ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  NONE unit ;
+                                  DIG 3 ;
+                                  DIG 4 ;
+                                  PAIR ;
+                                  UPDATE ;
+                                  SWAP ;
+                                  DUP ;
+                                  DUG 2 ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CAR ;
+                                  PAIR ;
+                                  SWAP ;
+                                  DUP ;
+                                  DUG 2 ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CAR ;
+                                  PAIR ;
+                                  SWAP ;
+                                  DUP ;
+                                  DUG 2 ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CAR ;
+                                  PAIR ;
+                                  SWAP ;
+                                  DUP ;
+                                  DUG 2 ;
+                                  CDR ;
+                                  CDR ;
+                                  CDR ;
+                                  CAR ;
+                                  PAIR ;
+                                  SWAP ;
+                                  DUP ;
+                                  DUG 2 ;
+                                  CDR ;
+                                  CDR ;
+                                  CAR ;
+                                  PAIR ;
+                                  SWAP ;
+                                  DUP ;
+                                  DUG 2 ;
+                                  CDR ;
+                                  CAR ;
+                                  PAIR ;
+                                  SWAP ;
+                                  CAR ;
+                                  PAIR ;
+                                  DIG 3 ;
+                                  DIG 4 ;
+                                  PAIR ;
+                                  PAIR ;
+                                  SWAP ;
+                                  ABS ;
+                                  DIG 3 ;
+                                  PAIR ;
+                                  DIG 3 ;
+                                  DIG 3 ;
+                                  PAIR ;
+                                  PAIR ;
+                                  PAIR ;
+                                  LEFT (pair (pair (list (pair address (pair nat nat))) nat)
+                                             (pair nat
+                                                   (pair (option (pair (pair address bool) (option address)))
+                                                         (pair nat
+                                                               (pair nat
+                                                                     (pair nat
+                                                                           (pair (big_map
+                                                                                    nat
+                                                                                    (pair address
+                                                                                          (pair mutez
+                                                                                                (pair timestamp
+                                                                                                      (pair timestamp
+                                                                                                            (pair int
+                                                                                                                  (pair int
+                                                                                                                        (pair (list (pair address (list (pair nat nat))))
+                                                                                                                              (pair nat
+                                                                                                                                    (pair mutez
+                                                                                                                                          (pair timestamp
+                                                                                                                                                (pair address (pair nat (pair nat (pair nat (pair (pair address nat) (pair nat bool)))))))))))))))))
+                                                                                 (pair unit (pair (big_map (pair nat nat) address) (big_map (pair nat address) unit)))))))))) } } ;
+                         DIG 5 ;
+                         DROP ;
+                         UNPAIR ;
+                         UNPAIR ;
+                         DIG 2 ;
+                         CAR ;
+                         NIL (pair address (list (pair address (pair nat nat)))) ;
+                         DIG 2 ;
+                         SELF_ADDRESS ;
+                         PAIR ;
+                         CONS ;
+                         DUP 4 ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CAR ;
+                         CAR ;
+                         DIG 7 ;
+                         SWAP ;
+                         EXEC ;
+                         PUSH mutez 0 ;
+                         DIG 2 ;
+                         TRANSFER_TOKENS ;
+                         DIG 2 ;
+                         DUP 4 ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CAR ;
+                         ADD ;
+                         DUP 6 ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         DUP 7 ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CAR ;
+                         DUP 6 ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         DIG 5 ;
+                         PAIR ;
+                         DUP 6 ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CAR ;
+                         PAIR ;
+                         DUP 6 ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CAR ;
+                         PAIR ;
+                         DUP 6 ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CAR ;
+                         PAIR ;
+                         DUP 6 ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CAR ;
+                         PAIR ;
+                         DUP 6 ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CAR ;
+                         PAIR ;
+                         DUP 6 ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CAR ;
+                         PAIR ;
+                         DUP 6 ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CAR ;
+                         PAIR ;
+                         DUP 6 ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CAR ;
+                         PAIR ;
+                         DUP 6 ;
+                         CDR ;
+                         CDR ;
+                         CAR ;
+                         PAIR ;
+                         DUP 6 ;
+                         CDR ;
+                         CAR ;
+                         PAIR ;
+                         DIG 5 ;
+                         CAR ;
+                         PAIR ;
                          DUP ;
                          CDR ;
                          CDR ;
@@ -2211,115 +2885,32 @@
                          CDR ;
                          CDR ;
                          CDR ;
-                         CAR ;
-                         NIL (pair address (pair nat nat)) ;
-                         PAIR ;
-                         DIG 3 ;
-                         ITER { SWAP ;
-                                UNPAIR ;
-                                DUP 4 ;
-                                CDR ;
-                                CDR ;
-                                CDR ;
-                                CDR ;
-                                CDR ;
-                                CDR ;
-                                CDR ;
-                                CDR ;
-                                CDR ;
-                                CDR ;
-                                CDR ;
-                                CAR ;
-                                CDR ;
-                                CDR ;
-                                DUP 4 ;
-                                GET ;
-                                IF_NONE { PUSH string "INVALID_BIDDER_ID" ; FAILWITH } {} ;
-                                DIG 2 ;
-                                DIG 3 ;
-                                PAIR ;
-                                DUP 7 ;
-                                SWAP ;
-                                EXEC ;
-                                DIG 2 ;
-                                PUSH nat 1 ;
-                                DUP 5 ;
-                                CDR ;
-                                CDR ;
-                                CDR ;
-                                CDR ;
-                                CDR ;
-                                CDR ;
-                                CDR ;
-                                CDR ;
-                                CDR ;
-                                CDR ;
-                                CDR ;
-                                CDR ;
-                                CAR ;
-                                CDR ;
-                                PAIR ;
-                                DIG 3 ;
-                                PAIR ;
-                                CONS ;
-                                PAIR } ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
                          DIG 4 ;
-                         DROP ;
-                         UNPAIR ;
-                         NIL (pair address (list (pair address (pair nat nat)))) ;
+                         PAIR ;
                          SWAP ;
-                         SELF_ADDRESS ;
+                         DUP ;
+                         DUG 2 ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CAR ;
                          PAIR ;
-                         CONS ;
-                         DUP 3 ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CAR ;
-                         CAR ;
-                         DIG 6 ;
                          SWAP ;
-                         EXEC ;
-                         PUSH mutez 0 ;
-                         DIG 2 ;
-                         TRANSFER_TOKENS ;
-                         DUP 5 ;
+                         DUP ;
+                         DUG 2 ;
                          CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         DUP 6 ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CAR ;
-                         DUP 5 ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         CDR ;
-                         DIG 4 ;
-                         PAIR ;
-                         DUP 5 ;
                          CDR ;
                          CDR ;
                          CDR ;
@@ -2332,7 +2923,24 @@
                          CDR ;
                          CAR ;
                          PAIR ;
-                         DUP 5 ;
+                         SWAP ;
+                         DUP ;
+                         DUG 2 ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CDR ;
+                         CAR ;
+                         PAIR ;
+                         SWAP ;
+                         DUP ;
+                         DUG 2 ;
                          CDR ;
                          CDR ;
                          CDR ;
@@ -2344,7 +2952,9 @@
                          CDR ;
                          CAR ;
                          PAIR ;
-                         DUP 5 ;
+                         SWAP ;
+                         DUP ;
+                         DUG 2 ;
                          CDR ;
                          CDR ;
                          CDR ;
@@ -2355,7 +2965,9 @@
                          CDR ;
                          CAR ;
                          PAIR ;
-                         DUP 5 ;
+                         SWAP ;
+                         DUP ;
+                         DUG 2 ;
                          CDR ;
                          CDR ;
                          CDR ;
@@ -2365,7 +2977,9 @@
                          CDR ;
                          CAR ;
                          PAIR ;
-                         DUP 5 ;
+                         SWAP ;
+                         DUP ;
+                         DUG 2 ;
                          CDR ;
                          CDR ;
                          CDR ;
@@ -2374,7 +2988,9 @@
                          CDR ;
                          CAR ;
                          PAIR ;
-                         DUP 5 ;
+                         SWAP ;
+                         DUP ;
+                         DUG 2 ;
                          CDR ;
                          CDR ;
                          CDR ;
@@ -2382,29 +2998,37 @@
                          CDR ;
                          CAR ;
                          PAIR ;
-                         DUP 5 ;
+                         SWAP ;
+                         DUP ;
+                         DUG 2 ;
                          CDR ;
                          CDR ;
                          CDR ;
                          CDR ;
                          CAR ;
                          PAIR ;
-                         DUP 5 ;
+                         SWAP ;
+                         DUP ;
+                         DUG 2 ;
                          CDR ;
                          CDR ;
                          CDR ;
                          CAR ;
                          PAIR ;
-                         DUP 5 ;
+                         SWAP ;
+                         DUP ;
+                         DUG 2 ;
                          CDR ;
                          CDR ;
                          CAR ;
                          PAIR ;
-                         DUP 5 ;
+                         SWAP ;
+                         DUP ;
+                         DUG 2 ;
                          CDR ;
                          CAR ;
                          PAIR ;
-                         DIG 4 ;
+                         SWAP ;
                          CAR ;
                          PAIR ;
                          SOME ;
@@ -2455,8 +3079,6 @@
                      DROP ;
                      DIG 2 ;
                      DROP ;
-                     DIG 2 ;
-                     DROP ;
                      SWAP ;
                      DROP ;
                      NEVER } } }
@@ -2467,8 +3089,6 @@
              DIG 2 ;
              DROP ;
              DIG 2 ;
-             DROP ;
-             DIG 4 ;
              DROP ;
              DIG 4 ;
              DROP ;
@@ -2495,6 +3115,7 @@
              CDR ;
              CDR ;
              CDR ;
+             CAR ;
              SWAP ;
              DUP ;
              DUG 2 ;
@@ -2690,11 +3311,11 @@
              CDR ;
              CAR ;
              PAIR ;
-             EMPTY_MAP nat address ;
              PUSH nat 0 ;
              PAIR ;
              PUSH nat 0 ;
              PAIR ;
+             PUSH nat 1 ;
              PAIR ;
              DUP 5 ;
              PAIR ;

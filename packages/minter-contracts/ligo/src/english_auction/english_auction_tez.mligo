@@ -4,13 +4,6 @@
 #include "../allowlist_common.mligo"
 #include "../common.mligo"
 
-type consolation_winner_array = 
-  [@layout:comb]
-  { size : nat ; 
-    bid_index : nat; 
-    content : (nat , address) map 
-  } (*Acts as bounded queue*)
-
 type auction =
   [@layout:comb]
   {
@@ -26,7 +19,9 @@ type auction =
     end_time : timestamp;
     highest_bidder : address;
 #if CONSOLATION_AUCTION
-    consolation_winners : consolation_winner_array;
+    consolation_index : nat; 
+    num_losing_bidders : nat;
+    consolation_tokens_sent : nat;
     consolation_token : global_token_id;
     max_consolation_winners : nat;
 #endif
@@ -62,7 +57,7 @@ type auction_without_configure_entrypoints =
   | Offchain_bid of permit_bid_param
 #endif
 #if CONSOLATION_AUCTION
-  | Send_consolation of (nat * nat list)
+  | Send_consolation of (nat * nat)
 #endif
 
 type auction_entrypoints =
@@ -81,31 +76,43 @@ type storage =
 #if FEE
     fee : fee_data;
 #endif
+
+#if CONSOLATION_AUCTION
+    consolation_queue : (nat * nat, address) big_map;
+    consolation_receivers : (nat * address, unit) big_map;
+#endif
   }
 
 type return = operation list * storage
 
-let empty_consolation_winner_array : consolation_winner_array = 
-  ({ 
-    size = 0n ; 
-    bid_index = 0n; 
-    content = (Map.empty : (nat , address) map) ;
-  } : consolation_winner_array)
+#if CONSOLATION_AUCTION
 
-let append_to_consolation_winner_array (bidder, array : address * consolation_winner_array) 
-  : consolation_winner_array = 
-  { array with 
-    size = array.size + 1n; 
-    bid_index = array.bid_index + 1n; 
-    content = Map.add array.bid_index bidder array.content;
-   }
+let add_consolation_winner (auction_id, consolation_index, bidder, storage : nat * nat * address * storage) 
+  : storage * bool =
+  let new_bidder_added : bool = 
+    not (Big_map.mem (auction_id, bidder) storage.consolation_receivers) in 
+  let new_receiver_bm : (nat * address, unit) big_map = 
+    Big_map.update (auction_id, bidder) (Some unit) storage.consolation_receivers in 
+  let new_queue_bm : (nat * nat, address) big_map =
+    Big_map.update (auction_id, consolation_index) (Some bidder) storage.consolation_queue in 
+  let new_storage : storage = 
+    { storage with 
+      consolation_queue = new_queue_bm;
+      consolation_receivers = new_receiver_bm;
+    } in 
+  (new_storage, new_bidder_added)
 
-let remove_from_consolation_winner_array (bid_index, array : nat * consolation_winner_array) 
-  : consolation_winner_array = 
-  { array with 
-    size = abs(array.size - 1n); (*There is at least 1 element otherwise next line will fail*)
-    content = Map.remove bid_index array.content; 
-  }
+let remove_consolation_winner (auction_id, consolation_index, bidder, storage : nat * nat * address * storage) 
+  : storage =
+  let new_receiver_bm : (nat * address, unit) big_map = 
+    Big_map.update (auction_id, bidder) (None : unit option) storage.consolation_receivers in 
+  let new_queue_bm : (nat * nat, address) big_map =
+    Big_map.update (auction_id, consolation_index) (None : address option) storage.consolation_queue in 
+  ({ storage with 
+    consolation_queue = new_queue_bm;
+    consolation_receivers = new_receiver_bm;
+   } : storage)
+#endif
 
 let transfer_tokens_in_single_contract (from_ : address) (to_ : address) (tokens : tokens) : operation =
   let to_tx (fa2_tokens : fa2_tokens) : transfer_destination = {
@@ -208,8 +215,10 @@ let configure_auction_storage(configure_param, seller, storage : configure_param
       last_bid_offchain = false;
 #endif
 #if CONSOLATION_AUCTION
-      consolation_winners = empty_consolation_winner_array;
+      consolation_index = 1n;
       consolation_token = configure_param.consolation_token;
+      consolation_tokens_sent = 0n;
+      num_losing_bidders = 0n;
       max_consolation_winners = configure_param.max_consolation_winners;
 #endif
     } in
@@ -273,14 +282,17 @@ let resolve_auction(asset_id, storage : nat * storage) : return = begin
 #endif
 
 #if CONSOLATION_AUCTION
-    assert_msg (auction.consolation_winners.size = 0n, "CONSOLATION_NOT_SENT");
+    let all_consolation_tokens_sent : bool = 
+      auction.consolation_tokens_sent = auction.num_losing_bidders ||
+      auction.consolation_tokens_sent = auction.max_consolation_winners
+      in
+    assert_msg (all_consolation_tokens_sent, "CONSOLATION_NOT_SENT");
     let oplist = 
-      if auction.consolation_winners.bid_index >= auction.max_consolation_winners ||
-         auction.max_consolation_winners = 0n
+      if auction.consolation_tokens_sent >= auction.max_consolation_winners 
       then oplist 
       else 
           let remaining_consolation_tokens : nat = 
-            abs (auction.max_consolation_winners - auction.consolation_winners.bid_index) in 
+            abs (auction.max_consolation_winners - auction.consolation_tokens_sent) in 
           let send_consolation_tokens : operation = 
             transfer_tokens_in_single_contract Tezos.self_address auction.seller
                   ({fa2_address = auction.consolation_token.fa2_address;
@@ -355,21 +367,22 @@ let place_bid(  asset_id
       let return_bid : operation = transfer_tez(auction.current_bid,  auction.highest_bidder) in
       [return_bid] in
 #if CONSOLATION_AUCTION
-    let new_consolation_winners : consolation_winner_array = 
-        if auction.consolation_winners.size < auction.max_consolation_winners 
-        then 
-             (if first_bid(auction)
-              then auction.consolation_winners
-              else append_to_consolation_winner_array(auction.highest_bidder, auction.consolation_winners)
-             )
-        else (*Queue is full*)
-             (if first_bid(auction) || auction.max_consolation_winners = 0n
-              then auction.consolation_winners
-              else 
-                   let remove_bidder_index : nat = abs(auction.consolation_winners.bid_index - auction.max_consolation_winners) in (*Should always be positive*)
-                   let updated_array : consolation_winner_array = remove_from_consolation_winner_array(remove_bidder_index, auction.consolation_winners) in
-                   append_to_consolation_winner_array(auction.highest_bidder, updated_array)
-             )
+    let (auction, storage) : auction * storage = 
+        if first_bid(auction)
+        then (auction, storage)
+        else let (new_storage, new_bidder_added) : storage * bool = 
+               add_consolation_winner(asset_id, auction.consolation_index, auction.highest_bidder, storage) in 
+             let num_losing_bidders = 
+               if new_bidder_added 
+               then auction.num_losing_bidders + 1n
+               else auction.num_losing_bidders
+               in
+             let new_auction : auction = 
+               {auction with 
+                 consolation_index = auction.consolation_index + 1n;
+                 num_losing_bidders = num_losing_bidders;
+               } in 
+             (new_auction, new_storage)  
     in 
 #endif
     let new_end_time = if auction.end_time - Tezos.now <= auction.extend_time then
@@ -378,9 +391,6 @@ let place_bid(  asset_id
                                 last_bid_time = Tezos.now; end_time = new_end_time;
 #if OFFCHAIN_BID
                                 last_bid_offchain = is_offchain; 
-#endif
-#if CONSOLATION_AUCTION 
-                                consolation_winners = new_consolation_winners;
 #endif
                                } in
     let updated_auctions = Big_map.update asset_id (Some updated_auction_data) storage.auctions in
@@ -439,34 +449,59 @@ let update_allowed(allowlist_param, storage : allowlist_entrypoints * storage) :
 
 #if CONSOLATION_AUCTION
 
-let send_consolation(asset_id, bidders, storage : nat * nat list * storage) : return = begin
+let rec send_highest_consolation_tokens(txs, auction_id, auction, consolation_index, send_qty, tokens_sent, storage 
+   : transfer_destination list * nat * auction * nat * nat * nat * storage) 
+   : (transfer_destination list * nat * nat * storage) = begin 
+    assert_msg(send_qty > 0n, "INVALID_SEND_QTY");
+    
+    let bidder_address : address = 
+      match (Map.find_opt (auction_id, consolation_index) storage.consolation_queue) with 
+        | Some add -> add
+        | None -> (failwith "INVALID_CONSOLATION_ID" : address)
+      in 
+
+    let is_duplicate_token : bool = not Big_map.mem (auction_id, bidder_address) storage.consolation_receivers in 
+
+    let tx : transfer_destination = {
+      to_ = bidder_address;
+      token_id = auction.consolation_token.token_id;
+      amount = 1n;
+    } in 
+
+    let updated_storage = remove_consolation_winner(auction_id, consolation_index, bidder_address, storage) in 
+    
+    let (updated_txs, tokens_sent) : transfer_destination list * nat = 
+      if is_duplicate_token 
+      then (txs, tokens_sent)
+      else (tx :: txs, tokens_sent + 1n)
+      in 
+    
+    let consolation_index : int = int(consolation_index) - 1 in 
+
+    if tokens_sent = send_qty || consolation_index <= 0 
+    then (updated_txs, tokens_sent, abs(consolation_index), storage)
+    else send_highest_consolation_tokens(updated_txs, auction_id, auction, abs(consolation_index), send_qty, tokens_sent, updated_storage)
+  end
+
+let send_consolation(asset_id, distribute_qty, storage : nat * nat * storage) : return = begin
   fail_if_not_admin(storage.admin);
   let auction : auction = get_auction_data(asset_id, storage) in
   assert_msg(auction_ended(auction), "AUCTION_NOT_ENDED");
-  let (transfers, remaining_consolation_winners) : transfer_destination list * consolation_winner_array = 
-    List.fold_left
-    (fun ((txs, consolation_winners), bidder : (transfer_destination list * consolation_winner_array) * nat) ->
-        let bidder_address : address = 
-            match (Map.find_opt bidder auction.consolation_winners.content) with 
-              | Some add -> add
-              | None -> (failwith "INVALID_BIDDER_ID" : address)
-            in 
-        let tx : transfer_destination = {
-          to_ = bidder_address;
-          token_id = auction.consolation_token.token_id;
-          amount = 1n;
-        } in 
-        let updated_consolation_winners = remove_from_consolation_winner_array(bidder, consolation_winners) in 
-        (tx :: txs, updated_consolation_winners)
-    )
-    (([] : transfer_destination list), auction.consolation_winners)
-    bidders
+  let highest_consolation_index : nat = auction.consolation_index in 
+  let (transfers, tokens_sent, updated_consolation_index, new_storage) : transfer_destination list * nat * storage = 
+    send_highest_consolation_tokens(([] : transfer_destination list), asset_id, auction, highest_consolation_index, distribute_qty, 0n, storage)
     in 
   let transfer_param = [{from_ = Tezos.self_address; txs = transfers}] in
   let c = address_to_contract_transfer_entrypoint(auction.consolation_token.fa2_address) in
   let op : operation = (Tezos.transaction transfer_param 0mutez c) in 
-  let updated_auction_data : auction = {auction with consolation_winners = remaining_consolation_winners} in 
-  let updated_auctions : (nat, auction) big_map = Big_map.update asset_id (Some updated_auction_data) storage.auctions in
+  let updated_consolation_tokens_sent = auction.consolation_tokens_sent + tokens_sent in  
+  let updated_auction_data : auction = 
+    {auction with 
+       consolation_index = updated_consolation_index;
+       consolation_tokens_sent = updated_consolation_tokens_sent;
+    } in 
+  let updated_auctions : (nat, auction) big_map = 
+    Big_map.update asset_id (Some updated_auction_data) storage.auctions in
   ([op], {storage with auctions = updated_auctions})
   end
 
@@ -484,8 +519,8 @@ let english_auction_tez_no_configure (p,storage : auction_without_configure_entr
 #endif
 #if CONSOLATION_AUCTION
     | Send_consolation consolation_param -> 
-        let (asset_id, bidders) = consolation_param in 
-        send_consolation(asset_id, bidders, storage)
+        let (asset_id, distribute_qty) = consolation_param in 
+        send_consolation(asset_id, distribute_qty, storage)
 #endif 
 
 let english_auction_tez_main (p,storage : auction_entrypoints * storage) : return = match p with

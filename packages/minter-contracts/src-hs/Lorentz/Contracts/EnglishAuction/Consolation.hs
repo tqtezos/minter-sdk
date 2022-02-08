@@ -21,17 +21,18 @@ deriving anyclass instance IsoValue GlobalTokenId
 deriving anyclass instance HasAnnotation GlobalTokenId
 instance Buildable GlobalTokenId where build = genericF
 
-data ConsolationWinnerArray = ConsolationWinnerArray
+data ConsolationWinnerData = ConsolationWinnerData
   {
-    size :: Natural 
-  , bidIndex :: Natural 
-  , content :: Map Natural Address 
+    numReceivers :: Natural 
+  , consolationIndex :: Natural 
+  , consolationQueue :: Map Natural Address 
+  , consolationReceivers :: Set Address
   }
 
-customGeneric "ConsolationWinnerArray" ligoCombLayout
-deriving anyclass instance IsoValue ConsolationWinnerArray
-deriving anyclass instance HasAnnotation ConsolationWinnerArray
-instance Buildable ConsolationWinnerArray where build = genericF
+customGeneric "ConsolationWinnerData" ligoCombLayout
+deriving anyclass instance IsoValue ConsolationWinnerData
+deriving anyclass instance HasAnnotation ConsolationWinnerData
+instance Buildable ConsolationWinnerData where build = genericF
 
 data Auction = Auction
   { seller :: Address
@@ -45,7 +46,7 @@ data Auction = Auction
   , minRaise :: Mutez
   , endTime :: Timestamp
   , highestBidder :: Address
-  , consolationWinners :: ConsolationWinnerArray
+  , consolationWinners :: ConsolationWinnerData
   , consolationToken :: GlobalTokenId
   , maxConsolationWinners :: Natural
   }

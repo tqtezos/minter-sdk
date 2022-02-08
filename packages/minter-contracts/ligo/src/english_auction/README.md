@@ -205,3 +205,7 @@ The offchain bid submission uses a mechanism similar to the One-step permit proc
 - Only the admin can submit the permit
 - The counter is always set to 0. This is a valid simplification of that procedure because admin conducted replay attacks are not possible as both the current bid value as well as the auction id counter as well are strictly increasing. 
 - The `offchain_bid` entrypoint logic is different than the normal `bid` entrypoint logic (e.g. to indicate to the contract that the offchain bid should not be returned to the bidder, as it is assumed payment is handled offchain). 
+
+# Consolation Auction
+
+This extension alters the base auction contract to allow the Nth highest, non-winning bidders to receive a consolation token upon the closing of the auction. The auctioneer defines `max_consolation_winners` and `consolation_token` when configuring the auction. When the auction finishes, the Nth highest bidders are eligible to receive `consolation_token` where `N = min(max_consolation_winners, # of bids)`. 
