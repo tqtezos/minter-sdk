@@ -37,37 +37,6 @@ deriving anyclass instance IsoValue Auction
 deriving anyclass instance HasAnnotation Auction
 instance Buildable Auction where build = genericF
 
-data ConfigureParam = ConfigureParam
-  { openingPrice :: Mutez
-  , minRaisePercent :: Natural
-  , minRaise :: Mutez
-  , roundTime :: Natural
-  , extendTime :: Natural
-  , asset :: [Common.Tokens]
-  , startTime :: Timestamp
-  , endTime :: Timestamp
-  , consolationToken :: Consolation.GlobalTokenId
-  , maxConsolationWinners :: Natural
-  }
-
-customGeneric "ConfigureParam" ligoCombLayout
-deriving anyclass instance IsoValue ConfigureParam
-deriving anyclass instance HasAnnotation ConfigureParam
-
-defConfigureParam :: ConfigureParam
-defConfigureParam = ConfigureParam
-  { openingPrice = toMutez 1
-  , minRaisePercent = 1
-  , minRaise = toMutez 1
-  , roundTime = 100000000000
-  , extendTime = 100000000000
-  , asset = []
-  , startTime = timestampFromSeconds 0
-  , endTime = timestampFromSeconds 1000000000000
-  , consolationToken = Consolation.GlobalTokenId Consolation.exampleFA2Address (FA2I.TokenId 0)
-  , maxConsolationWinners = 10
-  }
-
 data AuctionStorage al = AuctionStorage
   { pausableAdmin :: AdminStorage
   , currentId :: Natural
@@ -136,7 +105,7 @@ instance
   type ParameterEntrypointsDerivation (AuctionWithoutConfigureEntrypoints al) = EpdDelegate
 
 data AuctionEntrypoints al
-  = Configure ConfigureParam
+  = Configure Consolation.ConfigureParam
   | AdminAndInteract (AuctionWithoutConfigureEntrypoints al)
 
 customGeneric "AuctionEntrypoints" ligoLayout

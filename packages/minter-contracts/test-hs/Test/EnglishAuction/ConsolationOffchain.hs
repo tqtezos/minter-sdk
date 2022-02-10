@@ -4,29 +4,26 @@ import Cleveland.Util (sec)
 import qualified Data.List as List
 import qualified Data.Map as Map
 import Data.Traversable.WithIndex (TraversableWithIndex, ifor)
-import Fmt ((+|), (|+))
 import Hedgehog (Gen, Property, forAll, property)
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import qualified Indigo.Contracts.FA2Sample as FA2
 import Lorentz hiding (amount, contract, now)
-import Lorentz.Contracts.EnglishAuction.Common
-import Lorentz.Contracts.EnglishAuction.TezFixedFee 
 import qualified Lorentz.Contracts.NoAllowlist as NoAllowlist
 import Lorentz.Contracts.Spec.FA2Interface (TokenId(..))
-import Michelson.Typed (convertContract, untypeValue)
 import Morley.Nettest
-import Test.Util (balanceOf, clevelandProp, genMutez', iterateM)
+import Test.Util 
 import Tezos.Core (timestampPlusSeconds)
 import qualified Lorentz.Contracts.EnglishAuction.ConsolationOffchain as ConsolationOffchain
 import Test.EnglishAuction.Util
+import qualified Lorentz.Contracts.EnglishAuction.Common as Common
 import qualified Lorentz.Contracts.EnglishAuction.Consolation as Consolation
 import qualified Lorentz.Contracts.Spec.FA2Interface as FA2I
 
 hprop_Send_consolation_admin_checked :: Property
 hprop_Send_consolation_admin_checked =
   property $ do
-    testData@TestData{testExtendTime, testAuctionDuration, testMaxConsolationWinners} <- forAll genTestData
+    testData@TestData{testExtendTime, testAuctionDuration} <- forAll genTestData
     bids <- forAll $ genSomeBids testData
 
     clevelandProp $ do
@@ -53,7 +50,7 @@ hprop_Send_consolation_admin_checked =
 hprop_Send_consolation_fails_if_auction_not_ended :: Property
 hprop_Send_consolation_fails_if_auction_not_ended =
   property $ do
-    testData@TestData{testMaxConsolationWinners} <- forAll genTestData
+    testData <- forAll genTestData
     bids <- forAll $ genSomeBids testData
 
     clevelandProp $ do
@@ -109,7 +106,7 @@ hprop_Assets_are_transferred_to_highest_bidder_after_consolation_tokens_sent =
       forM_ (testTokenBatches `zip` fa2Contracts) \(tokenBatch, fa2Contract) -> do
         let expectedBalances =
               tokenBatch
-                <&> (\FA2Token{tokenId, amount} -> (tokenId, amount))
+                <&> (\Common.FA2Token{tokenId, amount} -> (tokenId, amount))
                 & Map.fromListWith (+)
         forM_ (Map.toList expectedBalances) \(tokenId, expectedBalance) -> do
           sellerBalance <- balanceOf fa2Contract tokenId seller
@@ -119,7 +116,7 @@ hprop_Assets_are_transferred_to_highest_bidder_after_consolation_tokens_sent =
           winnerBalance <- balanceOf fa2Contract tokenId winner
           winnerBalance @== expectedBalance
      
-      let consolationReceivers = genConsolationWinners (fromIntegral numBids) (fromIntegral testMaxConsolationWinners)
+      let consolationReceivers = genConsolationWinners numBids testMaxConsolationWinners
 
       -- Tests consolation tokens are received    
       forM_ (toList bidders `zip` [1 .. length (toList bidders)]) \(bidder, bidIndex) -> do 
@@ -127,10 +124,41 @@ hprop_Assets_are_transferred_to_highest_bidder_after_consolation_tokens_sent =
           if (fromIntegral bidIndex) `elem` consolationReceivers  
               then consolationBalance @== 1 
           else consolationBalance @== 0 
+
+hprop_Consolation_tokens_emptied_from_contract_upon_resolution :: Property
+hprop_Consolation_tokens_emptied_from_contract_upon_resolution =
+  property $ do
+    testData@TestData{testExtendTime, testAuctionDuration, testMaxConsolationWinners} <- forAll genTestData
+    bids <- forAll $ genSomeBids testData
+
+    clevelandProp $ do
+      setup@Setup{seller, contract, consolationFa2Contract} <- testSetup testData
+      bidders <- mkBidders bids
+      let numBids = fromIntegral $ length (toList bids)
+
+      assertingBalanceDeltas consolationFa2Contract
+        [ (toAddress contract, FA2I.TokenId Consolation.consolationTokenId) -: 0 ] $ do 
+            withSender seller $ configureAuction testData setup
+  
+            -- Wait for the auction to start.
+            waitForAuctionToStart testData
+  
+            forM_ (toList bids `zip` toList bidders) \(bid, bidder) -> do
+              withSender bidder $
+                placeBid contract bid
+  
+            -- Wait for the auction to end.
+            advanceTime (sec $ fromIntegral $ testAuctionDuration `max` testExtendTime)
+            
+            when (numBids > 1 && testMaxConsolationWinners > 0) (withSender seller $ 
+                sendConsolation numBids contract)
+  
+            withSender seller $
+              resolveAuction contract
           
 
-hprop_Resolve_auction_fails_if_not_all_consolation_tokens_sent :: Property
-hprop_Resolve_auction_fails_if_not_all_consolation_tokens_sent =
+hprop_Resolve_auction_fails_if_consolation_tokens_not_sent :: Property
+hprop_Resolve_auction_fails_if_consolation_tokens_not_sent =
   property $ do
     testData@TestData{testExtendTime, testAuctionDuration, testMaxConsolationWinners} <- forAll genTestData
     bids <- forAll $ genMultipleBids testData
@@ -138,7 +166,6 @@ hprop_Resolve_auction_fails_if_not_all_consolation_tokens_sent =
     clevelandProp $ do
       setup@Setup{seller, contract} <- testSetup testData
       bidders <- mkBidders bids
-      let numBids = fromIntegral $ length (toList bids)
       -- Ensures testMaxConsolationWinners is at least 1  
       withSender seller $ configureAuction (testData {testMaxConsolationWinners = testMaxConsolationWinners + 1}) setup
 
@@ -152,9 +179,6 @@ hprop_Resolve_auction_fails_if_not_all_consolation_tokens_sent =
       -- Wait for the auction to end.
       advanceTime (sec $ fromIntegral $ testAuctionDuration `max` testExtendTime)
       
---      withSender seller $ 
---        sendConsolation numBids contract
-
       withSender seller
         (resolveAuction contract `expectFailure` failedWith contract [mt|CONSOLATION_NOT_SENT|])
 
@@ -177,7 +201,7 @@ data TestData = TestData
   , testMinRaise :: Mutez
   , testMinRaisePercent :: Natural
 
-  , testTokenBatches :: [[FA2Token]]
+  , testTokenBatches :: [[Common.FA2Token]]
   , testMaxConsolationWinners :: Natural
   }
   deriving stock (Show)
@@ -205,7 +229,7 @@ genTestData = do
   testTokenBatches <-
     Gen.list (Range.linear 0 10) $
         Gen.list (Range.linear 0 10) $
-        FA2Token
+        Common.FA2Token
           <$> (TokenId <$> Gen.integral (Range.linear 0 10))
           <*> Gen.integral (Range.linear 0 10)
 
@@ -271,10 +295,10 @@ testSetup testData = do
 
   -- The FA2 contracts with the seller's assets
   fa2Contracts <- forM (testTokenBatches testData) \tokenBatch -> do
-    let tokenIds = List.nub $ tokenId <$> tokenBatch
+    let tokenIds = List.nub $ Common.tokenId <$> tokenBatch
     let ledger =
           Map.fromListWith (+) $
-            tokenBatch <&> \FA2Token{tokenId, amount} -> ((seller, tokenId), amount)
+            tokenBatch <&> \Common.FA2Token{tokenId, amount} -> ((seller, tokenId), amount)
 
     originateSimple "asset-fa2"
       FA2.Storage
@@ -309,26 +333,10 @@ waitForAuctionToStart :: (HasCallStack, MonadNettest caps base m) => TestData ->
 waitForAuctionToStart TestData{testTimeToStart} =
   advanceTime (sec $ fromIntegral testTimeToStart)
 
-originateAuctionContract :: MonadNettest caps base m => AuctionStorage -> m (TAddress (ConsolationOffchain.AuctionEntrypoints NoAllowlist.Entrypoints))
-originateAuctionContract storage = do
-  TAddress @(ConsolationOffchain.AuctionEntrypoints NoAllowlist.Entrypoints) <$> originateUntypedSimple "auction-tez-fixed-fee"
-    (untypeValue $ toVal storage)
-    (convertContract englishAuctionTezFixedFeeContract)
 
 mkBidders :: (MonadNettest caps base m, TraversableWithIndex Int f) => f Mutez -> m (f Address)
 mkBidders bids =
   ifor bids \i _ -> newAddress ("bidder-" <> show i)
-
-getAuction :: MonadNettest caps base m => AuctionId -> AuctionStorage -> m Auction
-getAuction auctionId st = do
-  let auctionOpt =
-        st
-          & auctions
-          & unBigMap
-          & Map.lookup auctionId
-  case auctionOpt of
-    Just auction -> pure auction
-    Nothing -> failure $ "Expected the storage to contain an auction with ID '" +| auctionId |+ "', but it didn't."
 
 -- | Calculates the `min_raise_percent` of a bid.
 minRaisePercentOfBid :: TestData -> Mutez -> Mutez
@@ -352,12 +360,12 @@ configureAuction :: (HasCallStack, MonadNettest caps base m) => TestData -> Setu
 configureAuction testData Setup{fa2Contracts, contract, startTime, endTime, consolationFa2Contract}  = do
   let assets =
         (testTokenBatches testData `zip` fa2Contracts) <&> \(tokenBatch, fa2Contract) ->
-          Tokens
+          Common.Tokens
             { fa2Address = toAddress fa2Contract
             , fa2Batch = tokenBatch
             }
 
-  call contract (Call @"Configure") ConsolationOffchain.ConfigureParam
+  call contract (Call @"Configure") Consolation.ConfigureParam
     { openingPrice = testOpeningPrice testData
     , minRaisePercent = testMinRaisePercent testData
     , minRaise = testMinRaise testData
@@ -366,7 +374,7 @@ configureAuction testData Setup{fa2Contracts, contract, startTime, endTime, cons
     , asset = assets
     , startTime = startTime
     , endTime = endTime
-    , consolationToken = Consolation.GlobalTokenId (toAddress consolationFa2Contract) (FA2I.TokenId 0)
+    , consolationToken = Consolation.GlobalTokenId (toAddress consolationFa2Contract) (FA2I.TokenId Consolation.consolationTokenId)
     , maxConsolationWinners = testMaxConsolationWinners testData
     }
 
@@ -376,17 +384,17 @@ placeBid contract bidAmount =
     { tdTo = contract
     , tdAmount = bidAmount
     , tdEntrypoint = ep "bid"
-    , tdParameter = AuctionId 0
+    , tdParameter = Common.AuctionId 0
     }
 
 cancelAuction :: (HasCallStack, MonadNettest caps base m) => TAddress (ConsolationOffchain.AuctionEntrypoints NoAllowlist.Entrypoints) -> m ()
 cancelAuction contract =
-  call contract (Call @"Cancel") (AuctionId 0)
+  call contract (Call @"Cancel") (Common.AuctionId 0)
 
 resolveAuction :: (HasCallStack, MonadNettest caps base m) => TAddress (ConsolationOffchain.AuctionEntrypoints NoAllowlist.Entrypoints) -> m ()
 resolveAuction contract =
-  call contract (Call @"Resolve") (AuctionId 0)
+  call contract (Call @"Resolve") (Common.AuctionId 0)
 
 sendConsolation :: (HasCallStack, MonadNettest caps base m) => Natural -> TAddress (ConsolationOffchain.AuctionEntrypoints NoAllowlist.Entrypoints) -> m ()
 sendConsolation numTokens contract =
-  call contract (Call @"Send_consolation") (AuctionId 0, numTokens)
+  call contract (Call @"Send_consolation") (Common.AuctionId 0, numTokens)

@@ -65,6 +65,9 @@ customGeneric "ConfigureParam" ligoCombLayout
 deriving anyclass instance IsoValue ConfigureParam
 deriving anyclass instance HasAnnotation ConfigureParam
 
+consolationTokenId :: Natural 
+consolationTokenId = 0 
+
 defConfigureParam :: ConfigureParam
 defConfigureParam = ConfigureParam
   { openingPrice = toMutez 1
@@ -75,7 +78,7 @@ defConfigureParam = ConfigureParam
   , asset = []
   , startTime = timestampFromSeconds 0
   , endTime = timestampFromSeconds 1000000000000
-  , consolationToken = GlobalTokenId exampleFA2Address (FA2I.TokenId 0)
+  , consolationToken = GlobalTokenId exampleFA2Address (FA2I.TokenId consolationTokenId)
   , maxConsolationWinners = 10
   }
 
