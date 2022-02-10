@@ -24,7 +24,9 @@ data Auction = Auction
   , minRaise :: Mutez
   , endTime :: Timestamp
   , highestBidder :: Address
-  , consolationWinners :: Consolation.ConsolationWinnerData
+  , consolationIndex :: Natural 
+  , numLosingBidders :: Natural 
+  , consolationTokensSent :: Natural 
   , consolationToken :: Consolation.GlobalTokenId
   , maxConsolationWinners :: Natural
   , lastBidOffchain :: Bool
@@ -73,6 +75,8 @@ data AuctionStorage al = AuctionStorage
   , maxConfigToStartTime :: Natural
   , auctions :: BigMap Common.AuctionId Auction
   , allowlist :: al
+  , consolationQueue :: BigMap (Natural, Natural) Address
+  , consolationReceivers :: BigMap (Natural, Address) ()
   }
 
 customGeneric "AuctionStorage" ligoCombLayout
@@ -87,6 +91,8 @@ initAuctionStorage as = AuctionStorage
   , maxConfigToStartTime = 99999999999999999
   , auctions = mempty
   , allowlist = mempty
+  , consolationQueue = mempty 
+  , consolationReceivers = mempty
   }
 
 data OffchainBidData = OffchainBidData
@@ -116,7 +122,7 @@ data AuctionWithoutConfigureEntrypoints al
   | Admin AdminEntrypoints
   | Update_allowed al
   | Offchain_bid OffchainBidParam
-  | Send_consolation (Common.AuctionId, [Natural])
+  | Send_consolation (Common.AuctionId, Natural)
 
 customGeneric "AuctionWithoutConfigureEntrypoints" ligoLayout
 deriving anyclass instance IsoValue al => IsoValue (AuctionWithoutConfigureEntrypoints al)

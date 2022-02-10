@@ -21,19 +21,6 @@ deriving anyclass instance IsoValue GlobalTokenId
 deriving anyclass instance HasAnnotation GlobalTokenId
 instance Buildable GlobalTokenId where build = genericF
 
-data ConsolationWinnerData = ConsolationWinnerData
-  {
-    numReceivers :: Natural 
-  , consolationIndex :: Natural 
-  , consolationQueue :: Map Natural Address 
-  , consolationReceivers :: Set Address
-  }
-
-customGeneric "ConsolationWinnerData" ligoCombLayout
-deriving anyclass instance IsoValue ConsolationWinnerData
-deriving anyclass instance HasAnnotation ConsolationWinnerData
-instance Buildable ConsolationWinnerData where build = genericF
-
 data Auction = Auction
   { seller :: Address
   , currentBid :: Mutez
@@ -46,7 +33,9 @@ data Auction = Auction
   , minRaise :: Mutez
   , endTime :: Timestamp
   , highestBidder :: Address
-  , consolationWinners :: ConsolationWinnerData
+  , consolationIndex :: Natural 
+  , numLosingBidders :: Natural 
+  , consolationTokensSent :: Natural 
   , consolationToken :: GlobalTokenId
   , maxConsolationWinners :: Natural
   }
@@ -97,6 +86,8 @@ data AuctionStorage al = AuctionStorage
   , maxConfigToStartTime :: Natural
   , auctions :: BigMap AuctionId Auction
   , allowlist :: al
+  , consolationQueue :: BigMap (Natural, Natural) Address
+  , consolationReceivers :: BigMap (Natural, Address) ()
   }
 
 customGeneric "AuctionStorage" ligoCombLayout
@@ -111,6 +102,8 @@ initAuctionStorage as = AuctionStorage
   , maxConfigToStartTime = 99999999999999999
   , auctions = mempty
   , allowlist = mempty
+  , consolationQueue = mempty 
+  , consolationReceivers = mempty
   }
 
 data AuctionWithoutConfigureEntrypoints al
@@ -119,7 +112,7 @@ data AuctionWithoutConfigureEntrypoints al
   | Resolve AuctionId
   | Admin AdminEntrypoints
   | Update_allowed al
-  | Send_consolation (AuctionId, [Natural])
+  | Send_consolation (AuctionId, Natural)
 
 customGeneric "AuctionWithoutConfigureEntrypoints" ligoLayout
 deriving anyclass instance IsoValue al => IsoValue (AuctionWithoutConfigureEntrypoints al)

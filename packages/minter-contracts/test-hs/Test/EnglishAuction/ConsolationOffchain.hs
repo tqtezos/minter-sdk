@@ -32,7 +32,7 @@ hprop_Send_consolation_admin_checked =
     clevelandProp $ do
       setup@Setup{seller, contract} <- testSetup testData
       bidders <- mkBidders bids
-      let numBids = length (toList bids) 
+      let numBids = fromIntegral $ length (toList bids) 
       withSender seller $ configureAuction testData setup
 
       -- Wait for the auction to start.
@@ -44,12 +44,10 @@ hprop_Send_consolation_admin_checked =
 
       -- Wait for the auction to end.
       advanceTime (sec $ fromIntegral $ testAuctionDuration `max` testExtendTime)
-
-      let consolationReceivers = genConsolationWinners (fromIntegral numBids) (fromIntegral testMaxConsolationWinners)
       
       user <- newAddress "user"
       withSender user $
-        sendConsolation consolationReceivers contract
+        sendConsolation numBids contract
         & expectError contract ConsolationOffchain.errNotAdmin
 
 hprop_Send_consolation_fails_if_auction_not_ended :: Property
@@ -61,7 +59,7 @@ hprop_Send_consolation_fails_if_auction_not_ended =
     clevelandProp $ do
       setup@Setup{seller, contract} <- testSetup testData
       bidders <- mkBidders bids
-      let numBids = length (toList bids) 
+      let numBids = fromIntegral $ length (toList bids) 
       withSender seller $ configureAuction testData setup
 
       -- Wait for the auction to start.
@@ -73,10 +71,8 @@ hprop_Send_consolation_fails_if_auction_not_ended =
 
       -- Auction not ended as we don't advance time
 
-      let consolationReceivers = genConsolationWinners (fromIntegral numBids) (fromIntegral testMaxConsolationWinners)
-
       withSender seller $
-        sendConsolation consolationReceivers contract
+        sendConsolation numBids contract
         & expectError contract ConsolationOffchain.errAuctionNotEnded
 
 hprop_Assets_are_transferred_to_highest_bidder_after_consolation_tokens_sent :: Property
@@ -88,7 +84,7 @@ hprop_Assets_are_transferred_to_highest_bidder_after_consolation_tokens_sent =
     clevelandProp $ do
       setup@Setup{seller, contract, fa2Contracts, consolationFa2Contract} <- testSetup testData
       bidders <- mkBidders bids
-      let numBids = length (toList bids) 
+      let numBids = fromIntegral $ length (toList bids) 
       withSender seller $ configureAuction testData setup
 
       -- Wait for the auction to start.
@@ -100,11 +96,9 @@ hprop_Assets_are_transferred_to_highest_bidder_after_consolation_tokens_sent =
 
       -- Wait for the auction to end.
       advanceTime (sec $ fromIntegral $ testAuctionDuration `max` testExtendTime)
-
-      let consolationReceivers = genConsolationWinners (fromIntegral numBids) (fromIntegral testMaxConsolationWinners)
       
-      withSender seller $ 
-        sendConsolation consolationReceivers contract
+      when (numBids > 1 && testMaxConsolationWinners > 0) (withSender seller $ 
+          sendConsolation numBids contract)
 
       withSender seller $
         resolveAuction contract
@@ -124,9 +118,11 @@ hprop_Assets_are_transferred_to_highest_bidder_after_consolation_tokens_sent =
           contractBalance @== 0
           winnerBalance <- balanceOf fa2Contract tokenId winner
           winnerBalance @== expectedBalance
+     
+      let consolationReceivers = genConsolationWinners (fromIntegral numBids) (fromIntegral testMaxConsolationWinners)
 
       -- Tests consolation tokens are received    
-      forM_ (toList bidders `zip` [0 .. length (toList bidders) - 1]) \(bidder, bidIndex) -> do 
+      forM_ (toList bidders `zip` [1 .. length (toList bidders)]) \(bidder, bidIndex) -> do 
           consolationBalance <- balanceOf consolationFa2Contract (FA2I.TokenId 0) bidder
           if (fromIntegral bidIndex) `elem` consolationReceivers  
               then consolationBalance @== 1 
@@ -142,7 +138,7 @@ hprop_Resolve_auction_fails_if_not_all_consolation_tokens_sent =
     clevelandProp $ do
       setup@Setup{seller, contract} <- testSetup testData
       bidders <- mkBidders bids
-      let numBids = length (toList bids)
+      let numBids = fromIntegral $ length (toList bids)
       -- Ensures testMaxConsolationWinners is at least 1  
       withSender seller $ configureAuction (testData {testMaxConsolationWinners = testMaxConsolationWinners + 1}) setup
 
@@ -156,8 +152,8 @@ hprop_Resolve_auction_fails_if_not_all_consolation_tokens_sent =
       -- Wait for the auction to end.
       advanceTime (sec $ fromIntegral $ testAuctionDuration `max` testExtendTime)
       
-      withSender seller $ 
-        sendConsolation (genIncompleteConsolationWinners (fromIntegral numBids) (fromIntegral testMaxConsolationWinners + 1)) contract
+--      withSender seller $ 
+--        sendConsolation numBids contract
 
       withSender seller
         (resolveAuction contract `expectFailure` failedWith contract [mt|CONSOLATION_NOT_SENT|])
@@ -342,8 +338,8 @@ minRaisePercentOfBid TestData{testMinRaisePercent} bid =
 genConsolationWinners :: Natural -> Natural -> [Natural]
 genConsolationWinners numBids maxConsolationWinners 
     | numBids <= 1 || maxConsolationWinners == 0 = [] 
-    | maxConsolationWinners + 1 >= numBids = [0 .. (numBids - 2)]
-    | otherwise = [ (numBids - maxConsolationWinners - 1) .. (numBids - 2)]
+    | maxConsolationWinners >= numBids = [1 .. (numBids - 1)]
+    | otherwise = [ (numBids - maxConsolationWinners) .. (numBids - 1)]
 
 genIncompleteConsolationWinners :: Natural -> Natural -> [Natural]
 genIncompleteConsolationWinners numBids maxConsolationWinners = tailSafe $ genConsolationWinners numBids maxConsolationWinners
@@ -391,6 +387,6 @@ resolveAuction :: (HasCallStack, MonadNettest caps base m) => TAddress (Consolat
 resolveAuction contract =
   call contract (Call @"Resolve") (AuctionId 0)
 
-sendConsolation :: (HasCallStack, MonadNettest caps base m) => [Natural] -> TAddress (ConsolationOffchain.AuctionEntrypoints NoAllowlist.Entrypoints) -> m ()
-sendConsolation bidderIds contract =
-  call contract (Call @"Send_consolation") (AuctionId 0, bidderIds)
+sendConsolation :: (HasCallStack, MonadNettest caps base m) => Natural -> TAddress (ConsolationOffchain.AuctionEntrypoints NoAllowlist.Entrypoints) -> m ()
+sendConsolation numTokens contract =
+  call contract (Call @"Send_consolation") (AuctionId 0, numTokens)
