@@ -112,6 +112,11 @@ let remove_consolation_winner (auction_id, consolation_index, bidder, storage : 
     consolation_queue = new_queue_bm;
     consolation_receivers = new_receiver_bm;
    } : storage)
+
+let all_consolation_tokens_sent (auction : auction) : bool = 
+  auction.consolation_tokens_sent = auction.num_losing_bidders ||
+  auction.consolation_tokens_sent = auction.max_consolation_winners
+
 #endif
 
 let transfer_tokens_in_single_contract (from_ : address) (to_ : address) (tokens : tokens) : operation =
@@ -282,11 +287,7 @@ let resolve_auction(asset_id, storage : nat * storage) : return = begin
 #endif
 
 #if CONSOLATION_AUCTION
-    let all_consolation_tokens_sent : bool = 
-      auction.consolation_tokens_sent = auction.num_losing_bidders ||
-      auction.consolation_tokens_sent = auction.max_consolation_winners
-      in
-    assert_msg (all_consolation_tokens_sent, "CONSOLATION_NOT_SENT");
+    assert_msg (all_consolation_tokens_sent(auction), "CONSOLATION_NOT_SENT");
     let oplist = 
       if auction.consolation_tokens_sent >= auction.max_consolation_winners 
       then oplist 
@@ -485,17 +486,14 @@ let rec send_highest_consolation_tokens(txs, auction_id, auction, consolation_in
 let send_consolation(asset_id, distribute_qty, storage : nat * nat * storage) : return = begin
   fail_if_not_admin(storage.admin);
   let auction : auction = get_auction_data(asset_id, storage) in
-  let consolation_tokens_sent : nat = auction.consolation_tokens_sent in 
-  let highest_consolation_index : int = auction.consolation_index - consolation_tokens_sent - 1n in 
-  let potential_tokens_remaining : bool = 
-    consolation_tokens_sent < auction.max_consolation_winners ||
-    highest_consolation_index > 0 
-    in
+  let consolation_tokens_sent : nat = auction.consolation_tokens_sent in  
+  let conoslation_tokens_remaining : bool = not all_consolation_tokens_sent(auction) in 
   assert_msg(auction_ended(auction), "AUCTION_NOT_ENDED");
   assert_msg(distribute_qty > 0n, "DISTIBUTE_QTY_MUST_BE_NONZERO");
-  assert_msg(potential_tokens_remaining, "MAX_CONSOLATION_TOKENS_SENT");
+  assert_msg(conoslation_tokens_remaining, "MAX_CONSOLATION_TOKENS_SENT");
+  let highest_consolation_index : nat = abs(auction.consolation_index - consolation_tokens_sent - 1n) in 
   let (transfers, updated_consolation_tokens_sent, new_storage) : transfer_destination list * nat * storage = 
-    send_highest_consolation_tokens(([] : transfer_destination list), asset_id, auction, abs(highest_consolation_index), distribute_qty, consolation_tokens_sent, storage)
+    send_highest_consolation_tokens(([] : transfer_destination list), asset_id, auction, highest_consolation_index, distribute_qty, consolation_tokens_sent, storage)
     in 
   let transfer_param = [{from_ = Tezos.self_address; txs = transfers}] in
   let c = address_to_contract_transfer_entrypoint(auction.consolation_token.fa2_address) in
