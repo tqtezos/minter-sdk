@@ -462,9 +462,15 @@ let rec send_highest_consolation_tokens(txs, auction_id, auction, consolation_in
 
     let is_duplicate_token : bool = not Big_map.mem (auction_id, bidder_address) storage.consolation_receivers in 
 
+    let token_id = auction.consolation_token.token_id in 
+
+#if POSITIONAL_AUCTION
+    let token_id = token_id + tokens_sent in 
+#endif
+
     let tx : transfer_destination = {
       to_ = bidder_address;
-      token_id = auction.consolation_token.token_id;
+      token_id = token_id;
       amount = 1n;
     } in 
 
