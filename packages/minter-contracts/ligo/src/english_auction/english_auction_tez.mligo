@@ -451,7 +451,7 @@ let update_allowed(allowlist_param, storage : allowlist_entrypoints * storage) :
 
 let rec send_highest_consolation_tokens(txs, auction_id, auction, consolation_index, send_qty, tokens_sent, storage 
    : transfer_destination list * nat * auction * nat * nat * nat * storage) 
-   : (transfer_destination list * nat * nat * storage) = begin 
+   : (transfer_destination list * nat * storage) = begin 
     
     let bidder_address : address = 
       match (Map.find_opt (auction_id, consolation_index) storage.consolation_queue) with 
@@ -478,7 +478,7 @@ let rec send_highest_consolation_tokens(txs, auction_id, auction, consolation_in
     let consolation_index : int = int(consolation_index) - 1 in 
 
     if tokens_sent >= send_qty || consolation_index <= 0 || tokens_sent >= auction.max_consolation_winners
-    then (updated_txs, tokens_sent, abs(consolation_index), storage)
+    then (updated_txs, tokens_sent, storage)
     else send_highest_consolation_tokens(updated_txs, auction_id, auction, abs(consolation_index), send_qty, tokens_sent, updated_storage)
   end
 
@@ -486,20 +486,22 @@ let send_consolation(asset_id, distribute_qty, storage : nat * nat * storage) : 
   fail_if_not_admin(storage.admin);
   let auction : auction = get_auction_data(asset_id, storage) in
   let consolation_tokens_sent : nat = auction.consolation_tokens_sent in 
+  let highest_consolation_index : int = auction.consolation_index - consolation_tokens_sent - 1n in 
+  let potential_tokens_remaining : bool = 
+    consolation_tokens_sent < auction.max_consolation_winners ||
+    highest_consolation_index > 0 
+    in
   assert_msg(auction_ended(auction), "AUCTION_NOT_ENDED");
   assert_msg(distribute_qty > 0n, "DISTIBUTE_QTY_MUST_BE_NONZERO");
-  assert_msg(consolation_tokens_sent < auction.max_consolation_winners, "MAX_CONSOLATION_TOKENS_SENT");
-  let highest_consolation_index : nat = abs(auction.consolation_index - 1n) in 
-  let (transfers, tokens_sent, updated_consolation_index, new_storage) : transfer_destination list * nat * storage = 
-    send_highest_consolation_tokens(([] : transfer_destination list), asset_id, auction, highest_consolation_index, distribute_qty, consolation_tokens_sent, storage)
+  assert_msg(potential_tokens_remaining, "MAX_CONSOLATION_TOKENS_SENT");
+  let (transfers, updated_consolation_tokens_sent, new_storage) : transfer_destination list * nat * storage = 
+    send_highest_consolation_tokens(([] : transfer_destination list), asset_id, auction, abs(highest_consolation_index), distribute_qty, consolation_tokens_sent, storage)
     in 
   let transfer_param = [{from_ = Tezos.self_address; txs = transfers}] in
   let c = address_to_contract_transfer_entrypoint(auction.consolation_token.fa2_address) in
   let op : operation = (Tezos.transaction transfer_param 0mutez c) in 
-  let updated_consolation_tokens_sent = auction.consolation_tokens_sent + tokens_sent in  
   let updated_auction_data : auction = 
     {auction with 
-       consolation_index = updated_consolation_index;
        consolation_tokens_sent = updated_consolation_tokens_sent;
     } in 
   let updated_auctions : (nat, auction) big_map = 

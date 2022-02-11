@@ -125,6 +125,64 @@ hprop_Assets_are_transferred_to_highest_bidder_after_consolation_tokens_sent =
               then consolationBalance @== 1 
           else consolationBalance @== 0 
 
+hprop_Send_consolation_iteratively_correctly_distributes_tokens :: Property
+hprop_Send_consolation_iteratively_correctly_distributes_tokens =
+  property $ do
+    testData@TestData{testExtendTime, testAuctionDuration, testTokenBatches, testMaxConsolationWinners} <- forAll genTestData
+    bids <- forAll $ genSomeBids testData
+
+    clevelandProp $ do
+      setup@Setup{seller, contract, fa2Contracts, consolationFa2Contract} <- testSetup testData
+      bidders <- mkBidders bids
+      let numBids = fromIntegral $ length (toList bids) 
+      withSender seller $ configureAuction testData setup
+
+      -- Wait for the auction to start.
+      waitForAuctionToStart testData
+
+      forM_ (toList bids `zip` toList bidders) \(bid, bidder) -> do
+        withSender bidder $
+          placeBid contract bid
+
+      -- Wait for the auction to end.
+      advanceTime (sec $ fromIntegral $ testAuctionDuration `max` testExtendTime)
+
+      let consolationReceivers = genConsolationWinners numBids testMaxConsolationWinners
+
+      let numConsolationReceivers = length consolationReceivers
+      
+      when (numBids > 1 && testMaxConsolationWinners > 0) 
+        (forM_ [1 .. numConsolationReceivers] \_ -> do
+          withSender seller $ 
+            sendConsolation 1 contract
+        )
+
+      withSender seller $
+        resolveAuction contract
+
+      let winner = last bidders
+
+      -- All the tokens should have been transferred to the winner.
+      forM_ (testTokenBatches `zip` fa2Contracts) \(tokenBatch, fa2Contract) -> do
+        let expectedBalances =
+              tokenBatch
+                <&> (\Common.FA2Token{tokenId, amount} -> (tokenId, amount))
+                & Map.fromListWith (+)
+        forM_ (Map.toList expectedBalances) \(tokenId, expectedBalance) -> do
+          sellerBalance <- balanceOf fa2Contract tokenId seller
+          sellerBalance @== 0
+          contractBalance <- balanceOf fa2Contract tokenId contract
+          contractBalance @== 0
+          winnerBalance <- balanceOf fa2Contract tokenId winner
+          winnerBalance @== expectedBalance
+
+      -- Tests consolation tokens are received    
+      forM_ (toList bidders `zip` [1 .. length (toList bidders)]) \(bidder, bidIndex) -> do 
+          consolationBalance <- balanceOf consolationFa2Contract (FA2I.TokenId 0) bidder
+          if (fromIntegral bidIndex) `elem` consolationReceivers  
+              then consolationBalance @== 1 
+          else consolationBalance @== 0 
+
 hprop_Consolation_tokens_emptied_from_contract_upon_resolution :: Property
 hprop_Consolation_tokens_emptied_from_contract_upon_resolution =
   property $ do
@@ -138,7 +196,9 @@ hprop_Consolation_tokens_emptied_from_contract_upon_resolution =
 
       assertingBalanceDeltas consolationFa2Contract
         [ (toAddress contract, FA2I.TokenId Consolation.consolationTokenId) -: 0 ] $ do 
-            withSender seller $ configureAuction testData setup
+            assertingBalanceDeltas consolationFa2Contract
+                [ (toAddress contract, FA2I.TokenId Consolation.consolationTokenId) -: toInteger testMaxConsolationWinners ] $ do 
+                    withSender seller $ configureAuction testData setup
   
             -- Wait for the auction to start.
             waitForAuctionToStart testData
