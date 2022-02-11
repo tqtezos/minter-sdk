@@ -216,6 +216,30 @@ hprop_Consolation_tokens_emptied_from_contract_upon_resolution =
             withSender seller $
               resolveAuction contract
           
+hprop_Consolation_tokens_emptied_from_contract_upon_cancellation :: Property
+hprop_Consolation_tokens_emptied_from_contract_upon_cancellation =
+  property $ do
+    testData <- forAll genTestData
+    bids <- forAll $ genSomeBids testData
+
+    clevelandProp $ do
+      setup@Setup{seller, contract, consolationFa2Contract} <- testSetup testData
+      bidders <- mkBidders bids
+
+      assertingBalanceDeltas consolationFa2Contract
+        [ (toAddress contract, FA2I.TokenId Consolation.consolationTokenId) -: 0 ] $ do 
+    
+            withSender seller $ configureAuction testData setup
+  
+            -- Wait for the auction to start.
+            waitForAuctionToStart testData
+  
+            forM_ (toList bids `zip` toList bidders) \(bid, bidder) -> do
+              withSender bidder $
+                placeBid contract bid
+  
+            withSender seller $
+              cancelAuction contract
 
 hprop_Resolve_auction_fails_if_consolation_tokens_not_sent :: Property
 hprop_Resolve_auction_fails_if_consolation_tokens_not_sent =
