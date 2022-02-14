@@ -4,7 +4,6 @@ import Lorentz
 import Fmt (Buildable(..), genericF)
 import qualified Lorentz.Contracts.EnglishAuction.Common as Common
 import qualified Lorentz.Contracts.EnglishAuction.Consolation as Consolation
-import qualified Lorentz.Contracts.Spec.FA2Interface as FA2I
 import Lorentz.Contracts.PausableAdminOption
 import qualified Lorentz.Contracts.EnglishAuction.TezPermit as TezPermit
 import qualified Michelson.Typed as T
