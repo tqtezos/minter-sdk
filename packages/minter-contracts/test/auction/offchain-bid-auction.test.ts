@@ -24,7 +24,7 @@ import {
 jest.setTimeout(360000); // 6 minutes
 
 interface OffchainBidData {
-  asset_id : nat;
+  auction_id : nat;
   bid_amount : mutez;
 }
 
@@ -45,7 +45,7 @@ async function createPermit( signerKey : key,
   };
 
   const offchain_bid_data : OffchainBidData = {
-    asset_id : assetId,
+    auction_id : assetId,
     bid_amount : bidAmount,
   };
 
@@ -259,7 +259,7 @@ describe('test NFT auction', () => {
   test('Offchain bid by non admin should fail', async () => {
     dummy_permit_bid_param = {
       offchain_bid_data : {
-        asset_id : new BigNumber(0),
+        auction_id : new BigNumber(0),
         bid_amount : new BigNumber(0),
       },
       permit : {

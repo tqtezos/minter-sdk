@@ -38,7 +38,7 @@ type configure_param =
 type bid_param =
   [@layout:comb]
   {
-    asset_id : nat;
+    auction_id : nat;
     bid_amount : nat;
   }
 
@@ -113,8 +113,8 @@ let single_fa2_transfer (from_, to_, qty, fa2 : address * address * nat * bid_cu
 let transfer_tokens(tokens_list, from_, to_ : tokens list * address * address) : (operation list) =
    (List.map (transfer_tokens_in_single_contract_to_address from_ to_) tokens_list)
 
-let get_auction_data (asset_id, storage : nat * storage) : auction =
-  match (Big_map.find_opt asset_id storage.auctions) with
+let get_auction_data (auction_id, storage : nat * storage) : auction =
+  match (Big_map.find_opt auction_id storage.auctions) with
       None -> (failwith "AUCTION_DOES_NOT_EXIST" : auction)
     | Some auction -> auction
 
@@ -184,9 +184,9 @@ let configure_auction(configure_param, storage : configure_param * storage) : re
     (asset_transfers, {storage with auctions = updated_auctions; current_id = storage.current_id + 1n})
   end
 
-let resolve_auction(asset_id, storage : nat * storage) : return = begin
+let resolve_auction(auction_id, storage : nat * storage) : return = begin
     (fail_if_paused storage.admin);
-    let auction : auction = get_auction_data(asset_id, storage) in
+    let auction : auction = get_auction_data(auction_id, storage) in
     assert_msg (auction_ended(auction) , "AUCTION_NOT_ENDED");
     tez_stuck_guard("RESOLVE");
     let asset_transfers : operation list = transfer_tokens(auction.asset, Tezos.self_address, auction.highest_bidder) in
@@ -221,13 +221,13 @@ let resolve_auction(asset_id, storage : nat * storage) : return = begin
       let payments : operation = transfer_tokens_in_single_contract (txs, storage.bid_currency.fa2_address) in
       (payments :: asset_transfers) in
 #endif
-    let updated_auctions = Big_map.remove asset_id storage.auctions in
+    let updated_auctions = Big_map.remove auction_id storage.auctions in
     (op_list, {storage with auctions = updated_auctions})
   end
 
-let cancel_auction(asset_id, storage : nat * storage) : return = begin
+let cancel_auction(auction_id, storage : nat * storage) : return = begin
     (fail_if_paused storage.admin);
-    let auction : auction = get_auction_data(asset_id, storage) in
+    let auction : auction = get_auction_data(auction_id, storage) in
     let is_seller : bool = Tezos.sender = auction.seller in
     let v : unit = if is_seller then ()
           else fail_if_not_admin_ext (storage.admin, "OR_A_SELLER") in
@@ -239,12 +239,12 @@ let cancel_auction(asset_id, storage : nat * storage) : return = begin
       asset_transfers else
       let return_bid : operation = single_fa2_transfer(Tezos.self_address, auction.highest_bidder, auction.current_bid, storage.bid_currency) in
       (return_bid :: asset_transfers) in
-    let updated_auctions = Big_map.remove asset_id storage.auctions in
+    let updated_auctions = Big_map.remove auction_id storage.auctions in
     (op_list, {storage with auctions = updated_auctions})
   end
 
-let place_bid(asset_id, token_amount, storage : nat * nat * storage) : return = begin
-    let auction : auction = get_auction_data(asset_id, storage) in
+let place_bid(auction_id, token_amount, storage : nat * nat * storage) : return = begin
+    let auction : auction = get_auction_data(auction_id, storage) in
     assert_msg (Tezos.sender = Tezos.source, "BIDDER_NOT_IMPLICIT");
     (fail_if_paused storage.admin);
     assert_msg (auction_in_progress(auction), "NOT_IN_PROGRESS");
@@ -262,7 +262,7 @@ let place_bid(asset_id, token_amount, storage : nat * nat * storage) : return = 
     let new_end_time = if auction.end_time - Tezos.now <= auction.extend_time then
       Tezos.now + auction.extend_time else auction.end_time in
     let updated_auction_data = {auction with current_bid = token_amount; highest_bidder = Tezos.sender; last_bid_time = Tezos.now; end_time = new_end_time;} in
-    let updated_auctions = Big_map.update asset_id (Some updated_auction_data) storage.auctions in
+    let updated_auctions = Big_map.update auction_id (Some updated_auction_data) storage.auctions in
     (op_list , {storage with auctions = updated_auctions})
   end
 
@@ -285,8 +285,8 @@ let english_auction_fa2_main (p,storage : auction_entrypoints * storage) : retur
   let u : unit = tez_stuck_guard("ANY_ENTRYPOINT") in 
   match p with
     | Configure config -> configure_auction(config, storage)
-    | Bid bid_param -> place_bid(bid_param.asset_id, bid_param.bid_amount, storage)
-    | Cancel asset_id -> cancel_auction(asset_id, storage)
-    | Resolve asset_id -> resolve_auction(asset_id, storage)
+    | Bid bid_param -> place_bid(bid_param.auction_id, bid_param.bid_amount, storage)
+    | Cancel auction_id -> cancel_auction(auction_id, storage)
+    | Resolve auction_id -> resolve_auction(auction_id, storage)
     | Admin a -> admin(a, storage)
     | Update_allowed a -> update_allowed(a, storage)

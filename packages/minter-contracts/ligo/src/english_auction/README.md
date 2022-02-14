@@ -19,7 +19,7 @@ nat %max_auction_time;
 #Upper bound on how long between configuration and start time for an auction. Ensures fake auctions don't fill up big_map
 nat %max_config_to_start_time;
 
-bigmap %auctions nat %asset_id {
+bigmap %auctions nat %auction_id {
   seller : address; # SENDER that configured auction
   current_bid : mutez; #Upon configuration, set as opening_price
   start_time : timestamp; #When bidding can begin
@@ -107,7 +107,7 @@ When these conditions are met, a call to this entrypoint returns previous bid to
 
 ```sh=
 %bid {
-  asset_id : nat;
+  auction_id : nat;
 }
 ```
 
@@ -116,7 +116,7 @@ If `SENDER` is `seller` or `admin` and auction is in progress, a call to this en
 
 ```sh=
   %cancel {
-    asset_id : nat;
+    auction_id : nat;
   }
 ```
 
@@ -125,13 +125,13 @@ If an auction has ended, a call to this entrypoint ought to send the asset to `h
 
 ```sh=
 %resolve {
-  asset_id : nat;
+  auction_id : nat;
 }
 
 ```
 ## Errors 
 
-- `AUCTION_DOES_NOT_EXIST`: Auction does not exist for given `asset_id`
+- `AUCTION_DOES_NOT_EXIST`: Auction does not exist for given `auction_id`
 - `INVALID_END_TIME`: `end_time` must be after `start_time`
 - `INVALID_AUCTION_TIME`: `end_time - start_time` must be less than or equal to `max_auction_time`
 - `INVALID_START_TIME`: `start_time` must not have already passed
