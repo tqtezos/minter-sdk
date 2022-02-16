@@ -8,6 +8,7 @@ module Test.EnglishAuction.Util
   , originateAuctionTezPermitAllowlisted
   , originateAuctionTezPermitAllowlistedToken
   , originateAuctionTezOffchainConsolation
+  , originateAuctionTezOffchainPositional
   ) where
 
 import Lorentz.Value
@@ -72,6 +73,17 @@ originateAuctionTezOffchainConsolation admin = do
       ConsolationOffchain.initAuctionStorage @NoAllowlist.Allowlist
         (PausableAdminOption.initAdminStorage admin))
     (T.convertContract ConsolationOffchain.consolationAuctionTezContract)
+
+originateAuctionTezOffchainPositional
+  :: MonadNettest caps base m
+  => Address
+  -> m (TAddress $ ConsolationOffchain.AuctionEntrypoints NoAllowlist.Entrypoints)
+originateAuctionTezOffchainPositional admin = do
+  TAddress <$> originateUntypedSimple "auction-tez"
+    (T.untypeValue $ T.toVal $
+      ConsolationOffchain.initAuctionStorage @NoAllowlist.Allowlist
+        (PausableAdminOption.initAdminStorage admin))
+    (T.convertContract ConsolationOffchain.positionalAuctionTezContract)
 
 originateAuctionTezAllowlistedToken
   :: MonadNettest caps base m

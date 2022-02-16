@@ -129,6 +129,13 @@ consolationAuctionTezContract
 consolationAuctionTezContract =
   $$(embedContractM (inBinFolder "english_auction_tez_offchain_bid_consolation_auction.tz"))
 
+positionalAuctionTezContract
+  :: T.Contract
+      (ToT (AuctionEntrypoints NoAllowlist.Entrypoints))
+      (ToT (AuctionStorage NoAllowlist.Allowlist))
+positionalAuctionTezContract =
+  $$(embedContractM (inBinFolder "english_auction_tez_offchain_bid_positional_auction.tz"))
+
 -- Errors
 ----------------------------------------------------------------------------
 

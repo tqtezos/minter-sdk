@@ -130,6 +130,17 @@ let transfer_tokens_in_single_contract (from_ : address) (to_ : address) (tokens
    let c = address_to_contract_transfer_entrypoint(tokens.fa2_address) in
    (Tezos.transaction transfer_param 0mutez c)
 
+let rec transfer_positional_tokens_batch_param_helper (tokens_sent, token_id, num_to_transfer, tokens : nat * nat * nat * fa2_tokens list) : fa2_tokens list= 
+   if tokens_sent >= num_to_transfer
+   then tokens 
+   else let token = {token_id = token_id; amount = 1n;} in 
+        let tokens = token :: tokens in 
+        transfer_positional_tokens_batch_param_helper(tokens_sent + 1n, token_id + 1n, num_to_transfer, tokens)
+
+let transfer_positional_tokens_batch_param (initial_token_id, num_to_transfer : nat * nat) 
+  : fa2_tokens list =
+  transfer_positional_tokens_batch_param_helper(0n, initial_token_id, num_to_transfer, ([] : fa2_tokens list))
+   
 (*Handles transfers of tokens across FA2 Contracts*)
 let transfer_tokens(tokens_list, from_, to_ : tokens list * address * address) : (operation list) =
    (List.map (transfer_tokens_in_single_contract from_ to_) tokens_list)
@@ -238,11 +249,17 @@ let configure_auction(configure_param, storage : configure_param * storage) : re
   let new_storage = configure_auction_storage(configure_param, Tezos.sender, storage) in
   let fa2_transfers : operation list = transfer_tokens(configure_param.asset, Tezos.sender, Tezos.self_address) in
 #if CONSOLATION_AUCTION
+#if POSITIONAL_AUCTION
+  let fa2_batch = 
+    transfer_positional_tokens_batch_param(configure_param.consolation_token.token_id, configure_param.max_consolation_winners) in 
+#else
+  let fa2_batch = [{token_id = configure_param.consolation_token.token_id;
+                   amount = configure_param.max_consolation_winners;}] in 
+#endif
   let consolation_transfer : operation = 
     transfer_tokens_in_single_contract Tezos.sender Tezos.self_address 
                                       ({fa2_address = configure_param.consolation_token.fa2_address;
-                                        fa2_batch = [{token_id = configure_param.consolation_token.token_id;
-                                                      amount = configure_param.max_consolation_winners;}]
+                                        fa2_batch = fa2_batch
                                        }) in 
   let fa2_transfers = consolation_transfer :: fa2_transfers in 
 #endif 
@@ -294,11 +311,17 @@ let resolve_auction(auction_id, storage : nat * storage) : return = begin
       else 
           let remaining_consolation_tokens : nat = 
             abs (auction.max_consolation_winners - auction.consolation_tokens_sent) in 
+#if POSITIONAL_AUCTION
+          let fa2_batch = 
+            transfer_positional_tokens_batch_param(auction.consolation_token.token_id + auction.consolation_tokens_sent, remaining_consolation_tokens) in 
+#else
+          let fa2_batch = [{token_id = auction.consolation_token.token_id;
+                           amount = remaining_consolation_tokens;}] in 
+#endif
           let send_consolation_tokens : operation = 
             transfer_tokens_in_single_contract Tezos.self_address auction.seller
                   ({fa2_address = auction.consolation_token.fa2_address;
-                    fa2_batch = [{token_id = auction.consolation_token.token_id;
-                                  amount = remaining_consolation_tokens;}]
+                    fa2_batch = fa2_batch;
                    }) in
           send_consolation_tokens :: oplist    
     in       
@@ -323,6 +346,13 @@ let cancel_auction(auction_id, storage : nat * storage) : return = begin
       let return_bid : operation = transfer_tez(auction.current_bid, auction.highest_bidder) in 
       (return_bid :: fa2_transfers) in
 #if CONSOLATION_AUCTION
+#if POSITIONAL_AUCTION
+          let fa2_batch = 
+            transfer_positional_tokens_batch_param(auction.consolation_token.token_id, auction.max_consolation_winners) in 
+#else
+          let fa2_batch = [{token_id = auction.consolation_token.token_id;
+                           amount = auction.max_consolation_winners;}] in 
+#endif
     let op_list = 
         let return_consolation_tokens : operation = 
           transfer_tokens_in_single_contract Tezos.self_address auction.seller
