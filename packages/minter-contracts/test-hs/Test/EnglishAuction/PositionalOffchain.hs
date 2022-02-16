@@ -3,7 +3,6 @@ module Test.EnglishAuction.PositionalOffchain where
 import Cleveland.Util (sec)
 import qualified Data.List as List
 import qualified Data.Map as Map
-import Data.Traversable.WithIndex (TraversableWithIndex, ifor)
 import Hedgehog (Gen, Property, forAll, property)
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
@@ -75,8 +74,8 @@ hprop_Send_consolation_iteratively_correctly_distributes_tokens =
       -- Tests positional tokens are received    
       forM_ (toList bidders `zip` [1 .. numBids - 1]) \(bidder, bidIndex) -> do 
           consolationBalance <- 
-            balanceOf positionalFa2Contract (FA2I.TokenId $ fromIntegral ((numBids - 1) - bidIndex)) bidder
-          if (fromIntegral bidIndex) `elem` consolationReceivers  
+            balanceOf positionalFa2Contract (FA2I.TokenId $ ((numBids - 1) - bidIndex)) bidder
+          if bidIndex `elem` consolationReceivers  
               then consolationBalance @== 1 
           else consolationBalance @== 0 
 
@@ -129,7 +128,7 @@ hprop_Assets_are_transferred_to_highest_bidder_after_positional_tokens_sent =
       -- Tests consolation tokens are received    
       forM_ (toList bidders `zip` [1 .. numBids - 1]) \(bidder, bidIndex) -> do 
           consolationBalance <- balanceOf positionalFa2Contract (FA2I.TokenId ((numBids - 1) - bidIndex)) bidder
-          if (fromIntegral bidIndex) `elem` consolationReceivers  
+          if bidIndex `elem` consolationReceivers  
               then consolationBalance @== 1 
           else consolationBalance @== 0 
 
