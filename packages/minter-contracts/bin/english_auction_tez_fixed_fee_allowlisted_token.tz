@@ -467,7 +467,7 @@
                          DIG 3 ;
                          COMPARE ;
                          GE ;
-                         OR ;
+                         AND ;
                          OR ;
                          NOT ;
                          IF { NOW ;

@@ -55,8 +55,8 @@ hprop_First_bid_is_valid_IFF_it_meets_opening_price =
           else placeBid contract firstBid `expectFailure` failedWith contract
                  ([mt|INVALID_BID_AMOUNT|], (((testOpeningPrice, firstBid), seller, startTime), startTime))
 
-hprop_Subsequent_bids_are_valid_if_they_are_above_'min_raise' :: Property
-hprop_Subsequent_bids_are_valid_if_they_are_above_'min_raise' =
+hprop_Subsequent_bids_are_valid_IFF_they_are_above_'min_raise'_and_'min_raise_percent' :: Property
+hprop_Subsequent_bids_are_valid_IFF_they_are_above_'min_raise'_and_'min_raise_percent' =
   property $ do
     testData@TestData{testOpeningPrice} <- forAll genTestData
 
@@ -87,7 +87,7 @@ hprop_Subsequent_bids_are_valid_if_they_are_above_'min_raise' =
       label "Second bid is above `min_raise`, but below `min_raise_percent`"
 
     clevelandProp $ do
-      setup@Setup{seller, contract} <- testSetup testData'
+      setup@Setup{seller, contract, startTime} <- testSetup testData'
       bidder1 <- newAddress "bidder-1"
       bidder2 <- newAddress "bidder-2"
 
@@ -95,52 +95,14 @@ hprop_Subsequent_bids_are_valid_if_they_are_above_'min_raise' =
       waitForAuctionToStart testData'
 
       withSender bidder1 $ placeBid contract firstBid
-      withSender bidder2 $ placeBid contract secondBid
+      withSender bidder2 $ 
+        if secondBid >= firstBid + minRaisePercentOfFirstBid
+          then placeBid contract secondBid
+          else placeBid contract secondBid `expectFailure` failedWith contract
+               ([mt|INVALID_BID_AMOUNT|], ((firstBid, secondBid) , bidder1, startTime), startTime)
 
-hprop_Subsequent_bids_are_valid_if_they_are_above_'min_raise_percent' :: Property
-hprop_Subsequent_bids_are_valid_if_they_are_above_'min_raise_percent' =
-  property $ do
-    testData@TestData{testOpeningPrice} <- forAll genTestData
-
-    firstBid <- forAll $ genBid testData testOpeningPrice
-    let minRaisePercentOfFirstBid = minRaisePercentOfBid testData firstBid
-
-    -- Generate a `min_raise` with a 50% chance of it being above `min_raise_percent * firstBid`
-    -- and 50% of it being below.
-    testMinRaise <- forAll $ do
-      (lowerBound, upperBound) <-
-        Gen.element
-          [ (1, minRaisePercentOfFirstBid)
-          , (minRaisePercentOfFirstBid, minRaisePercentOfFirstBid * 2)
-          ]
-      genMutez' (Range.linear lowerBound upperBound)
-
-    let testData' = testData { testMinRaise = testMinRaise }
-
-    let secondBidLowerBound = firstBid + minRaisePercentOfFirstBid
-    let secondBidUpperBound = firstBid + (minRaisePercentOfFirstBid * 2)
-    secondBid <- forAll $ genMutez' (Range.linear secondBidLowerBound secondBidUpperBound)
-
-    -- These generators have been carefully calibrated to ensure `secondBid` is not ALWAYS
-    -- above BOTH `min_raise` and `min_raise_percent`.
-    -- For this property to be meaningful, we want there to be a fair chance of `secondBid`
-    -- being above `min_raise_percent`, but below `min_raise`.
-    when (secondBid < firstBid + testMinRaise) $
-      label "Second bid is above `min_raise_percent`, but below `min_raise`"
-
-    clevelandProp $ do
-      setup@Setup{seller, contract} <- testSetup testData'
-      bidder1 <- newAddress "bidder-1"
-      bidder2 <- newAddress "bidder-2"
-
-      withSender seller $ configureAuction testData' setup
-      waitForAuctionToStart testData'
-
-      withSender bidder1 $ placeBid contract firstBid
-      withSender bidder2 $ placeBid contract secondBid
-
-hprop_Subsequent_bids_are_invalid_if_they_are_below_'min_raise'_and_'min_raise_percent' :: Property
-hprop_Subsequent_bids_are_invalid_if_they_are_below_'min_raise'_and_'min_raise_percent' =
+hprop_Subsequent_bids_are_invalid_if_they_are_below_'min_raise'_or_'min_raise_percent' :: Property
+hprop_Subsequent_bids_are_invalid_if_they_are_below_'min_raise'_or_'min_raise_percent' =
   property $ do
     testData@TestData{testOpeningPrice} <- forAll genTestData
 
@@ -154,7 +116,7 @@ hprop_Subsequent_bids_are_invalid_if_they_are_below_'min_raise'_and_'min_raise_p
 
     let minRaisePercentOfFirstBid = minRaisePercentOfBid testData' firstBid
     let secondBidLowerBound = firstBid
-    let secondBidUpperBound = firstBid + (testMinRaise `min` minRaisePercentOfFirstBid) - 1
+    let secondBidUpperBound = firstBid + (testMinRaise `max` minRaisePercentOfFirstBid) - 1
     secondBid <- forAll $ genMutez' (Range.linear secondBidLowerBound secondBidUpperBound)
 
     clevelandProp $ do
@@ -556,10 +518,10 @@ genManyBids testData = do
 -- | Generate a valid bid, such that it is:
 --
 -- * Greater than the previous bid or opening price.
--- * Above either the `min_raise` or the `min_raise_percent` thresholds.
+-- * Above both the `min_raise` and the `min_raise_percent` thresholds.
 genBid :: TestData -> Mutez -> Gen Mutez
 genBid testData@TestData{testMinRaise} previousBid = do
-  raiseLowerBound <- Gen.element [testMinRaise, minRaisePercentOfBid testData previousBid]
+  let raiseLowerBound = testMinRaise `max` minRaisePercentOfBid testData previousBid
   raise <- genMutez' (Range.linear raiseLowerBound (raiseLowerBound + 1000))
   pure $ previousBid + raise
 

@@ -135,8 +135,8 @@ let dont_return_bid (auction : auction) : bool =
 #endif
 
 let valid_bid_amount (auction, bid_amount : auction * tez) : bool =
-  (bid_amount >= (auction.current_bid + (percent_of_bid_tez (auction.min_raise_percent, auction.current_bid)))) ||
-  (bid_amount >= auction.current_bid + auction.min_raise)                                            ||
+  ((bid_amount >= (auction.current_bid + (percent_of_bid_tez (auction.min_raise_percent, auction.current_bid)))) &&
+  (bid_amount >= auction.current_bid + auction.min_raise))                                            ||
   ((bid_amount >= auction.current_bid) && first_bid(auction))
 
 
