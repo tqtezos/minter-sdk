@@ -482,6 +482,12 @@ const compileSources: CompileSourceEntry[] = [
     dstFile: 'pausable_wallet.tz',
     contract: true,
   },
+  {
+    srcFile: 'multiunit_auction/multiunit_bonding_curve_auction.mligo',
+    mainFn: 'multiunit_auction_tez_main',
+    dstFile: 'multiunit_bonding_curve_auction.tz',
+    contract: true,
+  },
 ];
 
 const filterSources = (sources: CompileSourceEntry[]): CompileSourceEntry[] => {
