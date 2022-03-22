@@ -4,7 +4,7 @@
                    (nat %bid))
                (or (nat %cancel)
                    (pair %offchain_bid
-                      (pair %offchain_bid_data (nat %asset_id) (mutez %bid_amount))
+                      (pair %offchain_bid_data (nat %auction_id) (mutez %bid_amount))
                       (pair %permit (key %signerKey) (signature %signature)))))
            (or (nat %resolve) (never %update_allowed)))
         (pair %configure

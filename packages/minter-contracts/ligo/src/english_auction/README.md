@@ -19,7 +19,7 @@ nat %max_auction_time;
 #Upper bound on how long between configuration and start time for an auction. Ensures fake auctions don't fill up big_map
 nat %max_config_to_start_time;
 
-bigmap %auctions nat %asset_id {
+bigmap %auctions nat %auction_id {
   seller : address; # SENDER that configured auction
   current_bid : mutez; #Upon configuration, set as opening_price
   start_time : timestamp; #When bidding can begin
@@ -77,9 +77,9 @@ An auction can be configured with the parameters specified in `configure_param` 
 
 When the conditions are met, 
  
-`auctions[current_id]` is set with parameter values, `current_bid` is set to `opening_price` and `storage.current_id` is incremented. Also, `highest_bidder` is set to `seller`, which is used internally for the contract to know that no bid has yet been placed.
+`auctions[current_id]` is set with parameter values, `current_bid` is set to `opening_price` and `storage.current_id` is incremented. Also, `highest_bidder` is set to `seller`, which is used internally for the contract to know that no bid has yet been placed. The address that configures the auction will be referred to as `auctioneer` going forward in this document. 
 
-The contract optimistically transfers assets from `SENDER` to itself. That means `SENDER` needed to already have approved the transfer to the auction contract of the assets that they are auctioning. The auction configuration fails if any of these transfers fail.
+The contract optimistically transfers assets from the auctioneer to itself. That means the auctioneer needed to already have approved the transfer to the auction contract of the assets that they are auctioning. The auction configuration fails if any of these transfers fail.
 
 ```bash=
 %configure   {
@@ -107,7 +107,7 @@ When these conditions are met, a call to this entrypoint returns previous bid to
 
 ```sh=
 %bid {
-  asset_id : nat;
+  auction_id : nat;
 }
 ```
 
@@ -116,7 +116,7 @@ If `SENDER` is `seller` or `admin` and auction is in progress, a call to this en
 
 ```sh=
   %cancel {
-    asset_id : nat;
+    auction_id : nat;
   }
 ```
 
@@ -125,13 +125,13 @@ If an auction has ended, a call to this entrypoint ought to send the asset to `h
 
 ```sh=
 %resolve {
-  asset_id : nat;
+  auction_id : nat;
 }
 
 ```
 ## Errors 
 
-- `AUCTION_DOES_NOT_EXIST`: Auction does not exist for given `asset_id`
+- `AUCTION_DOES_NOT_EXIST`: Auction does not exist for given `auction_id`
 - `INVALID_END_TIME`: `end_time` must be after `start_time`
 - `INVALID_AUCTION_TIME`: `end_time - start_time` must be less than or equal to `max_auction_time`
 - `INVALID_START_TIME`: `start_time` must not have already passed
@@ -205,3 +205,15 @@ The offchain bid submission uses a mechanism similar to the One-step permit proc
 - Only the admin can submit the permit
 - The counter is always set to 0. This is a valid simplification of that procedure because admin conducted replay attacks are not possible as both the current bid value as well as the auction id counter as well are strictly increasing. 
 - The `offchain_bid` entrypoint logic is different than the normal `bid` entrypoint logic (e.g. to indicate to the contract that the offchain bid should not be returned to the bidder, as it is assumed payment is handled offchain). 
+
+# Consolation Auction
+
+This extension alters the base auction contract to allow the Nth highest, non-winning bidders to receive a consolation token upon the closing of the auction. The auctioneer defines `max_consolation_winners` and `consolation_token` when configuring the auction. When the auction finishes, the Nth highest, non winning bidders are eligible to receive `consolation_token` where `N = min(max_consolation_winners, # of non winning bids)`, where `# of non winning bids = # of bids - 1`. The auctioneer must own at least `max_consolation_winners` number of the consolation tokens and add the auction contract as an operator on these tokens in the FA2 contract in which they are defined, as the call to `%configure` must be able to successfully hold these tokens in escrow. 
+
+The contract also includes a `%Send_consolation` entrypoint, which must be called before resolving the auction, in the case that there are consolation winners. `Send_consolation` accepts one `nat` through which the caller can specify how many tokens to distribute in that call. This becomes necessary in the case of many consolation winners, to avoid locking the auction if the contract were to attempt to distribute all of the consolation tokens. The caller can thus make multiple calls to the entrypoint until the contract sends out all of the necessary consolation tokens.  
+
+Upon auction cancellation, all consolation tokens are returned to the auctioneer. Upon resolve, all remaining consolation tokens (those not rewarded to consolation winners) are returned to the auctioneer. 
+
+# Positional Auction
+
+The positional auction is a similar variant to the consolation auction in that the non-winning bidders are awarded for participation in the auction. In contrast, each of the `N` highest non winning bidders (where `N <= max_consolation_winners`) receives a unique consolation token. The auctioneer defines a `consolation_token` exactly as they would in the consolation auction with some token_id `t`. However, in this case the token_id of the `consolation_token` represents the highest consolation token of non-winning bidders. This means that the highest non-winning bidder will receive a consolation token with token_id `t`. The remaining consolation tokens are assigned in incrementing order-- that is, the 2nd highest non-winning bidder will receive a token with token_id `t + 1` up until the Nth highest non_winning bidder who will receive a token with token_id `t + N`. The auctioneer must own at least 1 of each of the consolation tokens with token_ids ranging from `t` to `t + max_consolation_winners` and add the auction contract as an operator on these tokens in the FA2 contract in which they are defined, as the call to `%configure` must be able to successfully hold these tokens in escrow. Otherwise, the `%send_consolation`, `%resolve`, and `%cancel` entrypoints work similarly to the modifications made in the consolation auction variant.

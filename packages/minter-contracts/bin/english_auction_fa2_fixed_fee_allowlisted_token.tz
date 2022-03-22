@@ -1,6 +1,6 @@
 { parameter
     (or (or (or (or %admin (or (unit %confirm_admin) (bool %pause)) (address %set_admin))
-                (pair %bid (nat %asset_id) (nat %bid_amount)))
+                (pair %bid (nat %auction_id) (nat %bid_amount)))
             (or (nat %cancel)
                 (pair %configure
                    (nat %opening_price)

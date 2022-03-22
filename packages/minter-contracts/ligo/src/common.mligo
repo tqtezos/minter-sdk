@@ -61,7 +61,7 @@ type permit_buy_param =
 type offchain_bid_data = 
   [@layout:comb]
   {
-    asset_id : nat;
+    auction_id : nat;
     bid_amount : tez;
   }
 

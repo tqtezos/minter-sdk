@@ -126,7 +126,7 @@ jobs:
     - uses: actions/setup-haskell@v1.1.4
       name: Setup Haskell Stack
       with:
-        ghc-version: 9.0.1  # higher than necessary, but is cached in the runner
+        ghc-version: 9.2.1  # higher than necessary, but is cached in the runner
         stack-version: 2.3
     
     - uses: actions/download-artifact@v2
