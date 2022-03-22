@@ -23,7 +23,7 @@ import Test.EnglishAuction.ConsolationOffchain hiding (Setup, genTestData, testS
 hprop_Send_consolation_iteratively_correctly_distributes_tokens :: Property
 hprop_Send_consolation_iteratively_correctly_distributes_tokens =
   property $ do
-    testData@TestData{testExtendTime, testAuctionDuration, testTokenBatches, testMaxConsolationWinners} <- forAll genTestData
+    testData@TestData{testExtendTime, testAuctionDuration, testTokenBatches, testMaxConsolationWinners, testConsolationTokenId} <- forAll genTestData
     bids <- forAll $ genSomeBids testData
 
     clevelandProp $ do
@@ -73,8 +73,9 @@ hprop_Send_consolation_iteratively_correctly_distributes_tokens =
 
       -- Tests positional tokens are received    
       forM_ (toList bidders `zip` [1 .. numBids - 1]) \(bidder, bidIndex) -> do 
+          let biddersConsolationTokenId = (numBids + testConsolationTokenId) - 1 - bidIndex
           consolationBalance <- 
-            balanceOf positionalFa2Contract (FA2I.TokenId $ ((numBids - 1) - bidIndex)) bidder
+            balanceOf positionalFa2Contract (FA2I.TokenId biddersConsolationTokenId) bidder
           if bidIndex `elem` consolationReceivers  
               then consolationBalance @== 1 
           else consolationBalance @== 0 
@@ -82,7 +83,7 @@ hprop_Send_consolation_iteratively_correctly_distributes_tokens =
 hprop_Assets_are_transferred_to_highest_bidder_after_positional_tokens_sent :: Property
 hprop_Assets_are_transferred_to_highest_bidder_after_positional_tokens_sent =
   property $ do
-    testData@TestData{testExtendTime, testAuctionDuration, testTokenBatches, testMaxConsolationWinners} <- forAll genTestData
+    testData@TestData{testExtendTime, testAuctionDuration, testTokenBatches, testMaxConsolationWinners, testConsolationTokenId} <- forAll genTestData
     bids <- forAll $ genSomeBids testData
 
     clevelandProp $ do
@@ -126,8 +127,9 @@ hprop_Assets_are_transferred_to_highest_bidder_after_positional_tokens_sent =
       let consolationReceivers = genConsolationWinners numBids testMaxConsolationWinners
 
       -- Tests consolation tokens are received    
-      forM_ (toList bidders `zip` [1 .. numBids - 1]) \(bidder, bidIndex) -> do 
-          consolationBalance <- balanceOf positionalFa2Contract (FA2I.TokenId ((numBids - 1) - bidIndex)) bidder
+      forM_ (toList bidders `zip` [1 .. numBids - 1]) \(bidder, bidIndex) -> do
+          let biddersConsolationTokenId = (numBids + testConsolationTokenId) - 1 - bidIndex
+          consolationBalance <- balanceOf positionalFa2Contract (FA2I.TokenId biddersConsolationTokenId) bidder
           if bidIndex `elem` consolationReceivers  
               then consolationBalance @== 1 
           else consolationBalance @== 0 
@@ -162,6 +164,8 @@ genTestData = do
         Common.FA2Token
           <$> (TokenId <$> Gen.integral (Range.linear 0 10))
           <*> Gen.integral (Range.linear 0 10)
+  
+  testConsolationTokenId <- Gen.integral (Range.linear 0 5)
 
   pure $ TestData {..}
 
@@ -198,16 +202,17 @@ testSetup testData = do
       }
       (FA2.fa2Contract def { FA2.cAllowedTokenIds = tokenIds })
 
-  -- The FA2 contract with the consolation token
+  -- The FA2 contract with the positional tokens ranging from consolationTokenId to consolationTokenId + 5, given that 5 is max number of bids
+  let minPositionalTokenId = testConsolationTokenId testData 
   positionalFa2Contract <- do
     let ledger =
           Map.fromList $
-             [((seller, FA2I.TokenId 0), 1000), 
-              ((seller, FA2I.TokenId 1), 1000),
-              ((seller, FA2I.TokenId 2), 1000),
-              ((seller, FA2I.TokenId 3), 1000),
-              ((seller, FA2I.TokenId 4), 1000),
-              ((seller, FA2I.TokenId 5), 1000)]
+             [((seller, FA2I.TokenId $ minPositionalTokenId), 1000), 
+              ((seller, FA2I.TokenId $ minPositionalTokenId + 1), 1000),
+              ((seller, FA2I.TokenId $ minPositionalTokenId + 2), 1000),
+              ((seller, FA2I.TokenId $ minPositionalTokenId + 3), 1000),
+              ((seller, FA2I.TokenId $ minPositionalTokenId + 4), 1000),
+              ((seller, FA2I.TokenId $ minPositionalTokenId + 5), 1000)]
 
     originateSimple "consolation-fa2"
       FA2.Storage
@@ -215,12 +220,12 @@ testSetup testData = do
       , sOperators = BigMap $ Map.fromList [((seller, toAddress contract), ())]
       , sTokenMetadata = mempty
       }
-      (FA2.fa2Contract def { FA2.cAllowedTokenIds = [FA2I.TokenId 0, 
-                                                     FA2I.TokenId 1, 
-                                                     FA2I.TokenId 2,
-                                                     FA2I.TokenId 3,
-                                                     FA2I.TokenId 4,
-                                                     FA2I.TokenId 5] })
+      (FA2.fa2Contract def { FA2.cAllowedTokenIds = [FA2I.TokenId $ minPositionalTokenId, 
+                                                     FA2I.TokenId $ minPositionalTokenId + 1, 
+                                                     FA2I.TokenId $ minPositionalTokenId + 2,
+                                                     FA2I.TokenId $ minPositionalTokenId + 3,
+                                                     FA2I.TokenId $ minPositionalTokenId + 4,
+                                                     FA2I.TokenId $ minPositionalTokenId + 5] })
 
   now <- getNow
   let startTime = now `timestampPlusSeconds` testTimeToStart testData
@@ -246,6 +251,6 @@ configureAuction testData Setup{fa2Contracts, contract, startTime, endTime, posi
     , asset = assets
     , startTime = startTime
     , endTime = endTime
-    , consolationToken = Consolation.GlobalTokenId (toAddress positionalFa2Contract) (FA2I.TokenId Consolation.consolationTokenId)
+    , consolationToken = Consolation.GlobalTokenId (toAddress positionalFa2Contract) (FA2I.TokenId $ testConsolationTokenId testData)
     , maxConsolationWinners = testMaxConsolationWinners testData
     }
