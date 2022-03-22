@@ -436,9 +436,6 @@ genConsolationWinners numBids maxConsolationWinners
     | maxConsolationWinners >= numBids = [1 .. (numBids - 1)]
     | otherwise = [ (numBids - maxConsolationWinners) .. (numBids - 1)]
 
-genIncompleteConsolationWinners :: Natural -> Natural -> [Natural]
-genIncompleteConsolationWinners numBids maxConsolationWinners = tailSafe $ genConsolationWinners numBids maxConsolationWinners
-
 ----------------------------------------------------------------------------
 -- Call entrypoints
 ----------------------------------------------------------------------------
