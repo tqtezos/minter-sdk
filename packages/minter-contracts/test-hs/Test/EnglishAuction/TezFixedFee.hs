@@ -36,6 +36,22 @@ hprop_Auctions_must_start_within_the_configured_number_of_seconds =
         `expectFailure`
           failedWith contract [mt|MAX_CONFIG_TO_START_TIME_VIOLATED|]
 
+hprop_Auction_duration_must_not_exceed_max_auction_time :: Property
+hprop_Auction_duration_must_not_exceed_max_auction_time =
+  property $ do
+    testData@TestData{testAuctionDuration} <- forAll genTestData
+    
+    tooLowMaxAuctionTime <- forAll $ Gen.integral $ Range.linear 0 (testAuctionDuration - 1)
+                 
+    let testData' = testData { testMaxAuctionTime = tooLowMaxAuctionTime } 
+
+    clevelandProp $ do
+      setup@Setup{contract} <- testSetup testData'
+
+      configureAuction testData' setup
+        `expectFailure`
+          failedWith contract [mt|INVALID_AUCTION_TIME|]
+
 hprop_First_bid_is_valid_IFF_it_meets_opening_price :: Property
 hprop_First_bid_is_valid_IFF_it_meets_opening_price =
   property $ do
