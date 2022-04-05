@@ -7,7 +7,7 @@
 type bid_param = 
  [@layout:comb]
  {  
-    asset_id : nat;
+    auction_id : nat;
     quantity : nat;
     price : tez;
  }
@@ -17,13 +17,18 @@ type bid =
   {
     bidder : address;
     quantity : nat;
-    price : tez;
 #if OFFCHAIN_BID
     is_offchain : bool;
 #endif
+    price : tez;
   }
 
-type bids = bid list
+type bid_node = 
+  [@layout:comb]
+  {
+    bid : bid;
+    next_bid_key : nat option;
+  }
 
 type permit_multiunit_bid_param =
   [@layout:comb]
@@ -41,10 +46,12 @@ type auction =
     last_bid_time : timestamp;
     round_time : int;
     extend_time : int;
-    asset : (tokens list);
+    asset : global_token_id;
+    assets_sent : nat;
     end_time : timestamp;
-    bids : bids;
     bonding_curve : nat;
+    bid_index : nat;
+    qp_pair : nat * tez;
   }
 
 type configure_param =
@@ -53,7 +60,7 @@ type configure_param =
     minimum_price : tez;
     round_time : nat;
     extend_time : nat;
-    asset : (tokens list);
+    asset : global_token_id;
     start_time : timestamp;
     end_time : timestamp;
     bonding_curve : nat;
@@ -73,24 +80,74 @@ type auction_entrypoints =
   | Configure of configure_param
   | AdminAndInteract of auction_without_configure_entrypoints
 
-#if !FEE
+type bid_bm_key = 
+  [@layout:comb]
+  {
+   auction_id : nat;
+   bid_index : nat; 
+  }
+
+type bid_bm = 
+  [@layout:comb]
+  {
+   bm : (bid_bm_key, bid_node) big_map;
+   first_node_key : nat;
+  }
 
 type storage =
   [@layout:comb]
   {
     admin : pauseable_admin_storage;
-    current_id : nat;
+    auction_id : nat;
     max_auction_time : nat;
     max_config_to_start_time : nat;
     auctions : (nat, auction) big_map;
     allowlist : allowlist;
+    bonding_curve_index : nat;
     bonding_curves : (nat, nat -> tez) big_map;
-#else
-    fee : fee_data;
-#endif
+    bids : bid_bm;
   }
 
 type return = operation list * storage
+
+let rec insert_bid_in_linked_list (new_bid, bid_bm, current_bid_key : bid * bid_bm * bid_bm_key) : bid_bm = 
+  let {bid_index = insertion_index; auction_id = auction_id;} = current_bid_key  in 
+  let insert_bid_helper : nat option * nat -> bid_bm = rec fun (last_index, current_index : nat option * nat) ->
+       let test_bid_key : bid_bm_key = {auction_id = auction_id; bid_index = current_index} in
+       let test_bid : bid_node = match (Big_map.find_opt test_bid_key bid_bm.bm) with 
+            Some test_bid -> test_bid
+          | None -> (failwith "INTERNAL_ERROR" : bid_node)
+       in 
+       (if test_bid.bid.price > new_bid.price 
+        then 
+           let new_bid_node : bid_node = {bid = new_bid; next_bid_key = (Some current_index);} in 
+           let new_bm = Big_map.add current_bid_key new_bid_node bid_bm.bm in 
+           ( match last_index with 
+                Some index -> 
+                    let previous_bid_key : bid_bm_key = {auction_id = auction_id; bid_index = index} in
+                    let previous_bid_node_new : bid_node = match (Big_map.find_opt previous_bid_key bid_bm.bm) with 
+                         Some previous_bid -> {previous_bid with next_bid_key = (Some insertion_index);}
+                       | None -> (failwith "INTERNAL_ERROR" : bid_node) in
+                    let new_bm = Big_map.update previous_bid_key (Some previous_bid_node_new) new_bm in 
+                    {bid_bm with bm = new_bm}
+              | None -> (*Insert at beginning of list*)
+                 {bid_bm with bm = new_bm; first_node_key = insertion_index;} 
+           )
+        else 
+           (match test_bid.next_bid_key with 
+                Some next_key -> insert_bid_helper(current_index, next_key)
+              | None ->   (*Insert at end of list*)
+                  let new_bid_node : bid_node = {bid = new_bid; next_bid_key = (None : nat option);} in 
+                  let test_bid_node_new : bid_node = match (Big_map.find_opt test_bid_key bid_bm.bm) with 
+                       Some test_bid -> {test_bid with next_bid_key = (Some insertion_index);}
+                     | None -> (failwith "INTERNAL_ERROR" : bid_node) in
+                  let new_bm = Big_map.update test_bid_key (Some test_bid_node_new) bid_bm.bm in 
+                  let new_bm = Big_map.add current_bid_key new_bid_node new_bm in 
+                  {bid_bm with bm = new_bm;}
+           )
+       )
+       in 
+  insert_bid_helper((None : nat option), bid_bm.first_node_key)
 
 let transfer_tokens_in_single_contract (from_ : address) (to_ : address) (tokens : tokens) : operation =
   let to_tx (fa2_tokens : fa2_tokens) : transfer_destination = {
@@ -119,8 +176,8 @@ let rec tokens_list_to_operation_list_append (from_, to_, tokens_list, op_list :
           | None -> (failwith "INTERNAL_ERROR" : operation list))
     | None -> op_list
 
-let get_auction_data ((asset_id, storage) : nat * storage) : auction =
-  match (Big_map.find_opt asset_id storage.auctions) with
+let get_auction_data ((auction_id, storage) : nat * storage) : auction =
+  match (Big_map.find_opt auction_id storage.auctions) with
       None -> (failwith "AUCTION_DOES_NOT_EXIST" : auction)
     | Some auction -> auction
 
@@ -185,47 +242,24 @@ let configure_auction_storage(configure_param, seller, storage : configure_param
       asset = configure_param.asset;
       end_time = configure_param.end_time;
       last_bid_time = configure_param.start_time;
-      bids = ([] : bids);
       bonding_curve = configure_param.bonding_curve;
+      bid_index = 0n;
     } in
-    let updated_auctions : (nat, auction) big_map = Big_map.update storage.current_id (Some auction_data) storage.auctions in
-    {storage with auctions = updated_auctions; current_id = storage.current_id + 1n}
+    let updated_auctions : (nat, auction) big_map = Big_map.update storage.auction_id (Some auction_data) storage.auctions in
+    {storage with auctions = updated_auctions; auction_id = storage.auction_id + 1n}
   end
 
 let configure_auction(configure_param, storage : configure_param * storage) : return =
-#if FEE
-  let u : unit = assert_msg (storage.fee.fee_percent <= 100n, "INVALID_FEE") in
-#endif
   let new_storage = configure_auction_storage(configure_param, Tezos.sender, storage) in
   let fa2_transfers : operation list = transfer_tokens(configure_param.asset, Tezos.sender, Tezos.self_address) in
   (fa2_transfers, new_storage)
 
-let resolve_auction(asset_id, storage : nat * storage) : return = begin
+let resolve_auction(auction_id, storage : nat * storage) : return = begin
   (([] : operation list), storage)
  end
 
-let cancel_auction(asset_id, storage : nat * storage) : return = begin
-    (fail_if_paused storage.admin);
-    let auction : auction = get_auction_data(asset_id, storage) in
-    let is_seller : bool = Tezos.sender = auction.seller in
-    let v : unit = if is_seller then ()
-          else fail_if_not_admin_ext (storage.admin, "OR_A_SELLER") in
-    assert_msg (not auction_ended(auction), "AUCTION_ENDED");
-    tez_stuck_guard("CANCEL");
-
-    let fa2_transfers : operation list = transfer_tokens(auction.asset, Tezos.self_address, auction.seller) in
-    let op_list : operation list = 
-      List.fold
-      (fun(ops, bid : operation list * bid) -> 
-         let total_tez : tez = bid.quantity * bid.price in 
-         let transfer_op : operation = transfer_tez(total_tez, bid.bidder) in 
-         transfer_op :: ops
-      )
-      auction.bids 
-      fa2_transfers
-      in 
-    let updated_auctions = Big_map.remove asset_id storage.auctions in
-    (op_list, {storage with auctions = updated_auctions})
+let cancel_auction(auction_id, storage : nat * storage) : return = begin
+    (([] : operation list), storage)
   end
 
 let place_bid(  bid_param
@@ -266,17 +300,20 @@ let place_bid(  bid_param
         is_offchain = is_offchain;
 #endif
       } : bid) in 
+    let bid_bm_key : bid_bm_key = {auction_id = bid_param.auction_id; bid_index = auction.bid_index;} in
+    let updated_bid_bm : bid_bm = insert_bid_in_linked_list (new_bid, storage.bid_bm, bid_bm_key) in
     let updated_auction_data = {auction with 
-                                last_bid_time = Tezos.now; end_time = new_end_time;
-                                bids = new_bid :: auction.bids
-                               } in
-    let updated_auctions = Big_map.update bid_param.asset_id (Some updated_auction_data) storage.auctions in
-    (([] : operation list) , {storage with auctions = updated_auctions})
+                            last_bid_time = Tezos.now; end_time = new_end_time;
+                            bid_index = auction.bid_index + 1n;
+                           } in
+    let updated_auctions = Big_map.update bid_param.auction_id (Some updated_auction_data) storage.auctions in
+    let updated_bids = Big_map.update (bid_param.auction_id, bid_param.price) (Some updated_bids_at_price_data) storage.bids in 
+    (([] : operation list) , {storage with auctions = updated_auctions; bids = updated_bids;})
   end
 
 let place_bid_onchain(bid_param, storage : bid_param * storage) : return = begin
     let bidder = Tezos.sender in 
-    let auction : auction = get_auction_data(bid_param.asset_id, storage) in 
+    let auction : auction = get_auction_data(bid_param.auction_id, storage) in 
     let bid_placed_offchain : bool = false in 
     let (ops, new_storage) = place_bid(bid_param, auction, bidder, storage
 #if OFFCHAIN_BID
@@ -288,7 +325,7 @@ let place_bid_onchain(bid_param, storage : bid_param * storage) : return = begin
 
 #if OFFCHAIN_BID
 let place_bid_offchain(bid_param, bidder, storage : bid_param * address * storage) : return = begin
-    let auction : auction = get_auction_data(bid_param.asset_id, storage) in
+    let auction : auction = get_auction_data(bid_param.auction_id, storage) in
     let bid_placed_offchain : bool = true in 
     let (ops, new_storage) = place_bid(bid_param, auction, bidder, storage, bid_placed_offchain ) in 
     (ops, new_storage)
@@ -323,8 +360,8 @@ let update_allowed(allowlist_param, storage : allowlist_entrypoints * storage) :
 let multiunit_bonding_curve_auction_no_configure (p,storage : auction_without_configure_entrypoints * storage) : return =
   match p with
     | Bid bid_param -> place_bid_onchain(bid_param, storage)
-    | Cancel asset_id -> cancel_auction(asset_id, storage)
-    | Resolve asset_id -> resolve_auction(asset_id, storage)
+    | Cancel auction_id -> cancel_auction(auction_id, storage)
+    | Resolve auction_id -> resolve_auction(auction_id, storage)
     | Admin a -> admin(a, storage)
     | Update_allowed a -> update_allowed(a, storage)
 #if OFFCHAIN_BID
