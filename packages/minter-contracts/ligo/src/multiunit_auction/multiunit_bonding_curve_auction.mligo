@@ -2,6 +2,9 @@
 #include "../../fa2_modules/pauseable_admin_option.mligo"
 #include "../common.mligo"
 
+type auction_id = nat
+type bid_index = nat
+
 type bid_param = 
  [@layout:comb]
  {  
@@ -19,13 +22,6 @@ type bid =
     is_offchain : bool;
 #endif
     price : tez;
-  }
-
-type bid_node = 
-  [@layout:comb]
-  {
-    bid : bid;
-    next_bid_key : nat option;
   }
 
 type permit_multiunit_bid_param =
@@ -56,7 +52,7 @@ type auction =
     assets_sent : nat;
     end_time : timestamp;
     bonding_curve : nat;
-    bid_index : nat;
+    bid_index : bid_index;
     qp_pair : (nat * tez) option;
   }
 
@@ -85,19 +81,16 @@ type auction_entrypoints =
   | Configure of configure_param
   | AdminAndInteract of auction_without_configure_entrypoints
 
-type bid_bm_key = 
+type bid_heap_key = 
   [@layout:comb]
   {
-   auction_id : nat;
-   bid_index : nat; 
+   auction_id : auction_id;
+   bid_index : bid_index; 
   }
 
-type bid_bm = 
-  [@layout:comb]
-  {
-   bm : (bid_bm_key, bid_node) big_map;
-   first_node_key : nat;
-  }
+type bid_heap =  (bid_heap_key, bid) big_map
+
+type heap_sizes = (auction_id, nat) big_map
 
 type storage =
   [@layout:comb]
@@ -109,47 +102,99 @@ type storage =
     auctions : (nat, auction) big_map;
     bonding_curve_index : nat;
     bonding_curves : (nat, nat -> tez) big_map;
-    bids : bid_bm;
+    bids : bid_heap;
+    heap_sizes : heap_sizes;
   }
 
 type return = operation list * storage
 
-let rec insert_bid_helper( last_index, current_index, new_bid, bid_bm, current_bid_key 
-                           : nat option * nat * bid * bid_bm * bid_bm_key ) : bid_bm = 
-     let {bid_index = insertion_index; auction_id = auction_id;} = current_bid_key  in 
-     let test_bid_key : bid_bm_key = {auction_id = auction_id; bid_index = current_index} in
-     let test_bid : bid_node = match (Big_map.find_opt test_bid_key bid_bm.bm) with 
-          Some test_bid -> test_bid
-        | None -> (failwith "INTERNAL_ERROR" : bid_node)
-     in 
-     (if test_bid.bid.price > new_bid.price 
-      then 
-         let new_bid_node : bid_node = {bid = new_bid; next_bid_key = (Some current_index);} in 
-         let new_bm = Big_map.add current_bid_key new_bid_node bid_bm.bm in 
-         ( match last_index with 
-              Some index -> 
-                  let previous_bid_key : bid_bm_key = {auction_id = auction_id; bid_index = index} in
-                  let previous_bid_node_new : bid_node = match (Big_map.find_opt previous_bid_key bid_bm.bm) with 
-                       Some previous_bid -> {previous_bid with next_bid_key = (Some insertion_index);}
-                     | None -> (failwith "INTERNAL_ERROR" : bid_node) in
-                  let new_bm = Big_map.update previous_bid_key (Some previous_bid_node_new) new_bm in 
-                  {bid_bm with bm = new_bm}
-            | None -> (*Insert at beginning of list*)
-               {bid_bm with bm = new_bm; first_node_key = insertion_index;} 
-         )
-      else 
-         (match test_bid.next_bid_key with 
-              Some next_key -> insert_bid_helper(Some current_index, next_key, new_bid, bid_bm, current_bid_key)
-            | None ->   (*Insert at end of list*)
-                let new_bid_node : bid_node = {bid = new_bid; next_bid_key = (None : nat option);} in 
-                let test_bid_node_new : bid_node = match (Big_map.find_opt test_bid_key bid_bm.bm) with 
-                     Some test_bid -> {test_bid with next_bid_key = (Some insertion_index);}
-                   | None -> (failwith "INTERNAL_ERROR" : bid_node) in
-                let new_bm = Big_map.update test_bid_key (Some test_bid_node_new) bid_bm.bm in 
-                let new_bm = Big_map.add current_bid_key new_bid_node new_bm in 
-                {bid_bm with bm = new_bm;}
-         )
-     )
+let parent (i : nat ) : nat = 
+   if i = 0n then 0n
+   else (abs (i - 1n))/2n
+
+let left_child (i : nat) : nat = 
+  (2n * i) + 1n
+
+let right_child (i : nat) : nat =
+  (2n * i) + 2n
+
+let swap_heap_keys (i_key, j_key, i_bid, j_key, bid_heap : bid_heap_key * bid_heap_key * bid * bid * bid_heap) : bid_heap =
+  let i_replaced_heap : bid_heap = 
+      Big_map.update i_key (Some j_bid) bid_heap in 
+  let ij_replaced_heap : bid_heap = 
+      Big_Map.update j_key (Some i_bid) i_replaced_heap in 
+  ij_replaced_heap
+
+let get_bid (index, bid_heap : nat * bid_heap) : bid = 
+  match (Big_map.find_opt index bid_heap) with 
+     Some bid -> bid 
+   | None -> (failwith "HEAP_GET_FAILS" : bid)
+
+let get_min (bid_heap : bid_heap) : bid = 
+  get_bid(0n, bid_heap)
+
+let rec maintain_min_heap (bid_heap, child_key, child_bid : bid_heap * bid_heap_key * bid) : bid_heap =
+  let parent_key : bid_heap_key = {auction_id = auction_id; bid_index = parent(index);} in
+  let parent_bid : bid = match (Big_map.find_opt parent_key bid_heap) with 
+      Some bid -> bid
+    | None -> (failwith "NO_PARENT_BID" : bid) in 
+  (
+  if index = 0 || parent_bid.price <= child_bid.price
+  then bid_heap
+  else 
+       let bid_heap : bid_heap = swap_heap_indices(parent_key, child_key, parent_bid, child_bid, bid_heap) in 
+       maintain_min_heap (bid_heap, parent_key, parent_bid)
+  )
+
+let get_heap_size(auction_id, heap_sizes : auction_id * heap_sizes) : nat = 
+    match (Big_map.find_opt auction_id heap_sizes) with 
+        Some size -> size 
+      | None -> (failwith "INVALID_HEAP_SIZE" : nat)
+   
+let insert_bid (bid, bid_heap, auction_id, heap_sizes : bid * bid_heap * auction_id * heap_sizes) : bid_heap * heap_sizes =
+  (*update heap size*)
+  let current_heap_size : nat = get_heap_size(auction_id, heap_sizes) in 
+  let new_heap_size = current_heap_size + 1n in 
+  let heap_sizes : heap_sizes = Big_map.update auction_id (Some new_heap_size) heap_sizes in 
+
+  (*insert bid at end of heap*)
+  let bid_key : bid_heap_key = {auction_id = auction_id; bid_index = new_heap_size;} in
+  let bid_heap : bid_heap = Big_map.add new_heap_size bid bid_heap in 
+
+  (*maintain min heap property*)
+  let bid_heap : bid_heap = maintain_min_heap (bid_heap, bid_key, bid) in 
+  bid_heap
+
+let extract_min (bid_heap, auction_id, heap_sizes : bid_heap * auction_id * heap_sizes) : bid option * bid_heap * heap_sizes = 
+    let heap_size : nat = get_heap_size(auction_id, heap_sizes) in 
+    if heap_size <= 0n 
+    then ((None : bid option), bid_heap, heap_sizes)
+    else  
+          let new_heap_size : nat = abs(heap_size - 1n) in
+          let heap_sizes : heap_sizes = Big_map.update auction_id (Some new_heap_size) heap_sizes in 
+          let min_bid : bid = get_min(bid_heap) in 
+
+      
+          let (percolate_bid_option, bid_heap) : bid option * bid_heap = 
+               Big_map.get_and_update new_heap_size (None : bid option) bid_heap in 
+          let percolate_bid : bid =  match percolate_bid_option with 
+               Some bid -> bid 
+            |  None -> (failwith "HEAP_GET_FAILS" : bid )
+            in 
+          let (min_bid_option, bid_heap) : bid option * bid_heap = 
+             Big_map.get_and_update 0n (Some percolate_bid) bid_heap in 
+          let min_bid : bid =  match min_bid_option with 
+               Some bid -> bid 
+            |  None -> (failwith "HEAP_GET_FAILS" : bid )
+            in 
+          let new_heap : bid_heap = min_heapify(bid_heap, 0n) in 
+          ((Some min_bid), new_heap, heap_sizes)
+ 
+(*
+let get_and_delete_min (bid_heap : bid_heap) : bid * bid_heap = 
+  match (Big_map.get_and_update 0n bid_heap) with 
+      Some bid -> bid 
+    | None -> (failwith "HEAP_EMPTY" : bid) *)
 
 let insert_bid_in_linked_list (new_bid, bid_bm, current_bid_key : bid * bid_bm * bid_bm_key) : bid_bm = 
   insert_bid_helper((None : nat option), bid_bm.first_node_key, new_bid, bid_bm, current_bid_key)
