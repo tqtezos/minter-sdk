@@ -3,7 +3,6 @@
 #include "../common.mligo"
 
 type auction_id = nat
-type bid_index = nat
 
 type bid_param = 
  [@layout:comb]
@@ -52,7 +51,7 @@ type auction =
     assets_sent : nat;
     end_time : timestamp;
     bonding_curve : nat;
-    bid_index : bid_index;
+    bid_index : nat;
     qp_pair : (nat * tez) option;
   }
 
@@ -85,7 +84,7 @@ type bid_heap_key =
   [@layout:comb]
   {
    auction_id : auction_id;
-   bid_index : bid_index; 
+   bid_index : nat; 
   }
 
 type bid_heap =  (bid_heap_key, bid) big_map
@@ -118,31 +117,30 @@ let left_child (i : nat) : nat =
 let right_child (i : nat) : nat =
   (2n * i) + 2n
 
-let swap_heap_keys (i_key, j_key, i_bid, j_key, bid_heap : bid_heap_key * bid_heap_key * bid * bid * bid_heap) : bid_heap =
+let swap_heap_keys (i_key, j_key, i_bid, j_bid, bid_heap : bid_heap_key * bid_heap_key * bid * bid * bid_heap) : bid_heap =
   let i_replaced_heap : bid_heap = 
       Big_map.update i_key (Some j_bid) bid_heap in 
   let ij_replaced_heap : bid_heap = 
-      Big_Map.update j_key (Some i_bid) i_replaced_heap in 
+      Big_map.update j_key (Some i_bid) i_replaced_heap in 
   ij_replaced_heap
 
-let get_bid (index, bid_heap : nat * bid_heap) : bid = 
-  match (Big_map.find_opt index bid_heap) with 
+let get_bid (index_key, bid_heap : bid_heap_key * bid_heap) : bid = 
+  match (Big_map.find_opt index_key bid_heap) with 
      Some bid -> bid 
    | None -> (failwith "HEAP_GET_FAILS" : bid)
 
-let get_min (bid_heap : bid_heap) : bid = 
-  get_bid(0n, bid_heap)
+let get_min (auction_id, bid_heap : auction_id * bid_heap) : bid = 
+  let min_key : bid_heap_key = {auction_id = auction_id; bid_index = 0n;} in 
+  get_bid(min_key, bid_heap)
 
-let rec maintain_min_heap (bid_heap, child_key, child_bid : bid_heap * bid_heap_key * bid) : bid_heap =
-  let parent_key : bid_heap_key = {auction_id = auction_id; bid_index = parent(index);} in
-  let parent_bid : bid = match (Big_map.find_opt parent_key bid_heap) with 
-      Some bid -> bid
-    | None -> (failwith "NO_PARENT_BID" : bid) in 
+let rec maintain_min_heap (bid_heap, current_key, current_bid : bid_heap * bid_heap_key * bid) : bid_heap =
+  let parent_key : bid_heap_key = {auction_id = current_key.auction_id; bid_index = parent(current_key.bid_index);} in
+  let parent_bid : bid = get_bid(parent_key, bid_heap) in 
   (
-  if index = 0 || parent_bid.price <= child_bid.price
+  if current_key.bid_index = 0n || parent_bid.price <= current_bid.price
   then bid_heap
   else 
-       let bid_heap : bid_heap = swap_heap_indices(parent_key, child_key, parent_bid, child_bid, bid_heap) in 
+       let bid_heap : bid_heap = swap_heap_keys(parent_key, current_key, parent_bid, current_bid, bid_heap) in 
        maintain_min_heap (bid_heap, parent_key, parent_bid)
   )
 
@@ -159,11 +157,41 @@ let insert_bid (bid, bid_heap, auction_id, heap_sizes : bid * bid_heap * auction
 
   (*insert bid at end of heap*)
   let bid_key : bid_heap_key = {auction_id = auction_id; bid_index = new_heap_size;} in
-  let bid_heap : bid_heap = Big_map.add new_heap_size bid bid_heap in 
+  let bid_heap : bid_heap = Big_map.add bid_key bid bid_heap in 
 
   (*maintain min heap property*)
   let bid_heap : bid_heap = maintain_min_heap (bid_heap, bid_key, bid) in 
-  bid_heap
+  (bid_heap, heap_sizes)
+
+let rec min_heapify (index_key, bid_heap, heap_size : bid_heap_key * bid_heap * nat) : bid_heap = 
+   let index_bid : bid = get_bid(index_key, bid_heap) in
+
+   let l_index : nat = left_child(index_key.bid_index) in 
+   let l_key : bid_heap_key =  {auction_id = index_key.auction_id; bid_index = l_index;} in
+   let l_bid : bid = get_bid(l_key, bid_heap) in 
+
+   let r_index : nat = right_child(index_key.bid_index) in 
+   let r_key : bid_heap_key =  {auction_id = index_key.auction_id; bid_index = r_index;} in
+   let r_bid : bid = get_bid(r_key, bid_heap) in 
+
+   let (smallest_key, smallest_bid) : bid_heap_key * bid = 
+     if l_index < heap_size && l_bid < index_bid
+     then (l_key, l_bid) 
+     else (index_key, index_bid)
+    in 
+
+   let (smallest_key, smallest_bid) : bid_heap_key * bid = 
+     if r_index < heap_size && r_bid < smallest_bid
+     then (r_key, r_bid)
+     else (smallest_key, smallest_bid)
+    in
+
+   if smallest_key <> index_key 
+   then 
+        let bid_heap : bid_heap = swap_heap_keys(smallest_key, index_key, smallest_bid, index_bid, bid_heap) in 
+        min_heapify(smallest_key, bid_heap, heap_size)
+   else bid_heap
+   
 
 let extract_min (bid_heap, auction_id, heap_sizes : bid_heap * auction_id * heap_sizes) : bid option * bid_heap * heap_sizes = 
     let heap_size : nat = get_heap_size(auction_id, heap_sizes) in 
@@ -172,33 +200,28 @@ let extract_min (bid_heap, auction_id, heap_sizes : bid_heap * auction_id * heap
     else  
           let new_heap_size : nat = abs(heap_size - 1n) in
           let heap_sizes : heap_sizes = Big_map.update auction_id (Some new_heap_size) heap_sizes in 
-          let min_bid : bid = get_min(bid_heap) in 
-
+          let min_bid : bid = get_min(auction_id, bid_heap) in 
+          
+          let percolate_bid_key : bid_heap_key = {auction_id = auction_id; bid_index = new_heap_size;} in
       
           let (percolate_bid_option, bid_heap) : bid option * bid_heap = 
-               Big_map.get_and_update new_heap_size (None : bid option) bid_heap in 
+               Big_map.get_and_update percolate_bid_key (None : bid option) bid_heap in 
           let percolate_bid : bid =  match percolate_bid_option with 
                Some bid -> bid 
             |  None -> (failwith "HEAP_GET_FAILS" : bid )
             in 
+          
+          let min_bid_key : bid_heap_key = {auction_id = auction_id; bid_index = 0n;} in 
+
           let (min_bid_option, bid_heap) : bid option * bid_heap = 
-             Big_map.get_and_update 0n (Some percolate_bid) bid_heap in 
+             Big_map.get_and_update min_bid_key (Some percolate_bid) bid_heap in 
           let min_bid : bid =  match min_bid_option with 
                Some bid -> bid 
             |  None -> (failwith "HEAP_GET_FAILS" : bid )
             in 
-          let new_heap : bid_heap = min_heapify(bid_heap, 0n) in 
+          let new_heap : bid_heap = min_heapify(min_bid_key, bid_heap, new_heap_size) in 
           ((Some min_bid), new_heap, heap_sizes)
  
-(*
-let get_and_delete_min (bid_heap : bid_heap) : bid * bid_heap = 
-  match (Big_map.get_and_update 0n bid_heap) with 
-      Some bid -> bid 
-    | None -> (failwith "HEAP_EMPTY" : bid) *)
-
-let insert_bid_in_linked_list (new_bid, bid_bm, current_bid_key : bid * bid_bm * bid_bm_key) : bid_bm = 
-  insert_bid_helper((None : nat option), bid_bm.first_node_key, new_bid, bid_bm, current_bid_key)
-
 let transfer_asset_tokens (from_, to_, asset_token : address * address * asset_token) : operation list = 
   let c = address_to_contract_transfer_entrypoint(asset_token.fa2_address) in
   let transfer_param = [{from_ = from_; txs = [{to_ = to_; token_id = asset_token.token_id; amount = asset_token.amount}]}] in 
@@ -325,8 +348,7 @@ let place_bid(  bid_param
     (fail_if_paused storage.admin);
     assert_msg (auction_in_progress(auction), "NOT_IN_PROGRESS");
     assert_msg(bidder <> auction.seller, "SEllER_CANT_BID");
-    assert_msg(bid_param.price >= auction.minimum_price, "BID_BELOW_MINIMUM_PRICE");
-    (if not bid_amount_sent(auction, bid_param)
+    (if not bid_amount_sent(auction, bid_param) && bid_param.price < auction.minimum_price
 #if OFFCHAIN_BID 
         && not is_offchain
 #endif
@@ -343,14 +365,11 @@ let place_bid(  bid_param
         is_offchain = is_offchain;
 #endif
       } : bid) in 
-    let bid_bm_key : bid_bm_key = {auction_id = bid_param.auction_id; bid_index = auction.bid_index;} in
-    let updated_bid_bm : bid_bm = insert_bid_in_linked_list (new_bid, storage.bids, bid_bm_key) in
-    let updated_auction_data = {auction with 
-                            last_bid_time = Tezos.now; end_time = new_end_time;
-                            bid_index = auction.bid_index + 1n;
-                           } in
+    let (updated_bid_bm, updated_heap_sizes) : bid_bm = insert_bid(new_bid, storage.bids, bid_param.auction_id, storage.heap_sizes) in
+    let updated_auction_data = {auction with last_bid_time = Tezos.now; end_time = new_end_time; 
+                                bid_index = auction.bid_index + 1n;} in
     let updated_auctions = Big_map.update bid_param.auction_id (Some updated_auction_data) storage.auctions in
-    (([] : operation list) , {storage with auctions = updated_auctions; bids = updated_bid_bm;})
+    (([] : operation list) , {storage with auctions = updated_auctions; bids = updated_bid_bm; heap_sizes = updated_heap_sizes;})
   end
 
 let place_bid_onchain(bid_param, storage : bid_param * storage) : return = begin
