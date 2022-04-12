@@ -21,6 +21,7 @@ type bid =
     is_offchain : bool;
 #endif
     price : tez;
+    bid_time : timestamp;
   }
 
 type permit_multiunit_bid_param =
@@ -121,6 +122,14 @@ let left_child (i : nat) : nat =
 let right_child (i : nat) : nat =
   (2n * i) + 2n
 
+let bid_is_less_than(bid1, bid2 : bid * bid) : bool =
+  if bid1.price < bid2.price 
+  then true 
+  else 
+       if bid1.price = bid2.price
+       then bid1.bid_time < bid2.bid_time
+       else false
+
 let swap_heap_keys (i_key, j_key, i_bid, j_bid, bid_heap : bid_heap_key * bid_heap_key * bid * bid * bid_heap) : bid_heap =
   let i_replaced_heap : bid_heap = 
       Big_map.update i_key (Some j_bid) bid_heap in 
@@ -177,13 +186,13 @@ let rec min_heapify (index_key, bid_heap, heap_size : bid_heap_key * bid_heap * 
    let r_bid : bid = get_bid(r_key, bid_heap) in 
 
    let (smallest_key, smallest_bid) : bid_heap_key * bid = 
-     if l_index < heap_size && l_bid < index_bid
+     if l_index < heap_size && bid_is_less_than(l_bid, index_bid)
      then (l_key, l_bid) 
      else (index_key, index_bid)
     in 
 
    let (smallest_key, smallest_bid) : bid_heap_key * bid = 
-     if r_index < heap_size && r_bid < smallest_bid
+     if r_index < heap_size && bid_is_less_than(r_bid, smallest_bid)
      then (r_key, r_bid)
      else (smallest_key, smallest_bid)
     in
@@ -365,6 +374,7 @@ let place_bid(  bid_param
 #if OFFCHAIN_BID
         is_offchain = is_offchain;
 #endif
+        bid_time = Tezos.now;
       } : bid) in 
 
     let current_heap_size : nat = get_heap_size(bid_param.auction_id, storage.heap_sizes) in 
