@@ -42,7 +42,7 @@ type auction =
   [@layout:comb]
   {
     seller : address;
-    minimum_price : tez;
+    price_floor : tez;
     start_time : timestamp;
     last_bid_time : timestamp;
     round_time : int;
@@ -53,13 +53,13 @@ type auction =
     bonding_curve : nat;
     bid_index : nat;
     num_offers : nat; 
-    pq_pair : (tez * nat) option;  (*p = min_price for valid bid, q = max satisfiable at p*)
+    (*pq_pair : (tez * nat) option;  p = min_price for valid bid, q = max satisfiable at p*)
   }
 
 type configure_param =
   [@layout:comb]
   {
-    minimum_price : tez;
+    price_floor : tez;
     round_time : nat;
     extend_time : nat;
     asset : asset_token;
@@ -290,7 +290,7 @@ let configure_auction_storage(configure_param, seller, storage : configure_param
     assert_msg (configure_param.start_time >= Tezos.now, "INVALID_START_TIME");
     assert_msg (abs(configure_param.start_time - Tezos.now) <= storage.max_config_to_start_time, "MAX_CONFIG_TO_START_TIME_VIOLATED");
 
-    assert_msg (configure_param.minimum_price > 0mutez, "INVALID_MINIMUM_PRICE");
+    assert_msg (configure_param.price_floor > 0mutez, "INVALID_PRICE_FLOOR");
     tez_stuck_guard("CONFIGURE");
     assert_msg (configure_param.round_time > 0n, "INVALID_ROUND_TIME");
 
@@ -298,7 +298,7 @@ let configure_auction_storage(configure_param, seller, storage : configure_param
 
     let auction_data : auction = {
       seller = seller;
-      minimum_price = configure_param.minimum_price;
+      price_floor = configure_param.price_floor;
       start_time = configure_param.start_time;
       round_time = int(configure_param.round_time);
       extend_time = int(configure_param.extend_time);
@@ -308,7 +308,7 @@ let configure_auction_storage(configure_param, seller, storage : configure_param
       last_bid_time = configure_param.start_time;
       bonding_curve = configure_param.bonding_curve;
       bid_index = 0n;
-      pq_pair = (None : (tez * nat) option); 
+      (*pq_pair = (None : (tez * nat) option); *)
       num_offers = 0n;
     } in
     let updated_auctions : (nat, auction) big_map = Big_map.update storage.auction_id (Some auction_data) storage.auctions in
@@ -352,11 +352,7 @@ let place_bid(  bid_param
 #if OFFCHAIN_BID 
         && not is_offchain
 #endif
-        ) || bid_param.price < auction.minimum_price ||  
-          (match auction.pq_pair with 
-              Some pq -> bid_param.price < pq.0 
-            | None -> false
-          )
+        ) || bid_param.price <= auction.price_floor 
       then ([%Michelson ({| { FAILWITH } |} : string * (address * tez * timestamp * timestamp) -> unit)] ("INVALID_BID_AMOUNT", (bidder, bid_param.price, auction.last_bid_time, Tezos.now)) : unit)
       else ());
     let new_end_time = if auction.end_time - Tezos.now <= auction.extend_time then
@@ -424,8 +420,8 @@ let admin(admin_param, storage : pauseable_admin * storage) : return =
     let new_storage = { storage with admin = admin; } in
     ops, new_storage
 
-let rec return_invalid_bids(bid_heap, op_list, num_offers, bonding_curve, auction_id, heap_size, bids_to_return : bid_heap * operation list * nat * bonding_curve * auction_id * nat * int) 
-  : bid_heap * operation list * nat * nat = 
+let rec return_invalid_bids(bid_heap, op_list, num_offers, bonding_curve, auction_id, heap_size, bids_to_return, price_floor : bid_heap * operation list * nat * bonding_curve * auction_id * nat * int * tez) 
+  : bid_heap * operation list * nat * nat * tez = 
   let min_bid : bid = get_min(auction_id, bid_heap) in 
   let min_price : tez = min_bid.price in 
   let max_sellable_at_price : nat = bonding_curve min_price in   
@@ -443,10 +439,11 @@ let rec return_invalid_bids(bid_heap, op_list, num_offers, bonding_curve, auctio
                       let bid_return_op : operation = transfer_tez(bid.quantity * bid.price, bid.bidder) in 
                       bid_return_op :: op_list in
              let remaining_offers : nat = abs(num_offers - bid.quantity) in 
-             return_invalid_bids(bid_heap, op_list, remaining_offers, bonding_curve, auction_id, heap_size, bids_to_return - 1)
-         | None -> (bid_heap, op_list, heap_size, num_offers) (*This should never be reached, get_min will fail*)
+             let price_floor : tez = bid.price in 
+             return_invalid_bids(bid_heap, op_list, remaining_offers, bonding_curve, auction_id, heap_size, bids_to_return - 1, price_floor)
+         | None -> (bid_heap, op_list, heap_size, num_offers, price_floor) (*This should never be reached, get_min will fail*)
   else 
-       (bid_heap, op_list, heap_size, num_offers)
+       (bid_heap, op_list, heap_size, num_offers, price_floor)
 
 let empty_heap(auction_id, num_bids_to_return, storage : auction_id * nat * storage) : return = 
     let num_bids_to_return : int = int(num_bids_to_return) in (*Cast to int for recursion, decrementing by 1 each step*)
@@ -456,10 +453,10 @@ let empty_heap(auction_id, num_bids_to_return, storage : auction_id * nat * stor
       | None -> (failwith "INTERNAL_ERROR" : bonding_curve)
       in  
     let heap_size : nat = get_heap_size(auction_id, storage.heap_sizes) in
-    let (bid_heap, op_list, new_heap_size, num_offers) = 
-        return_invalid_bids(storage.bids, ([] : operation list) , auction.num_offers, bonding_curve, auction_id, heap_size, num_bids_to_return) in 
+    let (bid_heap, op_list, new_heap_size, num_offers, price_floor) = 
+        return_invalid_bids(storage.bids, ([] : operation list) , auction.num_offers, bonding_curve, auction_id, heap_size, num_bids_to_return, auction.price_floor) in 
     let new_heap_size_bm : heap_sizes = update_heap_size(auction_id, storage.heap_sizes, new_heap_size) in 
-    let updated_auction_data : auction = {auction with num_offers = num_offers;} in
+    let updated_auction_data : auction = {auction with num_offers = num_offers; price_floor = price_floor;} in
     let updated_auctions = Big_map.update auction_id (Some updated_auction_data) storage.auctions in
     (op_list , {storage with auctions = updated_auctions; bids = bid_heap; heap_sizes = new_heap_size_bm;})
     
