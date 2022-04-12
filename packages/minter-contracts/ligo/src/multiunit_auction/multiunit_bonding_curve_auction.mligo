@@ -35,7 +35,7 @@ type asset_token =
   {
     fa2_address : address;
     token_id : token_id;
-    amount : nat;
+    amount_ : nat;
   }
 
 type auction =
@@ -52,7 +52,8 @@ type auction =
     end_time : timestamp;
     bonding_curve : nat;
     bid_index : nat;
-    qp_pair : (nat * tez) option;
+    num_offers : nat; 
+    pq_pair : (tez * nat) option;  (*p = min_price for valid bid, q = max satisfiable at p*)
   }
 
 type configure_param =
@@ -100,7 +101,7 @@ type storage =
     max_config_to_start_time : nat;
     auctions : (nat, auction) big_map;
     bonding_curve_index : nat;
-    bonding_curves : (nat, nat -> tez) big_map;
+    bonding_curves : (nat, tez -> nat) big_map;
     bids : bid_heap;
     heap_sizes : heap_sizes;
   }
@@ -148,20 +149,18 @@ let get_heap_size(auction_id, heap_sizes : auction_id * heap_sizes) : nat =
     match (Big_map.find_opt auction_id heap_sizes) with 
         Some size -> size 
       | None -> (failwith "INVALID_HEAP_SIZE" : nat)
-   
-let insert_bid (bid, bid_heap, auction_id, heap_sizes : bid * bid_heap * auction_id * heap_sizes) : bid_heap * heap_sizes =
-  (*update heap size*)
-  let current_heap_size : nat = get_heap_size(auction_id, heap_sizes) in 
-  let new_heap_size = current_heap_size + 1n in 
-  let heap_sizes : heap_sizes = Big_map.update auction_id (Some new_heap_size) heap_sizes in 
 
+let update_heap_size(auction_id, heap_sizes, new_size : auction_id * heap_sizes * nat) : heap_sizes = 
+    Big_map.update auction_id (Some new_size) heap_sizes
+   
+let insert_bid (bid, bid_heap, auction_id, new_heap_size : bid * bid_heap * auction_id * nat) : bid_heap =
   (*insert bid at end of heap*)
   let bid_key : bid_heap_key = {auction_id = auction_id; bid_index = new_heap_size;} in
   let bid_heap : bid_heap = Big_map.add bid_key bid bid_heap in 
 
   (*maintain min heap property*)
   let bid_heap : bid_heap = maintain_min_heap (bid_heap, bid_key, bid) in 
-  (bid_heap, heap_sizes)
+  bid_heap
 
 let rec min_heapify (index_key, bid_heap, heap_size : bid_heap_key * bid_heap * nat) : bid_heap = 
    let index_bid : bid = get_bid(index_key, bid_heap) in
@@ -193,13 +192,11 @@ let rec min_heapify (index_key, bid_heap, heap_size : bid_heap_key * bid_heap * 
    else bid_heap
    
 
-let extract_min (bid_heap, auction_id, heap_sizes : bid_heap * auction_id * heap_sizes) : bid option * bid_heap * heap_sizes = 
-    let heap_size : nat = get_heap_size(auction_id, heap_sizes) in 
+let extract_min (bid_heap, auction_id, heap_size : bid_heap * auction_id * nat) : bid option * bid_heap * nat= 
     if heap_size <= 0n 
-    then ((None : bid option), bid_heap, heap_sizes)
+    then ((None : bid option), bid_heap, heap_size)
     else  
-          let new_heap_size : nat = abs(heap_size - 1n) in
-          let heap_sizes : heap_sizes = Big_map.update auction_id (Some new_heap_size) heap_sizes in 
+          let new_heap_size : nat = abs(heap_size - 1n) in 
           let min_bid : bid = get_min(auction_id, bid_heap) in 
           
           let percolate_bid_key : bid_heap_key = {auction_id = auction_id; bid_index = new_heap_size;} in
@@ -220,12 +217,13 @@ let extract_min (bid_heap, auction_id, heap_sizes : bid_heap * auction_id * heap
             |  None -> (failwith "HEAP_GET_FAILS" : bid )
             in 
           let new_heap : bid_heap = min_heapify(min_bid_key, bid_heap, new_heap_size) in 
-          ((Some min_bid), new_heap, heap_sizes)
- 
+          ((Some min_bid), new_heap, new_heap_size)
+
 let transfer_asset_tokens (from_, to_, asset_token : address * address * asset_token) : operation list = 
   let c = address_to_contract_transfer_entrypoint(asset_token.fa2_address) in
-  let transfer_param = [{from_ = from_; txs = [{to_ = to_; token_id = asset_token.token_id; amount = asset_token.amount}]}] in 
-  [(Tezos.transaction transfer_param 0mutez c)]
+  let transfer_param = [{from_ = from_; txs = [{to_ = to_; token_id = asset_token.token_id; amount = asset_token.amount_}]}] in 
+  let op : operation = Tezos.transaction transfer_param 0mutez c in
+  [op]
 
 let transfer_tokens_in_single_contract (from_ : address) (to_ : address) (tokens : tokens) : operation =
   let to_tx (fa2_tokens : fa2_tokens) : transfer_destination = {
@@ -309,7 +307,8 @@ let configure_auction_storage(configure_param, seller, storage : configure_param
       last_bid_time = configure_param.start_time;
       bonding_curve = configure_param.bonding_curve;
       bid_index = 0n;
-      qp_pair = (None : (nat * tez) option); 
+      pq_pair = (None : (tez * nat) option); 
+      num_offers = 0n;
     } in
     let updated_auctions : (nat, auction) big_map = Big_map.update storage.auction_id (Some auction_data) storage.auctions in
     {storage with auctions = updated_auctions; auction_id = storage.auction_id + 1n}
@@ -348,10 +347,15 @@ let place_bid(  bid_param
     (fail_if_paused storage.admin);
     assert_msg (auction_in_progress(auction), "NOT_IN_PROGRESS");
     assert_msg(bidder <> auction.seller, "SEllER_CANT_BID");
-    (if not bid_amount_sent(auction, bid_param) && bid_param.price < auction.minimum_price
+    (if (not bid_amount_sent(auction, bid_param) 
 #if OFFCHAIN_BID 
         && not is_offchain
 #endif
+        ) || bid_param.price < auction.minimum_price ||  
+          (match auction.pq_pair with 
+              Some pq -> bid_param.price < pq.0 
+            | None -> false
+          )
       then ([%Michelson ({| { FAILWITH } |} : string * (address * tez * timestamp * timestamp) -> unit)] ("INVALID_BID_AMOUNT", (bidder, bid_param.price, auction.last_bid_time, Tezos.now)) : unit)
       else ());
     let new_end_time = if auction.end_time - Tezos.now <= auction.extend_time then
@@ -365,11 +369,21 @@ let place_bid(  bid_param
         is_offchain = is_offchain;
 #endif
       } : bid) in 
-    let (updated_bid_bm, updated_heap_sizes) : bid_bm = insert_bid(new_bid, storage.bids, bid_param.auction_id, storage.heap_sizes) in
-    let updated_auction_data = {auction with last_bid_time = Tezos.now; end_time = new_end_time; 
-                                bid_index = auction.bid_index + 1n;} in
+
+    let current_heap_size : nat = get_heap_size(bid_param.auction_id, storage.heap_sizes) in 
+    let new_heap_size : nat = current_heap_size + 1n in 
+
+    let bid_heap : bid_heap = insert_bid(new_bid, storage.bids, bid_param.auction_id, new_heap_size) in
+
+    let updated_num_offers : nat = auction.num_offers + new_bid.quantity in 
+
+    let new_heap_size_bm : heap_sizes = update_heap_size(bid_param.auction_id, storage.heap_sizes, new_heap_size) in 
+
+    let updated_auction_data : auction = {auction with last_bid_time = Tezos.now; end_time = new_end_time; 
+                                bid_index = auction.bid_index + 1n; 
+                                num_offers = updated_num_offers;} in
     let updated_auctions = Big_map.update bid_param.auction_id (Some updated_auction_data) storage.auctions in
-    (([] : operation list) , {storage with auctions = updated_auctions; bids = updated_bid_bm; heap_sizes = updated_heap_sizes;})
+    (([] : operation list) , {storage with auctions = updated_auctions; bids = bid_heap; heap_sizes = new_heap_size_bm;})
   end
 
 let place_bid_onchain(bid_param, storage : bid_param * storage) : return = begin
