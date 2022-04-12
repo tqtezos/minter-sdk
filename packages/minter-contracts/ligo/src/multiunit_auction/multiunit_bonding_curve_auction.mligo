@@ -70,12 +70,13 @@ type configure_param =
 
 type auction_without_configure_entrypoints =
   | Bid of bid_param
-  | Cancel of nat
-  | Resolve of nat
+  | Cancel of auction_id
+  | Resolve of auction_id
   | Admin of pauseable_admin
 #if OFFCHAIN_BID
   | Offchain_bid of permit_bid_param
 #endif
+  | Return_old_bids of auction_id * nat
 
 type auction_entrypoints =
   | Configure of configure_param
@@ -92,6 +93,8 @@ type bid_heap =  (bid_heap_key, bid) big_map
 
 type heap_sizes = (auction_id, nat) big_map
 
+type bonding_curve = tez -> nat
+
 type storage =
   [@layout:comb]
   {
@@ -101,7 +104,7 @@ type storage =
     max_config_to_start_time : nat;
     auctions : (nat, auction) big_map;
     bonding_curve_index : nat;
-    bonding_curves : (nat, tez -> nat) big_map;
+    bonding_curves : (nat, bonding_curve) big_map;
     bids : bid_heap;
     heap_sizes : heap_sizes;
   }
@@ -197,8 +200,6 @@ let extract_min (bid_heap, auction_id, heap_size : bid_heap * auction_id * nat) 
     then ((None : bid option), bid_heap, heap_size)
     else  
           let new_heap_size : nat = abs(heap_size - 1n) in 
-          let min_bid : bid = get_min(auction_id, bid_heap) in 
-          
           let percolate_bid_key : bid_heap_key = {auction_id = auction_id; bid_index = new_heap_size;} in
       
           let (percolate_bid_option, bid_heap) : bid option * bid_heap = 
@@ -274,7 +275,7 @@ let dont_return_bid (auction : auction) : bool =
   || auction.last_bid_offchain 
 #endif
 
-let bid_amount_sent (auction, bid_param: auction * bid_param) : bool =
+let bid_amount_sent (bid_param: bid_param) : bool =
   Tezos.amount = bid_param.price * bid_param.quantity (*If bid is offchian, no need to send tez*)
 
 let configure_auction_storage(configure_param, seller, storage : configure_param * address * storage ) : storage = begin
@@ -347,7 +348,7 @@ let place_bid(  bid_param
     (fail_if_paused storage.admin);
     assert_msg (auction_in_progress(auction), "NOT_IN_PROGRESS");
     assert_msg(bidder <> auction.seller, "SEllER_CANT_BID");
-    (if (not bid_amount_sent(auction, bid_param) 
+    (if (not bid_amount_sent(bid_param) 
 #if OFFCHAIN_BID 
         && not is_offchain
 #endif
@@ -423,6 +424,46 @@ let admin(admin_param, storage : pauseable_admin * storage) : return =
     let new_storage = { storage with admin = admin; } in
     ops, new_storage
 
+let rec return_invalid_bids(bid_heap, op_list, num_offers, bonding_curve, auction_id, heap_size, bids_to_return : bid_heap * operation list * nat * bonding_curve * auction_id * nat * int) 
+  : bid_heap * operation list * nat * nat = 
+  let min_bid : bid = get_min(auction_id, bid_heap) in 
+  let min_price : tez = min_bid.price in 
+  let max_sellable_at_price : nat = bonding_curve min_price in   
+  if num_offers > max_sellable_at_price && bids_to_return > 0
+  then 
+       let (possible_bid, bid_heap, heap_size) = extract_min(bid_heap, auction_id, heap_size) in 
+       match possible_bid with 
+           Some bid -> 
+             let op_list : operation list = 
+#if OFFCHAIN_BID
+                 if bid.is_offchain 
+                 then op_list 
+                 else 
+#endif   
+                      let bid_return_op : operation = transfer_tez(bid.quantity * bid.price, bid.bidder) in 
+                      bid_return_op :: op_list in
+             let remaining_offers : nat = abs(num_offers - bid.quantity) in 
+             return_invalid_bids(bid_heap, op_list, remaining_offers, bonding_curve, auction_id, heap_size, bids_to_return - 1)
+         | None -> (bid_heap, op_list, heap_size, num_offers) (*This should never be reached, get_min will fail*)
+  else 
+       (bid_heap, op_list, heap_size, num_offers)
+
+let empty_heap(auction_id, num_bids_to_return, storage : auction_id * nat * storage) : return = 
+    let num_bids_to_return : int = int(num_bids_to_return) in (*Cast to int for recursion, decrementing by 1 each step*)
+    let auction : auction = get_auction_data(auction_id, storage) in
+    let bonding_curve : bonding_curve = match (Big_map.find_opt auction.bonding_curve storage.bonding_curves) with 
+        Some bc -> bc 
+      | None -> (failwith "INTERNAL_ERROR" : bonding_curve)
+      in  
+    let heap_size : nat = get_heap_size(auction_id, storage.heap_sizes) in
+    let (bid_heap, op_list, new_heap_size, num_offers) = 
+        return_invalid_bids(storage.bids, ([] : operation list) , auction.num_offers, bonding_curve, auction_id, heap_size, num_bids_to_return) in 
+    let new_heap_size_bm : heap_sizes = update_heap_size(auction_id, storage.heap_sizes, new_heap_size) in 
+    let updated_auction_data : auction = {auction with num_offers = num_offers;} in
+    let updated_auctions = Big_map.update auction_id (Some updated_auction_data) storage.auctions in
+    (op_list , {storage with auctions = updated_auctions; bids = bid_heap; heap_sizes = new_heap_size_bm;})
+    
+
 let multiunit_bonding_curve_auction_no_configure (p,storage : auction_without_configure_entrypoints * storage) : return =
   match p with
     | Bid bid_param -> place_bid_onchain(bid_param, storage)
@@ -432,6 +473,9 @@ let multiunit_bonding_curve_auction_no_configure (p,storage : auction_without_co
 #if OFFCHAIN_BID
     | Offchain_bid permit -> bid_with_permit(permit, storage)
 #endif
+    | Return_old_bids return_bids_param -> 
+        let (auction_id, num_bids_to_return) = return_bids_param in 
+        empty_heap(auction_id, num_bids_to_return, storage)
 
 let multiunit_auction_tez_main (p,storage : auction_entrypoints * storage) : return = match p with
     | Configure config -> configure_auction(config, storage)
