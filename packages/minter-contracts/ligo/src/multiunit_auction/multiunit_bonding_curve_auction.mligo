@@ -54,7 +54,7 @@ type auction =
     bonding_curve : nat;
     bid_index : nat;
     num_offers : nat; 
-    (*pq_pair : (tez * nat) option;  p = min_price for valid bid, q = max satisfiable at p*)
+    winning_price : tez option;
   }
 
 type configure_param =
@@ -94,7 +94,7 @@ type bid_heap =  (bid_heap_key, bid) big_map
 
 type heap_sizes = (auction_id, nat) big_map
 
-type bonding_curve = tez -> nat
+type bonding_curve = nat -> tez
 
 type storage =
   [@layout:comb]
@@ -229,6 +229,13 @@ let extract_min (bid_heap, auction_id, heap_size : bid_heap * auction_id * nat) 
           let new_heap : bid_heap = min_heapify(min_bid_key, bid_heap, new_heap_size) in 
           ((Some min_bid), new_heap, new_heap_size)
 
+let get_bonding_curve(bc_id, bonding_curve_bm : nat * (nat, bonding_curve) big_map) : bonding_curve = 
+  let bonding_curve : bonding_curve = match (Big_map.find_opt bc_id bonding_curve_bm) with 
+      Some bc -> bc 
+    | None -> (failwith "INTERNAL_ERROR" : bonding_curve)
+  in  
+  bonding_curve
+
 let transfer_asset_tokens (from_, to_, asset_token : address * address * asset_token) : operation list = 
   let c = address_to_contract_transfer_entrypoint(asset_token.fa2_address) in
   let transfer_param = [{from_ = from_; txs = [{to_ = to_; token_id = asset_token.token_id; amount = asset_token.amount_}]}] in 
@@ -317,7 +324,7 @@ let configure_auction_storage(configure_param, seller, storage : configure_param
       last_bid_time = configure_param.start_time;
       bonding_curve = configure_param.bonding_curve;
       bid_index = 0n;
-      (*pq_pair = (None : (tez * nat) option); *)
+      winning_price = (None : tez option);
       num_offers = 0n;
     } in
     let updated_auctions : (nat, auction) big_map = Big_map.update storage.auction_id (Some auction_data) storage.auctions in
@@ -330,7 +337,18 @@ let configure_auction(configure_param, storage : configure_param * storage) : re
   (fa2_transfers, new_storage)
 
 let resolve_auction(auction_id, storage : nat * storage) : return = begin
-  (([] : operation list), storage)
+  (fail_if_paused storage.admin);
+  let auction : auction = get_auction_data(auction_id, storage) in
+  assert_msg (auction_ended(auction) , "AUCTION_NOT_ENDED");
+  let min_bid : bid = get_min(auction_id, storage.bids) in 
+  let min_price : tez = min_bid.price in 
+  let bonding_curve : bonding_curve = get_bonding_curve(auction.bonding_curve, storage.bonding_curves) in
+  let min_price_necessary_at_q : tez = bonding_curve auction.num_offers in 
+  assert_msg(min_price_necessary_at_q <= min_price, "NOT_ALL_INVALID_BIDS_SENT");
+  let winning_price : tez = min_price_necessary_at_q in 
+  let updated_auction_data : auction = {auction with winning_price = Some winning_price;} in
+  let updated_auctions = Big_map.update auction_id (Some updated_auction_data) storage.auctions in
+  (([] : operation list) , {storage with auctions = updated_auctions;})  
  end
 
 let cancel_auction(auction_id, storage : nat * storage) : return = begin
@@ -434,8 +452,8 @@ let rec return_invalid_bids(bid_heap, op_list, num_offers, bonding_curve, auctio
   : bid_heap * operation list * nat * nat * tez = 
   let min_bid : bid = get_min(auction_id, bid_heap) in 
   let min_price : tez = min_bid.price in 
-  let max_sellable_at_price : nat = bonding_curve min_price in   
-  if num_offers > max_sellable_at_price && bids_to_return > 0
+  let min_price_necessary_at_q : tez = bonding_curve num_offers in   
+  if min_price < min_price_necessary_at_q && bids_to_return > 0 (*There are bids to return*)
   then 
        let (possible_bid, bid_heap, heap_size) = extract_min(bid_heap, auction_id, heap_size) in 
        match possible_bid with 
@@ -458,10 +476,7 @@ let rec return_invalid_bids(bid_heap, op_list, num_offers, bonding_curve, auctio
 let empty_heap(auction_id, num_bids_to_return, storage : auction_id * nat * storage) : return = 
     let num_bids_to_return : int = int(num_bids_to_return) in (*Cast to int for recursion, decrementing by 1 each step*)
     let auction : auction = get_auction_data(auction_id, storage) in
-    let bonding_curve : bonding_curve = match (Big_map.find_opt auction.bonding_curve storage.bonding_curves) with 
-        Some bc -> bc 
-      | None -> (failwith "INTERNAL_ERROR" : bonding_curve)
-      in  
+    let bonding_curve : bonding_curve = get_bonding_curve(auction.bonding_curve, storage.bonding_curves) in
     let heap_size : nat = get_heap_size(auction_id, storage.heap_sizes) in
     let (bid_heap, op_list, new_heap_size, num_offers, price_floor) = 
         return_invalid_bids(storage.bids, ([] : operation list) , auction.num_offers, bonding_curve, auction_id, heap_size, num_bids_to_return, auction.price_floor) in 
