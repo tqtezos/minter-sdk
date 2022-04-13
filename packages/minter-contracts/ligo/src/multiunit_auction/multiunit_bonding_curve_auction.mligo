@@ -340,6 +340,11 @@ let resolve_auction(auction_id, storage : nat * storage) : return = begin
   (fail_if_paused storage.admin);
   let auction : auction = get_auction_data(auction_id, storage) in
   assert_msg (auction_ended(auction) , "AUCTION_NOT_ENDED");
+  let auction_resolved : bool = match auction.winning_price with 
+      Some wp -> true 
+    | None -> false 
+    in  
+  assert_msg(not auction_resolved, "AUCTION_ALREADY_RESOLVED");
   let min_bid : bid = get_min(auction_id, storage.bids) in 
   let min_price : tez = min_bid.price in 
   let bonding_curve : bonding_curve = get_bonding_curve(auction.bonding_curve, storage.bonding_curves) in
