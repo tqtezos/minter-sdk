@@ -55,6 +55,7 @@ type auction =
     bid_index : nat;
     num_offers : nat; 
     winning_price : tez option;
+    is_canceled : bool;
   }
 
 type configure_param =
@@ -326,6 +327,7 @@ let configure_auction_storage(configure_param, seller, storage : configure_param
       bid_index = 0n;
       winning_price = (None : tez option);
       num_offers = 0n;
+      is_canceled = false;
     } in
     let updated_auctions : (nat, auction) big_map = Big_map.update storage.auction_id (Some auction_data) storage.auctions in
     {storage with auctions = updated_auctions; auction_id = storage.auction_id + 1n}
@@ -338,6 +340,7 @@ let configure_auction(configure_param, storage : configure_param * storage) : re
 
 let resolve_auction(auction_id, storage : nat * storage) : return = begin
   (fail_if_paused storage.admin);
+  tez_stuck_guard("RESOLVE");
   let auction : auction = get_auction_data(auction_id, storage) in
   assert_msg (auction_ended(auction) , "AUCTION_NOT_ENDED");
   let auction_resolved : bool = match auction.winning_price with 
@@ -357,7 +360,15 @@ let resolve_auction(auction_id, storage : nat * storage) : return = begin
  end
 
 let cancel_auction(auction_id, storage : nat * storage) : return = begin
-    (([] : operation list), storage)
+    let auction : auction = get_auction_data(auction_id, storage) in
+    let is_seller : bool = Tezos.sender = auction.seller in
+    let v : unit = if is_seller then ()
+      else fail_if_not_admin_ext (storage.admin, "OR_A_SELLER") in
+    assert_msg (not auction_ended(auction), "AUCTION_ENDED");
+    tez_stuck_guard("CANCEL");
+    let updated_auction_data : auction = {auction with is_canceled = true;} in
+    let updated_auctions = Big_map.update auction_id (Some updated_auction_data) storage.auctions in
+    (([] : operation list) , {storage with auctions = updated_auctions;})  
   end
 
 let place_bid(  bid_param
@@ -453,12 +464,13 @@ let admin(admin_param, storage : pauseable_admin * storage) : return =
     let new_storage = { storage with admin = admin; } in
     ops, new_storage
 
-let rec return_invalid_bids(bid_heap, op_list, num_offers, bonding_curve, auction_id, heap_size, bids_to_return, price_floor : bid_heap * operation list * nat * bonding_curve * auction_id * nat * int * tez) 
+let rec return_invalid_bids(bid_heap, op_list, num_offers, bonding_curve, auction_id, auction_is_canceled, heap_size, bids_to_return, price_floor : bid_heap * operation list * nat * bonding_curve * auction_id * bool * nat * int * tez) 
   : bid_heap * operation list * nat * nat * tez = 
   let min_bid : bid = get_min(auction_id, bid_heap) in 
   let min_price : tez = min_bid.price in 
-  let min_price_necessary_at_q : tez = bonding_curve num_offers in   
-  if min_price < min_price_necessary_at_q && bids_to_return > 0 (*There are bids to return*)
+  let min_price_necessary_at_q : tez = bonding_curve num_offers in
+  let bid_returnable : bool =  (min_price < min_price_necessary_at_q || auction_is_canceled) && bids_to_return > 0 in
+  if bid_returnable 
   then 
        let (possible_bid, bid_heap, heap_size) = extract_min(bid_heap, auction_id, heap_size) in 
        match possible_bid with 
@@ -473,24 +485,26 @@ let rec return_invalid_bids(bid_heap, op_list, num_offers, bonding_curve, auctio
                       bid_return_op :: op_list in
              let remaining_offers : nat = abs(num_offers - bid.quantity) in 
              let price_floor : tez = bid.price in 
-             return_invalid_bids(bid_heap, op_list, remaining_offers, bonding_curve, auction_id, heap_size, bids_to_return - 1, price_floor)
+             return_invalid_bids(bid_heap, op_list, remaining_offers, bonding_curve, auction_id, auction_is_canceled, heap_size, bids_to_return - 1, price_floor)
          | None -> (bid_heap, op_list, heap_size, num_offers, price_floor) (*This should never be reached, get_min will fail*)
   else 
        (bid_heap, op_list, heap_size, num_offers, price_floor)
 
-let empty_heap(auction_id, num_bids_to_return, storage : auction_id * nat * storage) : return = 
+let empty_heap(auction_id, num_bids_to_return, storage : auction_id * nat * storage) : return = begin
+    tez_stuck_guard("RETURN_OLD_BIDS");
+    (fail_if_paused storage.admin);
     let num_bids_to_return : int = int(num_bids_to_return) in (*Cast to int for recursion, decrementing by 1 each step*)
     let auction : auction = get_auction_data(auction_id, storage) in
     let bonding_curve : bonding_curve = get_bonding_curve(auction.bonding_curve, storage.bonding_curves) in
     let heap_size : nat = get_heap_size(auction_id, storage.heap_sizes) in
     let (bid_heap, op_list, new_heap_size, num_offers, price_floor) = 
-        return_invalid_bids(storage.bids, ([] : operation list) , auction.num_offers, bonding_curve, auction_id, heap_size, num_bids_to_return, auction.price_floor) in 
+        return_invalid_bids(storage.bids, ([] : operation list) , auction.num_offers, bonding_curve, auction_id, auction.is_canceled, heap_size, num_bids_to_return, auction.price_floor) in 
     let new_heap_size_bm : heap_sizes = update_heap_size(auction_id, storage.heap_sizes, new_heap_size) in 
     let updated_auction_data : auction = {auction with num_offers = num_offers; price_floor = price_floor;} in
     let updated_auctions = Big_map.update auction_id (Some updated_auction_data) storage.auctions in
     (op_list , {storage with auctions = updated_auctions; bids = bid_heap; heap_sizes = new_heap_size_bm;})
-    
-
+  end  
+  
 let multiunit_bonding_curve_auction_no_configure (p,storage : auction_without_configure_entrypoints * storage) : return =
   match p with
     | Bid bid_param -> place_bid_onchain(bid_param, storage)
