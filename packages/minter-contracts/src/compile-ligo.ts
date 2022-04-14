@@ -488,6 +488,12 @@ const compileSources: CompileSourceEntry[] = [
     dstFile: 'multiunit_bonding_curve_auction.tz',
     contract: true,
   },
+  {
+    srcFile: 'multiunit_auction/multiunit_bonding_curve_auction_offchain.mligo',
+    mainFn: 'multiunit_auction_tez_main',
+    dstFile: 'multiunit_bonding_curve_auction_offchain_bid.tz',
+    contract: true,
+  },
 ];
 
 const filterSources = (sources: CompileSourceEntry[]): CompileSourceEntry[] => {

@@ -75,7 +75,7 @@ type auction_without_configure_entrypoints =
   | Resolve of auction_id
   | Admin of pauseable_admin
 #if OFFCHAIN_BID
-  | Offchain_bid of permit_bid_param
+  | Offchain_bid of permit_multiunit_bid_param
 #endif
   | Return_old_bids of auction_id * nat
   | Payout_winners of auction_id * nat
@@ -284,13 +284,6 @@ let auction_in_progress (auction : auction) : bool =
 (*This condition is met iff no bid has been placed before the function executes*)
 let first_bid (auction : auction) : bool =
   auction.bid_index = 0n
-
-let dont_return_bid (auction : auction) : bool =
-  first_bid(auction)
-
-#if OFFCHAIN_BID
-  || auction.last_bid_offchain 
-#endif
 
 let bid_amount_sent (bid_param: bid_param) : bool =
   Tezos.amount = bid_param.price * bid_param.quantity (*If bid is offchian, no need to send tez*)
