@@ -4,6 +4,10 @@
 
 type auction_id = nat
 
+type bonding_curve = nat -> tez
+
+type bonding_curves = (nat, bonding_curve) big_map
+
 type bid_param = 
  [@layout:comb]
  {  
@@ -80,6 +84,7 @@ type auction_without_configure_entrypoints =
   | Return_old_bids of auction_id * nat
   | Return_old_offers of auction_id * nat
   | Payout_winners of auction_id * nat
+  | Add_bonding_curve of bonding_curve
 
 type auction_entrypoints =
   | Configure of configure_param
@@ -96,8 +101,6 @@ type bid_heap =  (bid_heap_key, bid) big_map
 
 type heap_sizes = (auction_id, nat) big_map
 
-type bonding_curve = nat -> tez
-
 type storage =
   [@layout:comb]
   {
@@ -107,7 +110,7 @@ type storage =
     max_config_to_start_time : nat;
     auctions : (nat, auction) big_map;
     bonding_curve_index : nat;
-    bonding_curves : (nat, bonding_curve) big_map;
+    bonding_curves : bonding_curves;
     bids : bid_heap;
     heap_sizes : heap_sizes;
   }
@@ -231,7 +234,7 @@ let extract_min (bid_heap, auction_id, heap_size : bid_heap * auction_id * nat) 
           let new_heap : bid_heap = min_heapify(min_bid_key, bid_heap, new_heap_size) in 
           ((Some min_bid), new_heap, new_heap_size)
 
-let get_bonding_curve(bc_id, bonding_curve_bm : nat * (nat, bonding_curve) big_map) : bonding_curve = 
+let get_bonding_curve(bc_id, bonding_curve_bm : nat * bonding_curves) : bonding_curve = 
   let bonding_curve : bonding_curve = match (Big_map.find_opt bc_id bonding_curve_bm) with 
       Some bc -> bc 
     | None -> (failwith "INTERNAL_ERROR" : bonding_curve)
@@ -588,6 +591,10 @@ let multiunit_bonding_curve_auction_no_configure (p,storage : auction_without_co
     | Payout_winners payout_param ->
         let (auction_id, num_winners_to_payout) = payout_param in 
         payout(auction_id, num_winners_to_payout, storage)
+    | Add_bonding_curve bc -> 
+        let new_bonding_curve_bm : bonding_curves = Big_map.add storage.bonding_curve_index bc storage.bonding_curves in 
+        (([] : operation list), {storage with bonding_curves = new_bonding_curve_bm; 
+                                   bonding_curve_index = storage.bonding_curve_index + 1n})
 
 let multiunit_auction_tez_main (p,storage : auction_entrypoints * storage) : return = match p with
     | Configure config -> configure_auction(config, storage)
