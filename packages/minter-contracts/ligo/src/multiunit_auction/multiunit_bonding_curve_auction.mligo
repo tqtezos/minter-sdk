@@ -488,8 +488,10 @@ let rec return_invalid_bids(bid_heap, op_list, num_offers, bonding_curve, auctio
   : bid_heap * operation list * nat * nat * tez = 
   let min_bid : bid = get_min(auction_id, bid_heap) in 
   let bid_price : tez = min_bid.price in 
-  let min_price_valid_at_q : tez = bonding_curve num_offers in
-  let bid_returnable : bool =  (bid_price < min_price_valid_at_q || auction_is_canceled) && bids_to_return > 0 in
+  let min_price_valid_at_Q : tez = bonding_curve num_offers in
+  let remaining_offers : nat = abs(num_offers - min_bid.quantity) in 
+  let min_price_valid_at_q_plus_one : tez = bonding_curve (remaining_offers + 1n) in 
+  let bid_returnable : bool =  ((bid_price < min_price_valid_at_Q  && bid_price < min_price_valid_at_q_plus_one)|| auction_is_canceled) && bids_to_return > 0 in
   if bid_returnable 
   then 
        let (possible_bid, bid_heap, heap_size) = extract_min(bid_heap, auction_id, heap_size) in 
@@ -503,7 +505,6 @@ let rec return_invalid_bids(bid_heap, op_list, num_offers, bonding_curve, auctio
 #endif   
                       let bid_return_op : operation = transfer_tez(bid.quantity * bid.price, bid.bidder) in 
                       bid_return_op :: op_list in
-             let remaining_offers : nat = abs(num_offers - bid.quantity) in 
              let price_floor : tez = bid.price in 
              return_invalid_bids(bid_heap, op_list, remaining_offers, bonding_curve, auction_id, auction_is_canceled, heap_size, bids_to_return - 1, price_floor)
          | None -> (bid_heap, op_list, heap_size, num_offers, price_floor) (*This should never be reached, get_min will fail*)
