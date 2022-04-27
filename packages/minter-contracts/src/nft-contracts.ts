@@ -25,6 +25,7 @@ import {
   EnglishAuctionFa2FixedFeeCode,
   Fa2MultiFtAssetLimitedCode,
   EnglishAuctionTezOffchainBidCode,
+  MultiunitBondingCurveAuctionOffchainBidCode,
 } from '../bin-ts';
 
 export interface MintNftParam {
@@ -225,6 +226,15 @@ export async function originateEnglishAuctionTez(
   const storage = `(Pair None 0 86400 86400 {} Unit)`;
   return originateContract(tz, EnglishAuctionTezCode.code, storage, 'english_auction_tez');
 }
+
+export async function originateMultiunitAuctionOffchain(
+  tz: TezosToolkit,
+): Promise<Contract> {
+  const tzAddress = await tz.signer.publicKeyHash();
+  const storage = `(Pair (Some (Pair (Pair "${tzAddress}" False) None)) 0 86400 86400 {} 0 {} {} {})`;
+  return originateContract(tz, MultiunitBondingCurveAuctionOffchainBidCode.code, storage, 'multiunit_auction');
+}
+
 
 export async function originateEnglishAuctionTezAdmin(
   tz: TezosToolkit,

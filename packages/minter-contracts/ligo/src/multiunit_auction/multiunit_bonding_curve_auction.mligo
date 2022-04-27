@@ -142,64 +142,80 @@ let swap_heap_keys (i_key, j_key, i_bid, j_bid, bid_heap : bid_heap_key * bid_he
       Big_map.update j_key (Some i_bid) i_replaced_heap in 
   ij_replaced_heap
 
-let get_bid (index_key, bid_heap : bid_heap_key * bid_heap) : bid = 
-  match (Big_map.find_opt index_key bid_heap) with 
-     Some bid -> bid 
-   | None -> (failwith "HEAP_GET_FAILS" : bid)
+let get_bid (index_key, bid_heap : bid_heap_key * bid_heap) : bid option = 
+  Big_map.find_opt index_key bid_heap
 
 let get_min (auction_id, bid_heap : auction_id * bid_heap) : bid = 
   let min_key : bid_heap_key = {auction_id = auction_id; bid_index = 0n;} in 
-  get_bid(min_key, bid_heap)
+  let possible_min : bid option = get_bid(min_key, bid_heap) in 
+  match possible_min with 
+      Some min -> min 
+    | None -> (failwith "NO_BIDS" : bid) 
 
 let rec maintain_min_heap (bid_heap, current_key, current_bid : bid_heap * bid_heap_key * bid) : bid_heap =
   let parent_key : bid_heap_key = {auction_id = current_key.auction_id; bid_index = parent(current_key.bid_index);} in
-  let parent_bid : bid = get_bid(parent_key, bid_heap) in 
-  (
-  if current_key.bid_index = 0n || parent_bid.price <= current_bid.price
-  then bid_heap
-  else 
-       let bid_heap : bid_heap = swap_heap_keys(parent_key, current_key, parent_bid, current_bid, bid_heap) in 
-       maintain_min_heap (bid_heap, parent_key, parent_bid)
-  )
+  let parent_bid_option : bid option = get_bid(parent_key, bid_heap) in 
+  match parent_bid_option with 
+      Some parent_bid -> 
+        (
+        if current_key.bid_index = 0n || parent_bid.price <= current_bid.price
+        then bid_heap
+        else 
+             let bid_heap : bid_heap = swap_heap_keys(parent_key, current_key, parent_bid, current_bid, bid_heap) in 
+             maintain_min_heap (bid_heap, parent_key, parent_bid)
+        )
+    | None -> bid_heap
 
 let get_heap_size(auction_id, heap_sizes : auction_id * heap_sizes) : nat = 
     match (Big_map.find_opt auction_id heap_sizes) with 
         Some size -> size 
-      | None -> (failwith "INVALID_HEAP_SIZE" : nat)
+      | None -> 0n
 
 let update_heap_size(auction_id, heap_sizes, new_size : auction_id * heap_sizes * nat) : heap_sizes = 
     Big_map.update auction_id (Some new_size) heap_sizes
    
-let insert_bid (bid, bid_heap, auction_id, new_heap_size : bid * bid_heap * auction_id * nat) : bid_heap =
+let insert_bid (bid, bid_heap, auction_id, insert_index : bid * bid_heap * auction_id * nat) : bid_heap =
   (*insert bid at end of heap*)
-  let bid_key : bid_heap_key = {auction_id = auction_id; bid_index = new_heap_size;} in
+  let bid_key : bid_heap_key = {auction_id = auction_id; bid_index = insert_index;} in
   let bid_heap : bid_heap = Big_map.add bid_key bid bid_heap in 
 
   (*maintain min heap property*)
   let bid_heap : bid_heap = maintain_min_heap (bid_heap, bid_key, bid) in 
   bid_heap
 
+(*Assumes non-empty heap*)
 let rec min_heapify (index_key, bid_heap, heap_size : bid_heap_key * bid_heap * nat) : bid_heap = 
-   let index_bid : bid = get_bid(index_key, bid_heap) in
+   let index_bid_option : bid option = get_bid(index_key, bid_heap) in
+   let index_bid : bid = match index_bid_option with 
+        Some bid -> bid 
+      | None -> (failwith "INTERNAL_ERROR" : bid)
+   in 
+   let (smallest_key, smallest_bid) = (index_key, index_bid) in
 
    let l_index : nat = left_child(index_key.bid_index) in 
    let l_key : bid_heap_key =  {auction_id = index_key.auction_id; bid_index = l_index;} in
-   let l_bid : bid = get_bid(l_key, bid_heap) in 
+   let l_bid_option : bid option = get_bid(l_key, bid_heap) in 
+   
+   let (smallest_key, smallest_bid) : bid_heap_key * bid = 
+     match l_bid_option with 
+         Some l_bid -> 
+             if l_index < heap_size && bid_is_less_than(l_bid, index_bid)
+             then (l_key, l_bid) 
+             else (smallest_key, smallest_bid)
+       | None -> (smallest_key, smallest_bid)
+    in 
 
    let r_index : nat = right_child(index_key.bid_index) in 
    let r_key : bid_heap_key =  {auction_id = index_key.auction_id; bid_index = r_index;} in
-   let r_bid : bid = get_bid(r_key, bid_heap) in 
+   let r_bid_option : bid option = get_bid(r_key, bid_heap) in 
 
    let (smallest_key, smallest_bid) : bid_heap_key * bid = 
-     if l_index < heap_size && bid_is_less_than(l_bid, index_bid)
-     then (l_key, l_bid) 
-     else (index_key, index_bid)
-    in 
-
-   let (smallest_key, smallest_bid) : bid_heap_key * bid = 
-     if r_index < heap_size && bid_is_less_than(r_bid, smallest_bid)
-     then (r_key, r_bid)
-     else (smallest_key, smallest_bid)
+     match r_bid_option with 
+         Some r_bid -> 
+           if r_index < heap_size && bid_is_less_than(r_bid, smallest_bid)
+           then (r_key, r_bid)
+           else (smallest_key, smallest_bid)
+      |  None -> (smallest_key, smallest_bid)
     in
 
    if smallest_key <> index_key 
@@ -409,12 +425,12 @@ let place_bid(  bid_param
       } : bid) in 
 
     let current_heap_size : nat = get_heap_size(bid_param.auction_id, storage.heap_sizes) in 
-    let new_heap_size : nat = current_heap_size + 1n in 
 
-    let bid_heap : bid_heap = insert_bid(new_bid, storage.bids, bid_param.auction_id, new_heap_size) in
+    let bid_heap : bid_heap = insert_bid(new_bid, storage.bids, bid_param.auction_id, current_heap_size) in
 
     let updated_num_offers : nat = auction.num_offers + new_bid.quantity in 
-
+    
+    let new_heap_size : nat = current_heap_size + 1n in 
     let new_heap_size_bm : heap_sizes = update_heap_size(bid_param.auction_id, storage.heap_sizes, new_heap_size) in 
 
     let updated_auction_data : auction = {auction with last_bid_time = Tezos.now; end_time = new_end_time; 
