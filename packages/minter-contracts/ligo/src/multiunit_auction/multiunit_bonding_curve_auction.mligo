@@ -53,6 +53,8 @@ type auction =
     winning_price : tez option;
     is_canceled : bool;
     next_token_id : nat;
+    reserve_address : address;
+    profit_address : address;
   }
 
 type configure_param =
@@ -66,6 +68,8 @@ type configure_param =
     end_time : timestamp;
     bonding_curve : nat;
     next_token_id : nat;
+    reserve_address : address;
+    profit_address : address;
   }
 
 type auction_without_configure_entrypoints =
@@ -336,6 +340,8 @@ let configure_auction_storage(configure_param, seller, storage : configure_param
       num_offers = 0n;
       is_canceled = false;
       next_token_id = configure_param.next_token_id;
+      reserve_address = configure_param.reserve_address;
+      profit_address = configure_param.profit_address;
     } in
     let updated_auctions : (nat, auction) big_map = Big_map.update storage.auction_id (Some auction_data) storage.auctions in
     {storage with auctions = updated_auctions; auction_id = storage.auction_id + 1n}
@@ -345,6 +351,7 @@ let configure_auction(configure_param, storage : configure_param * storage) : re
   let new_storage = configure_auction_storage(configure_param, Tezos.sender, storage) in
   (([] : operation list), new_storage)
 
+(*Sets strike price iff all invalid bids and offers are returned, and sends out profit and reserve amounts*)
 let resolve_auction(auction_id, storage : nat * storage) : return = begin
   (fail_if_paused storage.admin);
   tez_stuck_guard("RESOLVE");
@@ -362,9 +369,14 @@ let resolve_auction(auction_id, storage : nat * storage) : return = begin
   let min_price_valid_at_q : tez = bonding_curve auction.num_offers in 
   assert_msg(min_price_valid_at_q <= min_price, "NOT_ALL_INVALID_BIDS_AND_OFFERS_RETURNED");
   let winning_price : tez = min_price_valid_at_q in 
+  let bonding_curve_integral : bonding_curve = get_bonding_curve(auction.bonding_curve, storage.bonding_curve_integrals) in
+  let reserve_amount : tez = (bonding_curve_integral auction.num_offers) - (bonding_curve_integral 0n) in (*Function must be increasing*)
+  let auction_profit : tez = (winning_price * auction.num_offers) - reserve_amount in 
+  let transfer_reserve_op : operation = transfer_tez(reserve_amount, auction.reserve_address) in 
+  let transfer_profit_op : operation = transfer_tez(auction_profit, auction.profit_address) in 
   let updated_auction_data : auction = {auction with winning_price = Some winning_price;} in
   let updated_auctions = Big_map.update auction_id (Some updated_auction_data) storage.auctions in
-  (([] : operation list) , {storage with auctions = updated_auctions;})  
+  ([transfer_reserve_op; transfer_profit_op] , {storage with auctions = updated_auctions;})  
  end
 
 let cancel_auction(auction_id, storage : nat * storage) : return = begin
