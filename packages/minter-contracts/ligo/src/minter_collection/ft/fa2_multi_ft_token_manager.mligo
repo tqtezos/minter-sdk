@@ -32,12 +32,6 @@ type token_manager =
   | Mint_tokens of mint_burn_tokens_param
   | Burn_tokens of mint_burn_tokens_param
 
-let address_to_contract_mint_entrypoint(add : address) : (mint_burn_tokens_param contract) =
-  let c : mint_burn_tokens_param contract option = Tezos.get_entrypoint_opt "%mint_tokens" add in
-  match c with
-    None -> (failwith "ADDRESS_DOES_NOT_RESOLVE" : mint_burn_tokens_param contract)
-  | Some c ->  c
-
 let create_token (metadata, storage
     : token_metadata * multi_ft_token_storage) : multi_ft_token_storage =
   (* extract token id *)

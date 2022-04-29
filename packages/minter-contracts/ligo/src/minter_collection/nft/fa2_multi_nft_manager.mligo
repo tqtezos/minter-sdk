@@ -20,6 +20,13 @@ type mint_token_param =
 
 type mint_tokens_param = mint_token_param list
 
+let address_to_contract_mint_entrypoint(add : address) : (mint_tokens_param contract) =
+  let c : mint_tokens_param contract option = Tezos.get_entrypoint_opt "%mint" add in
+  match c with
+    None -> (failwith "ADDRESS_DOES_NOT_RESOLVE" : mint_tokens_param contract)
+  | Some c ->  c
+
+
 let update_meta_and_create_txs (param, storage
     : mint_tokens_param * nft_token_storage ) : minted1 =
   let seed1 : minted1 = {
