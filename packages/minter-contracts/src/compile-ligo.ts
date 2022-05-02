@@ -500,6 +500,12 @@ const compileSources: CompileSourceEntry[] = [
     dstFile: 'three_x_bonding_curve.tz',
     contract: false,
   },
+  {
+    srcFile: 'multiunit_auction/bonding_curves/sample_bonding_curve.mligo',
+    mainFn: 'three_x_integral',
+    dstFile: 'three_x_bonding_curve_integral.tz',
+    contract: false,
+  },
 ];
 
 const filterSources = (sources: CompileSourceEntry[]): CompileSourceEntry[] => {

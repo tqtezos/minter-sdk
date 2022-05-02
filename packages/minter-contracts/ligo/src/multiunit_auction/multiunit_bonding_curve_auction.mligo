@@ -238,20 +238,21 @@ let extract_min (bid_heap, auction_id, heap_size : bid_heap * auction_id * nat) 
                Big_map.get_and_update percolate_bid_key (None : bid option) bid_heap in 
           let percolate_bid : bid =  match percolate_bid_option with 
                Some bid -> bid 
-            |  None -> (failwith "HEAP_GET_FAILS" : bid )
+            |  None -> (failwith "HEAP_GET_FAILS_INTERNAL_ERROR" : bid )
             in 
           
-          let min_bid_key : bid_heap_key = {auction_id = auction_id; bid_index = 0n;} in 
-
-          let (min_bid_option, bid_heap) : bid option * bid_heap = 
-             Big_map.get_and_update min_bid_key (Some percolate_bid) bid_heap in 
-          let min_bid : bid =  match min_bid_option with 
-               Some bid -> bid 
-            |  None -> (failwith "HEAP_GET_FAILS" : bid )
-            in 
-          let new_heap : bid_heap = min_heapify(min_bid_key, bid_heap, new_heap_size) in 
-          ((Some min_bid), new_heap, new_heap_size)
-
+          if new_heap_size <= 0n
+          then ((Some percolate_bid), bid_heap, new_heap_size) (*Case of single bid*)
+          else 
+              let min_bid_key : bid_heap_key = {auction_id = auction_id; bid_index = 0n;} in    
+              let (min_bid_option, bid_heap) : bid option * bid_heap = 
+                 Big_map.get_and_update min_bid_key (Some percolate_bid) bid_heap in 
+              ( match min_bid_option with 
+                    Some min_bid -> 
+                      let new_heap : bid_heap = min_heapify(min_bid_key, bid_heap, new_heap_size) in 
+                      ((Some min_bid), new_heap, new_heap_size)
+                  | None -> (failwith "HEAP_GET_FAILS_INTERNAL_ERROR" : bid option * bid_heap * nat ) (*Case of single bid*)
+              )
 let get_bonding_curve(bc_id, bonding_curve_bm : nat * bonding_curves) : bonding_curve = 
   let bonding_curve : bonding_curve = match (Big_map.find_opt bc_id bonding_curve_bm) with 
       Some bc -> bc 
@@ -557,7 +558,7 @@ let rec pay_winning_bids(bid_heap, op_list, mint_param, auction_id, heap_size, w
              let mint_token : mint_token_param = {
                owner = bid.bidder;
                token_metadata = token_metadata;
-             } in
+             } in (*TODO: CHANGE TOKEN METADATA IN ORDER TO HAVE CORRECT TOKEN ID*)
              let mint_param = mint_token :: mint_param in
              let op_list = 
 #if OFFCHAIN_BID

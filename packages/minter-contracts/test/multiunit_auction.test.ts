@@ -6,23 +6,18 @@ import { Contract, bytes, address, nat, mutez, timestamp } from '../src/type-ali
 import { InternalOperationResult } from '@taquito/rpc';
 import {
   originateMultiunitAuctionOffchain,
-  originateFtLimited, 
+  originateNftFaucet, 
   mintLimitedFtTokens, 
   MintLimitedFtParam,
 } from '../src/nft-contracts';
 import { MichelsonMap } from '@taquito/taquito';
-import { addOperator } from '../src/fa2-interface';
+import { addOperator, TokenMetadata } from '../src/fa2-interface';
 import { Fa2_token, Tokens, sleep } from '../src/auction-interface';
 import { queryBalancesWithLambdaView, hasTokens, QueryBalances, getBalances } from './fa2-balance-inspector';
 import { ThreeXBondingCurveCode } from '../bin-ts/three_x_bonding_curve.code'
+import { ThreeXBondingCurveIntegralCode } from '../bin-ts/three_x_bonding_curve_integral.code'
 
 jest.setTimeout(360000); // 6 minutes
-
-export interface Asset {
-  fa2_address : address;
-  token_id : nat;
-  amount_ : nat;
-}
 
 export interface BidParam {
   auction_id : nat;
@@ -34,10 +29,14 @@ export interface ConfigureMultiunitAuctionParam {
     price_floor : mutez;
     round_time : nat;
     extend_time : nat;
-    asset : Asset;
+    fa2_address : address;
     start_time : Date;
     end_time : Date;
     bonding_curve : nat;
+    next_token_id : nat;
+    reserve_address : address;
+    profit_address : address;
+    token_metadata : TokenMetadata;
 }
 
 describe('test NFT auction', () => {
@@ -49,26 +48,28 @@ describe('test NFT auction', () => {
   let nftContract : Contract;
   let bobAddress : address;
   let aliceAddress : address;
+  let eveAddress : address;
   let startTime : Date;
   let endTime : Date;
   let tokenId : BigNumber;
   let empty_metadata_map : MichelsonMap<string, bytes>;
   let token_info_bob : MichelsonMap< string, string>;
-  let nftContractAddress : address;
+  let ftContractAddress : address;
   let queryBalances : QueryBalances;
   let token0FixedSupply : nat;
   let tokensBob : MintLimitedFtParam;
 
   beforeAll(async () => {
     tezos = await bootstrap();
-    empty_metadata_map = new MichelsonMap();
-    tokenId = new BigNumber(0);
+    queryBalances = queryBalancesWithLambdaView(tezos.lambdaView);
     bobAddress = await tezos.bob.signer.publicKeyHash();
     aliceAddress = await tezos.alice.signer.publicKeyHash();
-    queryBalances = queryBalancesWithLambdaView(tezos.lambdaView);
+    eveAddress = await tezos.eve.signer.publicKeyHash();
   });
 
   beforeEach(async() => {
+    empty_metadata_map = new MichelsonMap();
+    tokenId = new BigNumber(0);
     $log.info('originating nft auction...');
     nftAuction = await originateMultiunitAuctionOffchain(tezos.bob);
     nftAuctionBob = await tezos.bob.contract.at(nftAuction.address);
@@ -77,36 +78,21 @@ describe('test NFT auction', () => {
     
     $log.info('Adding sample bonding curve');
     const bonding_curve = ThreeXBondingCurveCode.code;
+    const bonding_curve_integral = ThreeXBondingCurveIntegralCode.code;
     $log.info(bonding_curve);
-    const opAddBondingCurve = await nftAuction.methods.add_bonding_curve(bonding_curve).send();
+    $log.info(bonding_curve_integral);
+    const opAddBondingCurve = await nftAuction.methods.add_bonding_curve(bonding_curve, bonding_curve_integral).send();
     await opAddBondingCurve.confirmation();
-    $log.info(opAddBondingCurve.operationResults[0].parameters?.value);
     $log.info('Sample bonding curve added');
 
-    nftContract = await originateFtLimited(tezos.bob, bobAddress);
-    nftContractAddress = nftContract.address;
-    token0FixedSupply = new BigNumber(1000000);
-    tokensBob = {
-      owner : bobAddress,
-      amount : token0FixedSupply,
-      token_info : empty_metadata_map,
-    };
-
-    $log.info('minting token');
-    await mintLimitedFtTokens(nftContract, [tokensBob]);
-    $log.info('token minted');
+    $log.info('originating ft faucet...');
+    nftContract = await originateNftFaucet(tezos.bob);
 
     $log.info('adding auction contract as operator');
     await addOperator(nftContract.address, tezos.bob, nftAuction.address, tokenId);
     $log.info('Auction contract added as operator');
     
-    
-    const asset : Asset = {
-      fa2_address : nftContractAddress,
-      token_id : tokenId,
-      amount_ : token0FixedSupply,
-    }
-
+  
     startTime = moment.utc().add(7, 'seconds').toDate();
     endTime = moment(startTime).add(90, 'seconds').toDate();
 
@@ -117,14 +103,25 @@ describe('test NFT auction', () => {
       round_time : new BigNumber(3600),
       //extend_time = 0 seconds
       extend_time : new BigNumber(0),
-      //assset
-      asset : asset,
+      //assset contract
+      fa2_address : nftContract.address,
       //start_time = now + 7seconds
       start_time : startTime,
       //end_time = start_time + 90 seconds,
       end_time : endTime,
       //bonding_curve = 0n index
       bonding_curve : new BigNumber(0),
+
+      next_token_id : tokenId,
+
+      reserve_address : eveAddress,
+
+      profit_address : eveAddress,
+
+      token_metadata: {
+        token_id: tokenId,
+        token_info: empty_metadata_map,
+      },
     }
 
     $log.info('configuring auction');
@@ -197,8 +194,12 @@ describe('test NFT auction', () => {
     const payoutParam = [auction_id, new BigNumber(3)];
     const payWinners = await nftAuctionBob.methodsObject.payout_winners(payoutParam).send();
     await payWinners.confirmation();
-    $log.info(payWinners.results);
-
+    const internalOps = payWinners.operationResults[0].metadata.internal_operation_results;
+    if (internalOps != undefined) {
+      for (var op of internalOps) {
+        $log.info(op);
+      }
+    }
   });
 
 });

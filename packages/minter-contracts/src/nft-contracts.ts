@@ -231,7 +231,7 @@ export async function originateMultiunitAuctionOffchain(
   tz: TezosToolkit,
 ): Promise<Contract> {
   const tzAddress = await tz.signer.publicKeyHash();
-  const storage = `(Pair (Some (Pair (Pair "${tzAddress}" False) None)) 0 86400 86400 {} 0 {} {} {})`;
+  const storage = `(Pair (Some (Pair (Pair "${tzAddress}" False) None)) 0 86400 86400 {} 0 {} {} {} {})`;
   return originateContract(tz, MultiunitBondingCurveAuctionOffchainBidCode.code, storage, 'multiunit_auction');
 }
 
