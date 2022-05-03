@@ -55,7 +55,7 @@ type auction =
     next_token_id : nat;
     reserve_address : address;
     profit_address : address;
-    token_metadata : token_metadata;
+    token_info : (string, bytes) map;
   }
 
 type configure_param =
@@ -68,10 +68,10 @@ type configure_param =
     start_time : timestamp;
     end_time : timestamp;
     bonding_curve : nat;
-    next_token_id : nat;
+    initial_token_id : nat;
     reserve_address : address;
     profit_address : address;
-    token_metadata : token_metadata;
+    token_info : (string, bytes) map;
   }
 
 type auction_without_configure_entrypoints =
@@ -342,10 +342,10 @@ let configure_auction_storage(configure_param, seller, storage : configure_param
       winning_price = (None : tez option);
       num_offers = 0n;
       is_canceled = false;
-      next_token_id = configure_param.next_token_id;
+      next_token_id = configure_param.initial_token_id;
       reserve_address = configure_param.reserve_address;
       profit_address = configure_param.profit_address;
-      token_metadata = configure_param.token_metadata;
+      token_info = configure_param.token_info;
     } in
     let updated_auctions : (nat, auction) big_map = Big_map.update storage.auction_id (Some auction_data) storage.auctions in
     {storage with auctions = updated_auctions; auction_id = storage.auction_id + 1n}
@@ -548,7 +548,7 @@ let empty_heap(auction_id, num_bids_to_return, storage : auction_id * nat * stor
     (([] : operation list) , {storage with auctions = updated_auctions; bids = bid_heap; heap_sizes = new_heap_size_bm;})
   end  
 
-let rec pay_winning_bids(bid_heap, op_list, mint_param, auction_id, heap_size, winners_to_payout, winning_price, num_offers, next_token_id, token_metadata: bid_heap * operation list * mint_tokens_param * auction_id * nat * int * tez * nat * nat * token_metadata)
+let rec pay_winning_bids(bid_heap, op_list, mint_param, auction_id, heap_size, winners_to_payout, winning_price, num_offers, next_token_id, token_info : bid_heap * operation list * mint_tokens_param * auction_id * nat * int * tez * nat * nat * token_info)
     : bid_heap * operation list * mint_tokens_param * nat * nat * nat= 
   if winners_to_payout > 0
   then 
@@ -557,8 +557,11 @@ let rec pay_winning_bids(bid_heap, op_list, mint_param, auction_id, heap_size, w
            Some bid -> 
              let mint_token : mint_token_param = {
                owner = bid.bidder;
-               token_metadata = token_metadata;
-             } in (*TODO: CHANGE TOKEN METADATA IN ORDER TO HAVE CORRECT TOKEN ID*)
+               token_metadata = {
+                token_id = next_token_id;
+                token_info = token_info;
+               };
+             } in
              let mint_param = mint_token :: mint_param in
              let op_list = 
 #if OFFCHAIN_BID
@@ -570,7 +573,7 @@ let rec pay_winning_bids(bid_heap, op_list, mint_param, auction_id, heap_size, w
                       let bid_return_op : operation = transfer_tez(return_amt, bid.bidder) in (*Returns difference of bid and winning_price*)
                       bid_return_op :: op_list in
              let remaining_offers : nat = abs(num_offers - bid.quantity) in 
-             pay_winning_bids(bid_heap, op_list, mint_param, auction_id, heap_size, winners_to_payout - 1, winning_price, remaining_offers, next_token_id + 1n, token_metadata)
+             pay_winning_bids(bid_heap, op_list, mint_param, auction_id, heap_size, winners_to_payout - 1, winning_price, remaining_offers, next_token_id + 1n, token_info)
          | None -> (bid_heap, op_list, mint_param, heap_size, num_offers, next_token_id) (*This should never be reached, get_min will fail*)
   else 
        (bid_heap, op_list, mint_param, heap_size, num_offers, next_token_id)
@@ -587,7 +590,7 @@ let payout(auction_id, num_winners_to_payout, storage : auction_id * nat * stora
     let heap_size : nat = get_heap_size(auction_id, storage.heap_sizes) in
     assert_msg(heap_size > 0n, "NO_WINNERS_LEFT");
     let (bid_heap, op_list, mint_param, new_heap_size, num_offers, next_token_id) = 
-        pay_winning_bids(storage.bids, ([] : operation list), ([] : mint_tokens_param), auction_id, heap_size, num_winners_to_payout, winning_price, auction.num_offers, auction.next_token_id, auction.token_metadata) in 
+        pay_winning_bids(storage.bids, ([] : operation list), ([] : mint_tokens_param), auction_id, heap_size, num_winners_to_payout, winning_price, auction.num_offers, auction.next_token_id, auction.token_info) in 
     let new_heap_size_bm : heap_sizes = update_heap_size(auction_id, storage.heap_sizes, new_heap_size) in 
     let updated_auction_data : auction = {auction with num_offers = num_offers; next_token_id = next_token_id;} in
     let updated_auctions = Big_map.update auction_id (Some updated_auction_data) storage.auctions in

@@ -17,10 +17,9 @@
                              (pair (timestamp %start_time)
                                    (pair (timestamp %end_time)
                                          (pair (nat %bonding_curve)
-                                               (pair (nat %next_token_id)
+                                               (pair (nat %initial_token_id)
                                                      (pair (address %reserve_address)
-                                                           (pair (address %profit_address)
-                                                                 (pair %token_metadata (nat %token_id) (map %token_info string bytes))))))))))))) ;
+                                                           (pair (address %profit_address) (map %token_info string bytes)))))))))))) ;
   storage
     (pair (option %admin
              (pair (pair (address %admin) (bool %paused)) (option %pending_admin address)))
@@ -44,8 +43,7 @@
                                                                                                              (pair (bool %is_canceled)
                                                                                                                    (pair (nat %next_token_id)
                                                                                                                          (pair (address %reserve_address)
-                                                                                                                               (pair (address %profit_address)
-                                                                                                                                     (pair %token_metadata (nat %token_id) (map %token_info string bytes)))))))))))))))))))
+                                                                                                                               (pair (address %profit_address) (map %token_info string bytes))))))))))))))))))
                                   (pair (nat %bonding_curve_index)
                                         (pair (big_map %bonding_curves nat (lambda nat mutez))
                                               (pair (big_map %bonding_curve_integrals nat (lambda nat mutez))
@@ -447,8 +445,7 @@
                                                                                                   (pair nat
                                                                                                         (pair nat
                                                                                                               (pair nat
-                                                                                                                    (pair (option mutez)
-                                                                                                                          (pair bool (pair nat (pair address (pair address (pair nat (map string bytes)))))))))))))))))))
+                                                                                                                    (pair (option mutez) (pair bool (pair nat (pair address (pair address (map string bytes))))))))))))))))))
                                                (pair nat
                                                      (pair (big_map nat (lambda nat mutez))
                                                            (pair (big_map nat (lambda nat mutez))
@@ -465,8 +462,7 @@
                                                            (pair nat
                                                                  (pair nat
                                                                        (pair nat
-                                                                             (pair (option mutez)
-                                                                                   (pair bool (pair nat (pair address (pair address (pair nat (map string bytes))))))))))))))))))
+                                                                             (pair (option mutez) (pair bool (pair nat (pair address (pair address (map string bytes)))))))))))))))))
            { UNPAIR ;
              SWAP ;
              CDR ;
@@ -489,8 +485,7 @@
                                                            (pair nat
                                                                  (pair nat
                                                                        (pair nat
-                                                                             (pair (option mutez)
-                                                                                   (pair bool (pair nat (pair address (pair address (pair nat (map string bytes))))))))))))))))))
+                                                                             (pair (option mutez) (pair bool (pair nat (pair address (pair address (map string bytes)))))))))))))))))
            bool
            { DUP ;
              CDR ;
@@ -543,8 +538,7 @@
                                                                           (pair nat
                                                                                 (pair nat
                                                                                       (pair nat
-                                                                                            (pair (option mutez)
-                                                                                                  (pair bool (pair nat (pair address (pair address (pair nat (map string bytes))))))))))))))))))
+                                                                                            (pair (option mutez) (pair bool (pair nat (pair address (pair address (map string bytes)))))))))))))))))
                           bool)
                        (pair (lambda (pair (pair nat (big_map nat nat)) nat) (big_map nat nat))
                              (pair (lambda (pair nat (big_map nat nat)) nat)
@@ -572,8 +566,7 @@
                                                                                    (pair nat
                                                                                          (pair nat
                                                                                                (pair nat
-                                                                                                     (pair (option mutez)
-                                                                                                           (pair bool (pair nat (pair address (pair address (pair nat (map string bytes)))))))))))))))))))
+                                                                                                     (pair (option mutez) (pair bool (pair nat (pair address (pair address (map string bytes))))))))))))))))))
                              (pair address
                                    (pair (option (pair (pair address bool) (option address)))
                                          (pair nat
@@ -592,8 +585,7 @@
                                                                                                                     (pair nat
                                                                                                                           (pair nat
                                                                                                                                 (pair nat
-                                                                                                                                      (pair (option mutez)
-                                                                                                                                            (pair bool (pair nat (pair address (pair address (pair nat (map string bytes)))))))))))))))))))
+                                                                                                                                      (pair (option mutez) (pair bool (pair nat (pair address (pair address (map string bytes))))))))))))))))))
                                                                  (pair nat
                                                                        (pair (big_map nat (lambda nat mutez))
                                                                              (pair (big_map nat (lambda nat mutez))
@@ -618,8 +610,7 @@
                                                                                                   (pair nat
                                                                                                         (pair nat
                                                                                                               (pair nat
-                                                                                                                    (pair (option mutez)
-                                                                                                                          (pair bool (pair nat (pair address (pair address (pair nat (map string bytes)))))))))))))))))))
+                                                                                                                    (pair (option mutez) (pair bool (pair nat (pair address (pair address (map string bytes))))))))))))))))))
                                                (pair nat
                                                      (pair (big_map nat (lambda nat mutez))
                                                            (pair (big_map nat (lambda nat mutez))
@@ -2221,7 +2212,7 @@
                                                                     (list operation))
                                                               (pair (list (pair (pair nat (map string bytes)) address)) nat))
                                                         (pair (pair nat int) (pair mutez nat)))
-                                                  (pair nat (pair nat (map string bytes)))) }
+                                                  (pair nat (map string bytes))) }
                                         { DUP ;
                                           CDR ;
                                           CDR ;
@@ -2264,23 +2255,25 @@
                                           ABS ;
                                           DUP 7 ;
                                           PUSH nat 1 ;
-                                          DIG 7 ;
+                                          DUP 8 ;
                                           ADD ;
                                           PAIR ;
                                           SWAP ;
-                                          DIG 7 ;
+                                          DIG 8 ;
                                           PAIR ;
                                           PUSH int 1 ;
-                                          DIG 8 ;
+                                          DIG 9 ;
                                           SUB ;
                                           DIG 6 ;
                                           PAIR ;
                                           PAIR ;
-                                          DIG 7 ;
-                                          DIG 7 ;
+                                          DIG 8 ;
+                                          DIG 8 ;
                                           DIG 5 ;
                                           CAR ;
-                                          DIG 7 ;
+                                          DIG 8 ;
+                                          DIG 8 ;
+                                          PAIR ;
                                           PAIR ;
                                           CONS ;
                                           PAIR ;
@@ -2317,7 +2310,7 @@
                                                                 (list operation))
                                                           (pair (list (pair (pair nat (map string bytes)) address)) nat))
                                                     (pair (pair nat int) (pair mutez nat)))
-                                              (pair nat (pair nat (map string bytes)))) } } ;
+                                              (pair nat (map string bytes))) } } ;
                              DIG 4 ;
                              DROP ;
                              DIG 5 ;

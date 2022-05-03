@@ -64,11 +64,13 @@ type token_metadata =
 }
 *)
 
+type token_info = (string, bytes) map
+
 type token_metadata =
 [@layout:comb]
   {
     token_id: token_id;
-    token_info: ((string, bytes) map);
+    token_info: token_info;
   }
 
 type token_metadata_param =

@@ -33,10 +33,10 @@ export interface ConfigureMultiunitAuctionParam {
     start_time : Date;
     end_time : Date;
     bonding_curve : nat;
-    next_token_id : nat;
+    initial_token_id : nat;
     reserve_address : address;
     profit_address : address;
-    token_metadata : TokenMetadata;
+    token_info : MichelsonMap<string, bytes>;
 }
 
 describe('test NFT auction', () => {
@@ -53,8 +53,6 @@ describe('test NFT auction', () => {
   let endTime : Date;
   let tokenId : BigNumber;
   let empty_metadata_map : MichelsonMap<string, bytes>;
-  let token_info_bob : MichelsonMap< string, string>;
-  let ftContractAddress : address;
   let queryBalances : QueryBalances;
   let token0FixedSupply : nat;
   let tokensBob : MintLimitedFtParam;
@@ -112,16 +110,13 @@ describe('test NFT auction', () => {
       //bonding_curve = 0n index
       bonding_curve : new BigNumber(0),
 
-      next_token_id : tokenId,
+      initial_token_id : tokenId,
 
       reserve_address : eveAddress,
 
       profit_address : eveAddress,
 
-      token_metadata: {
-        token_id: tokenId,
-        token_info: empty_metadata_map,
-      },
+      token_info: empty_metadata_map,
     }
 
     $log.info('configuring auction');

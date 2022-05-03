@@ -1,7 +1,7 @@
 import { $log } from '@tsed/logger';
 import { TezosToolkit, MichelsonMap } from '@taquito/taquito';
 // import { BytesLiteral } from '@taquito/michel-codec';
-import { address, nat } from './type-aliases';
+import { address, bytes, nat } from './type-aliases';
 
 export interface Fa2TransferDestination {
     to_: address;
@@ -26,7 +26,7 @@ export interface BalanceOfResponse {
 
 export interface TokenMetadata {
     token_id: nat;
-    token_info: MichelsonMap<string, string>;
+    token_info: MichelsonMap<string, bytes>;
 }
 
 export async function transfer(
