@@ -14,8 +14,8 @@ import { MichelsonMap } from '@taquito/taquito';
 import { addOperator, TokenMetadata } from '../src/fa2-interface';
 import { Fa2_token, Tokens, sleep } from '../src/auction-interface';
 import { queryBalancesWithLambdaView, hasTokens, QueryBalances, getBalances } from './fa2-balance-inspector';
-import { ThreeXBondingCurveCode } from '../bin-ts/three_x_bonding_curve.code'
-import { ThreeXBondingCurveIntegralCode } from '../bin-ts/three_x_bonding_curve_integral.code'
+import { OneThirdXBondingCurveCode } from '../bin-ts/one_third_x_bonding_curve.code'
+import { OneThirdXBondingCurveIntegralCode } from '../bin-ts/one_third_x_bonding_curve_integral.code'
 
 jest.setTimeout(360000); // 6 minutes
 
@@ -77,8 +77,8 @@ describe('test NFT auction', () => {
     nftAuctionEve = await tezos.eve.contract.at(nftAuction.address);
     
     $log.info('Adding sample bonding curve');
-    const bonding_curve = ThreeXBondingCurveCode.code;
-    const bonding_curve_integral = ThreeXBondingCurveIntegralCode.code;
+    const bonding_curve = OneThirdXBondingCurveCode.code;
+    const bonding_curve_integral = OneThirdXBondingCurveIntegralCode.code;
     $log.info(bonding_curve);
     $log.info(bonding_curve_integral);
     const opAddBondingCurve = await nftAuction.methods.add_bonding_curve(bonding_curve, bonding_curve_integral).send();
@@ -177,26 +177,40 @@ describe('test NFT auction', () => {
     $log.info(opBid3.operationResults[0].metadata.operation_result);
     await opBid3.confirmation();
     
-    const returnParam = [auction_id, new BigNumber(1)];
+    //Return up to number of bids, but we expect to only return 1 in fact
+    const returnParam = [auction_id, new BigNumber(3)];
 
     $log.info('returning old bids ....');
     const opReturn = await nftAuctionBob.methodsObject.return_old_bids(returnParam).send();
     await opReturn.confirmation();
+    const internalReturnOps = opReturn.operationResults[0].metadata.internal_operation_results;
+    if (internalReturnOps != undefined) {
+      for (var op of internalReturnOps) {
+        $log.info(op);
+      }
+    }
     $log.info(opReturn.results)
     
     await sleep(90000); //90 seconds
-
+    
+    $log.info('Resolving auction .....')
     const opResolve = await nftAuctionBob.methods.resolve(auction_id).send();
     await opResolve.confirmation();
+    const internalResolveOps = opResolve.operationResults[0].metadata.internal_operation_results;
+    if (internalResolveOps != undefined) {
+      for (var op of internalResolveOps) {
+        $log.info(op);
+      }
+    }
     
     $log.info('paying out winners....');
     
-    const payoutParam = [auction_id, new BigNumber(3)];
+    const payoutParam = [auction_id, new BigNumber(4)];
     const payWinners = await nftAuctionBob.methodsObject.payout_winners(payoutParam).send();
     await payWinners.confirmation();
-    const internalOps = payWinners.operationResults[0].metadata.internal_operation_results;
-    if (internalOps != undefined) {
-      for (var op of internalOps) {
+    const internalPayOps = payWinners.operationResults[0].metadata.internal_operation_results;
+    if (internalPayOps != undefined) {
+      for (var op of internalPayOps) {
         $log.info(op);
       }
     }

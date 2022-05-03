@@ -496,14 +496,14 @@ const compileSources: CompileSourceEntry[] = [
   },
   {
     srcFile: 'multiunit_auction/bonding_curves/sample_bonding_curve.mligo',
-    mainFn: 'three_x',
-    dstFile: 'three_x_bonding_curve.tz',
+    mainFn: 'one_third_x',
+    dstFile: 'one_third_x_bonding_curve.tz',
     contract: false,
   },
   {
     srcFile: 'multiunit_auction/bonding_curves/sample_bonding_curve.mligo',
-    mainFn: 'three_x_integral',
-    dstFile: 'three_x_bonding_curve_integral.tz',
+    mainFn: 'one_third_x_integral',
+    dstFile: 'one_third_x_bonding_curve_integral.tz',
     contract: false,
   },
 ];

@@ -1,5 +1,6 @@
-let three_x (x : nat) : tez =
-  300_000mutez * x
+(*Means that if at least 3 bids win, the minimum bid value must be 1.*)
+let one_third_x (x : nat) : tez =
+  0.333333tez * x
 
-let three_x_integral (x : nat) : tez = 
-  150_000mutez * (x * x) 
+let one_third_x_integral (x : nat) : tez = 
+  0.166666tez * (x * x)
