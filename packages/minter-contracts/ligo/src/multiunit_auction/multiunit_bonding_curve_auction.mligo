@@ -48,6 +48,7 @@ type auction =
     fa2_address : address;
     end_time : timestamp;
     bonding_curve : nat;
+    highest_offer_price : tez;
     bid_index : nat;
     num_offers : nat; 
     winning_price : tez option;
@@ -341,6 +342,7 @@ let configure_auction_storage(configure_param, seller, storage : configure_param
       bid_index = 0n;
       winning_price = (None : tez option);
       num_offers = 0n;
+      highest_offer_price = 0tez;
       is_canceled = false;
       next_token_id = configure_param.initial_token_id;
       reserve_address = configure_param.reserve_address;
@@ -374,7 +376,8 @@ let resolve_auction(auction_id, storage : nat * storage) : return = begin
   assert_msg(min_price_valid_at_q <= min_price, "NOT_ALL_INVALID_BIDS_AND_OFFERS_RETURNED");
   let winning_price : tez = min_price_valid_at_q in 
   let bonding_curve_integral : bonding_curve = get_bonding_curve(auction.bonding_curve, storage.bonding_curve_integrals) in
-  let reserve_amount : tez = (bonding_curve_integral auction.num_offers) - (bonding_curve_integral 0n) in (*Function must be increasing*)
+  let integral_value : tez = (bonding_curve_integral auction.num_offers) - (bonding_curve_integral 0n) in (*Function must be increasing*)
+  let reserve_amount : tez = integral_value + auction.highest_offer_price in 
   let auction_profit : tez = (winning_price * auction.num_offers) - reserve_amount in 
   let transfer_reserve_op : operation = transfer_tez(reserve_amount, auction.reserve_address) in 
   let transfer_profit_op : operation = transfer_tez(auction_profit, auction.profit_address) in 
@@ -444,9 +447,16 @@ let place_bid(  bid_param
     let new_heap_size : nat = current_heap_size + 1n in 
     let new_heap_size_bm : heap_sizes = update_heap_size(bid_param.auction_id, storage.heap_sizes, new_heap_size) in 
 
+    let new_highest_offer_price : tez = 
+      if bid_param.price <= auction.highest_offer_price 
+      then auction.highest_offer_price
+      else bid_param.price 
+      in  
+
     let updated_auction_data : auction = {auction with last_bid_time = Tezos.now; end_time = new_end_time; 
                                 bid_index = auction.bid_index + 1n; 
-                                num_offers = updated_num_offers;} in
+                                num_offers = updated_num_offers;
+                                highest_offer_price = new_highest_offer_price } in
     let updated_auctions = Big_map.update bid_param.auction_id (Some updated_auction_data) storage.auctions in
     (([] : operation list) , {storage with auctions = updated_auctions; bids = bid_heap; heap_sizes = new_heap_size_bm;})
   end
@@ -603,6 +613,15 @@ let payout(auction_id, num_winners_to_payout, storage : auction_id * nat * stora
     let updated_auctions = Big_map.update auction_id (Some updated_auction_data) storage.auctions in
     let mint_tx : operation = mint_tokens(auction.fa2_address, mint_param) in 
     (mint_tx :: op_list, {storage with auctions = updated_auctions; bids = bid_heap; heap_sizes = new_heap_size_bm;})
+  end
+
+[@view]
+let get_auction_results(auction_id, storage : nat * storage) : bonding_curve * nat = begin
+    let auction : auction = get_auction_data(auction_id, storage) in 
+    let bonding_curve : bonding_curve =  get_bonding_curve(auction.bonding_curve, storage.bonding_curves) in 
+    match auction.winning_price with 
+        Some wp ->  (bonding_curve, auction.num_offers) (*Auction has ended*)
+      | None -> (failwith "AUCTION_NOT_ENDED" : bonding_curve * nat)  
   end
 
 let multiunit_bonding_curve_auction_no_configure (p,storage : auction_without_configure_entrypoints * storage) : return =
