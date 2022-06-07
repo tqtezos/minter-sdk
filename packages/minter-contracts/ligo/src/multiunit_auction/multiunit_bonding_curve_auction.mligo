@@ -48,7 +48,6 @@ type auction =
     fa2_address : address;
     end_time : timestamp;
     bonding_curve : nat;
-    highest_offer_price : tez;
     bid_index : nat;
     num_offers : nat; 
     winning_price : tez option;
@@ -56,6 +55,7 @@ type auction =
     next_token_id : nat;
     reserve_address : address;
     profit_address : address;
+    highest_offer_price : tez;
     token_info : (string, bytes) map;
   }
 
