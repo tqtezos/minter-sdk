@@ -107,9 +107,6 @@ customGeneric "PermitMultiunitBidParam" ligoCombLayout
 deriving anyclass instance IsoValue PermitMultiunitBidParam
 deriving anyclass instance HasAnnotation PermitMultiunitBidParam
 
-newtype BondingCurve = BondingCurve (Lambda Natural Mutez)
-  deriving newtype (IsoValue, HasAnnotation)
-
 data AuctionStorage = AuctionStorage
   { pausableAdmin :: AdminStorage
   , auctionId :: AuctionId
@@ -117,8 +114,8 @@ data AuctionStorage = AuctionStorage
   , maxConfigToStartTime :: Natural
   , auctions :: BigMap AuctionId Auction
   , bondingCurveIndex :: Natural
-  , bondingCurves :: BigMap Natural BondingCurve
-  , bondingCurveIntegrals :: BigMap Natural BondingCurve
+  , bondingCurves :: BigMap Natural ('[Natural] :-> '[Mutez])
+  , bondingCurveIntegrals :: BigMap Natural ('[Natural] :-> '[Mutez])
   , bids :: BigMap BidHeapKey BidData
   , heapSizes :: BigMap AuctionId Natural
   }
@@ -151,7 +148,7 @@ data AuctionWithoutConfigureEntrypoints
   | Return_old_bids (AuctionId, Natural)
   | Return_old_offers (AuctionId, Natural)
   | Payout_winners (AuctionId, Natural)
-  | Add_bonding_curve (BondingCurve, BondingCurve)
+  | Add_bonding_curve (('[Natural] :-> '[Mutez]), ('[Natural] :-> '[Mutez]))
 
 customGeneric "AuctionWithoutConfigureEntrypoints" ligoLayout
 deriving anyclass instance IsoValue AuctionWithoutConfigureEntrypoints
