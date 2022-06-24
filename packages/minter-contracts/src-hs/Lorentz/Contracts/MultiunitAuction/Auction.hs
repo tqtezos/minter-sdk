@@ -89,9 +89,9 @@ deriving anyclass instance HasAnnotation BidData
 data BidParam = BidParam 
  {  
     auctionId :: Natural
-  , quantity :: Natural
-  , price :: Mutez
- }
+  , quantityParam :: Natural
+  , priceParam :: Mutez
+ } deriving stock (Eq, Ord, Show)
 
 customGeneric "BidParam" ligoCombLayout
 deriving anyclass instance IsoValue BidParam
