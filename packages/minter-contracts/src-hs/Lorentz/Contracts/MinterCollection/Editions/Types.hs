@@ -1,5 +1,5 @@
 -- | Lorentz bindings for the editions contract.
-module Lorentz.Contracts.MinterCollection.Editions
+module Lorentz.Contracts.MinterCollection.Editions.Types
   ( EditionInfo
   , EditionId(..)
   , EditionMetadata(..)
@@ -7,16 +7,12 @@ module Lorentz.Contracts.MinterCollection.Editions
   , MintEditionParam(..)
   , DistributeEditionParam(..)
   , Entrypoints(..)
-  , editionsContract
   ) where
 
 import Fmt (Buildable(..), genericF)
 import Lorentz
-import Michelson.Test.Import (embedContractM)
-import qualified Michelson.Typed as T
 
 import qualified Lorentz.Contracts.MinterCollection.Nft.Asset as NftAsset
-import Lorentz.Contracts.MinterSdk (inBinFolder)
 
 type EditionInfo = Map MText ByteString
 
@@ -77,10 +73,3 @@ deriving anyclass instance HasAnnotation Entrypoints
 
 instance ParameterHasEntrypoints Entrypoints where
   type ParameterEntrypointsDerivation Entrypoints = EpdRecursive
-
-----------------------------------------------------------------------------
--- Contract
-----------------------------------------------------------------------------
-
-editionsContract :: T.Contract (ToT Entrypoints) (ToT Storage)
-editionsContract = $$(embedContractM (inBinFolder "fa2_multi_nft_token_editions.tz"))

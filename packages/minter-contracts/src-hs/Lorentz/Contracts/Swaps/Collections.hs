@@ -3,13 +3,10 @@ module Lorentz.Contracts.Swaps.Collections where
 
 import Lorentz
 
-import Lorentz.Contracts.MinterSdk
-import Michelson.Test.Import (embedContractM)
-import qualified Michelson.Typed as T
-
-import Lorentz.Contracts.Spec.FA2Interface (TokenId(..))
 import Lorentz.Contracts.NonPausableSimpleAdmin
-import Lorentz.Contracts.Swaps.Basic hiding (mkSingleOffer, mkNOffers, SwapOffer, SwapOffers, SwapInfo)
+import Lorentz.Contracts.Spec.FA2Interface (TokenId(..))
+import Lorentz.Contracts.Swaps.Basic hiding
+  (SwapInfo, SwapOffer, SwapOffers, mkNOffers, mkSingleOffer)
 import Tezos.Address (unsafeParseAddress)
 -- Types
 ----------------------------------------------------------------------------
@@ -45,13 +42,13 @@ customGeneric "SwapInfo" ligoCombLayout
 deriving anyclass instance IsoValue SwapInfo
 deriving anyclass instance HasAnnotation SwapInfo
 
-incrementCollectionId :: CollectionId -> CollectionId 
+incrementCollectionId :: CollectionId -> CollectionId
 incrementCollectionId (CollectionId n) = CollectionId (n + 1)
 
 initCollectionId :: CollectionId
 initCollectionId = CollectionId 1
 
-getCollectionId :: CollectionId -> Natural 
+getCollectionId :: CollectionId -> Natural
 getCollectionId (CollectionId n) = n
 
 data Permit = Permit
@@ -63,10 +60,10 @@ customGeneric "Permit" ligoCombLayout
 deriving anyclass instance IsoValue Permit
 deriving anyclass instance HasAnnotation Permit
 
-nullAddress :: Address 
+nullAddress :: Address
 nullAddress = unsafeParseAddress "tz1Ke2h7sDdakHJQh8WX4Z372du1KChsksyU"
 
-exampleFA2Address :: Address 
+exampleFA2Address :: Address
 exampleFA2Address = unsafeParseAddress "KT1T7ShxhtSRuhvhHeug6Sjc7W8irLmswEt7"
 
 data CollectionsStorage = CollectionsStorage
@@ -89,13 +86,13 @@ initCollectionsStorage admin fa2Address = CollectionsStorage
   , nextCollectionId = initCollectionId
   , swaps = mempty
   , burnAddress = nullAddress
-  , collections = mempty 
+  , collections = mempty
   , fa2Address = fa2Address
-  , admin = initAdminStorage admin 
+  , admin = initAdminStorage admin
   }
 
-data AcceptParam = AcceptParam 
-  { swapId :: SwapId , 
+data AcceptParam = AcceptParam
+  { swapId :: SwapId ,
     tokensSent :: Set (CollectionId, TokenId)
   }
 
@@ -107,7 +104,7 @@ data CollectionsEntrypoints
   = Start SwapOffers
   | Cancel SwapId
   | Accept AcceptParam
-  | Add_collection (Set TokenId) 
+  | Add_collection (Set TokenId)
   | Admin AdminEntrypoints
 
 customGeneric "CollectionsEntrypoints" ligoLayout
@@ -137,20 +134,6 @@ deriving anyclass instance HasAnnotation OffchainCollectionsEntrypoints
 instance ParameterHasEntrypoints OffchainCollectionsEntrypoints where
   type ParameterEntrypointsDerivation OffchainCollectionsEntrypoints = EpdDelegate
 
--- Contract
-----------------------------------------------------------------------------
-
-collectionsContract
-  :: T.Contract (ToT CollectionsEntrypoints) (ToT CollectionsStorage)
-collectionsContract =
-  $$(embedContractM (inBinFolder "fa2_swap_with_collections_and_burn.tz"))
-
-offchainCollectionsContract
-  :: T.Contract (ToT OffchainCollectionsEntrypoints) (ToT CollectionsStorage)
-offchainCollectionsContract =
-  $$(embedContractM (inBinFolder "fa2_swap_with_collections_and_burn_offchain.tz"))
-
-
 -- Errors
 ----------------------------------------------------------------------------
 errSwapNotExist :: MText
@@ -172,7 +155,7 @@ errSwapRequestedFA2Invalid = [mt|SWAP_REQUESTED_FA2_INVALID|]
 errTokensSentInvalid :: MText
 errTokensSentInvalid = [mt|TOKENS_SENT_INVALID|]
 
-errSwapRequestedFA2BalanceInvalid :: Natural -> Natural -> (MText, Natural, Natural) 
+errSwapRequestedFA2BalanceInvalid :: Natural -> Natural -> (MText, Natural, Natural)
 errSwapRequestedFA2BalanceInvalid requested actual = ([mt|FA2_INSUFFICIENT_BALANCE|], requested, actual)
 
 errNotAdmin :: MText
@@ -180,13 +163,13 @@ errNotAdmin = [mt|NOT_AN_ADMIN|]
 
 -- Helpers
 ----------------------------------------------------------------------------
- 
-mkNOffers :: Natural -> SwapOffer -> SwapOffers 
-mkNOffers n s = SwapOffers 
+
+mkNOffers :: Natural -> SwapOffer -> SwapOffers
+mkNOffers n s = SwapOffers
   {
     swapOffer = s
   , remainingOffers = n
   }
 
-mkSingleOffer :: SwapOffer -> SwapOffers 
+mkSingleOffer :: SwapOffer -> SwapOffers
 mkSingleOffer = mkNOffers 1

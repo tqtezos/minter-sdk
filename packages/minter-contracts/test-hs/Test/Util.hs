@@ -18,7 +18,6 @@ module Test.Util
 
   -- * Property-based tests
   , clevelandProp
-  , genMutez'
   , iterateM
 
     -- Re-exports
@@ -28,6 +27,7 @@ module Test.Util
 
 import qualified Data.Foldable as F
 import qualified Data.Map as Map
+import Data.Maybe
 import Data.Sized (Sized)
 import qualified Data.Sized as Sized
 import Data.Type.Natural.Lemma.Order (type (<))
@@ -35,13 +35,10 @@ import Data.Type.Ordinal (ordToNatural)
 import Fmt (build, indentF, unlinesF, (+|), (|+))
 import GHC.TypeLits (Symbol)
 import GHC.TypeNats (Nat, type (+))
-import Hedgehog (Gen, MonadTest, Range)
-import qualified Hedgehog.Gen as Gen
-import Data.Maybe
+import Hedgehog (Gen, MonadTest)
 
 import Lorentz.Test.Consumer
 import Lorentz.Value
-import Tezos.Core (unMutez, unsafeMkMutez)
 
 import qualified Indigo.Contracts.FA2Sample as FA2
 import Lorentz.Contracts.FA2
@@ -135,8 +132,8 @@ originateFA2
   :: MonadNettest caps base m
   => AliasHint
   -> FA2Setup addrsNum tokensNum
-  -> [TAddress contractParam]
-  -> m (TAddress FA2.FA2SampleParameter)
+  -> [ContractHandler contractParam contractStorage]
+  -> m (ContractHandler FA2.FA2SampleParameter FA2.Storage)
 originateFA2 name FA2Setup{..} contracts = do
   fa2 <- originateSimple name
     FA2.Storage
@@ -163,14 +160,14 @@ originateFA2WithGlobalOperators
   -> FA2Setup addrsNum tokensNum
   -> Set Address
   -> Address
-  -> [TAddress contractParam]
-  -> m (TAddress FtAsset.LimitedWithGlobalOperatorsEntrypoints)
-originateFA2WithGlobalOperators name FA2Setup{..} globalOperators admin contracts = do
+  -> [ContractHandler contractParam contractStorage]
+  -> m (ContractHandler FtAsset.LimitedWithGlobalOperatorsEntrypoints FtAsset.LimitedStorageWithGlobalOperators)
+originateFA2WithGlobalOperators name FA2Setup{..} globalOperators admin operatorContracts = do
   fa2 <- originateTypedSimple name
     FtAsset.LimitedStorageWithGlobalOperators
     {
       assets = FtToken.LimitedStorageWithGlobalOperators
-        { 
+        {
         ledger = BigMap $ Map.fromList do
           -- put money on several tokenIds for each given address
           addr <- F.toList sAddresses
@@ -178,17 +175,17 @@ originateFA2WithGlobalOperators name FA2Setup{..} globalOperators admin contract
           pure ((addr, tokenId), 1000)
         , operators = BigMap $ Map.fromList do
           owner <- F.toList sAddresses
-          operator <- contracts
-          tokenId <- F.toList sTokens 
+          operator <- operatorContracts
+          tokenId <- F.toList sTokens
           pure ((OperatorKey owner (toAddress operator) tokenId), ())
-        , tokenMetadata = BigMap $ Map.fromList do 
+        , tokenMetadata = BigMap $ Map.fromList do
           tokenId <- F.toList sTokens
           pure (tokenId, (TokenMetadata tokenId mempty))
         , globalOperators = globalOperators
-        , nextTokenId = 0 
+        , nextTokenId = 0
         , totalTokenSupply = mempty
-        }, 
-      metadata = mempty, 
+        },
+      metadata = mempty,
       admin = fromJust $ PausableAdminOption.initAdminStorage admin
     }
     (FtAsset.limitedWithGlobalOperatorsContract)
@@ -198,7 +195,7 @@ originateFA2WithGlobalOperators name FA2Setup{..} globalOperators admin contract
 -- address/token_ids change by the specified delta values.
 assertingBalanceDeltas
   :: (MonadNettest caps base m, HasCallStack)
-  => TAddress FA2.FA2SampleParameter
+  => ContractHandler FA2.FA2SampleParameter storage
   -> [((Address, FA2.TokenId), Integer)]
   -> m a
   -> m a
@@ -209,8 +206,7 @@ assertingBalanceDeltas fa2 indicedDeltas action = do
   res <- action
   pullBalance consumer
 
-  balancesRes <- map (map FA2.briBalance) . fromVal <$>
-    getStorage consumer
+  balancesRes <- map (map FA2.briBalance) <$> getStorage consumer
   (balancesAfter, balancesBefore) <- case balancesRes of
     [balancesAfter, balancesBefore] ->
       return (balancesAfter, balancesBefore)
@@ -227,7 +223,7 @@ assertingBalanceDeltas fa2 indicedDeltas action = do
     where
       pullBalance
         :: MonadNettest base caps m
-        => TAddress [FA2.BalanceResponseItem] -> m ()
+        => ContractHandler [FA2.BalanceResponseItem] storage -> m ()
       pullBalance consumer = do
         let tokenRefs = map fst indicedDeltas
         call fa2 (Call @"Balance_of") $
@@ -239,7 +235,7 @@ assertingBalanceDeltas fa2 indicedDeltas action = do
 -- address/token_ids change by the specified delta values.
 assertingBalanceDeltas'
   :: (MonadNettest caps base m, HasCallStack)
-  => TAddress FtAsset.LimitedWithGlobalOperatorsEntrypoints
+  => ContractHandler FtAsset.LimitedWithGlobalOperatorsEntrypoints st
   -> [((Address, FA2.TokenId), Integer)]
   -> m a
   -> m a
@@ -250,7 +246,7 @@ assertingBalanceDeltas' fa2 indicedDeltas action = do
   res <- action
   pullBalance consumer
 
-  balancesRes <- map (map FA2.briBalance) . fromVal <$>
+  balancesRes <- map (map FA2.briBalance) <$>
     getStorage consumer
   (balancesAfter, balancesBefore) <- case balancesRes of
     [balancesAfter, balancesBefore] ->
@@ -268,7 +264,7 @@ assertingBalanceDeltas' fa2 indicedDeltas action = do
     where
       pullBalance
         :: MonadNettest base caps m
-        => TAddress [FA2.BalanceResponseItem] -> m ()
+        => ContractHandler [FA2.BalanceResponseItem] st -> m ()
       pullBalance consumer = do
         let tokenRefs = map fst indicedDeltas
         call fa2 (Call @"Balance_of") $
@@ -279,11 +275,11 @@ assertingBalanceDeltas' fa2 indicedDeltas action = do
 -- | Retrieve the FA2 balance for a given account.
 balanceOf
   :: (HasCallStack, MonadNettest caps base m, ToAddress addr)
-  => TAddress FA2.FA2SampleParameter -> FA2.TokenId -> addr -> m Natural
+  => ContractHandler FA2.FA2SampleParameter storage -> FA2.TokenId -> addr -> m Natural
 balanceOf fa2 tokenId account = do
   consumer <- originateSimple "balance-response-consumer" [] (contractConsumer @[FA2.BalanceResponseItem])
   call fa2 (Call @"Balance_of") (FA2.mkFA2View [FA2.BalanceRequestItem (toAddress account) tokenId] consumer)
-  consumerStorage <- fromVal @[[FA2.BalanceResponseItem]] <$> getStorage consumer
+  consumerStorage <- getStorage consumer
 
   case consumerStorage of
     [[balanceResponseItem]] -> pure $ FA2.briBalance balanceResponseItem
@@ -294,14 +290,14 @@ balanceOf fa2 tokenId account = do
           ]
 
 -- | Construct allowlist for passing to allowlist overriding entrypoint.
-mkAllowlistSimpleParam :: [TAddress p] -> BigMap Address ()
+mkAllowlistSimpleParam :: [ContractHandler p s] -> BigMap Address ()
 mkAllowlistSimpleParam = mconcat . map (\a -> one (toAddress a, ()))
 
 -- | Originate the a contract and admin for it.
 originateWithAdmin
   :: MonadNettest caps base m
-  => (Address -> m (TAddress param))
-  -> m (TAddress param, Address)
+  => (Address -> m (ContractHandler param storage))
+  -> m (ContractHandler param storage, Address)
 originateWithAdmin originateFn = do
   admin <- newAddress "admin"
   swaps <- originateFn admin
@@ -310,21 +306,6 @@ originateWithAdmin originateFn = do
 -- | Create a hedgehog property-based test from a cleveland scenario.
 clevelandProp :: (MonadIO m, MonadTest m) => EmulatedT PureM () -> m ()
 clevelandProp = nettestTestProp . runEmulated . uncapsNettestEmulated
-
--- Note: these instances are needed in order to create mutez @Range@s.
--- TODO: We can delete them the next time we update morley; see: https://gitlab.com/morley-framework/morley/-/merge_requests/847
-instance Real Mutez where
-  toRational = toRational . unMutez
-
-instance Integral Mutez where
-  toInteger = toInteger . unMutez
-  quotRem x y = bimap unsafeMkMutez unsafeMkMutez $ quotRem (unMutez x) (unMutez y)
-  divMod x y = bimap unsafeMkMutez unsafeMkMutez $ quotRem (unMutez x) (unMutez y)
-
--- | Generates an arbitrary `Mutez` value constrained to the given range.
--- TODO: We can delete this the next time we update morley; see: https://gitlab.com/morley-framework/morley/-/merge_requests/847
-genMutez' :: Range Mutez -> Gen Mutez
-genMutez' range = unsafeMkMutez <$> Gen.word64 (unMutez <$> range)
 
 -- | Given a generator of values of type @a@ and an initial value,
 -- repeatedly uses the generator to create a list of the given length,

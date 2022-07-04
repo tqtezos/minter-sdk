@@ -3,10 +3,7 @@ module Lorentz.Contracts.Swaps.Basic where
 
 import Lorentz
 
-import Lorentz.Contracts.MinterSdk
 import Lorentz.Contracts.Spec.FA2Interface
-import Michelson.Test.Import (embedContractM)
-import qualified Michelson.Typed as T
 
 -- Types
 ----------------------------------------------------------------------------
@@ -81,13 +78,13 @@ customGeneric "SwapStorage" ligoLayout
 deriving anyclass instance IsoValue SwapStorage
 deriving anyclass instance HasAnnotation SwapStorage
 
-incrementSwapId :: SwapId -> SwapId 
+incrementSwapId :: SwapId -> SwapId
 incrementSwapId (SwapId n) = SwapId (n + 1)
 
-initSwapId :: SwapId 
+initSwapId :: SwapId
 initSwapId = SwapId 1
 
-getSwapId :: SwapId -> Natural 
+getSwapId :: SwapId -> Natural
 getSwapId (SwapId n) = n
 
 initSwapStorage :: SwapStorage
@@ -95,12 +92,6 @@ initSwapStorage = SwapStorage
   { nextSwapId = initSwapId
   , swaps = mempty
   }
-
--- Contract
-----------------------------------------------------------------------------
-
-swapsContract :: T.Contract (ToT SwapEntrypoints) (ToT SwapStorage)
-swapsContract = $$(embedContractM (inBinFolder "fa2_swap.tz"))
 
 -- Errors
 ----------------------------------------------------------------------------
@@ -124,18 +115,18 @@ errSwapOfferedFA2Invalid = [mt|SWAP_OFFERED_FA2_INVALID|]
 errSwapRequestedFA2Invalid :: MText
 errSwapRequestedFA2Invalid = [mt|SWAP_REQUESTED_FA2_INVALID|]
 
-errSwapRequestedFA2BalanceInvalid :: Natural -> Natural -> (MText, Natural, Natural) 
+errSwapRequestedFA2BalanceInvalid :: Natural -> Natural -> (MText, Natural, Natural)
 errSwapRequestedFA2BalanceInvalid requested actual = ([mt|FA2_INSUFFICIENT_BALANCE|], requested, actual)
 
 -- Helpers
 ----------------------------------------------------------------------------
- 
-mkNOffers :: Natural -> SwapOffer -> SwapOffers 
-mkNOffers n s = SwapOffers 
+
+mkNOffers :: Natural -> SwapOffer -> SwapOffers
+mkNOffers n s = SwapOffers
   {
     swapOffer = s
   , remainingOffers = n
   }
 
-mkSingleOffer :: SwapOffer -> SwapOffers 
+mkSingleOffer :: SwapOffer -> SwapOffers
 mkSingleOffer = mkNOffers 1

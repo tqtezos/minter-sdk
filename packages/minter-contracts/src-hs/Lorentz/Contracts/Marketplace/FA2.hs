@@ -4,14 +4,8 @@ module Lorentz.Contracts.Marketplace.FA2 where
 import Fmt (Buildable(..), genericF)
 import Lorentz
 
-import qualified Lorentz.Contracts.AllowlistSimple as AllowlistSimple
-import qualified Lorentz.Contracts.AllowlistToken as AllowlistToken
-import Lorentz.Contracts.MinterSdk
-import qualified Lorentz.Contracts.NoAllowlist as NoAllowlist
 import Lorentz.Contracts.PausableAdminOption
 import Lorentz.Contracts.Spec.FA2Interface
-import Michelson.Test.Import (embedContractM)
-import qualified Michelson.Typed as T
 
 -- Types
 ----------------------------------------------------------------------------
@@ -118,30 +112,3 @@ instance
   ) =>
     ParameterHasEntrypoints (MarketplaceEntrypoints al) where
   type ParameterEntrypointsDerivation (MarketplaceEntrypoints al) = EpdDelegate
-
--- Contract
-----------------------------------------------------------------------------
-
-marketplaceContract
-  :: T.Contract
-      (ToT (MarketplaceEntrypoints NoAllowlist.Entrypoints))
-      (ToT (MarketplaceStorage NoAllowlist.Allowlist))
-marketplaceContract =
-  $$(embedContractM (inBinFolder "fixed_price_sale_market.tz"))
-
-marketplaceAllowlistedContract
-  :: T.Contract
-      (ToT (MarketplaceEntrypoints AllowlistSimple.Entrypoints))
-      (ToT (MarketplaceStorage AllowlistSimple.Allowlist))
-marketplaceAllowlistedContract =
-  $$(embedContractM (inBinFolder "fixed_price_sale_market_allowlisted.tz"))
-
-marketplaceAllowlistedTokenContract
-  :: T.Contract
-      (ToT (MarketplaceEntrypoints AllowlistToken.Entrypoints))
-      (ToT (MarketplaceStorage AllowlistToken.Allowlist))
-marketplaceAllowlistedTokenContract =
-  $$(embedContractM (inBinFolder "fixed_price_sale_market_allowlisted_token.tz"))
-
--- Errors
-----------------------------------------------------------------------------

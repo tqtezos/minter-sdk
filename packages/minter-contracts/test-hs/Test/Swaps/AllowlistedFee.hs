@@ -9,8 +9,8 @@ import Lorentz.Value
 import Morley.Nettest
 import Morley.Nettest.Tasty (nettestScenarioCaps)
 
-import Lorentz.Contracts.Swaps.Basic hiding (SwapOffer, mkSingleOffer, mkNOffers)
 import Lorentz.Contracts.Swaps.AllowlistedFee
+import Lorentz.Contracts.Swaps.Basic hiding (SwapOffer, mkNOffers, mkSingleOffer)
 import Test.Swaps.Util
 import Test.Util
 
@@ -54,7 +54,7 @@ test_ContractSendsFee = testGroup "Tests that contract sends fee"
 
       withSender admin $
         call swap (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
-    
+
       withSender admin $
           call swap (Call @"Start") $ mkSingleOffer SwapOffer
             { assetsOffered = [mkFA2Assets fa2 [(tokenId, 10)]]
@@ -67,12 +67,12 @@ test_ContractSendsFee = testGroup "Tests that contract sends fee"
             , tdEntrypoint = ep "accept"
             , tdParameter = initSwapId
             }
-      
+
       sellerBalanceAfter <- getBalance admin
       buyerBalanceAfter <- getBalance alice
-    
+
       sellerBalanceAfter @== sellerBalanceBefore + amountRequested
-      buyerBalanceAfter @== buyerBalanceBefore - amountRequested 
+      buyerBalanceAfter @== buyerBalanceBefore - amountRequested
   ]
 
 test_BuyerMustSendFee :: TestTree
@@ -87,7 +87,7 @@ test_BuyerMustSendFee = testGroup "Tests that buyer must send fee"
 
       withSender admin $
         call swap (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
-    
+
       withSender admin $
           call swap (Call @"Start") $ mkSingleOffer SwapOffer
             { assetsOffered = [mkFA2Assets fa2 [(tokenId, 10)]]
@@ -99,6 +99,6 @@ test_BuyerMustSendFee = testGroup "Tests that buyer must send fee"
             , tdAmount = toMutez 0
             , tdEntrypoint = ep "accept"
             , tdParameter = initSwapId
-            } 
-          & expectError swap errNoXtzTransferred
+            }
+          & expectError errNoXtzTransferred
   ]

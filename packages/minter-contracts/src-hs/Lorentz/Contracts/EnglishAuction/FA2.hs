@@ -4,15 +4,9 @@ module Lorentz.Contracts.EnglishAuction.FA2 where
 import Lorentz
 
 import Fmt (Buildable(..), genericF)
-import qualified Lorentz.Contracts.AllowlistSimple as AllowlistSimple
-import qualified Lorentz.Contracts.AllowlistToken as AllowlistToken
 import Lorentz.Contracts.EnglishAuction.Common
-import Lorentz.Contracts.MinterSdk
-import qualified Lorentz.Contracts.NoAllowlist as NoAllowlist
 import Lorentz.Contracts.PausableAdminOption
 import Lorentz.Contracts.Spec.FA2Interface
-import Michelson.Test.Import (embedContractM)
-import qualified Michelson.Typed as T
 
 -- Types
 ----------------------------------------------------------------------------
@@ -125,30 +119,6 @@ instance
   ) =>
     ParameterHasEntrypoints (AuctionEntrypoints al) where
   type ParameterEntrypointsDerivation (AuctionEntrypoints al) = EpdDelegate
-
--- Contract
-----------------------------------------------------------------------------
-
-englishAuctionFA2Contract
-  :: T.Contract
-      (ToT (AuctionEntrypoints NoAllowlist.Entrypoints))
-      (ToT (AuctionStorage NoAllowlist.Allowlist))
-englishAuctionFA2Contract =
-  $$(embedContractM (inBinFolder "english_auction_fa2.tz"))
-
-auctionFA2AllowlistedContract
-  :: T.Contract
-      (ToT (AuctionEntrypoints AllowlistSimple.Entrypoints))
-      (ToT (AuctionStorage AllowlistSimple.Allowlist))
-auctionFA2AllowlistedContract =
-  $$(embedContractM (inBinFolder "english_auction_fa2_allowlisted.tz"))
-
-auctionFA2AllowlistedTokenContract
-  :: T.Contract
-      (ToT (AuctionEntrypoints AllowlistToken.Entrypoints))
-      (ToT (AuctionStorage AllowlistToken.Allowlist))
-auctionFA2AllowlistedTokenContract =
-  $$(embedContractM (inBinFolder "english_auction_fa2_allowlisted_token.tz"))
 
 -- Errors
 ----------------------------------------------------------------------------
