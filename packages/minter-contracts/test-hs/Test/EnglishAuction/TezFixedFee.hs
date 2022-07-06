@@ -7,17 +7,18 @@ import Data.Traversable.WithIndex (TraversableWithIndex, ifor)
 import Fmt ((+|), (|+))
 import Hedgehog (Gen, Property, forAll, label, property)
 import qualified Hedgehog.Gen as Gen
+import Hedgehog.Gen.Tezos.Core (genMutez')
 import qualified Hedgehog.Range as Range
 import qualified Indigo.Contracts.FA2Sample as FA2
 import Lorentz hiding (amount, contract, now)
 import Lorentz.Contracts.EnglishAuction.Common
+import Lorentz.Contracts.EnglishAuction.Contracts
 import Lorentz.Contracts.EnglishAuction.TezFixedFee
 import Lorentz.Contracts.MinterSdk
 import qualified Lorentz.Contracts.NoAllowlist as NoAllowlist
 import Lorentz.Contracts.Spec.FA2Interface (TokenId(..))
-import Michelson.Typed (convertContract, untypeValue)
 import Morley.Nettest
-import Test.Util (balanceOf, clevelandProp, genMutez', iterateM)
+import Test.Util (balanceOf, clevelandProp, iterateM)
 import Tezos.Core (timestampPlusSeconds)
 
 hprop_Auctions_must_start_within_the_configured_number_of_seconds :: Property
@@ -30,11 +31,10 @@ hprop_Auctions_must_start_within_the_configured_number_of_seconds =
     let testData' = testData { testTimeToStart = testTimeToStart }
 
     clevelandProp $ do
-      setup@Setup{contract} <- testSetup testData'
+      setup <- testSetup testData'
 
       configureAuction testData' setup
-        `expectFailure`
-          failedWith contract [mt|MAX_CONFIG_TO_START_TIME_VIOLATED|]
+        & expectFailedWith [mt|MAX_CONFIG_TO_START_TIME_VIOLATED|]
 
 hprop_First_bid_is_valid_IFF_it_meets_opening_price :: Property
 hprop_First_bid_is_valid_IFF_it_meets_opening_price =
@@ -52,8 +52,8 @@ hprop_First_bid_is_valid_IFF_it_meets_opening_price =
       withSender bidder $
         if firstBid >= testOpeningPrice
           then placeBid contract firstBid
-          else placeBid contract firstBid `expectFailure` failedWith contract
-                 ([mt|INVALID_BID_AMOUNT|], (((testOpeningPrice, firstBid), seller, startTime), startTime))
+          else placeBid contract firstBid
+                 & expectFailedWith ([mt|INVALID_BID_AMOUNT|], (((testOpeningPrice, firstBid), seller, startTime), startTime))
 
 hprop_Subsequent_bids_are_valid_if_they_are_above_'min_raise' :: Property
 hprop_Subsequent_bids_are_valid_if_they_are_above_'min_raise' =
@@ -168,8 +168,9 @@ hprop_Subsequent_bids_are_invalid_if_they_are_below_'min_raise'_and_'min_raise_p
         placeBid contract firstBid
 
       withSender bidder2 $ do
-        placeBid contract secondBid `expectFailure` failedWith contract
-          ([mt|INVALID_BID_AMOUNT|], ((firstBid, secondBid) , bidder1, startTime), startTime)
+        placeBid contract secondBid
+          & expectFailedWith
+              ([mt|INVALID_BID_AMOUNT|], ((firstBid, secondBid) , bidder1, startTime), startTime)
 
 hprop_Subsequent_bids_must_be_greater_than_last_bid :: Property
 hprop_Subsequent_bids_must_be_greater_than_last_bid =
@@ -189,8 +190,9 @@ hprop_Subsequent_bids_must_be_greater_than_last_bid =
         placeBid contract firstBid
 
       withSender bidder2 $ do
-        placeBid contract secondBid `expectFailure` failedWith contract
-          ([mt|INVALID_BID_AMOUNT|], ((firstBid, secondBid) , bidder1, startTime), startTime)
+        placeBid contract secondBid
+          & expectFailedWith
+              ([mt|INVALID_BID_AMOUNT|], ((firstBid, secondBid) , bidder1, startTime), startTime)
 
 hprop_Auction_ends_if_no_bids_are_placed_within_'round_time'_seconds :: Property
 hprop_Auction_ends_if_no_bids_are_placed_within_'round_time'_seconds =
@@ -221,13 +223,15 @@ hprop_Auction_ends_if_no_bids_are_placed_within_'round_time'_seconds =
                 placeBid contract bid
 
               -- `resolve` should fail because auction is still in progress.
-              resolveAuction contract `expectFailure` failedWith contract [mt|AUCTION_NOT_ENDED|]
+              resolveAuction contract
+                & expectFailedWith [mt|AUCTION_NOT_ENDED|]
 
               placeBids rest
 
             else do
               withSender bidder $ do
-                placeBid contract bid `expectFailure` failedWith contract [mt|NOT_IN_PROGRESS|]
+                placeBid contract bid
+                  & expectFailedWith [mt|NOT_IN_PROGRESS|]
 
               -- `resolve` should succeed.
               resolveAuction contract
@@ -248,7 +252,8 @@ hprop_Auction_ends_after_'end_time' =
       advanceTime (sec $ fromIntegral testAuctionDuration)
 
       -- `bid` should fail.
-      placeBid contract firstBid `expectFailure` failedWith contract [mt|NOT_IN_PROGRESS|]
+      placeBid contract firstBid
+        & expectFailedWith [mt|NOT_IN_PROGRESS|]
 
       -- `resolve` should succeed.
       resolveAuction contract
@@ -291,11 +296,11 @@ hprop_Placing_a_bid_within_'extend_time'_seconds_of_'end_time'_extends_the_aucti
         t1 @== t0 `timestampPlusSeconds` fromIntegral testExtendTime
 
         -- `resolve` should fail because auction is still in progress.
-        resolveAuction contract `expectFailure` failedWith contract [mt|AUCTION_NOT_ENDED|]
+        resolveAuction contract
+          & expectFailedWith [mt|AUCTION_NOT_ENDED|]
   where
     getEndTime contract =
       getStorage' contract
-        <&> fromVal @AuctionStorage
         >>= getAuction (AuctionId 0)
         <&> \a -> endTime (a :: Auction)
 
@@ -568,8 +573,8 @@ genBid testData@TestData{testMinRaise} previousBid = do
 ----------------------------------------------------------------------------
 
 data Setup = Setup
-  { contract :: TAddress (AuctionEntrypoints NoAllowlist.Entrypoints)
-  , fa2Contracts :: [TAddress FA2.FA2SampleParameter]
+  { contract :: ContractHandler (AuctionEntrypoints NoAllowlist.Entrypoints) AuctionStorage
+  , fa2Contracts :: [ContractHandler FA2.FA2SampleParameter FA2.Storage]
   , feeCollector :: Address
   , seller :: Address
   , startTime :: Timestamp
@@ -617,15 +622,15 @@ waitForAuctionToStart :: (HasCallStack, MonadNettest caps base m) => TestData ->
 waitForAuctionToStart TestData{testTimeToStart} =
   advanceTime (sec $ fromIntegral testTimeToStart)
 
-originateAuctionContract :: MonadNettest caps base m => AuctionStorage -> m (TAddress (AuctionEntrypoints NoAllowlist.Entrypoints))
+originateAuctionContract
+  :: MonadNettest caps base m
+  => AuctionStorage -> m (ContractHandler (AuctionEntrypoints NoAllowlist.Entrypoints) AuctionStorage)
 originateAuctionContract storage = do
-  TAddress @(AuctionEntrypoints NoAllowlist.Entrypoints) <$> originateUntypedSimple "auction-tez-fixed-fee"
-    (untypeValue $ toVal storage)
-    (convertContract englishAuctionTezFixedFeeContract)
+  originateSimple "auction-tez-fixed-fee" storage englishAuctionTezFixedFeeContract
 
 mkBidders :: (MonadNettest caps base m, TraversableWithIndex Int f) => f Mutez -> m (f Address)
 mkBidders bids =
-  ifor bids \i _ -> newAddress ("bidder-" <> show i)
+  ifor bids \i _ -> newAddress (fromString $ "bidder-" <> show i)
 
 getAuction :: MonadNettest caps base m => AuctionId -> AuctionStorage -> m Auction
 getAuction auctionId st = do
@@ -667,7 +672,7 @@ configureAuction testData Setup{fa2Contracts, contract, startTime, endTime}  = d
     , endTime = endTime
     }
 
-placeBid :: (HasCallStack, MonadNettest caps base m) => TAddress (AuctionEntrypoints NoAllowlist.Entrypoints) -> Mutez -> m ()
+placeBid :: (HasCallStack, MonadNettest caps base m) => ContractHandler (AuctionEntrypoints NoAllowlist.Entrypoints) storage -> Mutez -> m ()
 placeBid contract bidAmount =
   transfer TransferData
     { tdTo = contract
@@ -676,10 +681,10 @@ placeBid contract bidAmount =
     , tdParameter = AuctionId 0
     }
 
-cancelAuction :: (HasCallStack, MonadNettest caps base m) => TAddress (AuctionEntrypoints NoAllowlist.Entrypoints) -> m ()
+cancelAuction :: (HasCallStack, MonadNettest caps base m) => ContractHandler (AuctionEntrypoints NoAllowlist.Entrypoints) storage -> m ()
 cancelAuction contract =
   call contract (Call @"Cancel") (AuctionId 0)
 
-resolveAuction :: (HasCallStack, MonadNettest caps base m) => TAddress (AuctionEntrypoints NoAllowlist.Entrypoints) -> m ()
+resolveAuction :: (HasCallStack, MonadNettest caps base m) => ContractHandler (AuctionEntrypoints NoAllowlist.Entrypoints) storage -> m ()
 resolveAuction contract =
   call contract (Call @"Resolve") (AuctionId 0)

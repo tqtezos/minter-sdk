@@ -15,9 +15,9 @@ import Morley.Nettest.Tasty (nettestScenarioCaps)
 
 import Lorentz.Contracts.NonPausableSimpleAdmin
 
-type OriginateAdminContractFn param =
+type OriginateAdminContractFn param storage =
   forall m. (Monad m)
-  => Address -> NettestT m (TAddress param)
+  => Address -> NettestT m (ContractHandler param storage)
 
 adminOwnershipTransferChecks
   :: ( ParameterContainsEntrypoints param
@@ -25,7 +25,7 @@ adminOwnershipTransferChecks
         , "Confirm_admin" :> ()
         ]
      )
-  => OriginateAdminContractFn param
+  => OriginateAdminContractFn param storage
   -> TestTree
 adminOwnershipTransferChecks originateFn = testGroup "Admin functionality"
   [ nettestScenarioCaps "Ownership transfer works" $ do
@@ -46,14 +46,14 @@ adminOwnershipTransferChecks originateFn = testGroup "Admin functionality"
       successor <- newAddress "successor"
       contract <- originateFn admin
       call contract (Call @"Set_admin") successor
-        & expectError contract errNotAdmin
+        & expectError errNotAdmin
 
   , nettestScenarioCaps "Cannot accept ownership before prior transfer of it" $ do
       admin <- newAddress "admin"
       contract <- originateFn admin
 
       call contract (Call @"Confirm_admin") ()
-        & expectError contract noPendingAdmin
+        & expectError noPendingAdmin
 
   , nettestScenarioCaps "Not pending admin cannot confirm ownership" $ do
       admin <- newAddress "admin"
@@ -63,6 +63,6 @@ adminOwnershipTransferChecks originateFn = testGroup "Admin functionality"
       call contract (Call @"Set_admin") successor
         & withSender admin
       call contract (Call @"Confirm_admin") ()
-        & expectError contract notPendingAdmin
+        & expectError notPendingAdmin
 
   ]

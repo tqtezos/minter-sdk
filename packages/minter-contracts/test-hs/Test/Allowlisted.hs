@@ -13,7 +13,6 @@ import Test.Tasty (TestTree, testGroup)
 
 import Lorentz.Constraints
 import Lorentz.Entrypoints
-import Lorentz.Errors
 import Lorentz.Value
 import Morley.Nettest
 import Morley.Nettest.Tasty (nettestScenarioCaps)
@@ -28,9 +27,9 @@ import Test.Util
 import qualified Indigo.Contracts.FA2Sample as FA2
 
 -- | A function that originates a contract and also returns its admin.
-type OriginateAdminFn param =
+type OriginateAdminFn param storage =
   forall m. (Monad m)
-  => Address -> NettestT m (TAddress param)
+  => Address -> NettestT m (ContractHandler param storage)
 
 allowlistUpdateAuthorizationChecks
   :: (ParameterContainsEntrypoints param
@@ -38,7 +37,7 @@ allowlistUpdateAuthorizationChecks
         ]
      , KnownValue allowlistUpdateParam, Monoid allowlistUpdateParam
      )
-  => OriginateAdminFn param
+  => OriginateAdminFn param storage
   -> [TestTree]
 allowlistUpdateAuthorizationChecks originateFromAdminFn =
   [ nettestScenarioCaps "Can be updated by admin" $ do
@@ -53,27 +52,27 @@ allowlistUpdateAuthorizationChecks originateFromAdminFn =
 
       withSender user $
         call contract (Call @"Update_allowed") mempty
-        & expectError contract errNotAdmin
+        & expectFailedWith errNotAdmin
   ]
 
 -- | Single type of allowlist restriction, usually corresponds to one error.
 data AllowlistRestrictionCase setup contractParam =
-  forall err. (IsError err, Eq err) => AllowlistRestrictionCase
+  forall err. (NiceConstant err, Eq err) => AllowlistRestrictionCase
   { -- | Error raised when restriction is violated.
     allowlistError :: err
     -- | Run an action that requires the specified FA2 to be allowlisted
     -- and fails otherwise.
   , allowlistRunRestrictedAction
-      :: forall m. (Monad m)
+      :: forall contractStorage m. (Monad m)
       => setup
-      -> TAddress contractParam
-      -> (TAddress FA2.FA2SampleParameter, TokenId)
+      -> ContractHandler contractParam contractStorage
+      -> (ContractHandler FA2.FA2SampleParameter FA2.Storage, TokenId)
       -> NettestT m ()
   }
 
 -- | Setup for 'simpleAllowlistChecks'.
 data AllowlistChecksSetup eps =
-  forall contractParam setup.
+  forall contractParam contractStorage setup.
     ( ParameterContainsEntrypoints contractParam eps
     ) =>
   AllowlistChecksSetup
@@ -82,7 +81,7 @@ data AllowlistChecksSetup eps =
       :: forall m.
          (Monad m)
       => FA2Setup 1 2
-      -> NettestT m (Address, TAddress contractParam, setup)
+      -> NettestT m (Address, ContractHandler contractParam contractStorage, setup)
 
     -- | Restriction cases that needs to be tested.
     -- The cases should appear in the order in which the corresponding errors
@@ -93,7 +92,7 @@ data AllowlistChecksSetup eps =
     -- In most cases should be just empty.
   , allowlistAlwaysIncluded
       :: setup
-      -> ([(TAddress FA2.FA2SampleParameter, TokenId)])
+      -> ([(ContractHandler FA2.FA2SampleParameter FA2.Storage, TokenId)])
   }
 
 allowlistSimpleChecks
@@ -113,7 +112,7 @@ allowlistSimpleChecks AllowlistChecksSetup{..} =
       case allowlistRestrictionsCases of
         AllowlistRestrictionCase{..} :| _ ->
           allowlistRunRestrictedAction setup contract (fa2, tokenId)
-            & expectError contract allowlistError
+            & expectFailedWith allowlistError
 
   , nettestScenarioCaps "Only FA2s that has been allowed work" $ do
       fa2Setup <- doFA2Setup
@@ -126,12 +125,12 @@ allowlistSimpleChecks AllowlistChecksSetup{..} =
         call contract (Call @"Update_allowed") $ mkFullAllowlist setup [fa2_2]
 
       comment "Check that not yet allowed FA2 does not work"
-      for_ allowlistRestrictionsCases $ \AllowlistRestrictionCase{..} ->
+      for_ @_ @_ @() allowlistRestrictionsCases \AllowlistRestrictionCase{..} -> do
         allowlistRunRestrictedAction setup contract (fa2_1, tokenId)
-          & expectError contract allowlistError
+          & expectFailedWith allowlistError
 
       comment "Allowed FA2 works"
-      for_ allowlistRestrictionsCases $ \AllowlistRestrictionCase{..} ->
+      for_ @_ @_ @() allowlistRestrictionsCases $ \AllowlistRestrictionCase{..} ->
         allowlistRunRestrictedAction setup contract (fa2_2, tokenId)
 
   , nettestScenarioCaps "Permission can be revoked" $ do
@@ -149,7 +148,7 @@ allowlistSimpleChecks AllowlistChecksSetup{..} =
       case allowlistRestrictionsCases of
         AllowlistRestrictionCase{..} :| _ -> do
           allowlistRunRestrictedAction setup contract (fa2, tokenId)
-            & expectError contract allowlistError
+            & expectFailedWith allowlistError
 
   ]
 
@@ -175,7 +174,7 @@ allowlistTokenChecks AllowlistChecksSetup{..} =
         case allowlistRestrictionsCases of
           AllowlistRestrictionCase{..} :| _ ->
             allowlistRunRestrictedAction setup contract (fa2, tokenId)
-              & expectError contract allowlistError
+              & expectFailedWith allowlistError
 
     , nettestScenarioCaps "Only FA2s that has been allowed work" $ do
         fa2Setup <- doFA2Setup
@@ -191,13 +190,13 @@ allowlistTokenChecks AllowlistChecksSetup{..} =
               { AllowlistToken.toAdd = one (toAddress fa2_2, AllowlistToken.AllTokenIdsAllowed) }
 
         comment "Check that not yet allowed FA2 does not work"
-        case allowlistRestrictionsCases of
+        () <- case allowlistRestrictionsCases of
           AllowlistRestrictionCase{..} :| _ -> do
             allowlistRunRestrictedAction setup contract (fa2_1, tokenId)
-              & expectError contract allowlistError
+              & expectFailedWith allowlistError
 
         comment "Allowed FA2 works"
-        for_ allowlistRestrictionsCases $ \AllowlistRestrictionCase{..} ->
+        for_ @_ @_ @() allowlistRestrictionsCases \AllowlistRestrictionCase{..} ->
           allowlistRunRestrictedAction setup contract (fa2_2, tokenId)
 
     , nettestScenarioCaps "Permission can be revoked" $ do
@@ -222,7 +221,7 @@ allowlistTokenChecks AllowlistChecksSetup{..} =
         case allowlistRestrictionsCases of
           AllowlistRestrictionCase{..} :| _ -> do
             allowlistRunRestrictedAction setup contract (fa2, tokenId)
-              & expectError contract allowlistError
+              & expectFailedWith allowlistError
 
     , nettestScenarioCaps "Can safely remove non-existing address" $ do
         fa2Setup <- doFA2Setup
@@ -251,7 +250,7 @@ allowlistTokenChecks AllowlistChecksSetup{..} =
                   one (toAddress fa2, AllowlistToken.AllTokenIdsAllowed)
               }
 
-        for_ allowlistRestrictionsCases $ \AllowlistRestrictionCase{..} ->
+        for_ @_ @_ @() allowlistRestrictionsCases \AllowlistRestrictionCase{..} ->
           allowlistRunRestrictedAction setup contract (fa2, tokenId)
 
     ]
@@ -273,13 +272,13 @@ allowlistTokenChecks AllowlistChecksSetup{..} =
               }
 
         comment "Check that not yet allowed tokenId does not work"
-        case allowlistRestrictionsCases of
+        () <- case allowlistRestrictionsCases of
           AllowlistRestrictionCase{..} :| _ -> do
             allowlistRunRestrictedAction setup contract (fa2, tokenId2)
-              & expectError contract allowlistError
+              & expectFailedWith allowlistError
 
         comment "Allowed tokenId works"
-        for_ allowlistRestrictionsCases $ \AllowlistRestrictionCase{..} ->
+        for_ @_ @_ @() allowlistRestrictionsCases \AllowlistRestrictionCase{..} ->
           allowlistRunRestrictedAction setup contract (fa2, tokenId1)
 
     , nettestScenarioCaps "TokenIds are permitted per FA2 address" $ do
@@ -300,9 +299,9 @@ allowlistTokenChecks AllowlistChecksSetup{..} =
                   ]
               }
 
-        for_ allowlistRestrictionsCases $ \AllowlistRestrictionCase{..} ->
+        for_ @_ @_ @() allowlistRestrictionsCases \AllowlistRestrictionCase{..} ->
           allowlistRunRestrictedAction setup contract (fa2_2, tokenId2)
-              & expectError contract allowlistError
+              & expectFailedWith allowlistError
 
     , nettestScenarioCaps "Revoked tokenIds do not work" $ do
         fa2Setup <- doFA2Setup
@@ -323,9 +322,9 @@ allowlistTokenChecks AllowlistChecksSetup{..} =
                   one (toAddress fa2, AllowlistToken.TokenIdsAllowed (one tokenId1))
               }
 
-        for_ allowlistRestrictionsCases $ \AllowlistRestrictionCase{..} ->
+        for_ @_ @_ @() allowlistRestrictionsCases \AllowlistRestrictionCase{..} ->
           allowlistRunRestrictedAction setup contract (fa2, tokenId2)
-              & expectError contract allowlistError
+              & expectFailedWith allowlistError
 
     ]
 

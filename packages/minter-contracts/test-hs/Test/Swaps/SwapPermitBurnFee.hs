@@ -5,9 +5,9 @@ import Prelude hiding (swap, toStrict)
 
 import qualified Data.Sized as Sized (toList)
 
-import Hedgehog (Property, property, forAll)
+import Hedgehog (Property, forAll, property)
 
-import Michelson.Interpret.Pack 
+import Michelson.Interpret.Pack
 
 import GHC.Exts (fromList)
 import GHC.Integer (negateInteger)
@@ -20,20 +20,21 @@ import Morley.Nettest
 import Morley.Nettest.Tasty (nettestScenarioCaps)
 
 import Lorentz.Contracts.Swaps.Allowlisted
-import Lorentz.Contracts.Swaps.AllowlistedFee hiding (errSwapRequestedNotAllowlisted, errSwapOfferedNotAllowlisted)
-import Lorentz.Contracts.Swaps.Basic hiding (SwapOffer, mkSingleOffer, mkNOffers)
+import Lorentz.Contracts.Swaps.AllowlistedFee hiding
+  (errSwapOfferedNotAllowlisted, errSwapRequestedNotAllowlisted)
+import Lorentz.Contracts.Swaps.Basic hiding (SwapOffer, mkNOffers, mkSingleOffer)
 import Lorentz.Contracts.Swaps.Burn
 import Lorentz.Contracts.Swaps.SwapPermit
 import qualified Lorentz.Contracts.Swaps.SwapPermitBurnFee as SPBF
-import Lorentz.Value
 import Lorentz.Test (contractConsumer)
+import Lorentz.Value
 
 import qualified Test.Swaps.Basic as TestBasic
 
-import Test.Swaps.Util
 import Test.Allowlisted
-import Test.Util
 import Test.NonPausableSimpleAdmin
+import Test.Swaps.Util
+import Test.Util
 
 import Tezos.Address (unsafeParseAddress)
 import Tezos.Crypto
@@ -50,23 +51,23 @@ hprop_Sending_fake_permit_to_offchain_accept_fails =
       let admin ::< alice ::< SNil = sAddresses setup
       let tokenId1 ::< SNil = sTokens setup
       swap <- originateOffchainSwapBurnFee admin
-      swapId <- (\(SwapId n) -> n) . 
-                SPBF.nextSwapId . 
+      swapId <- (\(SwapId n) -> n) .
+                SPBF.nextSwapId .
                 SPBF.burnSwapStorage <$>
-                fromVal @SPBF.AllowlistedBurnSwapFeeStorage <$> 
-                getStorage' swap 
+                getStorage' swap
       fa2 <- originateFA2 "fa2" setup [swap]
       withSender admin $
         call swap (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
-      withSender admin $ do 
+      withSender admin $ do
         call swap (Call @"Start") $ mkSingleOffer SwapOffer
           { assetsOffered = []
           , assetsRequested = ([mkFA2Assets fa2 [(tokenId1, 1)]], 0)
           }
       missignedBytes <- fst <$> mkPermitToForge swapId swap
       withSender admin $ do
-        offchainAcceptForged alice swap `expectFailure` failedWith swap
-          ([mt|MISSIGNED|], missignedBytes)
+        offchainAcceptForged alice swap
+          & expectTransferFailure
+            [failedWith $ constant ([mt|MISSIGNED|], missignedBytes)]
 
 hprop_Offchain_accept_not_admin_submitted_fails :: Property
 hprop_Offchain_accept_not_admin_submitted_fails =
@@ -79,14 +80,14 @@ hprop_Offchain_accept_not_admin_submitted_fails =
       fa2 <- originateFA2 "fa2" setup [swap]
       withSender admin $
         call swap (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
-      withSender admin $ do 
+      withSender admin $ do
         call swap (Call @"Start") $ mkSingleOffer SwapOffer
           { assetsOffered = []
           , assetsRequested = ([mkFA2Assets fa2 [(tokenId1, 1)]], 0)
           }
       withSender alice $ do
-        offchainAccept alice swap `expectFailure` failedWith swap
-          errNotAdmin
+        offchainAccept alice swap
+          & expectTransferFailure [failedWith $ constant errNotAdmin]
 
 hprop_Consecutive_offchain_accept_equals_iterative_accept :: Property
 hprop_Consecutive_offchain_accept_equals_iterative_accept =
@@ -95,7 +96,7 @@ hprop_Consecutive_offchain_accept_equals_iterative_accept =
       clevelandProp $ do
         setup <- doFA2Setup @("addresses" :# 50) @("tokens" :# 2)
         let admin1 ::< admin2 ::< remainingAddresses = sAddresses setup
-        let addresses = take (fromIntegral numOffers) (Sized.toList remainingAddresses) 
+        let addresses = take (fromIntegral numOffers) (Sized.toList remainingAddresses)
         let tokenId1 ::< tokenId2 ::< SNil = sTokens setup
         swap1 <- originateOffchainSwapBurnFee admin1
         swap2 <- originateOffchainSwapBurnFee admin2
@@ -105,12 +106,12 @@ hprop_Consecutive_offchain_accept_equals_iterative_accept =
           call swap1 (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2_1])
         withSender admin2 $
           call swap2 (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2_2])
-        withSender admin1 $ do 
+        withSender admin1 $ do
           call swap1 (Call @"Start") $ mkNOffers numOffers SwapOffer
                { assetsOffered = [mkFA2Assets fa2_1 [(tokenId1, token1Offer), (tokenId2, token2Offer)]]
                , assetsRequested = ([mkFA2Assets fa2_1 [(tokenId1, token1Request), (tokenId2, token2Request)]], 0)
                }
-        withSender admin2 $ do 
+        withSender admin2 $ do
           call swap2 (Call @"Start") $ mkNOffers numOffers SwapOffer
                { assetsOffered = [mkFA2Assets fa2_2 [(tokenId1, token1Offer), (tokenId2, token2Offer)]]
                , assetsRequested = ([mkFA2Assets fa2_2 [(tokenId1, token1Request), (tokenId2, token2Request)]], 0)
@@ -119,15 +120,9 @@ hprop_Consecutive_offchain_accept_equals_iterative_accept =
           offchainAcceptAllConsecutive addresses swap1
         withSender admin2 $ do
           offchainAcceptBatch addresses swap2
-      
-        swapStorage1 <-  toVal <$>
-                         SPBF.burnSwapStorage <$>
-                         fromVal @SPBF.AllowlistedBurnSwapFeeStorage <$> 
-                         getStorage' swap1
-        swapStorage2 <-  toVal <$>
-                         SPBF.burnSwapStorage <$>
-                         fromVal @SPBF.AllowlistedBurnSwapFeeStorage <$> 
-                         getStorage' swap2
+
+        swapStorage1 <- toVal . SPBF.burnSwapStorage <$> getStorage' swap1
+        swapStorage2 <- toVal . SPBF.burnSwapStorage <$> getStorage' swap2
         swapStorage1 @== swapStorage2
 
 ----------------------------------------------------------------------------
@@ -146,8 +141,8 @@ hprop_Accepting_with_zero_balance_fails =
           withSender admin $
             call swap (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
           addressWithZeroBalance <- newAddress "test"
-          withSender addressWithZeroBalance $ 
-            call fa2 (Call @"Update_operators")     
+          withSender addressWithZeroBalance $
+            call fa2 (Call @"Update_operators")
               [
                 FA2I.AddOperator FA2I.OperatorParam
                   { opOwner = addressWithZeroBalance
@@ -162,28 +157,29 @@ hprop_Accepting_with_zero_balance_fails =
               }
           withSender admin
             (offchainAccept addressWithZeroBalance swap
-              `expectFailure` failedWith fa2 (errSwapRequestedFA2BalanceInvalid 5 0))  
+              & expectTransferFailure
+                [failedWith $ constant (errSwapRequestedFA2BalanceInvalid 5 0)])
 
 hprop_Start_callable_by_admin_only :: Property
-hprop_Start_callable_by_admin_only = 
+hprop_Start_callable_by_admin_only =
   property $ do
-   TestBasic.TestData{numOffers, token1Offer, token2Offer, token1Request, token2Request} <- forAll TestBasic.genTestData 
+   TestBasic.TestData{numOffers, token1Offer, token2Offer, token1Request, token2Request} <- forAll TestBasic.genTestData
    clevelandProp $ do
      setup <- doFA2Setup
      let admin ::< nonAdmin ::< SNil = sAddresses setup
      let tokenId1 ::< tokenId2 ::< SNil = sTokens setup
      swap <- originateOffchainSwapBurnFee admin
      fa2 <- originateFA2 "fa2" setup [swap]
-     withSender nonAdmin 
+     withSender nonAdmin
        (call swap (Call @"Start") (mkNOffers numOffers SwapOffer
          { assetsOffered = [mkFA2Assets fa2 [(tokenId1, token1Offer), (tokenId2, token2Offer)]]
          , assetsRequested = ([mkFA2Assets fa2 [(tokenId1, token1Request), (tokenId2, token2Request)]], 0)
-         }) & expectError swap errNotAdmin)
+         }) & expectError errNotAdmin)
 
 hprop_Correct_final_balances_on_acceptance :: Property
-hprop_Correct_final_balances_on_acceptance = 
+hprop_Correct_final_balances_on_acceptance =
   property $ do
-   TestBasic.TestData{numOffers, token1Offer, token2Offer, token1Request, token2Request} <- forAll TestBasic.genTestData 
+   TestBasic.TestData{numOffers, token1Offer, token2Offer, token1Request, token2Request} <- forAll TestBasic.genTestData
    clevelandProp  $ do
       setup <- doFA2Setup
       let admin ::< alice ::< SNil = sAddresses setup
@@ -193,8 +189,8 @@ hprop_Correct_final_balances_on_acceptance =
 
       withSender admin $
         call swap (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
-      
-      assertingBurnAddressUnchanged swap $ do 
+
+      assertingBurnAddressUnchanged swap $ do
         assertingBalanceDeltas fa2
           [ (admin, tokenId1) -: negateInteger (fromIntegral $ token1Offer * numOffers)
           , (admin, tokenId2) -: negateInteger (fromIntegral $ token2Offer * numOffers)
@@ -210,11 +206,11 @@ hprop_Correct_final_balances_on_acceptance =
                 }
             withSender admin $
               offchainAccept alice swap
-  
+
 hprop_Correct_final_balances_on_cancel :: Property
-hprop_Correct_final_balances_on_cancel = 
+hprop_Correct_final_balances_on_cancel =
   property $ do
-   TestBasic.TestData{numOffers, token1Offer, token2Offer, token1Request, token2Request} <- forAll TestBasic.genTestData 
+   TestBasic.TestData{numOffers, token1Offer, token2Offer, token1Request, token2Request} <- forAll TestBasic.genTestData
    clevelandProp  $ do
       setup <- doFA2Setup
       let admin ::< alice ::< SNil = sAddresses setup
@@ -224,8 +220,8 @@ hprop_Correct_final_balances_on_cancel =
 
       withSender admin $
         call swap (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
-      
-      assertingBurnAddressUnchanged swap $ do 
+
+      assertingBurnAddressUnchanged swap $ do
         assertingBalanceDeltas fa2
           [ (admin, tokenId1) -: 0
           , (admin, tokenId2) -: 0
@@ -241,11 +237,11 @@ hprop_Correct_final_balances_on_cancel =
                 }
             withSender admin $
               call swap (Call @"Cancel") initSwapId
-  
+
 hprop_Correct_num_tokens_transferred_to_contract_on_start :: Property
-hprop_Correct_num_tokens_transferred_to_contract_on_start = 
+hprop_Correct_num_tokens_transferred_to_contract_on_start =
   property $ do
-   TestBasic.TestData{numOffers, token1Offer, token2Offer} <- forAll TestBasic.genTestData 
+   TestBasic.TestData{numOffers, token1Offer, token2Offer} <- forAll TestBasic.genTestData
    clevelandProp  $ do
      setup <- doFA2Setup
      let admin ::< SNil = sAddresses setup
@@ -254,8 +250,8 @@ hprop_Correct_num_tokens_transferred_to_contract_on_start =
      fa2 <- originateFA2 "fa2" setup [swap]
      withSender admin $
         call swap (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
-     
-     assertingBurnAddressUnchanged swap $ do 
+
+     assertingBurnAddressUnchanged swap $ do
        assertingBalanceDeltas fa2
          [ (admin, tokenId1) -: negateInteger (fromIntegral $ token1Offer * numOffers)
          , (admin, tokenId2) -: negateInteger (fromIntegral $ token2Offer * numOffers)
@@ -267,9 +263,9 @@ hprop_Correct_num_tokens_transferred_to_contract_on_start =
                }
 
 hprop_Contract_balance_goes_to_zero_when_sale_concludes :: Property
-hprop_Contract_balance_goes_to_zero_when_sale_concludes = 
+hprop_Contract_balance_goes_to_zero_when_sale_concludes =
   property $ do
-   TestBasic.TestData{numOffers, token1Offer, token2Offer, token1Request, token2Request} <- forAll TestBasic.genTestData 
+   TestBasic.TestData{numOffers, token1Offer, token2Offer, token1Request, token2Request} <- forAll TestBasic.genTestData
    clevelandProp  $ do
      setup <- doFA2Setup
      let admin ::< alice ::< SNil = sAddresses setup
@@ -277,7 +273,7 @@ hprop_Contract_balance_goes_to_zero_when_sale_concludes =
      swap <- originateOffchainSwapBurnFee admin
      let swapAddress = toAddress swap
      fa2 <- originateFA2 "fa2" setup [swap]
-     assertingBurnAddressUnchanged swap $ do 
+     assertingBurnAddressUnchanged swap $ do
        withSender admin $
           call swap (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
        assertingBalanceDeltas fa2
@@ -291,7 +287,7 @@ hprop_Contract_balance_goes_to_zero_when_sale_concludes =
                }
            withSender admin $
               replicateM_ (fromIntegral numOffers) $ do
-                offchainAccept alice swap 
+                offchainAccept alice swap
 
 test_SwapPermitBurnFeeIntegrational :: TestTree
 test_SwapPermitBurnFeeIntegrational = testGroup "Basic swap functionality"
@@ -313,14 +309,14 @@ statusChecks = testGroup "Statuses"
       withSender admin $ do
         call swap (Call @"Start") $ mkSingleOffer (SwapOffer [] ([], 0))
         offchainAccept' alice swap
-      
+
       withSender admin $
         offchainAccept' alice swap
-        & expectError swap errSwapFinished
-      
+        & expectError errSwapFinished
+
       withSender admin $
         offchainAccept' alice swap
-        & expectError swap errSwapFinished
+        & expectError errSwapFinished
 
   , nettestScenarioCaps "Operations with cancelled swap fail" $ do
       (swap, admin) <- originateOffchainSwapBurnFeeWithAdmin
@@ -334,11 +330,11 @@ statusChecks = testGroup "Statuses"
 
       withSender admin $
         offchainAccept' alice swap
-        & expectError swap errSwapCancelled
-      
+        & expectError errSwapCancelled
+
       withSender admin $
         call swap (Call @"Cancel") initSwapId
-          & expectError swap errSwapCancelled
+          & expectError errSwapCancelled
   ]
 
 swapIdChecks :: TestTree
@@ -376,20 +372,20 @@ swapIdChecks = testGroup "SwapIds"
       let !SNil = sTokens setup
       withSender admin $
         offchainAccept' alice swap
-          & expectError swap errSwapNotExist
-      
-      withSender admin 
+          & expectError errSwapNotExist
+
+      withSender admin
         (call swap (Call @"Cancel") initSwapId
-          & expectError swap errSwapNotExist)
-      
-      withSender admin $ do 
+          & expectError errSwapNotExist)
+
+      withSender admin $ do
         call swap (Call @"Start") $ mkSingleOffer (SwapOffer [] ([], 0))
 
         (\swapId -> offchainAcceptSwapId' swapId alice swap) (getSwapId $ incrementSwapId initSwapId)
-          & expectError swap errSwapNotExist
+          & expectError errSwapNotExist
 
         call swap (Call @"Cancel") (incrementSwapId initSwapId)
-          & expectError swap errSwapNotExist
+          & expectError errSwapNotExist
 
         (\swapId -> offchainAcceptSwapId' swapId alice swap) (getSwapId initSwapId)
   ]
@@ -407,11 +403,11 @@ authorizationChecks = testGroup "Authorization checks"
         call swap (Call @"Start") $ mkSingleOffer (SwapOffer [] ([], 0))
 
       call swap (Call @"Cancel") initSwapId
-        & expectError swap errNotSwapSeller
+        & expectError errNotSwapSeller
 
       withSender alice $
         call swap (Call @"Cancel") initSwapId
-        & expectError swap errNotSwapSeller
+        & expectError errNotSwapSeller
   ]
 
 invalidFA2sChecks :: TestTree
@@ -421,10 +417,9 @@ invalidFA2sChecks = testGroup "Invalid FA2s"
       let admin ::< alice ::< SNil = sAddresses setup
       let tokenId1 ::< SNil = sTokens setup
 
-      fakeFa2 <-
-        TAddress . unTAddress <$>
-        originateSimple "fake-fa2" ([] :: [Integer]) contractConsumer
-      let nonExistingFa2 = TAddress $ unsafeParseAddress "tz1b7p3PPBd3vxmMHZkvtC61C7ttYE6g683F"
+      fakeFa2 <- originateSimple "fake-fa2" ([] :: [Integer]) contractConsumer
+      let nonExistingFa2 = ContractHandler "non-existing fa2" $
+            unsafeParseAddress "tz1b7p3PPBd3vxmMHZkvtC61C7ttYE6g683F"
       let pseudoFa2s = [("fake FA2", fakeFa2), ("non existing FA2", nonExistingFa2)]
 
       for_ pseudoFa2s $ \(desc, fa2) -> do
@@ -440,7 +435,7 @@ invalidFA2sChecks = testGroup "Invalid FA2s"
             { assetsOffered = [mkFA2Assets fa2 [(tokenId1, 1)]]
             , assetsRequested = ([], 0)
             })
-            & expectError swap errSwapOfferedFA2Invalid
+            & expectError errSwapOfferedFA2Invalid
 
         comment "Checking requested FA2"
         withSender admin $ do
@@ -451,7 +446,7 @@ invalidFA2sChecks = testGroup "Invalid FA2s"
 
           withSender admin
             (offchainAccept' alice swap)
-            & expectError swap errSwapRequestedFA2Invalid
+            & expectError errSwapRequestedFA2Invalid
   ]
 
 complexCases :: TestTree
@@ -545,7 +540,7 @@ test_ContractSendsFee = testGroup "Tests that contract sends fee"
 
       withSender admin $
         call swap (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
-    
+
       withSender admin $
           call swap (Call @"Start") $ mkSingleOffer SwapOffer
             { assetsOffered = [mkFA2Assets fa2 [(tokenId, 10)]]
@@ -558,12 +553,12 @@ test_ContractSendsFee = testGroup "Tests that contract sends fee"
             , tdEntrypoint = ep "accept"
             , tdParameter = initSwapId
             }
-      
+
       sellerBalanceAfter <- getBalance admin
       buyerBalanceAfter <- getBalance alice
-    
+
       sellerBalanceAfter @== sellerBalanceBefore + amountRequested
-      buyerBalanceAfter @== buyerBalanceBefore - amountRequested 
+      buyerBalanceAfter @== buyerBalanceBefore - amountRequested
   ]
 
 test_BuyerMustSendFee :: TestTree
@@ -578,7 +573,7 @@ test_BuyerMustSendFee = testGroup "Tests that buyer must send fee"
 
       withSender admin $
         call swap (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
-    
+
       withSender admin $
           call swap (Call @"Start") $ mkSingleOffer SwapOffer
             { assetsOffered = [mkFA2Assets fa2 [(tokenId, 10)]]
@@ -590,12 +585,12 @@ test_BuyerMustSendFee = testGroup "Tests that buyer must send fee"
             , tdAmount = toMutez 0
             , tdEntrypoint = ep "accept"
             , tdParameter = initSwapId
-            } 
-          & expectError swap errNoXtzTransferred
+            }
+          & expectError errNoXtzTransferred
   ]
 
 ----------------------------------------------------------------------------
--- Admin and Allowlist Checks 
+-- Admin and Allowlist Checks
 ----------------------------------------------------------------------------
 
 
@@ -646,49 +641,49 @@ test_AllowlistChecks = allowlistSimpleChecks
 ----------------------------------------------------------------------------
 
 -- N addresses accept all N assets in a sale conseutively, and then all N are confirmed
-offchainAcceptAllConsecutive :: (HasCallStack, MonadEmulated caps base m) => [Address] -> TAddress SPBF.PermitSwapBurnFeeEntrypoints -> m ()
+offchainAcceptAllConsecutive :: (HasCallStack, MonadEmulated caps base m) => [Address] -> ContractHandler SPBF.PermitSwapBurnFeeEntrypoints st -> m ()
 offchainAcceptAllConsecutive addresses contract = do
   forM_ addresses $ \buyer -> do
       offchainAccept buyer contract
 
-offchainAcceptBatch :: (HasCallStack, MonadEmulated caps base m) => [Address] -> TAddress SPBF.PermitSwapBurnFeeEntrypoints -> m ()
+offchainAcceptBatch :: (HasCallStack, MonadEmulated caps base m) => [Address] -> ContractHandler SPBF.PermitSwapBurnFeeEntrypoints st -> m ()
 offchainAcceptBatch buyers contract = do
   param <- forM buyers $ \buyer -> do
     buyerPK <- getPublicKey buyer
     unsigned <- mkPermitToSign swapId contract
     signature <- signBytes unsigned buyer
-    return OffchainAcceptParam { 
+    return OffchainAcceptParam {
         swapId = swapId
       , permit = Permit
           {
             signerKey = buyerPK
           , signature = signature
-          } 
-      } 
-  call contract (Call @"Offchain_accept") (toList param) 
+          }
+      }
+  call contract (Call @"Offchain_accept") (toList param)
   where swapId = 1
 
-mkPermitToForge :: (HasCallStack, MonadEmulated caps base m) => Natural -> TAddress SPBF.PermitSwapBurnFeeEntrypoints -> m (ByteString, PublicKey)
-mkPermitToForge swapId contract = do 
+mkPermitToForge :: (HasCallStack, MonadEmulated caps base m) => Natural -> ContractHandler SPBF.PermitSwapBurnFeeEntrypoints st -> m (ByteString, PublicKey)
+mkPermitToForge swapId contract = do
   aliasAddress <- newAddress "forged"
   aliasPK <- getPublicKey aliasAddress
-  unsignedPermit <- mkPermitToSign swapId contract 
+  unsignedPermit <- mkPermitToSign swapId contract
   pure (unsignedPermit, aliasPK)
 
-mkPermitToSign :: (HasCallStack, MonadEmulated caps base m) => Natural -> TAddress SPBF.PermitSwapBurnFeeEntrypoints -> m ByteString
-mkPermitToSign swapId contract = do 
+mkPermitToSign :: (HasCallStack, MonadEmulated caps base m) => Natural -> ContractHandler SPBF.PermitSwapBurnFeeEntrypoints st -> m ByteString
+mkPermitToSign swapId contract = do
   marketplaceChainId <- getChainId
   let unsigned = packValue' $ toVal ((marketplaceChainId, contractAddress), (0 :: Natural, swapIdHash))
   pure unsigned
-  where swapIdHash = blake2b $ packValue' $ toVal swapId 
+  where swapIdHash = blake2b $ packValue' $ toVal swapId
         contractAddress = toAddress contract
 
-offchainAcceptSwapId :: (HasCallStack, MonadEmulated caps base m) => Natural -> Address -> TAddress SPBF.PermitSwapBurnFeeEntrypoints -> m ()
+offchainAcceptSwapId :: (HasCallStack, MonadEmulated caps base m) => Natural -> Address -> ContractHandler SPBF.PermitSwapBurnFeeEntrypoints st -> m ()
 offchainAcceptSwapId swapId buyer contract = do
   buyerPK <- getPublicKey buyer
   unsigned <- mkPermitToSign swapId contract
-  signature <- signBytes unsigned buyer 
-  call contract (Call @"Offchain_accept") 
+  signature <- signBytes unsigned buyer
+  call contract (Call @"Offchain_accept")
     [OffchainAcceptParam
       {
         swapId = swapId
@@ -696,27 +691,27 @@ offchainAcceptSwapId swapId buyer contract = do
           {
             signerKey = buyerPK
           , signature = signature
-          } 
+          }
       }
     ]
 
-offchainAccept :: (HasCallStack, MonadEmulated caps base m) => Address -> TAddress SPBF.PermitSwapBurnFeeEntrypoints -> m ()
+offchainAccept :: (HasCallStack, MonadEmulated caps base m) => Address -> ContractHandler SPBF.PermitSwapBurnFeeEntrypoints st -> m ()
 offchainAccept = offchainAcceptSwapId 1
 
-mkPermitToSign' :: (HasCallStack, MonadNettest caps base m) => Natural -> TAddress SPBF.PermitSwapBurnFeeEntrypoints -> m ByteString
-mkPermitToSign' swapId contract = do 
+mkPermitToSign' :: (HasCallStack, MonadNettest caps base m) => Natural -> ContractHandler SPBF.PermitSwapBurnFeeEntrypoints st -> m ByteString
+mkPermitToSign' swapId contract = do
   marketplaceChainId <- getChainId
   let unsigned = packValue' $ toVal ((marketplaceChainId, contractAddress), (0 :: Natural, swapIdHash))
   pure unsigned
-  where swapIdHash = blake2b $ packValue' $ toVal swapId 
+  where swapIdHash = blake2b $ packValue' $ toVal swapId
         contractAddress = toAddress contract
 
-offchainAcceptSwapId' :: (HasCallStack, MonadNettest caps base m) => Natural -> Address -> TAddress SPBF.PermitSwapBurnFeeEntrypoints -> m ()
+offchainAcceptSwapId' :: (HasCallStack, MonadNettest caps base m) => Natural -> Address -> ContractHandler SPBF.PermitSwapBurnFeeEntrypoints st -> m ()
 offchainAcceptSwapId' swapId buyer contract = do
   buyerPK <- getPublicKey buyer
   unsigned <- mkPermitToSign' swapId contract
-  signature <- signBytes unsigned buyer 
-  call contract (Call @"Offchain_accept") 
+  signature <- signBytes unsigned buyer
+  call contract (Call @"Offchain_accept")
     [OffchainAcceptParam
       {
         swapId = swapId
@@ -724,19 +719,19 @@ offchainAcceptSwapId' swapId buyer contract = do
           {
             signerKey = buyerPK
           , signature = signature
-          } 
+          }
       }
     ]
 
-offchainAccept' :: (HasCallStack, MonadNettest caps base m) => Address -> TAddress SPBF.PermitSwapBurnFeeEntrypoints -> m ()
+offchainAccept' :: (HasCallStack, MonadNettest caps base m) => Address -> ContractHandler SPBF.PermitSwapBurnFeeEntrypoints st -> m ()
 offchainAccept' = offchainAcceptSwapId' 1
 
 
-offchainAcceptForged :: (HasCallStack, MonadEmulated caps base m) => Address -> TAddress SPBF.PermitSwapBurnFeeEntrypoints -> m ByteString
+offchainAcceptForged :: (HasCallStack, MonadEmulated caps base m) => Address -> ContractHandler SPBF.PermitSwapBurnFeeEntrypoints st -> m ByteString
 offchainAcceptForged buyer contract = do
   (unsigned, forgedPK) <- mkPermitToForge swapId contract
-  signature <- signBytes unsigned buyer 
-  (\() -> unsigned) <$> call contract (Call @"Offchain_accept") 
+  signature <- signBytes unsigned buyer
+  (\() -> unsigned) <$> call contract (Call @"Offchain_accept")
     [OffchainAcceptParam
       {
         swapId = swapId
@@ -744,14 +739,14 @@ offchainAcceptForged buyer contract = do
           {
             signerKey = forgedPK
           , signature = signature
-          } 
+          }
       }
-    ] 
+    ]
   where swapId = 1
 
 assertingBurnAddressStatus
   :: (MonadEmulated caps base m, HasCallStack)
-  => TAddress b
+  => ContractHandler b SPBF.AllowlistedBurnSwapFeeStorage
   -> m a
   -> (Address -> Address -> m ())
   -> m a
@@ -762,22 +757,21 @@ assertingBurnAddressStatus swapContract action changedStatus = do
   initBurnAddress `changedStatus` finalBurnAddress
   return res
     where
-      getBurnAddress c = do 
-        storage <- fromVal @SPBF.AllowlistedBurnSwapFeeStorage <$> getStorage' c
-        pure $ (SPBF.burnAddress . SPBF.burnSwapStorage) storage
+      getBurnAddress c =
+        SPBF.burnAddress . SPBF.burnSwapStorage <$> getStorage' c
 
-assertingBurnAddressUnchanged 
+assertingBurnAddressUnchanged
   :: (MonadEmulated caps base m, HasCallStack)
-  => TAddress b
+  => ContractHandler b SPBF.AllowlistedBurnSwapFeeStorage
   -> m a
-  -> m a 
-assertingBurnAddressUnchanged swapContract action = 
+  -> m a
+assertingBurnAddressUnchanged swapContract action =
    assertingBurnAddressStatus swapContract action (@==)
 
 assertingBurnAddressChanged
   :: (MonadEmulated caps base m, HasCallStack)
-  => TAddress b
+  => ContractHandler b SPBF.AllowlistedBurnSwapFeeStorage
   -> m a
-  -> m a 
-assertingBurnAddressChanged swapContract action = 
+  -> m a
+assertingBurnAddressChanged swapContract action =
    assertingBurnAddressStatus swapContract action (@/=)

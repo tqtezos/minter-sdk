@@ -7,6 +7,7 @@ import GHC.Integer (negateInteger)
 
 import Test.Tasty (TestTree, testGroup)
 
+import Lorentz.Address
 import Morley.Nettest
 import Morley.Nettest.Tasty (nettestScenarioCaps)
 import Tezos.Address (unsafeParseAddress)
@@ -19,7 +20,6 @@ import qualified Lorentz.Contracts.Spec.FA2Interface as FA2I
 
 import Lorentz.Contracts.Swaps.Basic
 import Lorentz.Test.Consumer
-import Lorentz.Value
 import Test.Swaps.Util
 import Test.Util
 
@@ -37,7 +37,7 @@ genTestData = do
   let genNat = Gen.integral (Range.constant 1 20)
   numOffers <- genNat
   token1Offer <- genNat
-  token2Offer <- genNat 
+  token2Offer <- genNat
   token1Request <- genNat
   token2Request <- genNat
   pure $ TestData
@@ -48,9 +48,9 @@ genTestData = do
     , token2Request = token2Request }
 
 hprop_Correct_num_tokens_transferred_to_contract_on_start :: Property
-hprop_Correct_num_tokens_transferred_to_contract_on_start = 
+hprop_Correct_num_tokens_transferred_to_contract_on_start =
   property $ do
-   TestData{numOffers, token1Offer, token2Offer} <- forAll genTestData 
+   TestData{numOffers, token1Offer, token2Offer} <- forAll genTestData
    clevelandProp  $ do
      setup <- doFA2Setup
      let alice ::< SNil = sAddresses setup
@@ -68,9 +68,9 @@ hprop_Correct_num_tokens_transferred_to_contract_on_start =
              }
 
 hprop_Contract_balance_goes_to_zero_when_sale_concludes :: Property
-hprop_Contract_balance_goes_to_zero_when_sale_concludes = 
+hprop_Contract_balance_goes_to_zero_when_sale_concludes =
   property $ do
-   TestData{numOffers, token1Offer, token2Offer, token1Request, token2Request} <- forAll genTestData 
+   TestData{numOffers, token1Offer, token2Offer, token1Request, token2Request} <- forAll genTestData
    clevelandProp  $ do
      setup <- doFA2Setup
      let alice ::< bob ::< SNil = sAddresses setup
@@ -153,10 +153,10 @@ statusChecks = testGroup "Statuses"
       call swap (Call @"Accept") initSwapId
 
       call swap (Call @"Accept") initSwapId
-        & expectError swap errSwapFinished
+        & expectError errSwapFinished
 
       call swap (Call @"Cancel") initSwapId
-        & expectError swap errSwapFinished
+        & expectError errSwapFinished
 
   , nettestScenarioCaps "Operations with cancelled swap fail" $ do
       swap <- originateSwap
@@ -165,10 +165,10 @@ statusChecks = testGroup "Statuses"
       call swap (Call @"Cancel") initSwapId
 
       call swap (Call @"Accept") initSwapId
-        & expectError swap errSwapCancelled
+        & expectError errSwapCancelled
 
       call swap (Call @"Cancel") initSwapId
-        & expectError swap errSwapCancelled
+        & expectError errSwapCancelled
   ]
 
 remainingOffersChecks :: TestTree
@@ -181,10 +181,10 @@ remainingOffersChecks = testGroup "Statuses"
       call swap (Call @"Accept") initSwapId
 
       call swap (Call @"Accept") initSwapId
-        & expectError swap errSwapFinished
+        & expectError errSwapFinished
 
       call swap (Call @"Cancel") initSwapId
-        & expectError swap errSwapFinished
+        & expectError errSwapFinished
   ]
 
 swapIdChecks :: TestTree
@@ -216,16 +216,16 @@ swapIdChecks = testGroup "SwapIds"
       swap <- originateSwap
 
       call swap (Call @"Accept") initSwapId
-        & expectError swap errSwapNotExist
+        & expectError errSwapNotExist
       call swap (Call @"Cancel") initSwapId
-        & expectError swap errSwapNotExist
+        & expectError errSwapNotExist
 
       call swap (Call @"Start") $ mkSingleOffer $ SwapOffer [] []
 
       call swap (Call @"Accept") (incrementSwapId initSwapId)
-        & expectError swap errSwapNotExist
+        & expectError errSwapNotExist
       call swap (Call @"Cancel") (incrementSwapId initSwapId)
-        & expectError swap errSwapNotExist
+        & expectError errSwapNotExist
 
       call swap (Call @"Accept") initSwapId
   ]
@@ -242,11 +242,11 @@ authorizationChecks = testGroup "Authorization checks"
         call swap (Call @"Start") $ mkSingleOffer $ SwapOffer [] []
 
       call swap (Call @"Cancel") initSwapId
-        & expectError swap errNotSwapSeller
+        & expectError errNotSwapSeller
 
       withSender bob $
         call swap (Call @"Cancel") initSwapId
-        & expectError swap errNotSwapSeller
+        & expectError errNotSwapSeller
   ]
 
 invalidFA2sChecks :: TestTree
@@ -257,9 +257,10 @@ invalidFA2sChecks = testGroup "Invalid FA2s"
       let tokenId1 ::< SNil = sTokens setup
 
       fakeFa2 <-
-        TAddress . unTAddress <$>
         originateSimple "fake-fa2" ([] :: [Integer]) contractConsumer
-      let nonExistingFa2 = TAddress $ unsafeParseAddress "tz1b7p3PPBd3vxmMHZkvtC61C7ttYE6g683F"
+      let nonExistingFa2 =
+            ContractHandler "non-existing fa2" $
+            unsafeParseAddress "tz1b7p3PPBd3vxmMHZkvtC61C7ttYE6g683F"
       let pseudoFa2s = [("fake FA2", fakeFa2), ("non existing FA2", nonExistingFa2)]
 
       for_ pseudoFa2s $ \(desc, fa2) -> do
@@ -272,7 +273,7 @@ invalidFA2sChecks = testGroup "Invalid FA2s"
             { assetsOffered = [mkFA2Assets fa2 [(tokenId1, 1)]]
             , assetsRequested = []
             })
-            & expectError swap errSwapOfferedFA2Invalid
+            & expectError errSwapOfferedFA2Invalid
 
         comment "Checking requested FA2"
         withSender alice $ do
@@ -282,7 +283,7 @@ invalidFA2sChecks = testGroup "Invalid FA2s"
             }
 
           call swap (Call @"Accept") initSwapId
-            & expectError swap errSwapRequestedFA2Invalid
+            & expectError errSwapRequestedFA2Invalid
       , nettestScenarioCaps "Accepter accepting swap with 0 balance of requested token fails" $ do
           setup <- doFA2Setup
           let alice ::< SNil = sAddresses setup
@@ -290,8 +291,8 @@ invalidFA2sChecks = testGroup "Invalid FA2s"
           swap <- originateSwap
           fa2 <- originateFA2 "fa2" setup [swap]
           addressWithZeroBalance <- newAddress "test"
-          withSender addressWithZeroBalance $ 
-            call fa2 (Call @"Update_operators")     
+          withSender addressWithZeroBalance $
+            call fa2 (Call @"Update_operators")
               [
                 FA2I.AddOperator FA2I.OperatorParam
                   { opOwner = addressWithZeroBalance
@@ -306,8 +307,9 @@ invalidFA2sChecks = testGroup "Invalid FA2s"
               }
           withSender addressWithZeroBalance
             (call swap (Call @"Accept") initSwapId
-              `expectFailure` failedWith fa2 (errSwapRequestedFA2BalanceInvalid 5 0))
-  ]    
+              & expectTransferFailure
+                [failedWith $ constant (errSwapRequestedFA2BalanceInvalid 5 0)])
+  ]
 
 complexCases :: TestTree
 complexCases = testGroup "Complex cases"

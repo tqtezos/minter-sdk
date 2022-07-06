@@ -22,53 +22,51 @@ module Test.Swaps.Util
 
 import qualified Lorentz.Contracts.Spec.FA2Interface as FA2
 import Lorentz.Value
-import qualified Michelson.Typed as T
 import Morley.Nettest
+
+import Lorentz.Contracts.Swaps.Contracts
 
 import Lorentz.Contracts.Swaps.Allowlisted
 import Lorentz.Contracts.Swaps.Basic
 import Lorentz.Contracts.Swaps.SwapPermit
 
+import qualified Lorentz.Contracts.Swaps.AllowlistedFee as AllowlistedFee
 import Lorentz.Contracts.Swaps.Burn
-import Lorentz.Contracts.Swaps.AllowlistedFee
 
 import Lorentz.Contracts.Swaps.Collections
 import Lorentz.Contracts.Swaps.SwapPermitBurnFee
+
 import Test.Util
 
 -- | Originate the swaps contract.
 originateSwap
   :: MonadNettest caps base m
-  => m (TAddress Lorentz.Contracts.Swaps.Basic.SwapEntrypoints)
-originateSwap = do
-  TAddress <$> originateUntypedSimple "swaps"
-    (T.untypeValue $ T.toVal Lorentz.Contracts.Swaps.Basic.initSwapStorage)
-    (T.convertContract swapsContract)
+  => m (ContractHandler SwapEntrypoints SwapStorage)
+originateSwap =
+  originateSimple "swaps" initSwapStorage swapsContract
 
 -- | Originate the allowlisted swaps contract.
 originateAllowlistedSwap
   :: MonadNettest caps base m
   => Address
-  -> m (TAddress AllowlistedSwapEntrypoints)
-originateAllowlistedSwap admin = do
-  TAddress <$> originateUntypedSimple "swaps"
-    (T.untypeValue $ T.toVal $ initAllowlistedSwapStorage admin)
-    (T.convertContract allowlistedSwapsContract)
+  -> m (ContractHandler AllowlistedSwapEntrypoints AllowlistedSwapStorage)
+originateAllowlistedSwap admin =
+  originateSimple "swaps" (initAllowlistedSwapStorage admin) allowlistedSwapsContract
 
 -- | Originate the allowlisted burn swaps contract.
 originateAllowlistedBurnSwap
   :: MonadNettest caps base m
   => Address
-  -> m (TAddress AllowlistedBurnSwapEntrypoints)
+  -> m (ContractHandler AllowlistedBurnSwapEntrypoints AllowlistedBurnSwapStorage)
 originateAllowlistedBurnSwap admin = do
-  TAddress <$> originateUntypedSimple "swaps"
-    (T.untypeValue $ T.toVal $ initAllowlistedBurnSwapStorage admin)
-    (T.convertContract allowlistedBurnSwapsContract)
+  originateSimple "swaps"
+    (initAllowlistedBurnSwapStorage admin)
+    allowlistedBurnSwapsContract
 
 -- | Originate the allowlisted burn swaps contract and admin for it.
 originateAllowlistedBurnSwapWithAdmin
   :: MonadNettest caps base m
-  => m (TAddress AllowlistedBurnSwapEntrypoints, Address)
+  => m (ContractHandler AllowlistedBurnSwapEntrypoints AllowlistedBurnSwapStorage, Address)
 originateAllowlistedBurnSwapWithAdmin =
   originateWithAdmin originateAllowlistedBurnSwap
 
@@ -77,16 +75,16 @@ originateAllowlistedBurnSwapWithAdmin =
 originateChangeBurnAddressSwap
   :: MonadNettest caps base m
   => Address
-  -> m (TAddress ChangeBurnAddressSwapEntrypoints)
+  -> m (ContractHandler ChangeBurnAddressSwapEntrypoints AllowlistedBurnSwapStorage)
 originateChangeBurnAddressSwap admin = do
-  TAddress <$> originateUntypedSimple "swaps"
-    (T.untypeValue $ T.toVal $ initAllowlistedBurnSwapStorage admin)
-    (T.convertContract changeBurnAddressSwapsContract)
+  originateSimple "swaps"
+    (initAllowlistedBurnSwapStorage admin)
+    changeBurnAddressSwapsContract
 
 -- | Originate the allowlisted burn swaps contract and admin for it.
 originateChangeBurnAddressSwapWithAdmin
   :: MonadNettest caps base m
-  => m (TAddress ChangeBurnAddressSwapEntrypoints, Address)
+  => m (ContractHandler ChangeBurnAddressSwapEntrypoints AllowlistedBurnSwapStorage, Address)
 originateChangeBurnAddressSwapWithAdmin =
   originateWithAdmin originateChangeBurnAddressSwap
 
@@ -94,7 +92,7 @@ originateChangeBurnAddressSwapWithAdmin =
 -- | Originate the allowlisted burn swaps contract and admin for it.
 originateOffchainSwapBurnFeeWithAdmin
   :: MonadNettest caps base m
-  => m (TAddress PermitSwapBurnFeeEntrypoints, Address)
+  => m (ContractHandler PermitSwapBurnFeeEntrypoints AllowlistedBurnSwapFeeStorage, Address)
 originateOffchainSwapBurnFeeWithAdmin =
   originateWithAdmin originateOffchainSwapBurnFee
 
@@ -103,16 +101,18 @@ originateOffchainSwapBurnFeeWithAdmin =
 originateAllowlistedFeeSwap
   :: MonadNettest caps base m
   => Address
-  -> m (TAddress Lorentz.Contracts.Swaps.AllowlistedFee.AllowlistedFeeSwapEntrypoints)
+  -> m $ ContractHandler
+      AllowlistedFee.AllowlistedFeeSwapEntrypoints
+      AllowlistedFee.AllowlistedFeeSwapStorage
 originateAllowlistedFeeSwap admin = do
-  TAddress <$> originateUntypedSimple "swaps"
-    (T.untypeValue $ T.toVal $ initAllowlistedFeeSwapStorage admin)
-    (T.convertContract allowlistedFeeSwapsContract)
+  originateSimple "swaps"
+    (AllowlistedFee.initAllowlistedFeeSwapStorage admin)
+    allowlistedFeeSwapsContract
 
 -- | Originate the allowlisted swaps contract and admin for it.
 originateAllowlistedSwapWithAdmin
   :: MonadNettest caps base m
-  => m (TAddress AllowlistedSwapEntrypoints, Address)
+  => m (ContractHandler AllowlistedSwapEntrypoints AllowlistedSwapStorage, Address)
 originateAllowlistedSwapWithAdmin =
   originateWithAdmin originateAllowlistedSwap
 
@@ -120,49 +120,49 @@ originateAllowlistedSwapWithAdmin =
 originateOffchainSwap
   :: MonadNettest caps base m
   => Address
-  -> m (TAddress PermitSwapEntrypoints)
+  -> m (ContractHandler PermitSwapEntrypoints AllowlistedSwapStorage)
 originateOffchainSwap admin = do
-  TAddress <$> originateUntypedSimple "swaps"
-    (T.untypeValue $ T.toVal $ initAllowlistedSwapStorage admin)
-    (T.convertContract allowlistedSwapsPermitContract)
+  originateSimple "swaps"
+    (initAllowlistedSwapStorage admin)
+    allowlistedSwapsPermitContract
 
 -- | Originate the offchain collections contract
 originateOffchainCollections
   :: MonadNettest caps base m
   => Address
   -> Address
-  -> m (TAddress OffchainCollectionsEntrypoints)
+  -> m (ContractHandler OffchainCollectionsEntrypoints CollectionsStorage)
 originateOffchainCollections admin fa2 = do
-  TAddress <$> originateUntypedSimple "swaps"
-    (T.untypeValue $ T.toVal $ initCollectionsStorage admin fa2)
-    (T.convertContract offchainCollectionsContract)
+  originateSimple "swaps"
+    (initCollectionsStorage admin fa2)
+    offchainCollectionsContract
 
 
 -- | Originate the swaps contract with offchain_accept entrypoint.
 originateOffchainSwapBurnFee
   :: MonadNettest caps base m
   => Address
-  -> m (TAddress PermitSwapBurnFeeEntrypoints)
+  -> m (ContractHandler PermitSwapBurnFeeEntrypoints AllowlistedBurnSwapFeeStorage)
 originateOffchainSwapBurnFee admin = do
-  TAddress <$> originateUntypedSimple "swaps"
-    (T.untypeValue $ T.toVal $ initAllowlistedBurnSwapFeeStorage admin)
-    (T.convertContract allowlistedSwapsPermitBurnFeeContract)
+  originateSimple "swaps"
+    (initAllowlistedBurnSwapFeeStorage admin)
+    allowlistedSwapsPermitBurnFeeContract
 
 -- | Originate the allowlisted swaps contract and admin for it.
 originateOffchainSwapWithAdmin
   :: MonadNettest caps base m
-  => m (TAddress PermitSwapEntrypoints, Address)
+  => m (ContractHandler PermitSwapEntrypoints AllowlistedSwapStorage, Address)
 originateOffchainSwapWithAdmin =
   originateWithAdmin originateOffchainSwap
 
 ---- | Originate the offchain collections contract
 --originateOffchainCollectionsWithAdmin
 --  :: MonadNettest caps base m
---  => m (TAddress OffchainCollectionsEntrypoints, Address)
---originateOffchainCollectionsWithAdmin = 
+--  => m (ContractHandler OffchainCollectionsEntrypoints CollectionsStorage, Address)
+--originateOffchainCollectionsWithAdmin =
 --  originateWithAdmin originateOffchainCollections
 
 -- | Construct 'FA2Assets' from a simplified representation.
-mkFA2Assets :: TAddress fa2Param -> [(FA2.TokenId, Natural)] -> FA2Assets
+mkFA2Assets :: ContractHandler fa2Param fa2Storage -> [(FA2.TokenId, Natural)] -> FA2Assets
 mkFA2Assets addr tokens =
   FA2Assets (toAddress addr) (uncurry FA2Token <$> tokens)

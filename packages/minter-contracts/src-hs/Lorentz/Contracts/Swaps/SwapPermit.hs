@@ -3,10 +3,6 @@ module Lorentz.Contracts.Swaps.SwapPermit where
 
 import Lorentz
 
-import Lorentz.Contracts.MinterSdk
-import Michelson.Test.Import (embedContractM)
-import qualified Michelson.Typed as T
-
 import Lorentz.Contracts.Swaps.Allowlisted
 -- Types
 ----------------------------------------------------------------------------
@@ -21,7 +17,7 @@ deriving anyclass instance IsoValue Permit
 deriving anyclass instance HasAnnotation Permit
 
 data OffchainAcceptParam = OffchainAcceptParam
-  { swapId :: Natural 
+  { swapId :: Natural
   , permit :: Permit
   }
 
@@ -39,14 +35,6 @@ deriving anyclass instance HasAnnotation PermitSwapEntrypoints
 
 instance ParameterHasEntrypoints PermitSwapEntrypoints where
   type ParameterEntrypointsDerivation PermitSwapEntrypoints = EpdDelegate
-
--- Contract
-----------------------------------------------------------------------------
-
-allowlistedSwapsPermitContract
-  :: T.Contract (ToT PermitSwapEntrypoints) (ToT AllowlistedSwapStorage)
-allowlistedSwapsPermitContract =
-  $$(embedContractM (inBinFolder "fa2_allowlisted_swap_offchain_nocounter.tz"))
 
 -- Errors
 ----------------------------------------------------------------------------

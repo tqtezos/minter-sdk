@@ -8,9 +8,6 @@ module Lorentz.Contracts.EnglishAuction.TezFixedFee
   , initAuctionStorage
   , AuctionTez.AuctionWithoutConfigureEntrypoints(..)
   , AuctionTez.AuctionEntrypoints(..)
-
-  -- * Contract
-  , englishAuctionTezFixedFeeContract
   ) where
 
 import Lorentz
@@ -19,10 +16,7 @@ import Fmt (Buildable(..), genericF)
 import Lorentz.Contracts.EnglishAuction.Common
 import qualified Lorentz.Contracts.EnglishAuction.Tez as AuctionTez
 import Lorentz.Contracts.MinterSdk
-import qualified Lorentz.Contracts.NoAllowlist as NoAllowlist
 import Lorentz.Contracts.PausableAdminOption
-import Michelson.Test.Import (embedContractM)
-import qualified Michelson.Typed as T
 
 -- Types
 ----------------------------------------------------------------------------
@@ -52,12 +46,3 @@ initAuctionStorage feeData as = AuctionStorage
   , allowlist = ()
   , fee = feeData
   }
-
--- Contract
-----------------------------------------------------------------------------
-
-englishAuctionTezFixedFeeContract
-  :: T.Contract
-      (ToT (AuctionTez.AuctionEntrypoints NoAllowlist.Entrypoints))
-      (ToT AuctionStorage)
-englishAuctionTezFixedFeeContract = $$(embedContractM (inBinFolder "english_auction_tez_fixed_fee.tz"))

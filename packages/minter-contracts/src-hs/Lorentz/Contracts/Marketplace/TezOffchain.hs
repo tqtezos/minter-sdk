@@ -10,22 +10,15 @@ module Lorentz.Contracts.Marketplace.TezOffchain
   , Permit(..)
   , MarketplaceTezOffchainEntrypoints
   , MarketplaceTezOffchainStorage(..)
-
-  -- * Contract
-  , marketplaceTezOffchainContract
   , initMarketplaceTezOffchainStorage
   ) where
 
 import Fmt (Buildable(..), genericF)
 import Lorentz
 
-import Lorentz.Contracts.MinterSdk
 import Lorentz.Contracts.PausableAdminOption
-import Michelson.Test.Import (embedContractM)
-import qualified Michelson.Typed as T
 
 import qualified Lorentz.Contracts.Marketplace.Tez as MarketTez
-import qualified Lorentz.Contracts.NoAllowlist as NoAllowlist
 
 -- Types
 ----------------------------------------------------------------------------
@@ -69,7 +62,7 @@ deriving anyclass instance IsoValue OffchainBuyParam
 deriving anyclass instance HasAnnotation OffchainBuyParam
 instance Buildable OffchainBuyParam where build = genericF
 
-data MarketplaceTezOffchainEntrypoints al 
+data MarketplaceTezOffchainEntrypoints al
   = BaseSale (MarketTez.MarketplaceTezEntrypoints al)
   | Offchain_buy [OffchainBuyParam]
   | Confirm_purchases [PendingPurchase]
@@ -89,15 +82,6 @@ instance
 initMarketplaceTezOffchainStorage :: Monoid al => AdminStorage -> MarketplaceTezOffchainStorage al
 initMarketplaceTezOffchainStorage as =
   MarketplaceTezOffchainStorage
-    { marketplaceStorage = MarketTez.initMarketplaceStorageWithPendingPurchasers as 
+    { marketplaceStorage = MarketTez.initMarketplaceStorageWithPendingPurchasers as
     , counter = 1
     }
-
--- Contract
-----------------------------------------------------------------------------
-
-marketplaceTezOffchainContract
-  :: T.Contract
-      (ToT (MarketplaceTezOffchainEntrypoints NoAllowlist.Entrypoints))
-      (ToT (MarketplaceTezOffchainStorage NoAllowlist.Allowlist))
-marketplaceTezOffchainContract = $$(embedContractM (inBinFolder "fixed_price_sale_market_tez_offchain.tz"))
