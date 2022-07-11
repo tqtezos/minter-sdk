@@ -9,7 +9,7 @@ import qualified Lorentz.Contracts.EnglishAuction.TezPermit as Permit
 import Lorentz.Contracts.MinterSdk
 import qualified Lorentz.Contracts.NoAllowlist as NoAllowlist
 import Lorentz.Contracts.PausableAdminOption
-import Michelson.Test.Import (embedContractM)
+import Lorentz.Test.Import (embedContractM)
 import qualified Michelson.Typed as T
 import qualified Lorentz.Contracts.Spec.FA2Interface as FA2I
 
@@ -75,10 +75,10 @@ deriving anyclass instance HasAnnotation BidHeapKey
 
 data BidData = BidData 
   {
-    bidder :: Address
+    price :: Mutez
+  , bidder :: Address
   , quantity :: Natural
   , isOffchain :: Bool
-  , price :: Mutez
   , bidTime :: Timestamp
   }
 
@@ -89,8 +89,8 @@ deriving anyclass instance HasAnnotation BidData
 data BidParam = BidParam 
  {  
     auctionId :: Natural
-  , quantityParam :: Natural
   , priceParam :: Mutez
+  , quantityParam :: Natural
  } deriving stock (Eq, Ord, Show)
 
 customGeneric "BidParam" ligoCombLayout
@@ -175,16 +175,6 @@ instance
   ) =>
     ParameterHasEntrypoints AuctionEntrypoints where
   type ParameterEntrypointsDerivation AuctionEntrypoints = EpdDelegate
-
--- Contract
-----------------------------------------------------------------------------
-
-auctionContract
-  :: T.Contract
-      (ToT AuctionEntrypoints)
-      (ToT AuctionStorage)
-auctionContract =
-  $$(embedContractM (inBinFolder "multiunit_bonding_curve_auction_offchain_bid.tz"))
 
 -- Errors
 ----------------------------------------------------------------------------

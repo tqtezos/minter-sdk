@@ -15,7 +15,7 @@ import Lorentz.Contracts.MinterCollection.Editions.Contracts
 import Lorentz.Contracts.MinterCollection.Editions.Types
 import qualified Lorentz.Contracts.MinterCollection.Nft.Asset as NftAsset
 import qualified Lorentz.Contracts.MinterCollection.Nft.Token as NftToken
-import qualified Lorentz.Contracts.PausableAdminOption as Admin
+import qualified Lorentz.Contracts.SimpleAdmin as SimpleAdmin
 import Lorentz.Contracts.Spec.FA2Interface (TokenId(..), mkFA2View)
 import qualified Lorentz.Contracts.Spec.FA2Interface as FA2
 import Test.Util (clevelandProp)
@@ -246,11 +246,7 @@ mkStorage modifyStorage = do
                   { ledger = mempty
                   , operators = mempty
                   }
-              , admin = Admin.AdminStorage
-                  { admin = admin
-                  , pendingAdmin = Nothing
-                  , paused = False
-                  }
+              , admin = SimpleAdmin.initAdminStorage admin
               , metadata = mempty
               }
           }

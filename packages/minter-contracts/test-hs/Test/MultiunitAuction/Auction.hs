@@ -14,10 +14,17 @@ import qualified Hedgehog.Range as Range
 import Hedgehog (Gen, Property, forAll, label, property)
 import Morley.Nettest
 import Test.MultiunitAuction.Util
-import qualified Indigo.Contracts.FA2Sample as FA2
+import qualified Lorentz.Contracts.MinterCollection.Nft.Asset as Nft
+import qualified Lorentz.Contracts.MinterCollection.Nft.Token as NftToken
+import qualified Lorentz.Contracts.MinterCollection.Nft.Contract as NftContract
+import qualified Lorentz.Contracts.Spec.FA2Interface as FA2I
+import qualified Lorentz.Contracts.PausableAdminOption as Admin
+import qualified Michelson.Typed as T
+import Hedgehog.Gen.Tezos.Core (genMutez')
 
 import qualified Lorentz.Contracts.MultiunitAuction.Auction as Auction
-import Tezos.Core (timestampPlusSeconds, unsafeMulMutez)
+import Test.MinterCollection.Util
+import Tezos.Core (timestampPlusSeconds, unsafeMulMutez, mulMutez)
 import Fmt ((+|), (|+))
 import Test.Util
 
@@ -34,14 +41,13 @@ hprop_First_bid_is_valid_IFF_it_meets_price_floor =
       withSender seller $ addSampleBondingCurve contract
       withSender seller $ configureAuction testData setup
       waitForAuctionToStart testData
-      let bid = Auction.BidParam 0 1 firstBid
+      let bid = Auction.BidParam 0 firstBid 1
 
       withSender bidder $
         if firstBid >= testPriceFloor
           then placeBid contract bid
           else placeBid contract bid 
-               `expectFailure` 
-                  failedWith contract
+               & expectFailedWith
                     ([mt|INVALID_BID_AMOUNT|], (bidder, firstBid, startTime, startTime))
 
 hprop_Auction_ends_if_no_bids_are_placed_within_'round_time'_seconds :: Property
@@ -74,13 +80,15 @@ hprop_Auction_ends_if_no_bids_are_placed_within_'round_time'_seconds =
                 placeBid contract bid
 
               -- `resolve` should fail because auction is still in progress.
-              resolveAuction contract `expectFailure` failedWith contract [mt|AUCTION_NOT_ENDED|]
+              resolveAuction contract 
+                & expectError [mt|AUCTION_NOT_ENDED|]
 
               placeBids (rest, successfulBids + 1)
 
             else do
               withSender bidder $ do
-                placeBid contract bid `expectFailure` failedWith contract [mt|NOT_IN_PROGRESS|]
+                placeBid contract bid 
+                  & expectError [mt|NOT_IN_PROGRESS|]
               
               -- return bids, max 6 bids
               if successfulBids > 0
@@ -101,7 +109,51 @@ hprop_Auction_ends_if_no_bids_are_placed_within_'round_time'_seconds =
               -- `resolve` should succeed.
               resolveAuction contract
 
+
       placeBids (toList bids `zip` toList bidders `zip` toList bidWaitingTimes, 0)
+
+hprop_Assets_are_transferred_to_winning_bidders :: Property
+hprop_Assets_are_transferred_to_winning_bidders =
+  property $ do
+    testData@TestData{testExtendTime, testAuctionDuration} <- forAll genTestData
+    bids <- forAll $ genSomeBids testData
+
+    clevelandProp $ do
+      setup@Setup{seller, contract, fa2Contract} <- testSetup testData
+      bidders <- mkBidders bids
+      withSender seller $ addSampleBondingCurve contract
+      withSender seller $ configureAuction testData setup
+
+      -- Wait for the auction to start.
+      waitForAuctionToStart testData
+
+      forM_ (toList bids `zip` toList bidders) \(bid, bidder) -> do
+        withSender bidder $
+          placeBid contract bid
+
+      -- Wait for the auction to end.
+      advanceTime (sec $ fromIntegral $ testAuctionDuration `max` testExtendTime)
+     
+      returnBids contract (Auction.AuctionId 0, 6) --max bids
+
+      withSender seller $ do
+        resolveAuction contract
+      
+      let winners = winningBids sampleBondingCurve' (toList bids `zip` toList bidders)
+
+      unless (null winners) (payoutWinners contract (Auction.AuctionId 0, 100))
+
+
+      -- All the tokens should have been transferred to the winner.
+      let increment n = n + 1
+      count <- newIORef 0
+      forM_ winners \(winningBid, winner) -> do
+        forM_ [1..(Auction.quantityParam winningBid)] \_ -> do
+          tokenId <- readIORef count
+          winnerBalance <- Nft.balanceOf fa2Contract (FA2I.TokenId tokenId) winner
+          winnerBalance @== 1
+          modifyIORef' count increment
+      
 ----------------------------------------------------------------------------
 -- Generators
 ----------------------------------------------------------------------------
@@ -148,7 +200,7 @@ genBid testData auctionId = do
   let minBid = testPriceFloor testData
   bidPrice <- genMutez' (Range.linear minBid (minBid + 1_000_000))
   --quantity <- Gen.integral (Range.linear 1 1000)
-  pure $ Auction.BidParam auctionId 1 bidPrice 
+  pure $ Auction.BidParam auctionId bidPrice 1
 
 ----------------------------------------------------------------------------
 -- Helpers
@@ -157,7 +209,7 @@ genBid testData auctionId = do
 mkBidders :: (MonadNettest caps base m, TraversableWithIndex Int f) => f Auction.BidParam -> m (f Address)
 mkBidders bids =
   ifor bids \i _ -> do 
-    addr <- newAddress ("bidder-" <> show i)
+    addr <- newAddress (fromString $ "bidder-" <> show i)
     transferMoney addr 1_000_000_e6 --transfer sufficient tez to bidders
     pure addr
 
@@ -165,13 +217,17 @@ sampleBondingCurve :: '[Natural] L.:-> '[Mutez]
 sampleBondingCurve = do
   L.push (toMutez 333333 :: Mutez) L.# L.mul
 
+sampleBondingCurve' :: Natural -> Mutez 
+sampleBondingCurve' qty = 
+  (toMutez 333333 :: Mutez) `unsafeMulMutez` qty 
+
 sampleIntegralCurve :: '[Natural] L.:-> '[Mutez]
 sampleIntegralCurve = do
   L.dup L.# L.mul L.# L.push (toMutez 166666 :: Mutez) L.# L.mul 
 
 data Setup = Setup
-  { contract :: TAddress $ Auction.AuctionEntrypoints
-  , fa2Contract :: TAddress FA2.FA2SampleParameter
+  { contract :: ContractHandler Auction.AuctionEntrypoints Auction.AuctionStorage
+  , fa2Contract :: ContractHandler Nft.EntrypointsWithMint Nft.StorageWithTokenMetadata
   , feeCollector :: Address
   , seller :: Address
   , startTime :: Timestamp
@@ -189,15 +245,8 @@ testSetup testData = do
   seller <- newAddress "seller"
   contract <- originateAuction seller
 
-  -- The FA2 contracts with the seller's assets
-  fa2Contract <- 
-    originateSimple "asset-fa2"
-      FA2.Storage
-      { sLedger = BigMap $ Map.empty --Auction contract mints tokens
-      , sOperators = BigMap $ Map.fromList [((seller, toAddress contract), ())]
-      , sTokenMetadata = mempty
-      }
-      (FA2.fa2Contract def { FA2.cAllowedTokenIds = []})
+  -- The FA2 contracts with the seller's assets, contact is the admin
+  fa2Contract <- originateNftContract (toAddress contract)
 
   now <- getNow
   let startTime = now `timestampPlusSeconds` testTimeToStart testData
@@ -233,6 +282,30 @@ getHeapSize auctionId auctionStorage = do
 --  fromMaybe totalOffers maybeMaxAcceptedOffers
 --  where minPriceValidAtQ = \q -> L.exec q bondingCurve 
 
+winningBids :: (Natural -> Mutez) -> [(Auction.BidParam, Address)] -> [(Auction.BidParam, Address)] 
+winningBids bondingCurve bids = do
+  let bidsSorted = sort bids 
+  let numOffers = foldl (\offers bid -> offers + Auction.quantityParam (fst bid)) 0 bidsSorted
+  let 
+    getValidBidList ([], _) = []
+    getValidBidList ((x:xs), numOffs) = 
+      let expectedMinimumPrice = bondingCurve $ numOffs 
+          bidParam = fst x
+          bidder =  snd x
+      in
+      if Auction.priceParam bidParam < expectedMinimumPrice 
+        then
+          if Auction.quantityParam bidParam == 1 
+            then getValidBidList (xs, numOffs)
+          else 
+            getValidBidList ((bidParam{Auction.quantityParam = ((Auction.quantityParam $ fst x) - 1)}, bidder) : xs, numOffs - 1)
+        else 
+          x : xs
+  getValidBidList (bidsSorted, numOffers) 
+--  let maybeMaxAcceptedOffers = find ( (>= offerPrice) . minPriceValidAtQ) [1 .. totalOffers]
+--  fromMaybe totalOffers maybeMaxAcceptedOffers
+--  where minPriceValidAtQ = \q -> L.exec q bondingCurve 
+
 ----------------------------------------------------------------------------
 -- Call entrypoints
 ----------------------------------------------------------------------------
@@ -254,7 +327,7 @@ configureAuction testData Setup{fa2Contract, contract, startTime, endTime, reser
     , tokenInfo = mempty 
     }
 
-placeBid :: (HasCallStack, MonadNettest caps base m) => TAddress Auction.AuctionEntrypoints -> Auction.BidParam -> m ()
+placeBid :: (HasCallStack, MonadNettest caps base m) => ContractHandler Auction.AuctionEntrypoints Auction.AuctionStorage -> Auction.BidParam -> m ()
 placeBid contract bidParam =
   transfer TransferData
     { tdTo = contract
@@ -263,22 +336,25 @@ placeBid contract bidParam =
     , tdParameter = bidParam
     }
 
-addSampleBondingCurve :: (HasCallStack, MonadNettest caps base m) => TAddress Auction.AuctionEntrypoints -> m ()
+addSampleBondingCurve :: (HasCallStack, MonadNettest caps base m) => ContractHandler Auction.AuctionEntrypoints Auction.AuctionStorage -> m ()
 addSampleBondingCurve = addBondingCurve sampleBondingCurve sampleIntegralCurve
 
-addBondingCurve :: (HasCallStack, MonadNettest caps base m) => ('[Natural] L.:-> '[Mutez])  -> ('[Natural] L.:-> '[Mutez])-> TAddress Auction.AuctionEntrypoints -> m ()
+addBondingCurve :: (HasCallStack, MonadNettest caps base m) => ('[Natural] L.:-> '[Mutez])  -> ('[Natural] L.:-> '[Mutez])-> ContractHandler Auction.AuctionEntrypoints Auction.AuctionStorage -> m ()
 addBondingCurve bc integral contract = do
   call contract (Call @"Add_bonding_curve") (bc, integral) 
 
-resolveAuction :: (HasCallStack, MonadNettest caps base m) => TAddress Auction.AuctionEntrypoints -> m ()
+resolveAuction :: (HasCallStack, MonadNettest caps base m) => ContractHandler Auction.AuctionEntrypoints Auction.AuctionStorage -> m ()
 resolveAuction contract =
   call contract (Call @"Resolve") (Auction.AuctionId 0)
 
-returnBids :: (HasCallStack, MonadNettest caps base m) => TAddress Auction.AuctionEntrypoints -> (Auction.AuctionId, Natural) -> m ()
+returnBids :: (HasCallStack, MonadNettest caps base m) => ContractHandler Auction.AuctionEntrypoints Auction.AuctionStorage -> (Auction.AuctionId, Natural) -> m ()
 returnBids contract =  
   call contract (Call @"Return_old_bids")
 
-returnOffers:: (HasCallStack, MonadNettest caps base m) => TAddress Auction.AuctionEntrypoints -> (Auction.AuctionId, Natural) -> m ()
+returnOffers:: (HasCallStack, MonadNettest caps base m) => ContractHandler Auction.AuctionEntrypoints Auction.AuctionStorage -> (Auction.AuctionId, Natural) -> m ()
 returnOffers contract =  
   call contract (Call @"Return_old_offers")
-  
+
+payoutWinners :: (HasCallStack, MonadNettest caps base m) => ContractHandler Auction.AuctionEntrypoints Auction.AuctionStorage -> (Auction.AuctionId, Natural) -> m ()
+payoutWinners contract = 
+  call contract (Call @"Payout_winners")

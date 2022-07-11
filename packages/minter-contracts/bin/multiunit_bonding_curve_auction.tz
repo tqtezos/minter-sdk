@@ -2,7 +2,7 @@
     (or (or %adminAndInteract
            (or (or (pair %add_bonding_curve (lambda nat mutez) (lambda nat mutez))
                    (or %admin (or (unit %confirm_admin) (bool %pause)) (address %set_admin)))
-               (or (pair %bid (nat %auction_id) (pair (nat %quantity) (mutez %price))) (nat %cancel)))
+               (or (pair %bid (nat %auction_id) (pair (mutez %price) (nat %quantity))) (nat %cancel)))
            (or (or (pair %payout_winners nat nat) (nat %resolve))
                (or (pair %return_old_bids nat nat) (pair %return_old_offers nat nat))))
         (pair %configure
@@ -46,8 +46,8 @@
                                               (pair (big_map %bonding_curve_integrals nat (lambda nat mutez))
                                                     (pair (big_map %bids
                                                              (pair (nat %auction_id) (nat %bid_index))
-                                                             (pair (address %bidder)
-                                                                   (pair (nat %quantity) (pair (mutez %price) (timestamp %bid_time)))))
+                                                             (pair (mutez %price)
+                                                                   (pair (address %bidder) (pair (nat %quantity) (timestamp %bid_time)))))
                                                           (big_map %heap_sizes nat nat)))))))))) ;
   code { LAMBDA
            (option (pair (pair address bool) (option address)))
@@ -97,21 +97,17 @@
              PUSH unit Unit ;
              TRANSFER_TOKENS } ;
          LAMBDA
-           (pair (pair address (pair nat (pair mutez timestamp)))
-                 (pair address (pair nat (pair mutez timestamp))))
+           (pair (pair mutez (pair address (pair nat timestamp)))
+                 (pair mutez (pair address (pair nat timestamp))))
            bool
            { UNPAIR ;
              SWAP ;
              DUP ;
              DUG 2 ;
-             CDR ;
-             CDR ;
              CAR ;
              SWAP ;
              DUP ;
              DUG 2 ;
-             CDR ;
-             CDR ;
              CAR ;
              COMPARE ;
              LT ;
@@ -119,14 +115,10 @@
                 { SWAP ;
                   DUP ;
                   DUG 2 ;
-                  CDR ;
-                  CDR ;
                   CAR ;
                   SWAP ;
                   DUP ;
                   DUG 2 ;
-                  CDR ;
-                  CDR ;
                   CAR ;
                   COMPARE ;
                   EQ ;
@@ -134,10 +126,10 @@
                      { DROP 2 ; PUSH bool False } } } ;
          LAMBDA
            (pair (pair (pair (pair nat nat) (pair nat nat))
-                       (pair (pair address (pair nat (pair mutez timestamp)))
-                             (pair address (pair nat (pair mutez timestamp)))))
-                 (big_map (pair nat nat) (pair address (pair nat (pair mutez timestamp)))))
-           (big_map (pair nat nat) (pair address (pair nat (pair mutez timestamp))))
+                       (pair (pair mutez (pair address (pair nat timestamp)))
+                             (pair mutez (pair address (pair nat timestamp)))))
+                 (big_map (pair nat nat) (pair mutez (pair address (pair nat timestamp)))))
+           (big_map (pair nat nat) (pair mutez (pair address (pair nat timestamp))))
            { UNPAIR ;
              UNPAIR ;
              UNPAIR ;
@@ -154,17 +146,17 @@
              UPDATE } ;
          LAMBDA
            (pair (pair nat nat)
-                 (big_map (pair nat nat) (pair address (pair nat (pair mutez timestamp)))))
-           (option (pair address (pair nat (pair mutez timestamp))))
+                 (big_map (pair nat nat) (pair mutez (pair address (pair nat timestamp)))))
+           (option (pair mutez (pair address (pair nat timestamp))))
            { UNPAIR ; GET } ;
          DUP ;
          LAMBDA
            (pair (lambda
                     (pair (pair nat nat)
-                          (big_map (pair nat nat) (pair address (pair nat (pair mutez timestamp)))))
-                    (option (pair address (pair nat (pair mutez timestamp)))))
-                 (pair nat (big_map (pair nat nat) (pair address (pair nat (pair mutez timestamp))))))
-           (pair address (pair nat (pair mutez timestamp)))
+                          (big_map (pair nat nat) (pair mutez (pair address (pair nat timestamp)))))
+                    (option (pair mutez (pair address (pair nat timestamp)))))
+                 (pair nat (big_map (pair nat nat) (pair mutez (pair address (pair nat timestamp))))))
+           (pair mutez (pair address (pair nat timestamp)))
            { UNPAIR ;
              SWAP ;
              UNPAIR ;
@@ -192,22 +184,22 @@
          LAMBDA
            (pair (pair (lambda
                           (pair (pair nat nat)
-                                (big_map (pair nat nat) (pair address (pair nat (pair mutez timestamp)))))
-                          (option (pair address (pair nat (pair mutez timestamp)))))
+                                (big_map (pair nat nat) (pair mutez (pair address (pair nat timestamp)))))
+                          (option (pair mutez (pair address (pair nat timestamp)))))
                        (pair (lambda
                                 (pair (pair (pair (pair nat nat) (pair nat nat))
-                                            (pair (pair address (pair nat (pair mutez timestamp)))
-                                                  (pair address (pair nat (pair mutez timestamp)))))
-                                      (big_map (pair nat nat) (pair address (pair nat (pair mutez timestamp)))))
-                                (big_map (pair nat nat) (pair address (pair nat (pair mutez timestamp)))))
+                                            (pair (pair mutez (pair address (pair nat timestamp)))
+                                                  (pair mutez (pair address (pair nat timestamp)))))
+                                      (big_map (pair nat nat) (pair mutez (pair address (pair nat timestamp)))))
+                                (big_map (pair nat nat) (pair mutez (pair address (pair nat timestamp)))))
                              (lambda
-                                (pair (pair address (pair nat (pair mutez timestamp)))
-                                      (pair address (pair nat (pair mutez timestamp))))
+                                (pair (pair mutez (pair address (pair nat timestamp)))
+                                      (pair mutez (pair address (pair nat timestamp))))
                                 bool)))
-                 (pair (pair (big_map (pair nat nat) (pair address (pair nat (pair mutez timestamp)))) nat)
+                 (pair (pair (big_map (pair nat nat) (pair mutez (pair address (pair nat timestamp)))) nat)
                        nat))
-           (pair (pair (option (pair address (pair nat (pair mutez timestamp))))
-                       (big_map (pair nat nat) (pair address (pair nat (pair mutez timestamp)))))
+           (pair (pair (option (pair mutez (pair address (pair nat timestamp))))
+                       (big_map (pair nat nat) (pair mutez (pair address (pair nat timestamp)))))
                  nat)
            { UNPAIR ;
              UNPAIR 3 ;
@@ -226,7 +218,7 @@
                   DROP ;
                   DIG 2 ;
                   DROP ;
-                  NONE (pair address (pair nat (pair mutez timestamp))) ;
+                  NONE (pair mutez (pair address (pair nat timestamp))) ;
                   PAIR ;
                   PAIR }
                 { PUSH nat 1 ;
@@ -234,7 +226,7 @@
                   SUB ;
                   ABS ;
                   SWAP ;
-                  NONE (pair address (pair nat (pair mutez timestamp))) ;
+                  NONE (pair mutez (pair address (pair nat timestamp))) ;
                   DUP 3 ;
                   DUP 5 ;
                   PAIR ;
@@ -269,7 +261,7 @@
                            DIG 3 ;
                            PAIR ;
                            PAIR ;
-                           LEFT (big_map (pair nat nat) (pair address (pair nat (pair mutez timestamp)))) ;
+                           LEFT (big_map (pair nat nat) (pair mutez (pair address (pair nat timestamp)))) ;
                            LOOP_LEFT
                              { UNPAIR ;
                                UNPAIR ;
@@ -379,13 +371,13 @@
                                     DIG 2 ;
                                     PAIR ;
                                     PAIR ;
-                                    LEFT (big_map (pair nat nat) (pair address (pair nat (pair mutez timestamp)))) }
+                                    LEFT (big_map (pair nat nat) (pair mutez (pair address (pair nat timestamp)))) }
                                   { DROP 4 ;
                                     SWAP ;
                                     DROP ;
                                     RIGHT
                                       (pair (pair (pair nat nat)
-                                                  (big_map (pair nat nat) (pair address (pair nat (pair mutez timestamp)))))
+                                                  (big_map (pair nat nat) (pair mutez (pair address (pair nat timestamp)))))
                                             nat) } } ;
                            DIG 3 ;
                            DROP ;
@@ -429,7 +421,7 @@
                                                (pair nat
                                                      (pair (big_map nat (lambda nat mutez))
                                                            (pair (big_map nat (lambda nat mutez))
-                                                                 (pair (big_map (pair nat nat) (pair address (pair nat (pair mutez timestamp))))
+                                                                 (pair (big_map (pair nat nat) (pair mutez (pair address (pair nat timestamp))))
                                                                        (big_map nat nat)))))))))))
            (pair address
                  (pair mutez
@@ -861,15 +853,15 @@
                          CAR ;
                          DUP 4 ;
                          CDR ;
-                         CDR ;
+                         CAR ;
                          COMPARE ;
                          LT ;
                          DUP 4 ;
                          CDR ;
-                         CAR ;
+                         CDR ;
                          DUP 5 ;
                          CDR ;
-                         CDR ;
+                         CAR ;
                          MUL ;
                          AMOUNT ;
                          COMPARE ;
@@ -885,7 +877,7 @@
                               PAIR ;
                               DUP 4 ;
                               CDR ;
-                              CDR ;
+                              CAR ;
                               DUP 3 ;
                               PAIR ;
                               PAIR ;
@@ -920,11 +912,11 @@
                          CDR ;
                          CDR ;
                          PAIR ;
-                         DUP 5 ;
+                         DIG 2 ;
+                         PAIR ;
+                         DUP 4 ;
                          CDR ;
                          CAR ;
-                         PAIR ;
-                         DIG 2 ;
                          PAIR ;
                          DUP 3 ;
                          CDR ;
@@ -973,7 +965,7 @@
                          UPDATE ;
                          PAIR ;
                          PAIR ;
-                         LEFT (big_map (pair nat nat) (pair address (pair nat (pair mutez timestamp)))) ;
+                         LEFT (big_map (pair nat nat) (pair mutez (pair address (pair nat timestamp)))) ;
                          LOOP_LEFT
                            { UNPAIR ;
                              UNPAIR ;
@@ -1016,18 +1008,14 @@
                                  SWAP ;
                                  DROP ;
                                  RIGHT
-                                   (pair (pair (big_map (pair nat nat) (pair address (pair nat (pair mutez timestamp))))
+                                   (pair (pair (big_map (pair nat nat) (pair mutez (pair address (pair nat timestamp))))
                                                (pair nat nat))
-                                         (pair address (pair nat (pair mutez timestamp)))) }
+                                         (pair mutez (pair address (pair nat timestamp)))) }
                                { DUP 5 ;
-                                 CDR ;
-                                 CDR ;
                                  CAR ;
                                  SWAP ;
                                  DUP ;
                                  DUG 2 ;
-                                 CDR ;
-                                 CDR ;
                                  CAR ;
                                  COMPARE ;
                                  LE ;
@@ -1043,9 +1031,9 @@
                                       SWAP ;
                                       DROP ;
                                       RIGHT
-                                        (pair (pair (big_map (pair nat nat) (pair address (pair nat (pair mutez timestamp))))
+                                        (pair (pair (big_map (pair nat nat) (pair mutez (pair address (pair nat timestamp))))
                                                     (pair nat nat))
-                                              (pair address (pair nat (pair mutez timestamp)))) }
+                                              (pair mutez (pair address (pair nat timestamp)))) }
                                     { DIG 2 ;
                                       DIG 4 ;
                                       DUP 3 ;
@@ -1062,12 +1050,13 @@
                                       DUG 2 ;
                                       PAIR ;
                                       PAIR ;
-                                      LEFT (big_map (pair nat nat) (pair address (pair nat (pair mutez timestamp)))) } } } ;
+                                      LEFT (big_map (pair nat nat) (pair mutez (pair address (pair nat timestamp)))) } } } ;
                          DIG 8 ;
                          DROP ;
                          DIG 8 ;
                          DROP ;
                          DIG 2 ;
+                         CDR ;
                          CDR ;
                          CAR ;
                          DUP 7 ;
@@ -1436,7 +1425,7 @@
                          CAR ;
                          DUP 7 ;
                          CDR ;
-                         CDR ;
+                         CAR ;
                          COMPARE ;
                          LE ;
                          IF { DIG 6 ;
@@ -1457,7 +1446,7 @@
                               CDR ;
                               CDR ;
                               CAR }
-                            { DIG 6 ; DROP ; DUP 6 ; CDR ; CDR } ;
+                            { DIG 6 ; DROP ; DUP 6 ; CDR ; CAR } ;
                          PAIR ;
                          SWAP ;
                          DUP ;
@@ -2212,7 +2201,7 @@
                          PAIR ;
                          PAIR ;
                          PAIR ;
-                         LEFT (pair (pair (pair (big_map (pair nat nat) (pair address (pair nat (pair mutez timestamp))))
+                         LEFT (pair (pair (pair (big_map (pair nat nat) (pair mutez (pair address (pair nat timestamp))))
                                                 (list operation))
                                           (pair (list (pair (pair nat (map string bytes)) address)) nat))
                                     (pair nat nat)) ;
@@ -2265,12 +2254,13 @@
                                       PAIR ;
                                       PAIR ;
                                       RIGHT
-                                        (pair (pair (pair (pair (big_map (pair nat nat) (pair address (pair nat (pair mutez timestamp))))
+                                        (pair (pair (pair (pair (big_map (pair nat nat) (pair mutez (pair address (pair nat timestamp))))
                                                                 (list operation))
                                                           (pair (list (pair (pair nat (map string bytes)) address)) nat))
                                                     (pair (pair nat int) (pair mutez nat)))
                                               (pair nat (map string bytes))) }
                                     { DUP ;
+                                      CDR ;
                                       CDR ;
                                       CAR ;
                                       INT ;
@@ -2278,6 +2268,7 @@
                                       DIG 5 ;
                                       PAIR ;
                                       DUP 3 ;
+                                      CDR ;
                                       CAR ;
                                       DIG 10 ;
                                       PAIR ;
@@ -2329,15 +2320,15 @@
                                       UNPAIR ;
                                       DUP 7 ;
                                       DUP 4 ;
-                                      CDR ;
-                                      CDR ;
                                       CAR ;
                                       SUB ;
                                       DUP 4 ;
                                       CDR ;
+                                      CDR ;
                                       CAR ;
                                       MUL ;
                                       DUP 4 ;
+                                      CDR ;
                                       CAR ;
                                       SWAP ;
                                       PAIR ;
@@ -2348,6 +2339,7 @@
                                       SWAP ;
                                       CONS ;
                                       DIG 3 ;
+                                      CDR ;
                                       CDR ;
                                       CAR ;
                                       DIG 8 ;
@@ -2374,7 +2366,7 @@
                                       PAIR ;
                                       PAIR ;
                                       PAIR ;
-                                      LEFT (pair (pair (pair (big_map (pair nat nat) (pair address (pair nat (pair mutez timestamp))))
+                                      LEFT (pair (pair (pair (big_map (pair nat nat) (pair mutez (pair address (pair nat timestamp))))
                                                              (list operation))
                                                        (pair (list (pair (pair nat (map string bytes)) address)) nat))
                                                  (pair nat nat)) } }
@@ -2397,7 +2389,7 @@
                                   PAIR ;
                                   PAIR ;
                                   RIGHT
-                                    (pair (pair (pair (pair (big_map (pair nat nat) (pair address (pair nat (pair mutez timestamp))))
+                                    (pair (pair (pair (pair (big_map (pair nat nat) (pair mutez (pair address (pair nat timestamp))))
                                                             (list operation))
                                                       (pair (list (pair (pair nat (map string bytes)) address)) nat))
                                                 (pair (pair nat int) (pair mutez nat)))
@@ -3198,8 +3190,6 @@
                               EXEC ;
                               PUSH string "NOT_ALL_INVALID_BIDS_AND_OFFERS_RETURNED" ;
                               DIG 2 ;
-                              CDR ;
-                              CDR ;
                               CAR ;
                               DUP 3 ;
                               COMPARE ;
@@ -3636,7 +3626,7 @@
                          PAIR ;
                          PAIR ;
                          PAIR ;
-                         LEFT (pair (pair (big_map (pair nat nat) (pair address (pair nat (pair mutez timestamp)))) nat)
+                         LEFT (pair (pair (big_map (pair nat nat) (pair mutez (pair address (pair nat timestamp)))) nat)
                                     (pair nat mutez)) ;
                          LOOP_LEFT
                            { UNPAIR ;
@@ -3667,7 +3657,7 @@
                                   PAIR ;
                                   PAIR ;
                                   RIGHT
-                                    (pair (pair (pair (big_map (pair nat nat) (pair address (pair nat (pair mutez timestamp)))) nat)
+                                    (pair (pair (pair (big_map (pair nat nat) (pair mutez (pair address (pair nat timestamp)))) nat)
                                                 (pair (lambda nat mutez) nat))
                                           (pair (pair bool nat) (pair int mutez))) }
                                 { DUP 7 ;
@@ -3677,14 +3667,13 @@
                                   SWAP ;
                                   EXEC ;
                                   DUP ;
-                                  CDR ;
-                                  CDR ;
                                   CAR ;
                                   DUP 10 ;
                                   DUP 8 ;
                                   SWAP ;
                                   EXEC ;
                                   DIG 2 ;
+                                  CDR ;
                                   CDR ;
                                   CAR ;
                                   DUP 11 ;
@@ -3742,15 +3731,13 @@
                                            PAIR ;
                                            PAIR ;
                                            RIGHT
-                                             (pair (pair (pair (big_map (pair nat nat) (pair address (pair nat (pair mutez timestamp)))) nat)
+                                             (pair (pair (pair (big_map (pair nat nat) (pair mutez (pair address (pair nat timestamp)))) nat)
                                                          (pair (lambda nat mutez) nat))
                                                    (pair (pair bool nat) (pair int mutez))) }
                                          { DIG 5 ;
                                            DROP ;
                                            DIG 8 ;
                                            DROP ;
-                                           CDR ;
-                                           CDR ;
                                            CAR ;
                                            PUSH int 1 ;
                                            DIG 5 ;
@@ -3768,7 +3755,7 @@
                                            PAIR ;
                                            PAIR ;
                                            PAIR ;
-                                           LEFT (pair (pair (big_map (pair nat nat) (pair address (pair nat (pair mutez timestamp)))) nat)
+                                           LEFT (pair (pair (big_map (pair nat nat) (pair mutez (pair address (pair nat timestamp)))) nat)
                                                       (pair nat mutez)) } }
                                      { DROP 2 ;
                                        SWAP ;
@@ -3784,7 +3771,7 @@
                                        PAIR ;
                                        PAIR ;
                                        RIGHT
-                                         (pair (pair (pair (big_map (pair nat nat) (pair address (pair nat (pair mutez timestamp)))) nat)
+                                         (pair (pair (pair (big_map (pair nat nat) (pair mutez (pair address (pair nat timestamp)))) nat)
                                                      (pair (lambda nat mutez) nat))
                                                (pair (pair bool nat) (pair int mutez))) } } } ;
                          DIG 4 ;
@@ -4193,6 +4180,7 @@
                          DUP 6 ;
                          DUP 3 ;
                          CDR ;
+                         CDR ;
                          CAR ;
                          COMPARE ;
                          GT ;
@@ -4219,8 +4207,6 @@
                          PUSH string "NO_OFFERS_CAN_BE_RETURNED" ;
                          SWAP ;
                          DUP 3 ;
-                         CDR ;
-                         CDR ;
                          CAR ;
                          COMPARE ;
                          LT ;
@@ -4257,23 +4243,17 @@
                          PUSH string "INVALID_RETURN_AMOUNT" ;
                          SWAP ;
                          DUP 5 ;
-                         CDR ;
-                         CDR ;
                          CAR ;
                          COMPARE ;
                          LT ;
                          DUP 3 ;
                          DUP 6 ;
-                         CDR ;
-                         CDR ;
                          CAR ;
                          COMPARE ;
                          GE ;
                          AND ;
                          DIG 2 ;
                          DUP 5 ;
-                         CDR ;
-                         CDR ;
                          CAR ;
                          COMPARE ;
                          LT ;
@@ -4429,7 +4409,12 @@
                          DUP 5 ;
                          CDR ;
                          CDR ;
+                         CDR ;
                          DIG 4 ;
+                         PAIR ;
+                         DUP 5 ;
+                         CDR ;
+                         CAR ;
                          PAIR ;
                          DIG 4 ;
                          CAR ;

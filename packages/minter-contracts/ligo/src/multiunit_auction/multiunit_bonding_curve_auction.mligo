@@ -13,19 +13,19 @@ type bid_param =
  [@layout:comb]
  {  
     auction_id : nat;
-    quantity : nat;
     price : tez;
+    quantity : nat;
  }
 
 type bid = 
   [@layout:comb]
   {
+    price : tez;
     bidder : address;
     quantity : nat;
 #if OFFCHAIN_BID
     is_offchain : bool;
 #endif
-    price : tez;
     bid_time : timestamp;
   }
 
