@@ -97,14 +97,14 @@ hprop_Auction_ends_if_no_bids_are_placed_within_'round_time'_seconds =
                 else do 
                   pass
               
-              --auctionStorage <- fromVal @Auction.AuctionStorage <$> getStorage' contract
-              --heapSize <- getHeapSize 0 auctionStorage
+              auctionStorage <- getStorage' contract
+              heapSize <- getHeapSize 0 auctionStorage
 
-              --if heapSize > 0 
-              --  then do 
-              --    returnOffers contract (Auction.AuctionId 0, 1000) --max offers in a bid
-              --  else do 
-              --    pass
+              if heapSize > 0 
+                then do 
+                  returnOffers contract (Auction.AuctionId 0, 1000) --max offers in a bid
+                else do 
+                  pass
               
               -- `resolve` should succeed.
               resolveAuction contract
@@ -135,6 +135,13 @@ hprop_Assets_are_transferred_to_winning_bidders =
       advanceTime (sec $ fromIntegral $ testAuctionDuration `max` testExtendTime)
      
       returnBids contract (Auction.AuctionId 0, 6) --max bids
+      auctionStorage <- getStorage' contract
+      heapSize <- getHeapSize 0 auctionStorage
+      if heapSize > 0 
+        then do 
+          returnOffers contract (Auction.AuctionId 0, 1000) --max offers in a bid
+        else do 
+          pass
 
       withSender seller $ do
         resolveAuction contract
@@ -199,8 +206,8 @@ genBid :: TestData -> Natural -> Gen Auction.BidParam
 genBid testData auctionId = do
   let minBid = testPriceFloor testData
   bidPrice <- genMutez' (Range.linear minBid (minBid + 1_000_000))
-  --quantity <- Gen.integral (Range.linear 1 1000)
-  pure $ Auction.BidParam auctionId bidPrice 1
+  quantity <- Gen.integral (Range.linear 1 1000)
+  pure $ Auction.BidParam auctionId bidPrice quantity
 
 ----------------------------------------------------------------------------
 -- Helpers
@@ -271,10 +278,13 @@ getAuction auctionId st = do
 
 getHeapSize :: MonadNettest caps base m => Natural -> Auction.AuctionStorage -> m Natural
 getHeapSize auctionId auctionStorage = do 
-  let heapSize = auctionStorage & Auction.heapSizes & unBigMap & Map.lookup (Auction.AuctionId auctionId)
+  let heapSize = auctionStorage 
+                    & Auction.heapSizes 
+                    & unBigMap 
+                    & Map.lookup (Auction.AuctionId auctionId)
   case heapSize of
       Just hs -> pure hs
-      Nothing -> failure $ "Expected the storage to contain an auction with ID '" +| auctionId |+ "', but it didn't."
+      Nothing -> pure 0
 
 --maxAcceptedOffersAtPrice :: ('[Natural] L.:-> '[Mutez]) -> Mutez -> Natural -> Natural 
 --maxAcceptedOffersAtPrice bondingCurve offerPrice totalOffers = do
