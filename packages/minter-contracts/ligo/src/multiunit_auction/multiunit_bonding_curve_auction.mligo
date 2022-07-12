@@ -623,8 +623,9 @@ let rec mint_n_tokens_to_owner(mint_param, owner, next_token_id, token_info, num
        let mint_param = mint_token :: mint_param in
        mint_n_tokens_to_owner(mint_param, owner, next_token_id + 1n, token_info, num_to_mint - 1)
 
-let rec pay_winning_bids(bid_heap, mint_param, auction_id, heap_size, winners_to_payout, winning_price, num_offers, next_token_id, token_info : bid_heap * mint_tokens_param * auction_id * nat * int * tez * nat * nat * token_info)
-    : bid_heap * mint_tokens_param * nat * nat * nat= 
+let rec pay_winning_bids(op_list, bid_heap, mint_param, auction_id, heap_size, winners_to_payout, winning_price, num_offers, next_token_id, token_info : 
+      operation list * bid_heap * mint_tokens_param * auction_id * nat * int * tez * nat * nat * token_info)
+    : operation list * bid_heap * mint_tokens_param * nat * nat * nat= 
   if winners_to_payout > 0
   then 
        let (possible_bid, bid_heap, heap_size) = extract_min(bid_heap, auction_id, heap_size) in 
@@ -632,10 +633,19 @@ let rec pay_winning_bids(bid_heap, mint_param, auction_id, heap_size, winners_to
            Some bid -> 
              let (mint_param, next_token_id) = mint_n_tokens_to_owner(mint_param, bid.bidder, next_token_id, token_info, int(bid.quantity)) in  
              let remaining_offers : nat = abs(num_offers - bid.quantity) in 
-             pay_winning_bids(bid_heap, mint_param, auction_id, heap_size, winners_to_payout - 1, winning_price, remaining_offers, next_token_id, token_info)
-         | None -> (bid_heap, mint_param, heap_size, num_offers, next_token_id) (*This should never be reached, get_min will fail*)
+             let op_list = 
+#if OFFCHAIN_BID
+                 if bid.is_offchain 
+                 then op_list 
+                 else 
+#endif   
+                      let return_amt : tez = bid.quantity * (bid.price - winning_price) in (*price ALWAYS will be greater than winning_price, asserted in resolve*)
+                      let bid_return_op : operation = transfer_tez(return_amt, bid.bidder) in (*Returns difference of bid and winning_price*)
+                      bid_return_op :: op_list in
+             pay_winning_bids(op_list, bid_heap, mint_param, auction_id, heap_size, winners_to_payout - 1, winning_price, remaining_offers, next_token_id, token_info)
+         | None -> (op_list, bid_heap, mint_param, heap_size, num_offers, next_token_id) (*This should never be reached, get_min will fail*)
   else 
-       (bid_heap, mint_param, heap_size, num_offers, next_token_id)
+       (op_list, bid_heap, mint_param, heap_size, num_offers, next_token_id)
 
 let payout(auction_id, num_winners_to_payout, storage : auction_id * nat * storage) : return = begin
     tez_stuck_guard("PAYOUT");
@@ -648,13 +658,13 @@ let payout(auction_id, num_winners_to_payout, storage : auction_id * nat * stora
       in   
     let heap_size : nat = get_heap_size(auction_id, storage.heap_sizes) in
     assert_msg(heap_size > 0n, "NO_WINNERS_LEFT");
-    let (bid_heap, mint_param, new_heap_size, num_offers, next_token_id) = 
-        pay_winning_bids(storage.bids, ([] : mint_tokens_param), auction_id, heap_size, num_winners_to_payout, winning_price, auction.num_offers, auction.next_token_id, auction.token_info) in 
+    let (op_list, bid_heap, mint_param, new_heap_size, num_offers, next_token_id) = 
+        pay_winning_bids(([] : operation list), storage.bids, ([] : mint_tokens_param), auction_id, heap_size, num_winners_to_payout, winning_price, auction.num_offers, auction.next_token_id, auction.token_info) in 
     let new_heap_size_bm : heap_sizes = update_heap_size(auction_id, storage.heap_sizes, new_heap_size) in 
     let updated_auction_data : auction = {auction with num_offers = num_offers; next_token_id = next_token_id;} in
     let updated_auctions = Big_map.update auction_id (Some updated_auction_data) storage.auctions in
     let mint_tx : operation = mint_tokens(auction.fa2_address, mint_param) in 
-    ([mint_tx], {storage with auctions = updated_auctions; bids = bid_heap; heap_sizes = new_heap_size_bm;})
+    (mint_tx :: op_list, {storage with auctions = updated_auctions; bids = bid_heap; heap_sizes = new_heap_size_bm;})
   end
 
 [@view]
