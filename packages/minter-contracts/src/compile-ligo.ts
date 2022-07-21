@@ -482,6 +482,12 @@ const compileSources: CompileSourceEntry[] = [
     dstFile: 'pausable_wallet.tz',
     contract: true,
   },
+  {
+    srcFile: 'booster/booster_distributor.mligo',
+    mainFn: 'booster_main',
+    dstFile: 'booster_distributor.tz',
+    contract: true,
+  },
 ];
 
 const filterSources = (sources: CompileSourceEntry[]): CompileSourceEntry[] => {
