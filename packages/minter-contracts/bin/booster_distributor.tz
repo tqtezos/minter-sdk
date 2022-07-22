@@ -1,5 +1,5 @@
 { parameter
-    (or (or (list %add_packs bytes)
+    (or (or (list %add_packs (pair (pair (address %fa2_address) (nat %token_id)) bytes))
             (list %add_tokens (pair (address %fa2_address) (nat %token_id))))
         (or (or %admin (or (unit %confirm_admin) (bool %pause)) (address %set_admin))
             (pair %redeem_booster
@@ -8,7 +8,7 @@
   storage
     (pair (nat %next_pack_id)
           (pair (nat %next_token_registry_id)
-                (pair (big_map %packs nat bytes)
+                (pair (big_map %packs nat (pair (pair (address %fa2_address) (nat %token_id)) bytes))
                       (pair (big_map %token_registry nat (pair (address %fa2_address) (nat %token_id)))
                             (pair %admin (pair (address %admin) (bool %paused)) (option %pending_admin address)))))) ;
   code { LAMBDA
@@ -51,7 +51,7 @@
                  SWAP ;
                  EXEC ;
                  DROP ;
-                 NIL bytes ;
+                 NIL (pair (pair address nat) bytes) ;
                  SWAP ;
                  ITER { CONS } ;
                  ITER { SWAP ;
@@ -241,20 +241,48 @@
                  SWAP ;
                  GET ;
                  IF_NONE { PUSH string "PACK_NOT_EXIST" ; FAILWITH } {} ;
+                 UNPAIR ;
+                 SELF_ADDRESS ;
+                 SENDER ;
+                 PUSH nat 1 ;
+                 PAIR ;
+                 DIG 2 ;
+                 UNPAIR ;
+                 DIG 2 ;
+                 UNPAIR ;
+                 DIG 2 ;
+                 CONTRACT %transfer
+                   (list (pair (address %from_)
+                               (list %txs (pair (address %to_) (pair (nat %token_id) (nat %amount)))))) ;
+                 IF_NONE
+                   { DROP 4 ; PUSH string "CANNOT_INVOKE_FA2_TRANSFER" ; FAILWITH }
+                   { PUSH mutez 0 ;
+                     NIL (pair address (list (pair address (pair nat nat)))) ;
+                     NIL (pair address (pair nat nat)) ;
+                     DIG 4 ;
+                     DIG 6 ;
+                     PAIR ;
+                     DIG 6 ;
+                     PAIR ;
+                     CONS ;
+                     DIG 4 ;
+                     PAIR ;
+                     CONS ;
+                     TRANSFER_TOKENS } ;
                  PUSH string "HASHES_DONT_MATCH" ;
-                 SWAP ;
-                 DIG 4 ;
+                 DIG 2 ;
+                 DIG 5 ;
                  PACK ;
                  SHA256 ;
                  COMPARE ;
                  EQ ;
                  PAIR ;
-                 DIG 4 ;
+                 DIG 5 ;
                  SWAP ;
                  EXEC ;
                  DROP ;
-                 DUP 3 ;
-                 DIG 2 ;
+                 DUP 4 ;
+                 DIG 3 ;
                  MAP { SWAP ;
                        DUP ;
                        DUG 2 ;
@@ -299,26 +327,28 @@
                  DROP ;
                  SWAP ;
                  DROP ;
-                 DUP 3 ;
-                 CDR ;
-                 CDR ;
-                 CDR ;
                  DUP 4 ;
                  CDR ;
                  CDR ;
+                 CDR ;
+                 DUP 5 ;
+                 CDR ;
+                 CDR ;
                  CAR ;
-                 DIG 3 ;
-                 NONE bytes ;
+                 DIG 4 ;
+                 NONE (pair (pair address nat) bytes) ;
                  SWAP ;
                  UPDATE ;
                  PAIR ;
-                 DUP 3 ;
+                 DUP 4 ;
                  CDR ;
                  CAR ;
                  PAIR ;
-                 DIG 2 ;
+                 DIG 3 ;
                  CAR ;
                  PAIR ;
                  SWAP ;
+                 DIG 2 ;
+                 CONS ;
                  PAIR } } } }
 

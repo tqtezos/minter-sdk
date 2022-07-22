@@ -16,7 +16,7 @@ type redeem_param =
   }
 
 type booster_entrypoints =
-    Add_packs of bytes list
+    Add_packs of (global_token_id * bytes) list
   | Add_tokens of global_token_id list
   | Redeem_booster of redeem_param 
   | Admin of admin_entrypoints
@@ -25,7 +25,7 @@ type booster_storage =
   [@layout:comb]
   { next_pack_id : pack_id
   ; next_token_registry_id : token_registry_id 
-  ; packs : (pack_id, bytes) big_map
+  ; packs : (pack_id, global_token_id * bytes) big_map
   ; token_registry : (nat, global_token_id) big_map
   ; admin : admin_storage
   }
@@ -64,9 +64,9 @@ let transfer_tokens(tokens_list, from_, to_ : tokens list * address * address) :
    (List.map (transfer_tokens_in_single_contract from_ to_) tokens_list)
  
 [@inline]
-let get_pack(id, storage : pack_id * booster_storage) : bytes =
+let get_pack(id, storage : pack_id * booster_storage) : global_token_id * bytes =
   match Big_map.find_opt id storage.packs with
-  | None -> (failwith "PACK_NOT_EXIST" : bytes)
+  | None -> (failwith "PACK_NOT_EXIST" : global_token_id * bytes)
   | Some bs -> bs
 
 [@inline]
@@ -87,7 +87,7 @@ let global_token_id_to_tokens(id : global_token_id) : tokens =
 
 (* ==== Entrypoints ==== *)
 
-let transfer_pack_to_redeemer(tokens_contained, storage : nat list * booster_storage) : operation list = begin 
+let transfer_pack_contents_to_redeemer(tokens_contained, storage : nat list * booster_storage) : operation list = begin 
   let tokens_list = List.map 
                     (fun(token_registry_id : nat) -> 
                       let token : global_token_id = get_token(token_registry_id, storage) in 
@@ -106,23 +106,26 @@ let redeem(redeem_param, storage : redeem_param * booster_storage) : return = be
         tokens_contained = tokens_contained;
         nonce = nonce;
       } = redeem_param in 
-  let booster_pack_bytes = get_pack(pack_id, storage) in 
+  let (pack_token_data, booster_pack_bytes) : global_token_id * byes = 
+      get_pack(pack_id, storage) in 
+  let transfer_pack_to_self_op : operation = 
+      transfer_fa2(pack_token_data.fa2_address, pack_token_data.token_id, 1n, Tezos.sender, Tezos.self_address) in 
   let hashed_data : bytes = Crypto.sha256 (Bytes.pack redeem_param) in
   assert_msg(hashed_data = booster_pack_bytes, "HASHES_DONT_MATCH");
-  let ops : operation list = transfer_pack_to_redeemer(tokens_contained, storage) in 
+  let ops : operation list = transfer_pack_contents_to_redeemer(tokens_contained, storage) in 
   let new_pack_registry = Big_map.remove pack_id storage.packs in 
-  (ops, {storage with packs = new_pack_registry;})
+  (transfer_pack_to_self_op :: ops, {storage with packs = new_pack_registry;})
 end
 
-let add_single_pack (pack_bytes, storage : bytes * booster_storage) : booster_storage = begin 
+let add_single_pack (pack_data, storage : (global_token_id * bytes) * booster_storage) : booster_storage = begin 
     let next_pack_id = storage.next_pack_id in
-    let new_packs_bm = Big_map.add next_pack_id pack_bytes storage.packs in 
+    let new_packs_bm = Big_map.add next_pack_id pack_data storage.packs in 
     {storage with packs = new_packs_bm; next_pack_id = next_pack_id + 1n}
   end
 
-let add_packs(pack_bytes_list, storage : bytes list * booster_storage) : return = begin 
+let add_packs(packs, storage : (global_token_id * bytes) list * booster_storage) : return = begin 
     fail_if_not_admin(storage.admin);
-    let new_storage : booster_storage = List.fold_right add_single_pack pack_bytes_list storage in 
+    let new_storage : booster_storage = List.fold_right add_single_pack packs storage in 
     (([] : operation list), new_storage)
   end
 
@@ -141,7 +144,7 @@ let add_tokens(token_list, storage : global_token_id list * booster_storage) : r
 let booster_main (param, storage : booster_entrypoints * booster_storage) : return = begin
   forbid_xtz_transfer;
   match param with
-    | Add_packs pack_bytes_list -> add_packs(pack_bytes_list, storage)
+    | Add_packs pack_list -> add_packs(pack_list, storage)
     | Add_tokens token_list -> add_tokens(token_list, storage)
     | Redeem_booster redeem_param -> redeem(redeem_param, storage)
     | Admin admin_param ->
