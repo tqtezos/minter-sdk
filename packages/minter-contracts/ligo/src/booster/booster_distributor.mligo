@@ -7,12 +7,19 @@ type pack_id = nat
 
 type token_registry_id = nat
 
-type redeem_param = 
+type redeem_key = 
   [@layout:comb]
   {
     pack_id : nat;
     tokens_contained : nat list;
     nonce : nat; 
+  }
+
+type redeem_param = 
+  [@layout:comb]
+  {
+      pack_owner : address;
+      redeem_key : redeem_key;
   }
 
 type booster_entrypoints =
@@ -27,6 +34,7 @@ type booster_storage =
   ; next_token_registry_id : token_registry_id 
   ; packs : (pack_id, global_token_id * bytes) big_map
   ; token_registry : (nat, global_token_id) big_map
+  ; tokens_owner : address 
   ; admin : admin_storage
   }
 
@@ -87,7 +95,7 @@ let global_token_id_to_tokens(id : global_token_id) : tokens =
 
 (* ==== Entrypoints ==== *)
 
-let transfer_pack_contents_to_redeemer(tokens_contained, storage : nat list * booster_storage) : operation list = begin 
+let transfer_pack_contents_to_redeemer(tokens_contained, pack_owner, storage : nat list * address * booster_storage) : operation list = begin 
   let tokens_list = List.map 
                     (fun(token_registry_id : nat) -> 
                       let token : global_token_id = get_token(token_registry_id, storage) in 
@@ -96,23 +104,28 @@ let transfer_pack_contents_to_redeemer(tokens_contained, storage : nat list * bo
                     ) 
                     tokens_contained
                     in 
-  let transfer_ops = transfer_tokens(tokens_list, Tezos.self_address, Tezos.sender) in 
+  let transfer_ops = transfer_tokens(tokens_list, storage.tokens_owner, pack_owner) in 
   transfer_ops
                     
 end
 
 let redeem(redeem_param, storage : redeem_param * booster_storage) : return = begin 
-  let { pack_id = pack_id;
-        tokens_contained = tokens_contained;
-        nonce = nonce;
+  let {  
+         pack_owner = pack_owner;
+         redeem_key =   
+         { 
+           pack_id = pack_id;
+           tokens_contained = tokens_contained;
+           nonce = nonce;
+         }; 
       } = redeem_param in 
   let (pack_token_data, booster_pack_bytes) : global_token_id * byes = 
       get_pack(pack_id, storage) in 
   let transfer_pack_to_self_op : operation = 
-      transfer_fa2(pack_token_data.fa2_address, pack_token_data.token_id, 1n, Tezos.sender, Tezos.self_address) in 
+      transfer_fa2(pack_token_data.fa2_address, pack_token_data.token_id, 1n, pack_owner, storage.tokens_owner) in 
   let hashed_data : bytes = Crypto.sha256 (Bytes.pack redeem_param) in
   assert_msg(hashed_data = booster_pack_bytes, "HASHES_DONT_MATCH");
-  let ops : operation list = transfer_pack_contents_to_redeemer(tokens_contained, storage) in 
+  let ops : operation list = transfer_pack_contents_to_redeemer(tokens_contained, pack_owner, storage) in 
   let new_pack_registry = Big_map.remove pack_id storage.packs in 
   (transfer_pack_to_self_op :: ops, {storage with packs = new_pack_registry;})
 end
