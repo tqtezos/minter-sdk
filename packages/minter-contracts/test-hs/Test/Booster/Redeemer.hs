@@ -26,6 +26,24 @@ import Tezos.Crypto
 
 import qualified Lorentz.Contracts.SimpleAdmin as SimpleAdmin
 
+hprop_Redeeming_with_correct_key_succeeds :: Property
+hprop_Redeeming_with_correct_key_succeeds =
+  property $ do
+    testData@TestData{testValidHashes} <- forAll genTestData
+
+    clevelandProp $ do
+      setup@Setup{seller, buyer, cardFA2, packFA2, boosterContract} <- testSetup testData
+      let packFA2Address = toAddress packFA2
+      let cardFA2Address = toAddress cardFA2
+      --let packs = List.map (\(TokenId n) -> GlobalTokenId packFA2Address n) packIds
+      let cards = List.map (\(TokenId n) -> GlobalTokenId cardFA2Address n) tokenIds
+      --withSender seller $
+      --  addPacks boosterContract packs
+      withSender seller $
+        addTokens boosterContract cards
+
+
+
 ----------------------------------------------------------------------------
 -- Helpers
 ----------------------------------------------------------------------------
@@ -68,8 +86,6 @@ testSetup testData = do
         Booster.initBoosterStorage $
          SimpleAdmin.initAdminStorage seller
 
-  let tokenIds = TokenId `List.map` [0..99]
-  let packIds = TokenId `List.map` [0..9]
   let ledger =
         Map.fromListWith (+) $
           tokenIds <&> \tokenId -> ((seller, tokenId), 1)
@@ -99,15 +115,31 @@ testSetup testData = do
 
   pure Setup {..}
 
+tokenIds :: [TokenId]
+tokenIds = TokenId `List.map` [0..99]
+
+packIds :: [TokenId]
+packIds = TokenId `List.map` [0..9]
+
 originateBoosterContract :: MonadNettest caps base m => Booster.BoosterStorage ->  m $ ContractHandler Booster.BoosterEntrypoints Booster.BoosterStorage
 originateBoosterContract storage = do
   originateSimple "booster-redeemer" storage BoosterContract.boosterContract
-
-----------------------------------------------------------------------------
--- Call entrypoints
-----------------------------------------------------------------------------
 
 mkHash :: Booster.RedeemKey -> ByteString
 mkHash redeemKey = 
   sha256 $ packValue' (toVal redeemKey)
   
+----------------------------------------------------------------------------
+-- Call entrypoints
+----------------------------------------------------------------------------
+
+addPacks :: (HasCallStack, MonadNettest caps base m) => [(Booster.GlobalTokenId, ByteString)] -> ContractHandler Booster.BoosterEntrypoints Booster.BoosterStorage -> m ()
+addPacks contract packs =
+  call contract (Call @"Add_packs") packs
+
+
+addTokens :: (HasCallStack, MonadNettest caps base m) => [Booster.GlobalTokenId] -> ContractHandler Booster.BoosterEntrypoints Booster.BoosterStorage -> m ()
+addTokens contract tokens =
+  call contract (Call @"Add_tokens") tokens
+
+
