@@ -56,3 +56,4 @@ tests:
       - indexed-traversable
       - morley-client
       - integer-gmp
+      - split
