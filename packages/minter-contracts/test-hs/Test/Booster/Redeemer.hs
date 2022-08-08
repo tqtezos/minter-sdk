@@ -5,6 +5,7 @@ import qualified Data.List as List
 import qualified Data.Map as Map
 import qualified Data.Foldable as F
 import qualified Data.Set as Set 
+import Data.Maybe
 import Data.List.Split as Split
 
 import Hedgehog (Gen, Property, forAll, property)
@@ -35,12 +36,25 @@ hprop_Redeeming_with_correct_key_succeeds =
       setup@Setup{seller, buyer, cardFA2, packFA2, boosterContract} <- testSetup testData
       let packFA2Address = toAddress packFA2
       let cardFA2Address = toAddress cardFA2
-      --let packs = List.map (\(TokenId n) -> GlobalTokenId packFA2Address n) packIds
-      let cards = List.map (\(TokenId n) -> GlobalTokenId cardFA2Address n) tokenIds
-      --withSender seller $
-      --  addPacks boosterContract packs
+      let cards = List.map (\n -> Booster.GlobalTokenId cardFA2Address n) cardIds
+      let addPacksParam = List.map 
+                         (\n -> 
+                           (,) (Booster.GlobalTokenId packFA2Address n) -- Pack token Id matches PackId
+                               (fst $ fromJust $ Map.lookup (Booster.PackId n) testValidHashes) --Hash for that pack 
+                         ) 
+                         packIds
       withSender seller $
-        addTokens boosterContract cards
+        addTokens cards boosterContract 
+      withSender seller $
+        addPacks addPacksParam boosterContract 
+      
+      forM_ packIds \packId -> do 
+        let redeemParam = Booster.RedeemParam 
+                          buyer 
+                          (Booster.PackId packId)
+                          (snd $ fromJust $ Map.lookup (Booster.PackId packId) testValidHashes) -- key
+        withSender buyer $ 
+          redeem redeemParam boosterContract
 
 
 
@@ -49,7 +63,8 @@ hprop_Redeeming_with_correct_key_succeeds =
 ----------------------------------------------------------------------------
 
 newtype TestData = TestData
-  { testValidHashes :: Map ByteString Booster.RedeemKey } 
+  { testValidHashes :: Map Booster.PackId  (ByteString, Booster.RedeemKey) 
+  } 
   deriving stock (Show)
 
 data Setup = Setup
@@ -62,20 +77,21 @@ data Setup = Setup
 
 genTestData :: Gen TestData
 genTestData = do
-  shuffledTokenIds :: [Natural] <- Gen.shuffle [0 .. 99]
+  shuffledTokenIds :: [Natural] <- Gen.shuffle cardIds
   splitLengths <- replicateM 10 (Gen.int (Range.linear 1 10))
   let packs = Split.splitPlaces splitLengths shuffledTokenIds -- generates 10 random packs of lengths 1 to 10 each 
-  nonces <- replicateM 10 (Gen.integral (Range.linear 1 1000000)) -- generates 10 nonces   
-  let redeemKeys =  ([1 .. 10] `zip` packs `zip` nonces) <&> (\((packId, tokens), nonce) -> 
+  nonces <- replicateM 10 (Gen.integral (Range.linear 1 1000000)) -- generates 10 nonces 
+  let redeemKeys =  (packIds `zip` packs `zip` nonces) <&> (\((packId, tokens), nonce) -> 
+        ( Booster.PackId packId, 
           Booster.RedeemKey 
           {
-            packId = Booster.PackId packId, 
-            tokensContained = Booster.TokenRegistryId `List.map` tokens,
+            tokensContained = tokens,
             nonce = nonce 
-          })
-  let keyValues =  List.map (\key -> (mkHash key, key)) redeemKeys
+          }
+        ))
+  let keyValues =  List.map (\(id, key) -> (id, (mkHash key, key))) redeemKeys
   let testValidHashes = Map.fromList keyValues
-  pure $ TestData { testValidHashes = testValidHashes}
+  pure $ TestData { testValidHashes = testValidHashes }
 
 testSetup :: MonadNettest caps base m => TestData -> m Setup
 testSetup testData = do
@@ -88,10 +104,10 @@ testSetup testData = do
 
   let ledger =
         Map.fromListWith (+) $
-          tokenIds <&> \tokenId -> ((seller, tokenId), 1)
+          cardTokens <&> \tokenId -> ((seller, tokenId), 1)
   let packLedger =
         Map.fromListWith (+) $
-          packIds <&> \packId -> ((buyer, packId), 1)
+          packTokens <&> \tokenId -> ((buyer, tokenId), 1)
   
   boosterContract <- originateBoosterContract boosterStorage 
 
@@ -102,7 +118,7 @@ testSetup testData = do
      , sOperators = BigMap $ Map.fromList [((seller, toAddress boosterContract), ())]
      , sTokenMetadata = mempty
      }
-     (FA2.fa2Contract def { FA2.cAllowedTokenIds = tokenIds })
+     (FA2.fa2Contract def { FA2.cAllowedTokenIds = cardTokens })
 
    -- Create an FA2 contracts, and give the pack assets to the buyer
   packFA2 <- originateSimple "pack_fa2"
@@ -111,15 +127,21 @@ testSetup testData = do
      , sOperators = BigMap $ Map.fromList [((buyer, toAddress boosterContract), ())]
      , sTokenMetadata = mempty
      }
-     (FA2.fa2Contract def { FA2.cAllowedTokenIds = packIds })
+     (FA2.fa2Contract def { FA2.cAllowedTokenIds = packTokens })
 
   pure Setup {..}
 
-tokenIds :: [TokenId]
-tokenIds = TokenId `List.map` [0..99]
+cardIds :: [Natural]
+cardIds = [0..99]
 
-packIds :: [TokenId]
-packIds = TokenId `List.map` [0..9]
+packIds :: [Natural]
+packIds = [0..9]
+
+cardTokens :: [TokenId]
+cardTokens = TokenId `List.map` cardIds
+
+packTokens :: [TokenId]
+packTokens = TokenId `List.map` packIds
 
 originateBoosterContract :: MonadNettest caps base m => Booster.BoosterStorage ->  m $ ContractHandler Booster.BoosterEntrypoints Booster.BoosterStorage
 originateBoosterContract storage = do
@@ -127,19 +149,23 @@ originateBoosterContract storage = do
 
 mkHash :: Booster.RedeemKey -> ByteString
 mkHash redeemKey = 
-  sha256 $ packValue' (toVal redeemKey)
+  blake2b $ packValue' $ toVal (tokensContained, nonce)
+  where tokensContained = Booster.tokensContained redeemKey 
+        nonce = Booster.nonce redeemKey
   
 ----------------------------------------------------------------------------
 -- Call entrypoints
 ----------------------------------------------------------------------------
 
 addPacks :: (HasCallStack, MonadNettest caps base m) => [(Booster.GlobalTokenId, ByteString)] -> ContractHandler Booster.BoosterEntrypoints Booster.BoosterStorage -> m ()
-addPacks contract packs =
+addPacks packs contract=
   call contract (Call @"Add_packs") packs
 
 
 addTokens :: (HasCallStack, MonadNettest caps base m) => [Booster.GlobalTokenId] -> ContractHandler Booster.BoosterEntrypoints Booster.BoosterStorage -> m ()
-addTokens contract tokens =
+addTokens tokens contract =
   call contract (Call @"Add_tokens") tokens
 
-
+redeem :: (HasCallStack, MonadNettest caps base m) => Booster.RedeemParam -> ContractHandler Booster.BoosterEntrypoints Booster.BoosterStorage -> m ()
+redeem redeemParam contract =
+  call contract (Call @"Redeem_booster") redeemParam

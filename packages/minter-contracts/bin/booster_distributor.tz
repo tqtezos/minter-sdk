@@ -4,14 +4,13 @@
         (or (or %admin (or (unit %confirm_admin) (bool %pause)) (address %set_admin))
             (pair %redeem_booster
                (address %pack_owner)
-               (pair %redeem_key (nat %pack_id) (pair (list %tokens_contained nat) (nat %nonce)))))) ;
+               (pair (nat %pack_id) (pair %redeem_key (list %tokens_contained nat) (nat %nonce)))))) ;
   storage
     (pair (nat %next_pack_id)
           (pair (nat %next_token_registry_id)
                 (pair (big_map %packs nat (pair (pair (address %fa2_address) (nat %token_id)) bytes))
                       (pair (big_map %token_registry nat (pair (address %fa2_address) (nat %token_id)))
-                            (pair (address %tokens_owner)
-                                  (pair %admin (pair (address %admin) (bool %paused)) (option %pending_admin address))))))) ;
+                            (pair %admin (pair (address %admin) (bool %paused)) (option %pending_admin address)))))) ;
   code { LAMBDA
            (pair bool string)
            unit
@@ -48,27 +47,24 @@
                  CDR ;
                  CDR ;
                  CDR ;
-                 CDR ;
                  DIG 3 ;
                  SWAP ;
                  EXEC ;
                  DROP ;
-                 NIL (pair (pair address nat) bytes) ;
-                 SWAP ;
-                 ITER { CONS } ;
                  ITER { SWAP ;
                         DUP ;
-                        DUG 2 ;
                         CAR ;
+                        SWAP ;
+                        DUP ;
+                        DUG 2 ;
+                        CDR ;
+                        CDR ;
+                        CDR ;
                         DUP 3 ;
                         CDR ;
                         CDR ;
-                        CDR ;
-                        DUP 4 ;
-                        CDR ;
-                        CDR ;
                         CAR ;
-                        DIG 3 ;
+                        DIG 4 ;
                         DUP 4 ;
                         SWAP ;
                         SOME ;
@@ -88,7 +84,6 @@
                { SWAP ;
                  DUP ;
                  DUG 2 ;
-                 CDR ;
                  CDR ;
                  CDR ;
                  CDR ;
@@ -156,7 +151,6 @@
                  CDR ;
                  CDR ;
                  CDR ;
-                 CDR ;
                  SWAP ;
                  IF_LEFT
                    { IF_LEFT
@@ -212,13 +206,6 @@
                  CDR ;
                  CDR ;
                  CDR ;
-                 CDR ;
-                 CAR ;
-                 PAIR ;
-                 DUP 3 ;
-                 CDR ;
-                 CDR ;
-                 CDR ;
                  CAR ;
                  PAIR ;
                  DUP 3 ;
@@ -237,16 +224,24 @@
                  PAIR }
                { DIG 2 ;
                  DROP ;
-                 DUP ;
-                 UNPAIR ;
-                 SWAP ;
-                 UNPAIR 3 ;
-                 DIG 2 ;
-                 DROP ;
-                 DUP 5 ;
+                 PUSH string "REDEEMER_IS_NOT_PACK_OWNER" ;
                  SWAP ;
                  DUP ;
                  DUG 2 ;
+                 CAR ;
+                 SENDER ;
+                 COMPARE ;
+                 EQ ;
+                 PAIR ;
+                 DIG 3 ;
+                 SWAP ;
+                 EXEC ;
+                 DROP ;
+                 UNPAIR 3 ;
+                 DIG 2 ;
+                 UNPAIR ;
+                 DUP 5 ;
+                 DUP 5 ;
                  SWAP ;
                  CDR ;
                  CDR ;
@@ -260,6 +255,7 @@
                  CDR ;
                  CDR ;
                  CDR ;
+                 CAR ;
                  CAR ;
                  DUP 6 ;
                  PUSH nat 1 ;
@@ -287,21 +283,22 @@
                      PAIR ;
                      CONS ;
                      TRANSFER_TOKENS } ;
-                 PUSH string "HASHES_DONT_MATCH" ;
-                 DIG 2 ;
-                 DIG 6 ;
-                 PACK ;
-                 SHA256 ;
-                 COMPARE ;
-                 EQ ;
+                 DIG 3 ;
+                 DUP 4 ;
                  PAIR ;
-                 DIG 6 ;
+                 PACK ;
+                 BLAKE2B ;
+                 DUP 3 ;
                  SWAP ;
-                 EXEC ;
-                 DROP ;
+                 DUP ;
+                 DUG 2 ;
+                 COMPARE ;
+                 NEQ ;
+                 IF { DIG 2 ; SWAP ; PUSH string "HASHES_DONT_MATCH" ; PAIR ; PAIR ; FAILWITH }
+                    { DROP ; SWAP ; DROP } ;
                  DUP 5 ;
-                 DIG 4 ;
-                 DIG 4 ;
+                 DIG 3 ;
+                 DIG 3 ;
                  MAP { DUP 3 ;
                        CDR ;
                        CDR ;
@@ -325,6 +322,7 @@
                  CDR ;
                  CDR ;
                  CDR ;
+                 CAR ;
                  CAR ;
                  DIG 2 ;
                  MAP { DUP ;

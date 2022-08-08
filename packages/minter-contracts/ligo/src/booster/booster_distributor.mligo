@@ -5,12 +5,9 @@
 
 type pack_id = nat
 
-type token_registry_id = nat
-
 type redeem_key = 
   [@layout:comb]
   {
-    pack_id : nat;
     tokens_contained : nat list;
     nonce : nat; 
   }
@@ -19,6 +16,7 @@ type redeem_param =
   [@layout:comb]
   {
       pack_owner : address;
+      pack_id : nat;
       redeem_key : redeem_key;
   }
 
@@ -31,10 +29,9 @@ type booster_entrypoints =
 type booster_storage =
   [@layout:comb]
   { next_pack_id : pack_id
-  ; next_token_registry_id : token_registry_id 
+  ; next_token_registry_id : nat
   ; packs : (pack_id, global_token_id * bytes) big_map
-  ; token_registry : (nat, global_token_id) big_map
-  ; tokens_owner : address 
+  ; token_registry : (nat, global_token_id) big_map 
   ; admin : admin_storage
   }
 
@@ -104,7 +101,7 @@ let transfer_pack_contents_to_redeemer(tokens_contained, pack_owner, storage : n
                     ) 
                     tokens_contained
                     in 
-  let transfer_ops = transfer_tokens(tokens_list, storage.tokens_owner, pack_owner) in 
+  let transfer_ops = transfer_tokens(tokens_list, storage.admin.admin, pack_owner) in 
   transfer_ops
                     
 end
@@ -112,9 +109,9 @@ end
 let redeem(redeem_param, storage : redeem_param * booster_storage) : return = begin 
   let {  
          pack_owner = pack_owner;
+         pack_id = pack_id;
          redeem_key =   
          { 
-           pack_id = pack_id;
            tokens_contained = tokens_contained;
            nonce = nonce;
          }; 
@@ -122,15 +119,17 @@ let redeem(redeem_param, storage : redeem_param * booster_storage) : return = be
   let (pack_token_data, booster_pack_bytes) : global_token_id * byes = 
       get_pack(pack_id, storage) in 
   let transfer_pack_to_self_op : operation = 
-      transfer_fa2(pack_token_data.fa2_address, pack_token_data.token_id, 1n, pack_owner, storage.tokens_owner) in 
-  let hashed_data : bytes = Crypto.sha256 (Bytes.pack redeem_param) in
-  assert_msg(hashed_data = booster_pack_bytes, "HASHES_DONT_MATCH");
+      transfer_fa2(pack_token_data.fa2_address, pack_token_data.token_id, 1n, pack_owner, storage.admin.admin) in 
+  let hashed_data : bytes = Crypto.blake2b (Bytes.pack (tokens_contained, nonce)) in
+  let u : unit = (if hashed_data <> booster_pack_bytes
+     then ([%Michelson ({| { FAILWITH } |} : string * bytes * bytes -> unit)] ("HASHES_DONT_MATCH", hashed_data, booster_pack_bytes) : unit)
+     else ()) in 
   let ops : operation list = transfer_pack_contents_to_redeemer(tokens_contained, pack_owner, storage) in 
   let new_pack_registry = Big_map.remove pack_id storage.packs in 
   (transfer_pack_to_self_op :: ops, {storage with packs = new_pack_registry;})
 end
 
-let add_single_pack (pack_data, storage : (global_token_id * bytes) * booster_storage) : booster_storage = begin 
+let add_single_pack (storage, pack_data : booster_storage * (global_token_id * bytes)) : booster_storage = begin 
     let next_pack_id = storage.next_pack_id in
     let new_packs_bm = Big_map.add next_pack_id pack_data storage.packs in 
     {storage with packs = new_packs_bm; next_pack_id = next_pack_id + 1n}
@@ -138,7 +137,7 @@ let add_single_pack (pack_data, storage : (global_token_id * bytes) * booster_st
 
 let add_packs(packs, storage : (global_token_id * bytes) list * booster_storage) : return = begin 
     fail_if_not_admin(storage.admin);
-    let new_storage : booster_storage = List.fold_right add_single_pack packs storage in 
+    let new_storage : booster_storage = List.fold_left add_single_pack storage packs in 
     (([] : operation list), new_storage)
   end
 
@@ -159,7 +158,10 @@ let booster_main (param, storage : booster_entrypoints * booster_storage) : retu
   match param with
     | Add_packs pack_list -> add_packs(pack_list, storage)
     | Add_tokens token_list -> add_tokens(token_list, storage)
-    | Redeem_booster redeem_param -> redeem(redeem_param, storage)
+    | Redeem_booster redeem_param -> begin 
+        assert_msg(Tezos.sender = redeem_param.pack_owner, "REDEEMER_IS_NOT_PACK_OWNER");
+        redeem(redeem_param, storage)
+      end 
     | Admin admin_param ->
       (*admin_main already admin checks entrypoint*)
       let (ops, admin_storage) = admin_main(admin_param, storage.admin) in

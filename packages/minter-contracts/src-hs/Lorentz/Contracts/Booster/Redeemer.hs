@@ -13,13 +13,12 @@ newtype PackId = PackId Natural
   deriving stock (Show, Eq, Ord)
   deriving newtype (IsoValue, HasAnnotation)
 
-newtype TokenRegistryId = TokenRegistryId Natural
-  deriving stock (Show, Eq, Ord)
-  deriving newtype (IsoValue, HasAnnotation)
+--newtype TokenRegistryId = TokenRegistryId Natural
+--  deriving stock (Show, Eq, Ord)
+--  deriving newtype (IsoValue, HasAnnotation)
 
 data RedeemKey = RedeemKey
-  { packId :: PackId
-  , tokensContained :: [TokenRegistryId]
+  { tokensContained :: [Natural]
   , nonce :: Natural
   } deriving stock (Eq, Show)
 
@@ -29,6 +28,7 @@ deriving anyclass instance HasAnnotation RedeemKey
 
 data RedeemParam = RedeemParam
   { packOwner :: Address
+  , packId :: PackId
   , redeemKey :: RedeemKey
   }
 
@@ -46,8 +46,7 @@ customGeneric "GlobalTokenId" ligoCombLayout
 deriving anyclass instance IsoValue GlobalTokenId
 deriving anyclass instance HasAnnotation GlobalTokenId
 
-data BoosterEntrypoints = 
-    Add_packs [(GlobalTokenId, ByteString)]
+data BoosterEntrypoints = Add_packs [(GlobalTokenId, ByteString)]
   | Add_tokens [GlobalTokenId]
   | Redeem_booster RedeemParam
   | Admin SimpleAdmin.AdminEntrypoints
@@ -56,15 +55,19 @@ customGeneric "BoosterEntrypoints" ligoLayout
 deriving anyclass instance IsoValue BoosterEntrypoints
 deriving anyclass instance HasAnnotation BoosterEntrypoints
 
-instance ParameterHasEntrypoints BoosterEntrypoints where
-  type ParameterEntrypointsDerivation BoosterEntrypoints = EpdPlain
+instance
+  ( RequireAllUniqueEntrypoints BoosterEntrypoints
+  , EntrypointsDerivation EpdDelegate BoosterEntrypoints
+  ) =>
+    ParameterHasEntrypoints BoosterEntrypoints where
+  type ParameterEntrypointsDerivation BoosterEntrypoints = EpdDelegate
+
 
 data BoosterStorage = BoosterStorage
   { nextPackId :: PackId
-  , nextTokenRegistryId :: TokenRegistryId
+  , nextTokenRegistryId :: Natural
   , packs :: BigMap PackId (GlobalTokenId, ByteString)
   , tokenRegistry :: BigMap Natural GlobalTokenId
-  , tokensOwner :: Address 
   , admin :: SimpleAdmin.AdminStorage
   }
 
@@ -75,10 +78,9 @@ deriving anyclass instance HasAnnotation BoosterStorage
 initBoosterStorage :: SimpleAdmin.AdminStorage -> BoosterStorage 
 initBoosterStorage as = BoosterStorage
   { nextPackId = PackId 0
-  , nextTokenRegistryId = TokenRegistryId 0
+  , nextTokenRegistryId = 0
   , packs = mempty
   , tokenRegistry = mempty
-  , tokensOwner = SimpleAdmin.admin $ as
   , admin = as
   }
 
