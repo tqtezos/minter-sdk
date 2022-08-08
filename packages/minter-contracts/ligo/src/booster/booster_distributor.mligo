@@ -141,7 +141,7 @@ let add_packs(packs, storage : (global_token_id * bytes) list * booster_storage)
     (([] : operation list), new_storage)
   end
 
-let add_single_token (token, storage : global_token_id * booster_storage) : booster_storage = begin 
+let add_single_token (storage, token : booster_storage *  global_token_id) : booster_storage = begin 
     let next_token_registry_id = storage.next_token_registry_id in
     let new_token_registry_bm = Big_map.add next_token_registry_id token storage.token_registry in 
     {storage with token_registry = new_token_registry_bm; next_token_registry_id = next_token_registry_id + 1n}
@@ -149,7 +149,7 @@ let add_single_token (token, storage : global_token_id * booster_storage) : boos
 
 let add_tokens(token_list, storage : global_token_id list * booster_storage) : return = begin 
     fail_if_not_admin(storage.admin);
-    let new_storage : booster_storage = List.fold_right add_single_token token_list storage in 
+    let new_storage : booster_storage = List.fold_left add_single_token storage token_list in 
     (([] : operation list), new_storage)
   end
 
