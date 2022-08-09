@@ -49,10 +49,7 @@ hprop_Redeeming_with_correct_key_succeeds =
         addPacks addPacksParam boosterContract 
       
       forM_ packIds \packId -> do 
-        let redeemParam = Booster.RedeemParam 
-                          buyer 
-                          (Booster.PackId packId)
-                          (snd $ fromJust $ Map.lookup (Booster.PackId packId) testValidHashes) -- key
+        let redeemParam =  (snd $ fromJust $ Map.lookup (Booster.PackId packId) testValidHashes) -- key
         withSender buyer $ 
           redeem redeemParam boosterContract
 
@@ -82,14 +79,14 @@ genTestData = do
   let packs = Split.splitPlaces splitLengths shuffledTokenIds -- generates 10 random packs of lengths 1 to 10 each 
   nonces <- replicateM 10 (Gen.integral (Range.linear 1 1000000)) -- generates 10 nonces 
   let redeemKeys =  (packIds `zip` packs `zip` nonces) <&> (\((packId, tokens), nonce) -> 
-        ( Booster.PackId packId, 
           Booster.RedeemKey 
           {
+            packId = Booster.PackId packId, 
             tokensContained = tokens,
             nonce = nonce 
           }
-        ))
-  let keyValues =  List.map (\(id, key) -> (id, (mkHash key, key))) redeemKeys
+        )
+  let keyValues =  List.map (\key -> (Booster.packId key, (mkHash key, key))) redeemKeys
   let testValidHashes = Map.fromList keyValues
   pure $ TestData { testValidHashes = testValidHashes }
 
@@ -149,10 +146,10 @@ originateBoosterContract storage = do
 
 mkHash :: Booster.RedeemKey -> ByteString
 mkHash redeemKey = 
-  blake2b $ packValue' $ toVal (tokensContained, nonce)
+  blake2b $ packValue' $ toVal (packId, (tokensContained, nonce))
   where tokensContained = Booster.tokensContained redeemKey 
         nonce = Booster.nonce redeemKey
-  
+        packId = Booster.packId redeemKey
 ----------------------------------------------------------------------------
 -- Call entrypoints
 ----------------------------------------------------------------------------
@@ -166,6 +163,6 @@ addTokens :: (HasCallStack, MonadNettest caps base m) => [Booster.GlobalTokenId]
 addTokens tokens contract =
   call contract (Call @"Add_tokens") tokens
 
-redeem :: (HasCallStack, MonadNettest caps base m) => Booster.RedeemParam -> ContractHandler Booster.BoosterEntrypoints Booster.BoosterStorage -> m ()
+redeem :: (HasCallStack, MonadNettest caps base m) => Booster.RedeemKey -> ContractHandler Booster.BoosterEntrypoints Booster.BoosterStorage -> m ()
 redeem redeemParam contract =
   call contract (Call @"Redeem_booster") redeemParam

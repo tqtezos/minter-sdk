@@ -18,7 +18,8 @@ newtype PackId = PackId Natural
 --  deriving newtype (IsoValue, HasAnnotation)
 
 data RedeemKey = RedeemKey
-  { tokensContained :: [Natural]
+  { packId :: PackId
+  , tokensContained :: [Natural]
   , nonce :: Natural
   } deriving stock (Eq, Show)
 
@@ -26,15 +27,23 @@ customGeneric "RedeemKey" ligoCombLayout
 deriving anyclass instance IsoValue RedeemKey
 deriving anyclass instance HasAnnotation RedeemKey
 
-data RedeemParam = RedeemParam
-  { packOwner :: Address
-  , packId :: PackId
-  , redeemKey :: RedeemKey
-  }
+data Permit = Permit
+  { signerKey :: PublicKey
+  , signature :: Signature
+  } deriving stock (Eq, Ord)
 
-customGeneric "RedeemParam" ligoCombLayout
-deriving anyclass instance IsoValue RedeemParam
-deriving anyclass instance HasAnnotation RedeemParam
+customGeneric "Permit" ligoCombLayout
+deriving anyclass instance IsoValue Permit
+deriving anyclass instance HasAnnotation Permit
+
+data OffchainRedeemParam = OffchainRedeemParam
+  { redeemKey :: RedeemKey
+  , permit :: Permit
+  } deriving stock (Eq)
+
+customGeneric "OffchainRedeemParam" ligoCombLayout
+deriving anyclass instance IsoValue OffchainRedeemParam
+deriving anyclass instance HasAnnotation OffchainRedeemParam
 
 data GlobalTokenId = GlobalTokenId
   { fa2Address :: Address
@@ -48,7 +57,8 @@ deriving anyclass instance HasAnnotation GlobalTokenId
 
 data BoosterEntrypoints = Add_packs [(GlobalTokenId, ByteString)]
   | Add_tokens [GlobalTokenId]
-  | Redeem_booster RedeemParam
+  | Redeem_booster RedeemKey
+  | Offchain_redeem_booster OffchainRedeemParam
   | Admin SimpleAdmin.AdminEntrypoints
 
 customGeneric "BoosterEntrypoints" ligoLayout

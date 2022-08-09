@@ -8,22 +8,23 @@ type pack_id = nat
 type redeem_key = 
   [@layout:comb]
   {
+    pack_id : nat;
     tokens_contained : nat list;
     nonce : nat; 
   }
 
-type redeem_param = 
+type offchain_redeem_param = 
   [@layout:comb]
   {
-      pack_owner : address;
-      pack_id : nat;
-      redeem_key : redeem_key;
+    redeem_key : redeem_key;
+    permit : permit;
   }
 
 type booster_entrypoints =
     Add_packs of (global_token_id * bytes) list
   | Add_tokens of global_token_id list
-  | Redeem_booster of redeem_param 
+  | Redeem_booster of redeem_key
+  | Offchain_redeem_booster of offchain_redeem_param
   | Admin of admin_entrypoints
 
 type booster_storage =
@@ -106,21 +107,17 @@ let transfer_pack_contents_to_redeemer(tokens_contained, pack_owner, storage : n
                     
 end
 
-let redeem(redeem_param, storage : redeem_param * booster_storage) : return = begin 
-  let {  
-         pack_owner = pack_owner;
+let redeem(redeem_key, pack_owner, storage : redeem_key * address * booster_storage) : return = begin 
+  let  { 
          pack_id = pack_id;
-         redeem_key =   
-         { 
-           tokens_contained = tokens_contained;
-           nonce = nonce;
-         }; 
-      } = redeem_param in 
+         tokens_contained = tokens_contained;
+         nonce = nonce;
+       } = redeem_key in 
   let (pack_token_data, booster_pack_bytes) : global_token_id * byes = 
       get_pack(pack_id, storage) in 
   let transfer_pack_to_self_op : operation = 
       transfer_fa2(pack_token_data.fa2_address, pack_token_data.token_id, 1n, pack_owner, storage.admin.admin) in 
-  let hashed_data : bytes = Crypto.blake2b (Bytes.pack (tokens_contained, nonce)) in
+  let hashed_data : bytes = Crypto.blake2b (Bytes.pack (pack_id, (tokens_contained, nonce))) in
   let u : unit = (if hashed_data <> booster_pack_bytes
      then ([%Michelson ({| { FAILWITH } |} : string * bytes * bytes -> unit)] ("HASHES_DONT_MATCH", hashed_data, booster_pack_bytes) : unit)
      else ()) in 
@@ -153,15 +150,24 @@ let add_tokens(token_list, storage : global_token_id list * booster_storage) : r
     (([] : operation list), new_storage)
   end
 
+let redeem_with_permit (p, storage : offchain_redeem_param * booster_storage)  : return = begin 
+    fail_if_not_admin(storage.admin);
+    let {redeem_key = redeem_key;
+         permit = permit; } = p in 
+    let param_hash = Crypto.blake2b (Bytes.pack redeem_key) in 
+    let v : unit = check_permit (permit, 0n, param_hash) in  (*Always set counter to 0*)
+    let redeemer = address_from_key (p.permit.signerKey) in
+    let (ops, storage) = redeem(redeem_key, redeemer, storage) in 
+    (ops, storage)
+  end
+
 let booster_main (param, storage : booster_entrypoints * booster_storage) : return = begin
   forbid_xtz_transfer;
   match param with
     | Add_packs pack_list -> add_packs(pack_list, storage)
     | Add_tokens token_list -> add_tokens(token_list, storage)
-    | Redeem_booster redeem_param -> begin 
-        assert_msg(Tezos.sender = redeem_param.pack_owner, "REDEEMER_IS_NOT_PACK_OWNER");
-        redeem(redeem_param, storage)
-      end 
+    | Redeem_booster redeem_key -> redeem(redeem_key, Tezos.sender, storage)
+    | Offchain_redeem_booster offchain_redeem_param -> redeem_with_permit(offchain_redeem_param, storage)
     | Admin admin_param ->
       (*admin_main already admin checks entrypoint*)
       let (ops, admin_storage) = admin_main(admin_param, storage.admin) in
