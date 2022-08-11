@@ -21,6 +21,9 @@ type nft_token_storage = {
   token_metadata : nft_meta;
   next_token_id : token_id;
   operators : operator_storage;
+#if GLOBAL_OPERATOR
+  global_operators : global_operator_storage;
+#endif
 }
 
 #else 
@@ -82,15 +85,20 @@ permissions or constraints are violated.
 @param txs transfers to be applied to the ledger
 @param validate_op function that validates of the tokens from the particular owner can be transferred.
  *)
-let transfer (txs, validate_op, ops_storage, ledger
-    : (transfer_descriptor list) * operator_validator * operator_storage * ledger)
+let transfer (txs, validate_op, storage
+    : (transfer_descriptor list) * operator_validator * nft_token_storage)
     : ledger =
   let make_transfer = fun (l, tx : ledger * transfer_descriptor) ->
     List.fold
       (fun (ll, dst : ledger * transfer_destination_descriptor) ->
         let u = match tx.from_ with
         | None -> unit
-        | Some owner -> validate_op (owner, Tezos.sender, dst.token_id, ops_storage)
+        | Some owner -> 
+#if !GLOBAL_OPERATOR
+           validate_op (owner, Tezos.sender, dst.token_id, storage.operators)
+#else 
+           validate_op (owner, Tezos.sender, dst.token_id, storage.operators, storage.global_operators)  
+#endif
         in
         if dst.amount > 1n
         then (failwith fa2_insufficient_balance : ledger)
@@ -103,13 +111,13 @@ let transfer (txs, validate_op, ops_storage, ledger
           inc_balance(dst.to_, dst.token_id, lll)
       ) tx.txs l
   in
-  List.fold make_transfer txs ledger
+  List.fold make_transfer txs storage.ledger
 
 let fa2_transfer (tx_descriptors, validate_op, storage
     : (transfer_descriptor list) * operator_validator * nft_token_storage)
     : (operation list) * nft_token_storage =
 
-  let new_ledger = transfer (tx_descriptors, validate_op, storage.operators, storage.ledger) in
+  let new_ledger = transfer (tx_descriptors, validate_op, storage) in
   let new_storage = { storage with ledger = new_ledger; } in
   let ops = get_owner_hook_ops (tx_descriptors, storage) in
   ops, new_storage
@@ -150,10 +158,5 @@ let fa2_main (param, storage : fa2_entry_points * nft_token_storage)
     let new_operators = fa2_update_operators (updates, storage.operators) in
     let new_storage = { storage with operators = new_operators; } in
     ([] : operation list), new_storage
-
-  (* | Token_metadata_registry callback ->
-   *   (\* the contract storage holds `token_metadata` big_map*\)
-   *   let callback_op = Tezos.transaction Tezos.self_address 0mutez callback in
-   *   [callback_op], storage *)
 
 #endif

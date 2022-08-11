@@ -8,19 +8,15 @@ type nft_asset_storage = {
   metadata: (string, bytes) big_map; (* contract metadata *)
 }
 
+
+type nft_asset_entrypoints =
+  | Assets of fa2_entry_points
 #if !EDITIONS 
-
-type nft_asset_entrypoints =
-  | Assets of fa2_entry_points
   | Mint of mint_tokens_param
+#endif
   | Admin of admin_entrypoints
-
-#else 
-
-type nft_asset_entrypoints =
-  | Assets of fa2_entry_points
-  | Admin of admin_entrypoints
-
+#if GLOBAL_OPERATOR
+  | Update_global_operators of address set
 #endif
 
 
@@ -47,3 +43,11 @@ let nft_asset_main (param, storage : nft_asset_entrypoints * nft_asset_storage)
     let ops, admin = admin_main (a, storage.admin) in
     let new_storage = { storage with admin = admin; } in
     ops, new_storage
+
+#if GLOBAL_OPERATOR
+  | Update_global_operators global_operators -> 
+      let u : unit = fail_if_not_admin storage.admin in 
+      let new_s = {storage with assets = {storage.assets with global_operators = global_operators}} in 
+      (([] : operation list), new_s) 
+#endif
+

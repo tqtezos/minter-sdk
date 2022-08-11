@@ -51,17 +51,12 @@
              UNPAIR ;
              UNPAIR ;
              DUP 3 ;
-             CAR ;
-             DUP 4 ;
-             CDR ;
-             PAIR ;
              DUG 2 ;
              DUP ;
              DUG 3 ;
-             DIG 2 ;
-             UNPAIR ;
+             DUP 3 ;
+             CAR ;
              SWAP ;
-             DIG 2 ;
              ITER { DUP ;
                     DUG 2 ;
                     CDR ;
@@ -70,7 +65,8 @@
                            CAR ;
                            IF_NONE
                              { UNIT }
-                             { DUP 5 ;
+                             { DUP 6 ;
+                               CDR ;
                                DUP 4 ;
                                CDR ;
                                CAR ;
@@ -79,7 +75,7 @@
                                DIG 2 ;
                                PAIR ;
                                PAIR ;
-                               DUP 6 ;
+                               DUP 5 ;
                                SWAP ;
                                EXEC } ;
                            DROP ;
