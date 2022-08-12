@@ -494,6 +494,12 @@ const compileSources: CompileSourceEntry[] = [
     dstFile: 'fa2_multi_nft_asset_simple_admin_global_operator.tz',
     contract: true,
   },
+  {
+    srcFile: 'minter_collection/nft/fa2_multi_nft_asset_multi_admin_global_operator.mligo',
+    mainFn: 'nft_asset_main',
+    dstFile: 'fa2_multi_nft_asset_multi_admin_global_operator.tz',
+    contract: true,
+  },
 ];
 
 const filterSources = (sources: CompileSourceEntry[]): CompileSourceEntry[] => {
