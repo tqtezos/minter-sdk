@@ -50,10 +50,79 @@ hprop_Redeeming_with_correct_key_succeeds =
       
       forM_ packIds \packId -> do 
         let redeemParam =  (snd $ fromJust $ Map.lookup (Booster.PackId packId) testValidHashes) -- key
-        withSender buyer $ 
-          redeem redeemParam boosterContract
+        let packContentsDeltas = List.concatMap (\tokenId -> [((buyer, TokenId tokenId), 1), ((seller, TokenId tokenId), -1)]) 
+                                          (Booster.tokensContained redeemParam) 
+        assertingBalanceDeltas packFA2
+          [  (buyer, TokenId packId) -: -1
+           , (seller, TokenId packId) -: 1
+          ] $ do
+            assertingBalanceDeltas cardFA2 packContentsDeltas
+               $ do
+                withSender buyer $ 
+                  redeem redeemParam boosterContract
 
+hprop_Redeeming_with_incorrect_nonce_fails :: Property
+hprop_Redeeming_with_incorrect_nonce_fails =
+  property $ do
+    testData@TestData{testValidHashes} <- forAll genTestData
 
+    clevelandProp $ do
+      setup@Setup{seller, buyer, cardFA2, packFA2, boosterContract} <- testSetup testData
+      let packFA2Address = toAddress packFA2
+      let cardFA2Address = toAddress cardFA2
+      let cards = List.map (\n -> Booster.GlobalTokenId cardFA2Address n) cardIds
+      let addPacksParam = List.map 
+                         (\n -> 
+                           (,) (Booster.GlobalTokenId packFA2Address n) -- Pack token Id matches PackId
+                               (fst $ fromJust $ Map.lookup (Booster.PackId n) testValidHashes) --Hash for that pack 
+                         ) 
+                         packIds
+      withSender seller $
+        addTokens cards boosterContract 
+      withSender seller $
+        addPacks addPacksParam boosterContract 
+      
+      forM_ packIds \packId -> do
+        let redeemData = fromJust $ Map.lookup (Booster.PackId packId) testValidHashes
+        let redeemHash =  fst $ redeemData 
+        let redeemParam =  snd $ redeemData -- key
+        let fabricatedRedeemParam = redeemParam {Booster.nonce = 0}
+        withSender buyer $
+          when (fabricatedRedeemParam /= redeemParam) 
+              (redeem fabricatedRedeemParam boosterContract
+                & expectFailedWith (([mt|HASHES_DONT_MATCH|], (mkHash fabricatedRedeemParam)), redeemHash))
+    
+hprop_Redeeming_with_incorrect_pack_fails :: Property
+hprop_Redeeming_with_incorrect_pack_fails =
+  property $ do
+    testData@TestData{testValidHashes} <- forAll genTestData
+
+    clevelandProp $ do
+      setup@Setup{seller, buyer, cardFA2, packFA2, boosterContract} <- testSetup testData
+      let packFA2Address = toAddress packFA2
+      let cardFA2Address = toAddress cardFA2
+      let cards = List.map (\n -> Booster.GlobalTokenId cardFA2Address n) cardIds
+      let addPacksParam = List.map 
+                         (\n -> 
+                           (,) (Booster.GlobalTokenId packFA2Address n) -- Pack token Id matches PackId
+                               (fst $ fromJust $ Map.lookup (Booster.PackId n) testValidHashes) --Hash for that pack 
+                         ) 
+                         packIds
+      withSender seller $
+        addTokens cards boosterContract 
+      withSender seller $
+        addPacks addPacksParam boosterContract 
+      
+      forM_ packIds \packId -> do
+        let redeemData = fromJust $ Map.lookup (Booster.PackId packId) testValidHashes
+        let redeemHash =  fst $ redeemData 
+        let redeemParam =  snd $ redeemData -- key
+        let fabricatedRedeemParam = redeemParam {Booster.tokensContained = [1]}
+        withSender buyer $
+          when (fabricatedRedeemParam /= redeemParam) 
+              (redeem fabricatedRedeemParam boosterContract
+                & expectFailedWith (([mt|HASHES_DONT_MATCH|], (mkHash fabricatedRedeemParam)), redeemHash))
+    
 
 ----------------------------------------------------------------------------
 -- Helpers
