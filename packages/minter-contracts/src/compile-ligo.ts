@@ -500,6 +500,12 @@ const compileSources: CompileSourceEntry[] = [
     dstFile: 'fa2_multi_nft_asset_multi_admin_global_operator.tz',
     contract: true,
   },
+  {
+    srcFile: 'booster/booster_minimal.mligo',
+    mainFn:  'booster_main',
+    dstFile: 'booster_minimal.tz',
+    contract: true,
+  },
 ];
 
 const filterSources = (sources: CompileSourceEntry[]): CompileSourceEntry[] => {
