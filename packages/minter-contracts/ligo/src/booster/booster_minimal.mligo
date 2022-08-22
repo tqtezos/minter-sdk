@@ -3,35 +3,28 @@
 #include "../../fa2_modules/admin/simple_admin.mligo"
 (* ==== Types ==== *)
 
-type pack_id = nat
-
-
 type offchain_redeem_param = 
   [@layout:comb]
   {
-    pack_id : pack_id;
+    pack_token_id : nat;
     permit : permit;
   }
 
 type pack_state = 
-    Unredeemed of unit
-  | Redeemed of address
+    Redeemed of address
   | Distributed of address
 
 type booster_entrypoints =
-    Add_packs of nat list
-  | Redeem_booster of pack_id 
+    Redeem_booster of nat 
   | Offchain_redeem_booster of offchain_redeem_param 
-  | Admin_distribute_packs of pack_id list 
+  | Admin_distribute_packs of nat list 
   | Admin of admin_entrypoints
-
-type pack_data = nat * pack_state
 
 type booster_storage =
   [@layout:comb]
-  { next_pack_id : pack_id
-  ; pack_fa2 : address
-  ; packs : (pack_id, pack_data) big_map
+  { pack_fa2 : address
+  ; burn_address : address
+  ; packs : (nat, pack_state) big_map
   ; admin : admin_storage
   }
 
@@ -69,9 +62,9 @@ let transfer_tokens(tokens_list, from_, to_ : tokens list * address * address) :
    (List.map (transfer_tokens_in_single_contract from_ to_) tokens_list)
  
 [@inline]
-let get_pack(id, storage : pack_id * booster_storage) : pack_data =
+let get_pack(id, storage : nat * booster_storage) : pack_state =
   match Big_map.find_opt id storage.packs with
-  | None -> (failwith "PACK_NOT_EXIST" : pack_data)
+  | None -> (failwith "PACK_NOT_EXIST" : pack_state)
   | Some bs -> bs
 
 let global_token_id_to_tokens(id : global_token_id) : tokens = 
@@ -86,19 +79,15 @@ let global_token_id_to_tokens(id : global_token_id) : tokens =
 
 (* ==== Entrypoints ==== *)
 
-let redeem(pack_id, pack_owner, storage : pack_id * address * booster_storage) : return = begin 
-  let (token_id, pack_state) : pack_data = 
-      get_pack(pack_id, storage) in 
-  let u : unit = match pack_state with 
-      Unredeemed -> unit 
-    | Redeemed -> (failwith "PACK_REDEEMED" : unit)
-    | Distributed -> (failwith "PACK_REDEEMED" : unit)
-    in
-  let transfer_pack_to_self_op : operation = 
-      transfer_fa2(storage.pack_fa2, token_id, 1n, pack_owner, storage.admin.admin) in 
-  let new_pack_registry = Big_map.update pack_id (Some (token_id, (Redeemed pack_owner: pack_state))) storage.packs in 
-  ([transfer_pack_to_self_op], {storage with packs = new_pack_registry;})
+let redeem(pack_token_id, pack_owner, storage : nat * address * booster_storage) : return = begin 
+  assert_msg(not Big_map.mem pack_token_id storage.packs, "BOOSTER_ALREADY_REDEEMED");
+  let burn_pack_op : operation = 
+      transfer_fa2(storage.pack_fa2, pack_token_id, 1n, pack_owner, storage.burn_address) in 
+  let new_pack_registry = Big_map.add pack_token_id (Redeemed pack_owner : pack_state) storage.packs in 
+  ([burn_pack_op], {storage with packs = new_pack_registry;})
 end
+
+(*
 
 let add_single_pack (storage, token_id : booster_storage * nat) : booster_storage = begin 
     let next_pack_id = storage.next_pack_id in
@@ -112,31 +101,32 @@ let add_packs(packs, storage : nat list * booster_storage) : return = begin
     (([] : operation list), new_storage)
   end
 
+*)
+
 let redeem_with_permit (p, storage : offchain_redeem_param * booster_storage)  : return = begin 
     fail_if_not_admin(storage.admin);
-    let {pack_id = pack_id;
+    let {pack_token_id = pack_token_id;
          permit = permit; } = p in 
-    let param_hash = Crypto.blake2b (Bytes.pack pack_id) in 
+    let param_hash = Crypto.blake2b (Bytes.pack pack_token_id) in 
     let v : unit = check_permit (permit, 0n, param_hash) in  
     let redeemer = address_from_key (p.permit.signerKey) in
-    let (ops, storage) = redeem(pack_id, redeemer, storage) in 
+    let (ops, storage) = redeem(pack_token_id, redeemer, storage) in 
     (ops, storage)
   end
 
-let distribute_pack (storage, pack_id : booster_storage * pack_id)  : booster_storage = begin 
+let distribute_pack (storage, pack_token_id : booster_storage * nat)  : booster_storage = begin 
     fail_if_not_admin(storage.admin);
-    let (pack_token_data, pack_state) : token_id * pack_state = 
-        get_pack(pack_id, storage) in 
+    let pack_state : pack_state = 
+        get_pack(pack_token_id, storage) in 
     let redeemer : address = match pack_state with 
-        Unredeemed -> (failwith "PACK_UNREDEEMED" : address)
-      | Redeemed redeemer -> redeemer 
+        Redeemed redeemer -> redeemer 
       | Distributed -> (failwith "PACK_ALREADY_DISTRIBUTED" : address)
       in
-    let new_pack_registry = Big_map.update pack_id (Some (pack_token_data, (Distributed redeemer : pack_state))) storage.packs in 
+    let new_pack_registry = Big_map.update pack_token_id (Some (Distributed redeemer : pack_state)) storage.packs in 
     {storage with packs = new_pack_registry;}
   end
 
-let distribute_packs(packs, storage : pack_id list * booster_storage) : return = begin 
+let distribute_packs(packs, storage : nat list * booster_storage) : return = begin 
     fail_if_not_admin(storage.admin);
     let new_storage : booster_storage = List.fold_left distribute_pack storage packs in 
     (([] : operation list), new_storage)
@@ -146,7 +136,6 @@ let distribute_packs(packs, storage : pack_id list * booster_storage) : return =
 let booster_main (param, storage : booster_entrypoints * booster_storage) : return = begin
   forbid_xtz_transfer;
   match param with
-    | Add_packs pack_list -> add_packs(pack_list, storage) 
     | Redeem_booster pack_id -> redeem(pack_id, Tezos.sender, storage)
     | Offchain_redeem_booster offchain_redeem_param -> redeem_with_permit(offchain_redeem_param, storage) 
     | Admin_distribute_packs pack_ids -> distribute_packs(pack_ids, storage) 
