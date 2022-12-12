@@ -8,6 +8,7 @@ module Lorentz.Contracts.FA2
 
 import Fmt (Buildable(..), genericF)
 import Lorentz
+import Util () -- instance Buildable ByteString
 
 import qualified Lorentz.Contracts.Spec.FA2Interface as FA2I
 
@@ -34,6 +35,7 @@ data TokenMetadata = TokenMetadata
 customGeneric "TokenMetadata" rightComb
 deriving anyclass instance IsoValue TokenMetadata
 deriving anyclass instance HasAnnotation TokenMetadata
+instance Buildable TokenMetadata where build = genericF
 
 -- | TZIP-12 (and, consequently, @morley-ledgers@) does not prescribe any specific
 -- layout for the FA2 parameter.

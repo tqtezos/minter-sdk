@@ -11,7 +11,7 @@ data AdminStorage = AdminStorage
   { admin :: Address
   , pendingAdmin :: Maybe Address
   , paused :: Bool
-  }
+  } deriving stock (Eq, Show)
 
 customGeneric "AdminStorage" ligoLayout
 deriving anyclass instance IsoValue AdminStorage
@@ -22,6 +22,7 @@ data AdminEntrypoints
   = Set_admin Address
   | Confirm_admin
   | Pause Bool
+  deriving stock (Eq, Show)
 
 customGeneric "AdminEntrypoints" ligoLayout
 deriving anyclass instance IsoValue AdminEntrypoints
@@ -34,7 +35,7 @@ initAdminStorage :: Address -> AdminStorage
 initAdminStorage admin = AdminStorage
   { admin = admin
   , pendingAdmin = Nothing
-  , paused = False 
+  , paused = False
   }
 
 -- Errors
@@ -52,5 +53,5 @@ notPendingAdmin = [mt|NOT_A_PENDING_ADMIN|]
 noPendingAdmin :: MText
 noPendingAdmin = [mt|NO_PENDING_ADMIN|]
 
-errPaused :: MText 
+errPaused :: MText
 errPaused = [mt|PAUSED|]

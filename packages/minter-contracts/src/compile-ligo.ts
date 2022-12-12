@@ -40,6 +40,19 @@ type CompileSourceEntry = {
 // add contracts here
 const compileSources: CompileSourceEntry[] = [
   {
+    srcFile: 'bonding_curve/bonding_curve.mligo',
+    mainFn: 'bonding_curve_main',
+    dstFile: 'bonding_curve.tz',
+    contract: true,
+  },
+  {
+    srcFile: 'bonding_curve/bonding_curve_debug.mligo',
+    mainFn: 'bonding_curve_main',
+    dstFile: 'bonding_curve_debug.tz',
+    contract: true,
+  },
+
+  {
     srcFile: 'minter_collection/nft/fa2_multi_nft_faucet.mligo',
     mainFn: 'nft_faucet_main',
     dstFile: 'fa2_multi_nft_faucet.tz',
@@ -51,12 +64,14 @@ const compileSources: CompileSourceEntry[] = [
     dstFile: 'fa2_multi_nft_asset_no_admin.tz',
     contract: true,
   },
+
   {
     srcFile: 'minter_collection/nft/fa2_multi_nft_asset_simple_admin.mligo',
     mainFn: 'nft_asset_main',
     dstFile: 'fa2_multi_nft_asset.tz',
     contract: true,
   },
+
   {
     srcFile: 'minter_collection/nft/fa2_multi_nft_asset_multi_admin.mligo',
     mainFn: 'nft_asset_main',
@@ -482,6 +497,7 @@ const compileSources: CompileSourceEntry[] = [
     dstFile: 'pausable_wallet.tz',
     contract: true,
   },
+
 ];
 
 const filterSources = (sources: CompileSourceEntry[]): CompileSourceEntry[] => {
