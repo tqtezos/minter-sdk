@@ -215,9 +215,6 @@ type bonding_curve_storage =
     // set this price constant based on final price of auction
     auction_price : tez;
 
-    // number of tokens sold _during_ the auction
-    auction_tokens_sold : nat;
-
     // number of tokens sold _after_ the auction
     token_index : nat;
 

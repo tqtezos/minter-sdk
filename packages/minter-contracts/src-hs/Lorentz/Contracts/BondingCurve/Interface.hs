@@ -44,6 +44,14 @@ runPiecewisePolynomial PiecewisePolynomial{..} x = aux x segments
          then runPolynomial poly (toInteger x)
          else aux (offset - segmentLength) segments'
 
+polynomialToPiecewisePolynomial :: [Integer] -> PiecewisePolynomial
+polynomialToPiecewisePolynomial polynomial = PiecewisePolynomial
+  { segments = []
+  , last_segment = polynomial
+  }
+
+constantPiecewisePolynomial :: Integer -> PiecewisePolynomial
+constantPiecewisePolynomial = polynomialToPiecewisePolynomial . (: [])
 
 examplePiecewisePolynomial :: PiecewisePolynomial
 examplePiecewisePolynomial = PiecewisePolynomial
@@ -61,7 +69,6 @@ data Storage = Storage
   { admin :: AdminStorage
   , market_contract :: Address
   , auction_price :: Mutez
-  , auction_tokens_sold :: Natural
   , token_index :: Natural
   , token_metadata :: FA2.TokenMetadata
   , basis_points :: Natural
@@ -96,7 +103,6 @@ exampleStorage = Storage
   { admin = exampleAdminStorage
   , market_contract = detGenKeyAddress "dummy-impossible-contract-key"
   , auction_price = toMutez 0
-  , auction_tokens_sold = 0
   , token_index = 0
   , token_metadata = exampleTokenMetadata
   , basis_points = 100
@@ -115,7 +121,6 @@ exampleStorage' = Storage
   { admin = exampleAdminStorage
   , market_contract = detGenKeyAddress "dummy-impossible-contract-key"
   , auction_price = toMutez 0
-  , auction_tokens_sold = 1
   , token_index = 2
   , token_metadata = exampleTokenMetadata
   , basis_points = 100
@@ -127,7 +132,12 @@ exampleStorage' = Storage
 --
 -- ("admin","Pair (Pair \"tz2C97sask3WgSSg27bJhFxuBwW6MMU4uTPK\" False) None")
 -- ("market_contract","\"tz2UXHa5WU79MnWF5uKFRM6qUowX13pdgJGy\"")
--- "{ Pair (Pair \"tz2C97sask3WgSSg27bJhFxuBwW6MMU4uTPK\" False) None; \"tz2UXHa5WU79MnWF5uKFRM6qUowX13pdgJGy\"; 0; 1; 2; 100; Pair { Pair 6 { 7; 8 } } { 4; 5 }; 3 }"
+-- storage for distinguishing fields:
+-- "{ Pair (Pair \"tz2C97sask3WgSSg27bJhFxuBwW6MMU4uTPK\" False) None; \"tz2UXHa5WU79MnWF5uKFRM6qUowX13pdgJGy\"; 0; 2; Pair 42 { Elt \"decimals\" 0x3132; Elt \"name\" 0x546869732069732061207465737421205b6e616d655d; Elt \"symbol\" 0x746573745f73796d626f6c }; 100; Pair { Pair 6 { 7; 8 } } { 4; 5 }; 3 }"
+--
+-- exampleStorage:
+-- "{ Pair (Pair \"tz2C97sask3WgSSg27bJhFxuBwW6MMU4uTPK\" False) None; \"tz2UXHa5WU79MnWF5uKFRM6qUowX13pdgJGy\"; 0; 0; Pair 42 { Elt \"decimals\" 0x3132; Elt \"name\" 0x546869732069732061207465737421205b6e616d655d; Elt \"symbol\" 0x746573745f73796d626f6c }; 100; Pair { Pair 6 { 7; 8 } } { 4; 5 }; 0 }"printExampleStorage' :: IO ()
+--
 printExampleStorage' :: IO ()
 printExampleStorage' = do
   print $ ("admin" :: String, printLorentzValue False exampleAdminStorage)
@@ -141,12 +151,12 @@ printExampleStorage' = do
 
 data Entrypoints
   = Admin AdminEntrypoints
-  | SetDelegate (Maybe KeyHash)
+  | Set_delegate (Maybe KeyHash)
   | Withdraw ()
   | Buy ()
-  | BuyOffchain Address
+  | Buy_offchain Address
   | Sell TokenId
-  | SellOffchain (TokenId, Address)
+  | Sell_offchain (TokenId, Address)
   deriving stock (Eq, Show)
 
 customGeneric "Entrypoints" ligoLayout

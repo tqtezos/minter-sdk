@@ -41,14 +41,12 @@ test_AdminChecks =
         (exampleNftStorageWithAdmin admin)
     )
 
-
 -- type nft_asset_entrypoints =
 --   | Assets of fa2_entry_points
 --   | Mint of mint_tokens_param
 --   | Burn of (token_id * bytes)
 --   | Update_metadata of (token_metadata list)
 --   | Admin of admin_entrypoints
-
 test_Integrational :: TestTree
 test_Integrational = testGroup "Integrational"
   [

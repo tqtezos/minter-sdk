@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedLists #-}
+
 {-# LANGUAGE InstanceSigs #-}
 
 -- | Tests for bonding curve contract
@@ -5,27 +7,41 @@ module Test.BondingCurve where
 
 import Prelude hiding (swap)
 
-import Hedgehog ((===), Gen, Property, forAll, property)
-import qualified Hedgehog.Gen as Gen
-import qualified Hedgehog.Range as Range
+-- import Hedgehog ((===), Gen, Property, forAll, property)
+-- import qualified Hedgehog.Gen as Gen
+-- import qualified Hedgehog.Range as Range
+-- import qualified Data.Map as Map
 import Test.Tasty (TestTree, testGroup)
 
-import Lorentz.Errors
+-- import Lorentz.Errors
 import Lorentz.Value
-import Michelson.Typed.Scope (ConstantScope)
-import Michelson.Typed.Sing (KnownT)
+import Michelson.Interpret (MorleyLogs(..))
+import Michelson.Text (unsafeMkMText)
+import Michelson.Typed.Scope () -- (ConstantScope)
+import Michelson.Typed.Sing () -- (KnownT)
 import Morley.Nettest
-import Morley.Nettest.Tasty (nettestScenarioCaps)
+import Morley.Nettest.Tasty
+-- import Michelson.Runtime.GState (GState(..), asBalance)
+-- import Michelson.Test.Integrational (InternalState(..))
+-- import Morley.Nettest.Pure
 
+import qualified Lorentz.Contracts.FA2 as FA2 -- (TokenMetadata(..))
+import Lorentz.Contracts.Spec.FA2Interface
 import Lorentz.Contracts.BondingCurve
 import Lorentz.Contracts.BondingCurve.Interface
 import Lorentz.Contracts.BondingCurve.Interface.Debug (DebugEntrypoints(..))
-import Lorentz.Contracts.SimpleAdmin ()
+import Lorentz.Contracts.MinterCollection.Nft.Types
+-- import Lorentz.Contracts.SimpleAdmin
 
-import Test.Swaps.Util
+-- import Test.Swaps.Util
 import Test.Util
 
 import Test.SimpleAdmin
+import Test.MinterCollection.Nft (originateNft)
+
+----------------------------------------------------------------------------------------
+-- Originators
+----------------------------------------------------------------------------------------
 
 originateBondingCurve
   :: MonadNettest caps base m
@@ -34,6 +50,19 @@ originateBondingCurve
 originateBondingCurve storage =
   originateSimple "bonding-curve" storage bondingCurveContract
 
+originateBondingCurveWithBalance
+  :: MonadNettest caps base m
+  => Mutez
+  -> Storage
+  -> m (ContractHandler Entrypoints Storage)
+originateBondingCurveWithBalance balance storage =
+  originate $ OriginateData
+    { odName = "bonding-curve"
+    , odBalance = balance
+    , odStorage = storage
+    , odContract = bondingCurveContract
+    }
+
 originateDebugBondingCurve
   :: MonadNettest caps base m
   => Storage
@@ -41,284 +70,421 @@ originateDebugBondingCurve
 originateDebugBondingCurve storage =
   originateSimple "debug-bonding-curve" storage debugBondingCurveContract
 
--- Test SimpleAdmin admin ownership transfer
-test_AdminChecks :: TestTree
-test_AdminChecks =
-  adminOwnershipTransferChecks @Entrypoints  @Storage
-    (\admin ->
-      originateBondingCurve
+
+----------------------------------------------------------------------------------------
+-- Admin tests
+----------------------------------------------------------------------------------------
+
+-- TODO: re-enable
+-- -- Test SimpleAdmin admin ownership transfer
+-- test_AdminChecks :: TestTree
+-- test_AdminChecks =
+--   adminOwnershipTransferChecks @Entrypoints  @Storage
+--     (\admin ->
+--       originateBondingCurve
+--         (exampleStorageWithAdmin admin)
+--     )
+
+
+----------------------------------------------------------------------------------------
+-- Test data
+----------------------------------------------------------------------------------------
+
+tokenMetadata0 :: TokenMetadata
+tokenMetadata0 = mkTokenMetadata "nft-symbol-0" "nft-name-0" "12"
+
+tokenMetadata0' :: TokenId -> FA2.TokenMetadata
+tokenMetadata0' tokenId = FA2.TokenMetadata
+  { tokenId = tokenId
+  , tokenInfo = tokenMetadata0
+  }
+
+
+
+----------------------------------------------------------------------------------------
+-- Integration tests
+----------------------------------------------------------------------------------------
+
+-- TODO: morley seems unable to test this with its emulator's current version
+-- nettestScenarioCaps "Set_delegate" $ do
+setDelegateTest :: TestTree
+setDelegateTest = nettestScenarioOnEmulatorCaps "Set_delegate" $ do
+  setup <- doFA2Setup
+  let admin ::< alice ::< SNil = sAddresses setup
+  let !SNil = sTokens setup
+  let bondingCurveStorage :: Storage = exampleStorageWithAdmin admin
+  bondingCurve <- originateBondingCurve bondingCurveStorage
+
+  -- admin only
+  withSender alice $
+    call bondingCurve (Call @"Set_delegate") Nothing
+      & expectError (unsafeMkMText "NOT_AN_ADMIN")
+
+  withSender admin $
+    call bondingCurve (Call @"Set_delegate") Nothing
+
+  -- TODO ensure delegate set
+  logs <- getMorleyLogs
+  logs @== [MorleyLogs []]
+
+
+withdrawTest :: TestTree
+withdrawTest = nettestScenarioCaps "Withdraw" $ do
+  setup <- doFA2Setup
+  let admin ::< alice ::< SNil = sAddresses setup
+  let !SNil = sTokens setup
+
+  -- ensure admin has no tez
+  withSender admin $
+    getBalance admin >>= transferMoney alice
+  getBalance admin @@== 0
+
+  -- nft <- originateNft (exampleNftStorageWithAdmin alice)
+  let withdrawAmount = 1234
+  let bondingCurveStorage :: Storage =
         (exampleStorageWithAdmin admin)
-    )
+          {
+            market_contract = alice -- toAddress nft
+          , unclaimed = withdrawAmount
+          }
+  bondingCurve <- originateBondingCurveWithBalance withdrawAmount bondingCurveStorage
 
--- TODO: include
--- test_Integrational :: TestTree
--- test_Integrational = testGroup "Integrational"
---   [
---     -- simple origination test
---     nettestScenarioCaps "Bonding curve origination" $ do
---       setup <- doFA2Setup
---       let admin ::< alice ::< SNil = sAddresses setup
---       let tokenId ::< SNil = sTokens setup
---       let bondingCurveStorage :: Storage = exampleStorage { admin = AdminStorage admin Nothing False }
---       bondingCurve <- originateBondingCurve bondingCurveStorage
+  -- admin only
+  withSender alice $
+    call bondingCurve (Call @"Withdraw") ()
+      & expectError (unsafeMkMText "NOT_AN_ADMIN")
 
---       return ()
+  withSender admin $
+    call bondingCurve (Call @"Withdraw") ()
 
---       -- TODO: enable
---       -- withSender admin $
---       --   -- call bondingCurve (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
---       --   call bondingCurve (Call @"Buy") ()
+  getBalance admin @@== withdrawAmount
 
 
-------------------------------------------------------------------------------------------------------------------------
---       -- fa2 <- originateFA2 "fa2" setup [swap]
+buyNoMint :: TestTree
+buyNoMint = nettestScenarioCaps "Buy: NO_MINT" $ do
+  setup <- doFA2Setup
+  let admin ::< alice ::< SNil = sAddresses setup
+  let !SNil = sTokens setup
+  let bondingCurveStorage :: Storage =
+        (exampleStorageWithAdmin admin)
+          {
+            market_contract = alice
+          , cost_mutez = constantPiecewisePolynomial 0
+          }
+  bondingCurve <- originateBondingCurve bondingCurveStorage
 
---       -- assertingBalanceDeltas fa2
---       --   [ (admin, tokenId) -: -3
---       --   , (alice, tokenId) -: 3
---       --   ] $ do
---       --     withSender admin $
---       --       call swap (Call @"Start") $ mkSingleOffer SwapOffer
---       --         { assetsOffered = [mkFA2Assets fa2 [(tokenId, 10)]]
---       --         , assetsRequested = [mkFA2Assets fa2 [(tokenId, 7)]]
---       --         }
---       --     withSender alice $
---       --       call swap (Call @"Accept") initSwapId
---   ]
-------------------------------------------------------------------------------------------------------------------------
+  withSender alice $
+    call bondingCurve (Call @"Buy") ()
+      & expectError (unsafeMkMText "NO_MINT")
+
+
+--- too little/much tez
+--- Spec:
+--  + Mints token using `token_metadata` from storage to buyer
+--  + Increments `token_index`
+--  + Adds the `basis_points` fee to the `unclaimed` tez in storage
+buyTest :: TestTree
+buyTest = nettestScenarioCaps "Buy" $ do
+  setup <- doFA2Setup
+  let admin ::< alice ::< SNil = sAddresses setup
+  let !SNil = sTokens setup
+  nft <- originateNft (exampleNftStorageWithAdmin admin)
+  let bondingCurveStorage :: Storage =
+        (exampleStorageWithAdmin admin)
+          {
+            market_contract = toAddress nft
+          , cost_mutez = constantPiecewisePolynomial 0
+          }
+  bondingCurve <- originateBondingCurve bondingCurveStorage
+
+  withSender alice $
+    call bondingCurve (Call @"Buy") ()
+      & expectError (unsafeMkMText "WRONG_TEZ_PRICE")
+
+  -- TODO: successful buy: which price?
+  -- TODO: assert changes
+
+
+-- TODO: buy-offchain
+buyOffchainTest :: TestTree
+buyOffchainTest = nettestScenarioCaps "Buy_offchain" $ do
+  setup <- doFA2Setup
+  let admin ::< alice ::< bob ::< SNil = sAddresses setup
+  let !SNil = sTokens setup
+  nft <- originateNft (exampleNftStorageWithAdmin admin)
+
+  let bondingCurveStorage :: Storage =
+        (exampleStorageWithAdmin admin)
+          {
+            market_contract = toAddress nft
+          , cost_mutez = constantPiecewisePolynomial 0
+          }
+  bondingCurve <- originateBondingCurve bondingCurveStorage
+
+  -- admin only
+  withSender alice $
+    call bondingCurve (Call @"Buy_offchain") alice
+      & expectError (unsafeMkMText "NOT_AN_ADMIN")
+
+  withSender admin $
+    call bondingCurve (Call @"Buy_offchain") bob
+      & expectError (unsafeMkMText "NOT_AN_ADMIN") -- TODO correct error ??
+
+  withSender admin $
+    call bondingCurve (Call @"Buy_offchain") alice
+      & expectError (unsafeMkMText "WRONG_TEZ_PRICE")
+
+  -- TODO: assert changes
+
+
+-- sell with token_index = 0 always fails with NO_TOKENS
+sellTokenIndex0 :: TestTree
+sellTokenIndex0 = nettestScenarioOnEmulatorCaps "Sell: token_index = 0" $ do
+  setup <- doFA2Setup
+  let admin ::< alice ::< SNil = sAddresses setup
+  let tokenId0 ::< SNil = sTokens setup
+  nft <- originateNft (exampleNftStorageWithAdmin admin)
+  let bondingCurveStorage :: Storage =
+        (exampleStorageWithAdmin admin)
+          {
+            market_contract = toAddress nft
+          , token_index = 0
+          }
+  bondingCurve <- originateBondingCurve bondingCurveStorage
+
+  -- mint to alice
+  withSender admin $
+    call nft (Call @"Mint") [MintTokenParam
+      { token_metadata = tokenMetadata0' tokenId0
+      , owner = alice
+      }]
+
+  withSender alice $
+    call bondingCurve (Call @"Sell") tokenId0
+      & expectError (unsafeMkMText "NO_TOKENS")
+
+
+-- TODO: sell
+--- call w/ admin (no tokens owned)
+--- call w/ seller
+--- Spec:
+--  + Price is calculared as in `Buy`, without the `basis_points` fee:
+--    * `auction_price`
+--    * `cost_mutez` applied to `token_index`
+--  + The token is burned on the FA2 marketplace
+--  + Tez equal to the price is sent to the seller
+-- , nettestScenarioCaps "Sell" $ do
+sellTest :: TestTree
+sellTest = nettestScenarioOnEmulatorCaps "Sell" $ do
+  setup <- doFA2Setup
+  let admin ::< alice ::< bob ::< SNil = sAddresses setup
+  let tokenId0 ::< SNil = sTokens setup
+  nft <- originateNft (exampleNftStorageWithAdmin admin)
+
+  let bondingCurveStorage :: Storage =
+        (exampleStorageWithAdmin admin)
+          {
+            market_contract = toAddress nft
+          , cost_mutez = constantPiecewisePolynomial 0
+          , token_index = 1 -- token_index must be > 0 to sell
+          }
+  bondingCurve <- originateBondingCurve bondingCurveStorage
+
+  -- alice can't sell a token that doesn't exist
+  withSender alice $
+    call bondingCurve (Call @"Sell") tokenId0
+      & expectError (unsafeMkMText "WRONG_ID")
+
+  -- mint to alice
+  withSender admin $
+    call nft (Call @"Mint") [MintTokenParam
+      { token_metadata = tokenMetadata0' tokenId0
+      , owner = alice
+      }]
+
+  -- bob can't sell alice's token
+  withSender bob $
+    call bondingCurve (Call @"Sell") tokenId0
+      & expectError (unsafeMkMText "WRONG_SYMBOL")
+
+  -- no operator set
+  withSender alice $
+    call bondingCurve (Call @"Sell") tokenId0
+      & expectError (unsafeMkMText "WRONG_SYMBOL")
+
+  -- alice needs to set operator to sell
+  withSender alice $
+    call nft (Call @"Update_operators")
+      [ AddOperator OperatorParam
+          { opOwner = alice
+          , opOperator = toAddress bondingCurve
+          , opTokenId = tokenId0
+          }
+      ]
+
+  withSender alice $
+    call bondingCurve (Call @"Sell") tokenId0
+      -- & expectError (unsafeMkMText "NO_TOKENS")
+
+  -- ensure tokenId0 burned
+  postBurnStorage <- getStorage' nft
+  postBurnStorage @== (exampleNftStorageWithAdmin alice) {
+    assets = exampleNftTokenStorage {
+        next_token_id = TokenId 1
+      , operators = [(FA2.OperatorKey
+          { owner = bob
+          , operator = alice
+          , tokenId = tokenId0
+          }, ())]
+      } }
+
+  -- TODO: ensure expectedPrice sent to alice
+  -- let expectedPrice :: Integer = 42
+  -- call bondingCurve (Call @"Cost") (0 :: Natural)
+  --   & expectError (WrappedValue expectedPrice)
 
 
 
-test_Debug :: TestTree
-test_Debug = testGroup "Debug"
+
+
+-- sell with token_index = 0 always fails with NO_TOKENS
+sellOffchainTokenIndex0 :: TestTree
+sellOffchainTokenIndex0 = nettestScenarioOnEmulatorCaps "Sell_offchain: token_index = 0" $ do
+  setup <- doFA2Setup
+  let admin ::< alice ::< bob ::< SNil = sAddresses setup
+  let tokenId0 ::< SNil = sTokens setup
+  nft <- originateNft (exampleNftStorageWithAdmin admin)
+
+  let bondingCurveStorage :: Storage =
+        (exampleStorageWithAdmin admin)
+          {
+            market_contract = toAddress nft
+          , cost_mutez = constantPiecewisePolynomial 0
+          , token_index = 0
+          }
+  bondingCurve <- originateBondingCurve bondingCurveStorage
+
+  -- mint to alice
+  withSender admin $
+    call nft (Call @"Mint") [MintTokenParam
+      { token_metadata = tokenMetadata0' tokenId0
+      , owner = alice
+      }]
+
+  withSender admin $
+    call bondingCurve (Call @"Sell_offchain") (tokenId0, bob)
+      & expectError (unsafeMkMText "NO_TOKENS")
+
+
+
+-- TODO: sell-offchain
+-- , nettestScenarioCaps "Sell_offchain" $ do
+sellOffchainTest :: TestTree
+sellOffchainTest = nettestScenarioOnEmulatorCaps "Sell_offchain" $ do
+  setup <- doFA2Setup
+  let admin ::< alice ::< bob ::< SNil = sAddresses setup
+  let tokenId0 ::< SNil = sTokens setup
+  nft <- originateNft (exampleNftStorageWithAdmin admin)
+
+  let bondingCurveStorage :: Storage =
+        (exampleStorageWithAdmin admin)
+          {
+            market_contract = toAddress nft
+          , cost_mutez = constantPiecewisePolynomial 0
+          , token_index = 1 -- token_index > 0 to sell tokens, otherwise no tokens to sell
+          }
+  bondingCurve <- originateBondingCurve bondingCurveStorage
+
+  -- admin only
+  withSender alice $
+    call bondingCurve (Call @"Sell_offchain") (tokenId0, alice)
+      & expectError (unsafeMkMText "NOT_AN_ADMIN")
+
+  withSender admin $
+    call bondingCurve (Call @"Sell_offchain") (tokenId0, alice)
+      & expectError (unsafeMkMText "WRONG_ID")
+
+  -- mint to alice
+  withSender admin $
+    call nft (Call @"Mint") [MintTokenParam
+      { token_metadata = tokenMetadata0' tokenId0
+      , owner = alice
+      }]
+
+  -- bob can't sell alice's token
+  withSender bob $
+    call bondingCurve (Call @"Sell") tokenId0
+      & expectError (unsafeMkMText "WRONG_SYMBOL")
+
+  -- admin can't sell alice's tokenId0 "from bob"
+  withSender admin $
+    call bondingCurve (Call @"Sell_offchain") (tokenId0, bob)
+      & expectError (unsafeMkMText "WRONG_SYMBOL")
+
+  withSender admin $
+    call bondingCurve (Call @"Sell_offchain") (tokenId0, alice)
+      & expectError (unsafeMkMText "WRONG_TEZ_PRICE")
+
+  -- ensure tokenId0 burned
+  postBurnStorage <- getStorage' nft
+  postBurnStorage @== (exampleNftStorageWithAdmin alice) {
+    assets = exampleNftTokenStorage {
+        next_token_id = TokenId 1
+      , operators = [(FA2.OperatorKey
+          { owner = bob
+          , operator = alice
+          , tokenId = tokenId0
+          }, ())]
+      } }
+
+  -- TODO: ensure expectedPrice sent to alice
+
+
+
+test_Integrational :: TestTree
+test_Integrational = testGroup "Integrational"
   [
-    -- simple origination test
-    nettestScenarioCaps "Bonding curve (debug) originate and call Cost with 4" $ do
-      -- TODO test w/o FA2
-      setup <- doFA2Setup @("addresses" :# 2) @("tokens" :# 0)
-      let admin ::< _alice ::< SNil = sAddresses setup
 
-      -- let tokenId ::< SNil = sTokens setup
-      let bondingCurveStorage = exampleStorageWithAdmin admin
-      bondingCurve <- originateDebugBondingCurve bondingCurveStorage
+  -- TODO: re-enable
+  --   setDelegateTest
+  -- , withdrawTest
+  -- , buyNoMint
 
-      -- TODO: enable
-      -- withSender admin $
-      --   -- call bondingCurve (Call @"Update_allowed") (mkAllowlistSimpleParam [fa2])
-      --   call bondingCurve (Call @"Buy") ()
+    buyTest
+  , buyOffchainTest
 
-      call bondingCurve (Call @"Cost") (4 :: Natural)
-        & expectError (WrappedValue (39 :: Integer))
+  -- , sellTokenIndex0
+  , sellTest
 
+  -- , sellOffchainTokenIndex0
+  , sellOffchainTest
   ]
 
+-- input, expectedOutput, storageF
+--
+-- storageF is applied to the generated admin address
+callCostTest :: Natural -> Integer -> (Address -> Storage) -> TestTree
+callCostTest input expectedOutput storageF =
+  nettestScenarioCaps ("Call Cost with " ++ show input) $ do
+    setup <- doFA2Setup @("addresses" :# 1) @("tokens" :# 0)
+    let admin ::< SNil = sAddresses setup
+    let bondingCurveStorage = storageF admin
+    bondingCurve <- originateDebugBondingCurve bondingCurveStorage
 
-data TestData = TestData
-  -- | Polynomials have up to
-  -- - 2^6=128 coefficients
-  -- - 2^10=1024 coefficient absolute value
-  -- - 2^9=512 offsets
-  -- - 2^5=32 segments
-  { piecewisePoly :: PiecewisePolynomial
-
-  -- Tested up to 2^10=1024
-  , polyInput :: Natural
-  }
-  deriving stock (Eq, Show)
-
--- | Shrink a list by alternatively removing any element
-shrinkList :: [a] -> [[a]]
-shrinkList xs = (\i -> take i xs ++ drop (i+1) xs) <$> [0..1 `subtract` length xs] -- this is length - 1, because (-) is overloaded weird by Lorentz
-
--- shrink towards 0 or keep equal (for shrinkPolynomial)
-shrinkCoefficient :: Integer -> [Integer]
-shrinkCoefficient x = [x - signum x, x]
-
--- cartesianProduct [[1,2],[3,4],[5,6]]
--- [[1,3,5],[1,3,6],[1,4,5],[1,4,6],[2,3,5],[2,3,6],[2,4,5],[2,4,6]]
-cartesianProduct :: [[a]] -> [[a]]
-cartesianProduct [] = [[]]
-cartesianProduct (x:xs) = do
-  y <- x
-  ys <- cartesianProduct xs
-  return (y:ys)
-
--- | all options of shrinking or now each coefficient
-shrinkCoefficients :: [Integer] -> [[Integer]]
-shrinkCoefficients xs = cartesianProduct $ fmap shrinkCoefficient xs
-
--- | Shrink list and/or coefficients
-shrinkPolynomial :: [Integer] -> [[Integer]]
-shrinkPolynomial xs = shrinkList xs >>= shrinkCoefficients
-
--- | Generate a polynomial
-genPolynomial :: Gen [Integer]
-genPolynomial =
-  Gen.shrink shrinkList $
-  Gen.list (Range.constant 0 128) (Gen.integral (Range.constant -1024 1024))
-
-shrinkPiecewisePolySegment :: (Natural, [Integer]) -> [(Natural, [Integer])]
-shrinkPiecewisePolySegment (segmentLength, polynomial) = do
-  segmentLength' <- [segmentLength, 1 `subtract` segmentLength..0]
-  polynomial' <- shrinkPolynomial polynomial
-  pure (segmentLength', polynomial')
-
-genPiecewisePolySegment :: Gen (Natural, [Integer])
-genPiecewisePolySegment = Gen.shrink shrinkPiecewisePolySegment $ do
-  segmentLength <- Gen.integral (Range.constant 0 32)
-  polynomial <- genPolynomial
-  pure (segmentLength, polynomial)
-
-shrinkPiecewisePoly :: PiecewisePolynomial -> [PiecewisePolynomial]
-shrinkPiecewisePoly PiecewisePolynomial{..} = do
-  segments' <- shrinkList segments >>= cartesianProduct . fmap shrinkPiecewisePolySegment
-
-  last_segment' <- shrinkPolynomial last_segment
-  pure $ PiecewisePolynomial
-    { segments = segments'
-    , last_segment = last_segment'
-    }
-
-genPiecewisePoly :: Gen PiecewisePolynomial
-genPiecewisePoly = Gen.shrink shrinkPiecewisePoly $ do
-  segments <- Gen.shrink shrinkList $
-    Gen.list (Range.constant 0 32) genPiecewisePolySegment
-  last_segment <- genPolynomial
-  pure $ PiecewisePolynomial
-    { segments = segments
-    , last_segment = last_segment
-    }
-
-shrinkTestData :: TestData -> [TestData]
-shrinkTestData TestData{..} = do
-  piecewisePoly' <- shrinkPiecewisePoly piecewisePoly
-  polyInput' <- [polyInput, 1 `subtract` polyInput..0]
-  pure $ TestData
-    { piecewisePoly = piecewisePoly'
-    , polyInput = polyInput'
-    }
-
-genTestData :: Gen TestData
-genTestData = Gen.shrink shrinkTestData $ do
-  piecewisePoly <- genPiecewisePoly
-  polyInput <- Gen.integral (Range.constant 0 1024)
-  pure $ TestData
-    { piecewisePoly = piecewisePoly
-    , polyInput = polyInput
-    }
-
--- -- | A piecewise polynomial is composed of a number of (length, coefficients
--- -- from x^0..) polynomials, ended by a single (coefficients from x^0..)
--- -- polynomial
--- data PiecewisePolynomial = PiecewisePolynomial
---   { segments :: [(Natural, [Integer])]
---   , last_segment :: [Integer]
---   } deriving stock (Eq, Ord, Show)
-
--- runPolynomial behaves as expected for:
--- f(x) = 1
-hprop_runPolynomial_constant :: Property
-hprop_runPolynomial_constant = property $ do
-  x <- forAll $ Gen.integral (Range.constant (negate 1024) 1024)
-  runPolynomial [1] x === 1
-
--- runPolynomial behaves as expected for:
--- f(x) = x
-hprop_runPolynomial_line :: Property
-hprop_runPolynomial_line = property $ do
-  x <- forAll $ Gen.integral (Range.constant (negate 1024) 1024)
-  runPolynomial [0, 1] x === x
-
--- runPolynomial behaves as expected for:
--- f(x) = 2 x^2 + 3 x - 5
-hprop_runPolynomial_quadratic :: Property
-hprop_runPolynomial_quadratic = property $ do
-  x <- forAll $ Gen.integral (Range.constant (negate 1024) 1024)
-  runPolynomial [-5, 3, 2] x === 2 * x^2 + 3 * x - 5
-
--- runPiecewisePolynomial is equivalent to runPolynomial when there's only a
--- last_segment
-hprop_runPiecewisePolynomial_is_runPolynomial :: Property
-hprop_runPiecewisePolynomial_is_runPolynomial = property $ do
-  TestData{piecewisePoly, polyInput} <- forAll genTestData
-  let polynomial = last_segment piecewisePoly
-
-  runPolynomial polynomial (toInteger polyInput) ===
-    runPiecewisePolynomial (PiecewisePolynomial
-      { segments = []
-      , last_segment = polynomial
-      }) polyInput
-
--- runPiecewisePolynomial is equivalent to runPolynomial when the input is
--- >= sum segmentLength's
-hprop_runPiecewisePolynomial_is_runPolynomial_after_offsets :: Property
-hprop_runPiecewisePolynomial_is_runPolynomial_after_offsets = property $ do
-  TestData{piecewisePoly, polyInput} <- forAll genTestData
-  let polynomial = last_segment piecewisePoly
-  let offsetInput :: Natural = polyInput + sum (fmap fst (segments piecewisePoly))
-
-  runPolynomial polynomial (toInteger offsetInput) ===
-    runPiecewisePolynomial piecewisePoly offsetInput
+    call bondingCurve (Call @"Cost") input
+      & expectError (WrappedValue expectedOutput)
 
 
+-- TODO: re-enable
+-- -- test cost function using the debug version of the contract
+-- test_Debug :: TestTree
+-- test_Debug = testGroup "Debug"
+--   [ -- default storage cost_mutez(4) == 34
+--     callCostTest 4 39 exampleStorageWithAdmin
 
--- runPiecewisePolynomial can implement
--- abs (x - abs constant)
-hprop_runPiecewisePolynomial_abs :: Property
-hprop_runPiecewisePolynomial_abs = property $ do
-  let genNatUpTo2ToThe20 = Gen.integral $ Range.constant 0 (2^20)
-  (offset, x) <- forAll $ liftA2 (,) genNatUpTo2ToThe20 genNatUpTo2ToThe20
-  toInteger (abs (x - offset)) ===
-    runPiecewisePolynomial (PiecewisePolynomial
-      { segments = [(offset + 1, [toInteger offset, -1])] -- if x < offset + 1 == x <= offset then -x
-      , last_segment = [0, 1]                             -- else x
-      }) x
+--   -- (constantPiecewisePolynomial 0) cost_mutez(12) == 0
+--   , callCostTest 12 0 (\admin -> (exampleStorageWithAdmin admin)
+--       { cost_mutez = constantPiecewisePolynomial 0 })
 
--- | Call the "Cost" entrypoint on the debugBondingCurveContract to check the
--- LIGO implementation of runPiecewisePolynomial against the Haskell one
-hprop_piecewise_polynomial_correct :: Property
-hprop_piecewise_polynomial_correct =
-  property $ do
-    TestData{piecewisePoly, polyInput} <- forAll genTestData
-    clevelandProp $ do
-      -- TODO: test w/o FA2 or using NFT contract
-      setup <- doFA2Setup @("addresses" :# 1) @("tokens" :# 0)
-
-      let alice ::< SNil = sAddresses setup
-      let bondingCurveStorage = (exampleStorageWithAdmin alice) { cost_mutez = piecewisePoly }
-      bondingCurve <- originateDebugBondingCurve bondingCurveStorage
-
-      call bondingCurve (Call @"Cost") polyInput
-        & expectError (WrappedValue (runPiecewisePolynomial piecewisePoly polyInput))
-
-
-
--- TODO: relocate, used for catching failWith (_ :: int)
--------------------------------------------------------------------------------------------
--- BEGIN WrappedValue
--------------------------------------------------------------------------------------------
-
-newtype WrappedValue a = WrappedValue
-  { unwrapValue :: a
-  } deriving stock (Eq, Ord, Show)
-
--- | Note: these are undefined because they're not needed to use WrappedValue to test
-instance Typeable a => ErrorHasDoc (WrappedValue a) where
-  type ErrorRequirements _ = ()
-
-  errorDocName = error "ErrorHasDoc (WrappedValue a): undefined errorDocName"
-  errorDocMdCause = error "ErrorHasDoc (WrappedValue a): undefined errorDocMdCause"
-  errorDocHaskellRep = error "ErrorHasDoc (WrappedValue a): undefined errorDocHaskellRep"
-  errorDocDependencies = error "ErrorHasDoc (WrappedValue a): undefined errorDocDependencies"
-
-instance (IsoValue a, Typeable a, ConstantScope (ToT a)) => IsError (WrappedValue a) where
-  errorToVal :: WrappedValue a -> (forall t. ErrorScope t => Value t -> r) -> r
-  errorToVal xs ys = isoErrorToVal (unwrapValue xs) ys
-
-  errorFromVal :: forall t. (KnownT t) => Value t -> Either Text (WrappedValue a)
-  errorFromVal = fmap WrappedValue . isoErrorFromVal @t @a
-
--------------------------------------------------------------------------------------------
--- END WrappedValue
--------------------------------------------------------------------------------------------
+--   ]
 

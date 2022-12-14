@@ -16,12 +16,11 @@ indefinitely without creating new auctions.
 - `auction_price : tez`:
   + Final price of the auction
 
-- `auction_tokens_sold : nat`:
-  + Unused, to be removed
-  + Set to anything for now
-
 - `token_index : nat`:
-  + Number of tokens sold _after_ the auction
+  + Number of tokens sold. This number must be positive to sell back tokens.
+  + I.e. `token_index` must be `20` to sell back up to `20` tokens after an auction where users bought at least `20` tokens
+  + You may want to add a constant piecewise polynomial segment at the beginning with `tokens_sold_in_auction` length
+    and value `token_final_cost_in_auction`
 
 - `token_metadata : token_metadata`:
   + Token metadata for minting

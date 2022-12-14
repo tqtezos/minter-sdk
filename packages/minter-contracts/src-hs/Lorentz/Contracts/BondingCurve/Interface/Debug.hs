@@ -10,12 +10,12 @@ import Lorentz.Contracts.Spec.FA2Interface (TokenId)
 -- Same as bonding curve entrypoints, but GetCost
 data DebugEntrypoints
   = Admin AdminEntrypoints
-  | SetDelegate (Maybe KeyHash)
+  | Set_delegate (Maybe KeyHash)
   | Withdraw ()
   | Buy ()
-  | BuyOffchain Address
+  | Buy_offchain Address
   | Sell TokenId
-  | SellOffchain (TokenId, Address)
+  | Sell_offchain (TokenId, Address)
 
   -- | Get the current cost (debug only)
   | Cost Natural

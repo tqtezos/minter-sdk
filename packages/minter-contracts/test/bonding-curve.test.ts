@@ -5,23 +5,24 @@ import {
 } from '@taquito/taquito';
 
 import { bootstrap, TestTz } from './bootstrap-sandbox';
-import { Contract, bytes, address, nat} from '../src/type-aliases';
-import {
-  address as bin_address,
-  int as bin_int,
-  mutez as bin_mutez,
-  nat as bin_nat,
-} from '../bin-ts/type-aliases';
+import { Contract, bytes, address, nat } from '../src/type-aliases';
+// import {
+//   address as bin_address,
+//   int as bin_int,
+//   mutez as bin_mutez,
+//   nat as bin_nat,
+// } from '../bin-ts/type-aliases';
 
-import { originateBondingCurve, BondingCurveCode, BondingCurveContractType } from '../src/bonding-curve';
+import { originateBondingCurve, BondingCurveContractType } from '../src/bonding-curve';
 import {
 
   // TODO add originateNft and replace editions
-  originateEditionsNftContract,
+  // originateEditionsNftContract,
+  originateNft,
 } from '../src/nft-contracts';
-import {
-  transfer,
-} from '../src/fa2-interface';
+// import {
+//   transfer,
+// } from '../src/fa2-interface';
 import { QueryBalances, queryBalancesWithLambdaView, hasTokens } from './fa2-balance-inspector';
 import { Tzip16Module, tzip16 } from '@taquito/tzip16';
 
@@ -49,8 +50,8 @@ describe('bonding-curve: test NFT auction', () => {
   let bondingCurveBob: Contract;
 
   let nftEditionsAlice: Contract;
-  let nft1: MintEditionParam;
-  let nft2: MintEditionParam;
+  // let nft1: MintEditionParam;
+  // let nft2: MintEditionParam;
   let edition_1_metadata: MichelsonMap<string, bytes>;
   let edition_2_metadata: MichelsonMap<string, bytes>;
   let bobAddress: address;
@@ -86,7 +87,6 @@ describe('bonding-curve: test NFT auction', () => {
     //   market_contract: bobAddress as bin_address,
 
     //   auction_price: new BigNumber(0) as bin_mutez,
-    //   auction_tokens_sold: new BigNumber(0) as bin_nat,
     //   token_index: new BigNumber(0) as bin_nat,
     //   token_metadata: {
 
@@ -107,30 +107,36 @@ describe('bonding-curve: test NFT auction', () => {
     // ("admin","Pair (Pair \"tz2C97sask3WgSSg27bJhFxuBwW6MMU4uTPK\" False) None")
     // ("market_contract","\"tz2UXHa5WU79MnWF5uKFRM6qUowX13pdgJGy\"")
     // storage for distinguishing fields:
-    // "{ Pair (Pair \"tz2C97sask3WgSSg27bJhFxuBwW6MMU4uTPK\" False) None; \"tz2UXHa5WU79MnWF5uKFRM6qUowX13pdgJGy\"; 0; 1; 2; Pair 42 { Elt \"decimals\" 0x3132; Elt \"name\" 0x546869732069732061207465737421205b6e616d655d; Elt \"symbol\" 0x746573745f73796d626f6c }; 100; Pair { Pair 6 { 7; 8 } } { 4; 5 }; 3 }"
+    // "{ Pair (Pair \"tz2C97sask3WgSSg27bJhFxuBwW6MMU4uTPK\" False) None; \"tz2UXHa5WU79MnWF5uKFRM6qUowX13pdgJGy\"; 0;
+    // 2; Pair 42 { Elt \"decimals\" 0x3132; Elt \"name\" 0x546869732069732061207465737421205b6e616d655d; Elt \"symbol\"
+    // 0x746573745f73796d626f6c }; 100; Pair { Pair 6 { 7; 8 } } { 4; 5 }; 3 }"
 
-    const bondingCurveBobStorageString : string = `{ Pair (Pair \"${bobAddress}\" False) None; \"tz2UXHa5WU79MnWF5uKFRM6qUowX13pdgJGy\"; 0; 0; 0; Pair 42 { Elt \"decimals\" 0x3132; Elt \"name\" 0x546869732069732061207465737421205b6e616d655d; Elt \"symbol\" 0x746573745f73796d626f6c }; 100; Pair { Pair 6 { 7; 8 } } { 4; 5 }; 0 }`;
+    const adminAddress = aliceAddress;
+    const market_contractAddress = aliceAddress;
+    const bondingCurveBobStorageString = `
+      { Pair (Pair "${adminAddress}" False) None; "${market_contractAddress}"; 0; 0;
+        Pair 42 {
+          Elt "decimals" 0x3132;
+          Elt "name" 0x546869732069732061207465737421205b6e616d655d;
+          Elt "symbol" 0x746573745f73796d626f6c };
+        100; Pair { Pair 6 { 7; 8 } } { 4; 5 }; 0 }`;
 
     $log.info('originating bonding curve contract..');
     // bondingCurveBob = await originateBondingCurve(tezos.bob, bondingCurveBobStorage as Record<string, any>);
     bondingCurveBob = await originateBondingCurve(tezos.bob, bondingCurveBobStorageString);
     $log.info(`bonding curve contract originated: ${bondingCurveBob}`);
 
-    nftEditionsAlice = await tezos.alice.contract.at(nftEditionsBob.address);
-    $log.info(`editions contract originated`);
-    const contractStorage : any = await nftEditionsBob.storage();
-    maxEditions = await contractStorage.max_editions_per_run;
+    // nftEditionsAlice = await tezos.alice.contract.at(nftEditionsBob.address);
+    // $log.info(`editions contract originated`);
+    // const contractStorage : any = await nftEditionsBob.storage();
+    // maxEditions = await contractStorage.max_editions_per_run;
   });
 
   test('Minimal test to originate', async () => {
     $log.info("Minimal test to originate");
 
-    expect('ok').toBe('ok')
+    expect('ok').toBe('ok');
   });
-
-
-
-
 
 
   // test('change admin by non admin should fail', async () => {
@@ -230,14 +236,6 @@ describe('bonding-curve: test NFT auction', () => {
   // });
 
 
-
-
-
-
-
-
-
-
   // test('distributing too many editions should fail', async () => {
   //   const distributeEdition1: distribute_edition = {
   //     edition_id: new BigNumber(1),
@@ -262,7 +260,8 @@ describe('bonding-curve: test NFT auction', () => {
   //   return expect(opDistribute).rejects.toHaveProperty('message', 'NO_EDITIONS_TO_DISTRIBUTE');
   // });
 
-  // test('distributing exactly as many editions available should succeed with 0 editions left to distribute', async () => {
+  // test('distributing exactly as many editions available should succeed with 0 editions left to distribute',
+  //      async () => {
   //   const nft4 = {
   //     edition_info: edition_1_metadata,
   //     number_of_editions: new BigNumber(3),

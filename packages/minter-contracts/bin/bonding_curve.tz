@@ -8,14 +8,13 @@
     (pair (pair %admin (pair (address %admin) (bool %paused)) (option %pending_admin address))
           (pair (address %market_contract)
                 (pair (mutez %auction_price)
-                      (pair (nat %auction_tokens_sold)
-                            (pair (nat %token_index)
-                                  (pair (pair %token_metadata (nat %token_id) (map %token_info string bytes))
-                                        (pair (nat %basis_points)
-                                              (pair (pair %cost_mutez
-                                                       (list %segments (pair (nat %length) (list %poly int)))
-                                                       (list %last_segment int))
-                                                    (mutez %unclaimed))))))))) ;
+                      (pair (nat %token_index)
+                            (pair (pair %token_metadata (nat %token_id) (map %token_info string bytes))
+                                  (pair (nat %basis_points)
+                                        (pair (pair %cost_mutez
+                                                 (list %segments (pair (nat %length) (list %poly int)))
+                                                 (list %last_segment int))
+                                              (mutez %unclaimed)))))))) ;
   code { LAMBDA
            (pair (pair address bool) (option address))
            unit
@@ -89,17 +88,15 @@
                              (pair address
                                    (pair mutez
                                          (pair nat
-                                               (pair nat
-                                                     (pair (pair nat (map string bytes))
-                                                           (pair nat (pair (pair (list (pair nat (list int))) (list int)) mutez))))))))))
+                                               (pair (pair nat (map string bytes))
+                                                     (pair nat (pair (pair (list (pair nat (list int))) (list int)) mutez)))))))))
            (pair (list operation)
                  (pair (pair (pair address bool) (option address))
                        (pair address
                              (pair mutez
                                    (pair nat
-                                         (pair nat
-                                               (pair (pair nat (map string bytes))
-                                                     (pair nat (pair (pair (list (pair nat (list int))) (list int)) mutez)))))))))
+                                         (pair (pair nat (map string bytes))
+                                               (pair nat (pair (pair (list (pair nat (list int))) (list int)) mutez))))))))
            { UNPAIR ;
              SWAP ;
              UNPAIR ;
@@ -109,10 +106,8 @@
              CDR ;
              CDR ;
              CDR ;
-             CDR ;
              CAR ;
              DUP 3 ;
-             CDR ;
              CDR ;
              CDR ;
              CDR ;
@@ -133,7 +128,6 @@
              ADD ;
              PUSH nat 10000 ;
              DUP 4 ;
-             CDR ;
              CDR ;
              CDR ;
              CDR ;
@@ -168,7 +162,6 @@
                       CDR ;
                       CDR ;
                       CDR ;
-                      CDR ;
                       CAR ;
                       PAIR ;
                       CONS ;
@@ -178,21 +171,13 @@
                   CDR ;
                   CDR ;
                   CDR ;
-                  CDR ;
                   PUSH nat 1 ;
                   DUP 5 ;
                   CDR ;
                   CDR ;
                   CDR ;
-                  CDR ;
                   CAR ;
                   ADD ;
-                  PAIR ;
-                  DUP 4 ;
-                  CDR ;
-                  CDR ;
-                  CDR ;
-                  CAR ;
                   PAIR ;
                   DUP 4 ;
                   CDR ;
@@ -215,20 +200,7 @@
                   CDR ;
                   CDR ;
                   CDR ;
-                  CDR ;
                   ADD ;
-                  SWAP ;
-                  DUP ;
-                  DUG 2 ;
-                  CDR ;
-                  CDR ;
-                  CDR ;
-                  CDR ;
-                  CDR ;
-                  CDR ;
-                  CDR ;
-                  CAR ;
-                  PAIR ;
                   SWAP ;
                   DUP ;
                   DUG 2 ;
@@ -297,17 +269,15 @@
                              (pair address
                                    (pair mutez
                                          (pair nat
-                                               (pair nat
-                                                     (pair (pair nat (map string bytes))
-                                                           (pair nat (pair (pair (list (pair nat (list int))) (list int)) mutez))))))))))
+                                               (pair (pair nat (map string bytes))
+                                                     (pair nat (pair (pair (list (pair nat (list int))) (list int)) mutez)))))))))
            (pair (list operation)
                  (pair (pair (pair address bool) (option address))
                        (pair address
                              (pair mutez
                                    (pair nat
-                                         (pair nat
-                                               (pair (pair nat (map string bytes))
-                                                     (pair nat (pair (pair (list (pair nat (list int))) (list int)) mutez)))))))))
+                                         (pair (pair nat (map string bytes))
+                                               (pair nat (pair (pair (list (pair nat (list int))) (list int)) mutez))))))))
            { UNPAIR ;
              SWAP ;
              UNPAIR ;
@@ -317,14 +287,12 @@
              CDR ;
              CDR ;
              CDR ;
-             CDR ;
              CAR ;
              SUB ;
              ISNAT ;
              IF_NONE { PUSH string "NO_TOKENS" ; FAILWITH } {} ;
              DUP ;
              DUP 5 ;
-             CDR ;
              CDR ;
              CDR ;
              CDR ;
@@ -349,7 +317,6 @@
              CDR ;
              CDR ;
              CDR ;
-             CDR ;
              CAR ;
              CDR ;
              PUSH string "symbol" ;
@@ -369,14 +336,7 @@
              CDR ;
              CDR ;
              CDR ;
-             CDR ;
              DIG 3 ;
-             PAIR ;
-             DUP 4 ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CAR ;
              PAIR ;
              DUP 4 ;
              CDR ;
@@ -519,7 +479,6 @@
                  CDR ;
                  CDR ;
                  CDR ;
-                 CDR ;
                  PUSH mutez 0 ;
                  COMPARE ;
                  LT ;
@@ -539,20 +498,9 @@
                       CDR ;
                       CDR ;
                       CDR ;
-                      CDR ;
                       PUSH unit Unit ;
                       TRANSFER_TOKENS ;
                       PUSH mutez 0 ;
-                      DUP 3 ;
-                      CDR ;
-                      CDR ;
-                      CDR ;
-                      CDR ;
-                      CDR ;
-                      CDR ;
-                      CDR ;
-                      CAR ;
-                      PAIR ;
                       DUP 3 ;
                       CDR ;
                       CDR ;
