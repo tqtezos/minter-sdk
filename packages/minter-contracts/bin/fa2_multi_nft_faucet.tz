@@ -325,10 +325,11 @@
              NIL (pair (option address) (pair nat nat)) ;
              PAIR ;
              SWAP ;
-             ITER { DUP ;
-                    DUG 2 ;
+             ITER { SWAP ;
+                    DUP ;
+                    CDR ;
                     CAR ;
-                    CAR ;
+                    CDR ;
                     SWAP ;
                     DUP ;
                     DUG 2 ;
@@ -353,6 +354,9 @@
                          CDR ;
                          DUP 6 ;
                          CAR ;
+                         CDR ;
+                         DUP 5 ;
+                         PAIR ;
                          DUP 5 ;
                          SWAP ;
                          SOME ;

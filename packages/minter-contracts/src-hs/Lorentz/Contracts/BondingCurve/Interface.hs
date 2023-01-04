@@ -6,8 +6,20 @@ import Lorentz
 import Tezos.Address (detGenKeyAddress)
 
 import Lorentz.Contracts.SimpleAdmin (AdminEntrypoints(..), AdminStorage(..))
-import qualified Lorentz.Contracts.FA2 as FA2 (TokenMetadata(..))
-import Lorentz.Contracts.Spec.FA2Interface (TokenId(..), mkTokenMetadata)
+import qualified Lorentz.Contracts.FA2 as FA2 () -- TokenMetadata(..))
+import Lorentz.Contracts.Spec.FA2Interface (TokenId(..), TokenMetadata, mkTokenMetadata)
+
+-- | "`calculateBasisPointFee` basisPoints amount" gives the expected basis point fee
+calculateBasisPointFee :: Natural -> Integer -> Integer
+calculateBasisPointFee basisPoints x =
+  (fromIntegral basisPoints * x) `div` (100 * 100)
+
+-- | Add the basis point fee to the input:
+--
+-- addBasisPointFee basisPoints x = x + calculateBasisPointFee basisPoints x
+addBasisPointFee :: Natural -> Integer -> Integer
+addBasisPointFee basisPoints x =
+  x + calculateBasisPointFee basisPoints x
 
 -- | A piecewise polynomial is composed of a number of (length, coefficients
 -- from x^0..) polynomials, ended by a single (coefficients from x^0..)
@@ -40,7 +52,9 @@ runPiecewisePolynomial PiecewisePolynomial{..} x = aux x segments
     aux :: Natural -> [(Natural, [Integer])] -> Integer
     aux _offset [] = runPolynomial last_segment (toInteger x)
     aux  offset ((segmentLength, poly):segments') =
-      if offset < segmentLength
+      -- TODO: remove comment
+      -- if offset < segmentLength
+      if offset <= segmentLength
          then runPolynomial poly (toInteger x)
          else aux (offset - segmentLength) segments'
 
@@ -50,8 +64,13 @@ polynomialToPiecewisePolynomial polynomial = PiecewisePolynomial
   , last_segment = polynomial
   }
 
+-- | PiecewisePolynomial that always outputs constant
 constantPiecewisePolynomial :: Integer -> PiecewisePolynomial
 constantPiecewisePolynomial = polynomialToPiecewisePolynomial . (: [])
+
+-- | PiecewisePolynomial that's always a line with formula: y(x) := y0 + slope * x
+linearPiecewisePolynomial :: Integer -> Integer -> PiecewisePolynomial
+linearPiecewisePolynomial y0 slope = polynomialToPiecewisePolynomial [y0, slope]
 
 examplePiecewisePolynomial :: PiecewisePolynomial
 examplePiecewisePolynomial = PiecewisePolynomial
@@ -70,7 +89,7 @@ data Storage = Storage
   , market_contract :: Address
   , auction_price :: Mutez
   , token_index :: Natural
-  , token_metadata :: FA2.TokenMetadata
+  , token_metadata :: TokenMetadata
   , basis_points :: Natural
   , cost_mutez :: PiecewisePolynomial
   , unclaimed :: Mutez
@@ -88,11 +107,8 @@ exampleAdminStorage = AdminStorage
   , paused = False
   }
 
-exampleTokenMetadata :: FA2.TokenMetadata
-exampleTokenMetadata = FA2.TokenMetadata
-  { tokenId = TokenId 42 -- :: FA2I.TokenId
-  , tokenInfo = mkTokenMetadata symbol name decimals -- :: FA2I.TokenMetadata
-  }
+exampleTokenMetadata :: TokenMetadata
+exampleTokenMetadata = mkTokenMetadata symbol name decimals
   where
     symbol = "test_symbol"
     name = "This is a test! [name]"
@@ -147,6 +163,11 @@ printExampleStorage' = do
   putStrLn ("" :: Text)
   putStrLn ("exampleStorage:" :: Text)
   print $ printLorentzValue False exampleStorage
+
+
+storageStr :: String
+storageStr = "{ Pair (Pair \"tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb\" False) None; \"tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb\"; 0; 0; { Elt \"decimals\" 0x3132; Elt \"name\" 0x546869732069732061207465737421205b6e616d655d; Elt \"symbol\" 0x746573745f73796d626f6c }; 100; Pair { Pair 6 { 7; 8 } } { 4; 5 }; 3 }"
+
 
 
 data Entrypoints

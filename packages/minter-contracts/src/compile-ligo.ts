@@ -51,20 +51,6 @@ const compileSources: CompileSourceEntry[] = [
     dstFile: 'bonding_curve_debug.tz',
     contract: true,
   },
-
-  {
-    srcFile: 'minter_collection/nft/fa2_multi_nft_faucet.mligo',
-    mainFn: 'nft_faucet_main',
-    dstFile: 'fa2_multi_nft_faucet.tz',
-    contract: true,
-  },
-  {
-    srcFile: 'minter_collection/nft/fa2_multi_nft_asset_no_admin.mligo',
-    mainFn: 'nft_asset_main',
-    dstFile: 'fa2_multi_nft_asset_no_admin.tz',
-    contract: true,
-  },
-
   {
     srcFile: 'minter_collection/nft/fa2_multi_nft_asset_simple_admin.mligo',
     mainFn: 'nft_asset_main',
@@ -72,12 +58,28 @@ const compileSources: CompileSourceEntry[] = [
     contract: true,
   },
 
+  // broken: minting doesn't work because of storage.admin.admin call
+  // {
+  //   srcFile: 'minter_collection/nft/fa2_multi_nft_asset_no_admin.mligo',
+  //   mainFn: 'nft_asset_main',
+  //   dstFile: 'fa2_multi_nft_asset_no_admin.tz',
+  //   contract: true,
+  // },
+  // multi_admin is untested
+  // {
+  //   srcFile: 'minter_collection/nft/fa2_multi_nft_asset_multi_admin.mligo',
+  //   mainFn: 'nft_asset_main',
+  //   dstFile: 'fa2_multi_nft_asset_multi_admin.tz',
+  //   contract: true,
+  // },
+
   {
-    srcFile: 'minter_collection/nft/fa2_multi_nft_asset_multi_admin.mligo',
-    mainFn: 'nft_asset_main',
-    dstFile: 'fa2_multi_nft_asset_multi_admin.tz',
+    srcFile: 'minter_collection/nft/fa2_multi_nft_faucet.mligo',
+    mainFn: 'nft_faucet_main',
+    dstFile: 'fa2_multi_nft_faucet.tz',
     contract: true,
   },
+
   {
     srcFile: 'minter_collection/nft/fa2_multi_nft_asset_non_pausable_simple_admin.mligo',
     mainFn: 'nft_asset_main',

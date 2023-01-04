@@ -109,7 +109,7 @@ deriving anyclass instance HasAnnotation MintTokenParam
 data NftEntrypoints
   = Assets FA2.Parameter
   | Mint MintTokensParam
-  | Burn (TokenId, ByteString)
+  | Burn (TokenId, (ByteString, Address))
   | Update_metadata [FA2.TokenMetadata]
   | Admin AdminEntrypoints
   deriving stock (Eq, Show)

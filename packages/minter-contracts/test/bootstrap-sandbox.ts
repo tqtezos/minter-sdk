@@ -59,6 +59,21 @@ export async function awaitForNetwork(tz: TezosToolkit): Promise<void> {
   $log.info('connected to Tezos network');
 }
 
+export async function bootstrapWithoutLambdaView(): Promise<TestTz> {
+  const { bob, alice, eve } = await flextesaKeys();
+  const rpc = 'http://localhost:20000';
+  const bobToolkit = signerToToolkit(bob, rpc);
+  const aliceToolkit = signerToToolkit(alice, rpc);
+  const eveToolkit = signerToToolkit(eve, rpc);
+
+  await awaitForNetwork(bobToolkit);
+  return {
+    bob: bobToolkit,
+    alice: aliceToolkit,
+    eve: eveToolkit,
+  };
+}
+
 export async function bootstrap(): Promise<TestTz> {
   const { bob, alice, eve } = await flextesaKeys();
   const rpc = 'http://localhost:20000';
@@ -82,3 +97,4 @@ export async function bootstrap(): Promise<TestTz> {
     lambdaView: lambdaContract.address,
   };
 }
+

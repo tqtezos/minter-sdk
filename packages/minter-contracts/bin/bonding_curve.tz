@@ -9,7 +9,7 @@
           (pair (address %market_contract)
                 (pair (mutez %auction_price)
                       (pair (nat %token_index)
-                            (pair (pair %token_metadata (nat %token_id) (map %token_info string bytes))
+                            (pair (map %token_metadata string bytes)
                                   (pair (nat %basis_points)
                                         (pair (pair %cost_mutez
                                                  (list %segments (pair (nat %length) (list %poly int)))
@@ -88,15 +88,13 @@
                              (pair address
                                    (pair mutez
                                          (pair nat
-                                               (pair (pair nat (map string bytes))
-                                                     (pair nat (pair (pair (list (pair nat (list int))) (list int)) mutez)))))))))
+                                               (pair (map string bytes) (pair nat (pair (pair (list (pair nat (list int))) (list int)) mutez)))))))))
            (pair (list operation)
                  (pair (pair (pair address bool) (option address))
                        (pair address
                              (pair mutez
                                    (pair nat
-                                         (pair (pair nat (map string bytes))
-                                               (pair nat (pair (pair (list (pair nat (list int))) (list int)) mutez))))))))
+                                         (pair (map string bytes) (pair nat (pair (pair (list (pair nat (list int))) (list int)) mutez))))))))
            { UNPAIR ;
              SWAP ;
              UNPAIR ;
@@ -163,6 +161,8 @@
                       CDR ;
                       CDR ;
                       CAR ;
+                      PUSH nat 0 ;
+                      PAIR ;
                       PAIR ;
                       CONS ;
                       TRANSFER_TOKENS } ;
@@ -269,15 +269,13 @@
                              (pair address
                                    (pair mutez
                                          (pair nat
-                                               (pair (pair nat (map string bytes))
-                                                     (pair nat (pair (pair (list (pair nat (list int))) (list int)) mutez)))))))))
+                                               (pair (map string bytes) (pair nat (pair (pair (list (pair nat (list int))) (list int)) mutez)))))))))
            (pair (list operation)
                  (pair (pair (pair address bool) (option address))
                        (pair address
                              (pair mutez
                                    (pair nat
-                                         (pair (pair nat (map string bytes))
-                                               (pair nat (pair (pair (list (pair nat (list int))) (list int)) mutez))))))))
+                                         (pair (map string bytes) (pair nat (pair (pair (list (pair nat (list int))) (list int)) mutez))))))))
            { UNPAIR ;
              SWAP ;
              UNPAIR ;
@@ -311,50 +309,52 @@
              DUP 5 ;
              CDR ;
              CAR ;
-             CONTRACT %burn (pair nat bytes) ;
+             CONTRACT %burn (pair nat (pair bytes address)) ;
              DUP 6 ;
              CDR ;
              CDR ;
              CDR ;
              CDR ;
              CAR ;
-             CDR ;
              PUSH string "symbol" ;
              GET ;
              IF_NONE { PUSH string "NO_SYMBOL" ; FAILWITH } {} ;
              SWAP ;
              IF_NONE
                { DROP ; DIG 2 ; DROP ; PUSH string "NO_BURN" ; FAILWITH }
-               { PUSH mutez 0 ; DIG 2 ; DIG 5 ; PAIR ; TRANSFER_TOKENS } ;
+               { PUSH mutez 0 ; DUP 7 ; DIG 3 ; PAIR ; DIG 5 ; PAIR ; TRANSFER_TOKENS } ;
              DIG 3 ;
              CONTRACT unit ;
              IF_NONE
-               { SWAP ; DROP ; PUSH string "CANT_RETURN" ; FAILWITH }
-               { DIG 2 ; UNIT ; TRANSFER_TOKENS } ;
-             DUP 4 ;
+               { DROP 2 ; PUSH string "CANT_RETURN" ; FAILWITH }
+               { DUP 3 ;
+                 PUSH mutez 0 ;
+                 COMPARE ;
+                 EQ ;
+                 IF { DROP ; SWAP ; DROP ; NIL operation }
+                    { NIL operation ; SWAP ; DIG 3 ; UNIT ; TRANSFER_TOKENS ; CONS } ;
+                 SWAP ;
+                 CONS } ;
+             DUP 3 ;
              CDR ;
              CDR ;
              CDR ;
              CDR ;
-             DIG 3 ;
-             PAIR ;
-             DUP 4 ;
-             CDR ;
-             CDR ;
-             CAR ;
-             PAIR ;
-             DUP 4 ;
-             CDR ;
-             CAR ;
-             PAIR ;
-             DIG 3 ;
-             CAR ;
-             PAIR ;
-             NIL operation ;
              DIG 2 ;
-             CONS ;
+             PAIR ;
+             DUP 3 ;
+             CDR ;
+             CDR ;
+             CAR ;
+             PAIR ;
+             DUP 3 ;
+             CDR ;
+             CAR ;
+             PAIR ;
              DIG 2 ;
-             CONS ;
+             CAR ;
+             PAIR ;
+             SWAP ;
              PAIR } ;
          SWAP ;
          APPLY ;
