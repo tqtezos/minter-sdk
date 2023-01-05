@@ -51,7 +51,6 @@ let nft_asset_main (param, storage : nft_asset_entrypoints * nft_asset_storage)
   (** Check 'symbol' is the given symbol and remove token from ledger and
       token_metadata (minter only, forwarded_sender must be token owner) *)
   | Burn token_to_burn_and_symbol_address ->
-    // let u = fail_if_not_admin storage.admin in
     let token_to_burn, (token_to_burn_symbol, forwarded_sender) : token_id * (bytes * address) = token_to_burn_and_symbol_address in
 
     // delete token from token_metadata and return its token_metadata for assertions

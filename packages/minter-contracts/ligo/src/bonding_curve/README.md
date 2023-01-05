@@ -25,7 +25,7 @@ indefinitely without creating new auctions.
 - `token_metadata : token_metadata`:
   + Token metadata for minting
   + When `Buy` or `Buy_offchain` are called, this `token_metadata` is used to
-    mint a NFT on the `market_contract`
+    mint a NFT on the `market_contract` (with a unique token id)
 
 - `basis_points : nat`:
   + The percentage (in basis points) cost of buying and selling a token at the same index
@@ -48,7 +48,7 @@ indefinitely without creating new auctions.
   + Parameter: `key_hash option`
   + Spec:
     * Admin-only
-    * Set the delegate to the given `key_hash` if present, or unset if `None`
+    * Set the delegate of the contract to the given `key_hash` if present, or unset if `None`
 
 - `Withdraw`
   + Parameter: `unit`
@@ -59,11 +59,12 @@ indefinitely without creating new auctions.
 - `Buy`
   + Parameter: `unit`
   + Spec:
+    * Requires the bonding curve contract to be a minter
     * Requires tez sent equal to the price
     * Price is calculated as the sum of
       - `auction_price`
       - `cost_mutez` applied to `token_index`
-      - `(auction_price + cost_mutez) * (basis_points / 10,000)`
+      - `(auction_price + cost_mutez) * (basis_points / 10,000)` (integer division)
     * Mints token using `token_metadata` from storage to buyer
     * Increments `token_index`
     * Adds the `basis_points` fee to the `unclaimed` tez in storage
@@ -72,6 +73,7 @@ indefinitely without creating new auctions.
   + Parameter: `address`
   + Spec:
     * Admin-only
+    * Has all requirements of the `Buy` entrypoint
     * `address` is the buyer's address, the minted NFT is sent here
     * This entrypoint is the same as `Buy`, except the minted token is sent to
       the buyer's address
@@ -79,8 +81,10 @@ indefinitely without creating new auctions.
 - `Sell`
   + Parameter:
   + Spec:
+    * Required the bonding curve contract to be a minter
+    * The sender must be the owner of the token to sell
     * `token_id` is token to sell
-    * Price is calculared as in `Buy`, without the `basis_points` fee:
+    * Price is calculared as in `Buy`, without the `basis_points` fee, i.e. as the sum of:
       - `auction_price`
       - `cost_mutez` applied to `token_index`
     * The token is burned on the FA2 marketplace
@@ -91,6 +95,7 @@ indefinitely without creating new auctions.
   + Parameter: `token_id * address`
   + Spec:
     * Admin-only
+    * Has all requirements of the `Sell` entrypoint, except can be called by admin without being a token owner
     * `token_id` is token to sell
     * `address` is the sellers's address, the NFT is burned from this account and the tez are sent here
     * This entrypoint is the same as `Sell`, except the token is burned from the
@@ -101,7 +106,11 @@ indefinitely without creating new auctions.
 
 Updated NFT (marketplace) contract on which NFT's are minted/traded
 
-Storage: no storage updates!
+Storage: no storage type updates, but an update to the semantics:
+The token with `token_id = 0` must be held by the admin of the marketplace to
+for any minting or burning and any address which is an operator of `token_id = 0`
+for the admin address is allowed to mint or burn tokens. Such a user is called a
+"minter".
 
 Entrypoints:
 - `Update_metadata`
@@ -110,15 +119,16 @@ Entrypoints:
     * Admin-only
     * The given `token_metadata`'s are inserted into the
       `token_metadata : big_map token_id token_metadata` `big_map`,
-      updating any currently-present `token_id`'s.
+      updating any currently-present `token_id`'s metadata.
   + Misc: this entrypoint can't be used to delete token metadata
-- `Burn`:
-  + Parameter: `token_id * bytes`
-  + Spec:
-    * Operator-only (of given `token_id`)
-    * `bytes` is the `symbol` of the NFT to burn
-    * The token is deleted from the ledger and `token_metadata` `big_map`
 
+- `Burn`:
+  + Parameter: `token_id * (bytes * address)`
+  + Spec:
+    * Minter-only
+    * `bytes` is the `symbol` of the NFT to burn
+    * `address` is the owner of the NFT to burn
+    * The token is deleted from the ledger and `token_metadata` `big_map`
 
 
 ## Appendix A: Piecewise Polynomial's
@@ -142,7 +152,7 @@ Is represented as the list:
 
 Where the coefficient of `x^i` is the `ith` element of the list.
 
-This is exactly the definition of `polynomial` in ligo:
+This is exactly the definition of the `polynomial` type in ligo:
 
 ```
 type polynomial =
@@ -153,7 +163,7 @@ type polynomial =
 ```
 
 Note that coefficients are `int`'s: floating point numbers are not supported in
-Michelson.
+Michelson, but their behavior may be simulated to arbitrary precision.
 
 
 ### Piecewise Polynomials
@@ -208,5 +218,4 @@ type piecewise_polynomial =
     last_segment : polynomial;
   }
 ```
-
 
