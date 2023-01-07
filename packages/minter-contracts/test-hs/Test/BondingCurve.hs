@@ -1,21 +1,23 @@
 {-# LANGUAGE OverloadedLists #-}
-
 {-# LANGUAGE InstanceSigs #-}
 
 -- | Tests for bonding curve contract
 module Test.BondingCurve where
 
 import Prelude hiding (swap)
+import System.IO (writeFile)
 
+import qualified Data.Text.Lazy as L
 import Test.Tasty (TestTree, testGroup)
 
--- import Lorentz.Errors
 import Lorentz.Value
+import Michelson.Printer
 import Michelson.Text (unsafeMkMText)
 import Michelson.Typed.Scope () -- (ConstantScope)
 import Michelson.Typed.Sing () -- (KnownT)
 import Morley.Nettest
 import Morley.Nettest.Tasty
+import Tezos.Address
 
 import qualified Lorentz.Contracts.FA2 as FA2
 import Lorentz.Contracts.Spec.FA2Interface
@@ -590,17 +592,35 @@ sellOffchainTest = nettestScenarioOnEmulatorCaps "Sell_offchain" $ do
       } }
 
 
-
-
 buySellTest :: TestTree
 buySellTest = nettestScenarioOnEmulatorCaps "Buy Sell" $ do
+
+  let logFile = "buy_sell_test_data.txt"
+  liftIO $ writeFile logFile "Buy Sell Test\n"
+
+  let dontForceSingleLine = False
+  let log = liftIO . appendFile logFile . ("\n" <>)
+
   setup <- doFA2Setup
   let admin ::< alice ::< bob ::< charlie ::< SNil = sAddresses setup
+
+  log "(admin, alice, bob, charlie)"
+  log $ show (formatAddress admin, formatAddress alice, formatAddress bob, formatAddress charlie)
+  log ""
+
   let !SNil = sTokens setup
-  nft <- originateNft ((exampleNftStorageWithAdmin admin)
-    { assets = exampleNftTokenStorage { ledger = [(TokenId 0, admin)]
-                                      , next_token_id = TokenId 1
-                                      } })
+  let nftStorage = ((exampleNftStorageWithAdmin admin)
+        { assets = exampleNftTokenStorage { ledger = [(TokenId 0, admin)]
+                                          , next_token_id = TokenId 1
+                                          } })
+  log "nft storage"
+  log . L.toStrict . printTypedValue dontForceSingleLine $ toVal nftStorage
+  log ""
+
+  nft <- originateNft nftStorage
+  log "nft address"
+  log . formatAddress $ toAddress nft
+  log ""
 
   let auctionPrice = 100
   let basisPoints = 100
@@ -612,18 +632,28 @@ buySellTest = nettestScenarioOnEmulatorCaps "Buy Sell" $ do
           , auction_price = auctionPrice
           , basis_points = basisPoints
           }
+  log "bonding curve storage"
+  log . L.toStrict . printTypedValue dontForceSingleLine $ toVal bondingCurveStorage
+  log ""
 
   bondingCurve <- originateDebugBondingCurve bondingCurveStorage
+  log "bonding curve address"
+  log . formatAddress $ toAddress bondingCurve
+  log ""
 
   -- admin needs to set operator on (TokenId 0) to allow bondingCurve to mint
+  let updateOperators :: [UpdateOperator] =
+        [ AddOperator OperatorParam
+            { opOwner = admin
+            , opOperator = toAddress bondingCurve
+            , opTokenId = TokenId 0
+            }
+        ]
+  log "admin -> nft: update_operators"
+  log . L.toStrict . printTypedValue dontForceSingleLine $ toVal updateOperators
+  log ""
   withSender admin $
-    call nft (Call @"Update_operators")
-      [ AddOperator OperatorParam
-          { opOwner = admin
-          , opOperator = toAddress bondingCurve
-          , opTokenId = TokenId 0
-          }
-      ]
+    call nft (Call @"Update_operators") updateOperators
 
   let buyers :: [(Integer, Address)] =
         [ (10, alice)
@@ -648,11 +678,18 @@ buySellTest = nettestScenarioOnEmulatorCaps "Buy Sell" $ do
           })
         & expectError (unsafeMkMText "WRONG_TEZ_PRICE")
 
+    let buyAmount = fromIntegral . addBasisPointFee 100 $ fromIntegral auctionPrice + amount
+    log "buyer -> bondingCurve: buy"
+    log "buyer:"
+    log $ formatAddress buyer
+    log "amount:"
+    log . L.toStrict . printTypedValue dontForceSingleLine $ toVal buyAmount
+    log ""
     withSender buyer $
       transfer $
         TransferData
           { tdTo = bondingCurve
-          , tdAmount = fromIntegral . addBasisPointFee 100 $ fromIntegral auctionPrice + amount
+          , tdAmount = buyAmount
           , tdEntrypoint = ep "buy"
           , tdParameter = ()
           }
@@ -662,6 +699,14 @@ buySellTest = nettestScenarioOnEmulatorCaps "Buy Sell" $ do
   forM_ (reverse sellers) $ \(tokenId, (expectedCost, seller)) -> do
     sellerBalanceBefore <- getBalance seller
 
+
+
+    log "seller -> bondingCurve: sell"
+    log "seller:"
+    log $ formatAddress seller
+    log "parameter:"
+    log . L.toStrict . printTypedValue dontForceSingleLine $ toVal (TokenId tokenId)
+    log ""
     withSender seller $
       call bondingCurve (Call @"Sell") (TokenId tokenId)
 
@@ -673,6 +718,12 @@ buySellTest = nettestScenarioOnEmulatorCaps "Buy Sell" $ do
   postSellStorage <- getStorage' bondingCurve
   postSellStorage @== bondingCurveStorage { unclaimed = 4 }
 
+  log "admin -> bondingCurve: withdraw"
+  log "admin:"
+  log $ formatAddress admin
+  log "parameter:"
+  log . L.toStrict . printTypedValue dontForceSingleLine $ toVal ()
+  log ""
   withSender admin $
     call bondingCurve (Call @"Withdraw") ()
 

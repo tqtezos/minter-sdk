@@ -302,7 +302,11 @@ let buy_offchain_no_admin (buyer_addr, storage : offchain_buyer * bonding_curve_
 
     (* assert cost = sent tez *)
     if Tezos.amount <> (current_price + basis_point_fee)
-    then (failwith error_wrong_tez_price : (operation list) * bonding_curve_storage)
+
+    // TODO: verbose error preferred?
+    // then (failwith error_wrong_tez_price : (operation list) * bonding_curve_storage)
+    then ([%Michelson ({| { FAILWITH } |} : string * tez * tez -> (operation list) * bonding_curve_storage)] ("WRONG_TEZ_PRICE", Tezos.amount, (current_price + basis_point_fee)) : (operation list) * bonding_curve_storage)
+
     else
       (* mint using storage.token_metadata *)
       let mint_entrypoint_opt : (mint_tokens_param contract) option =

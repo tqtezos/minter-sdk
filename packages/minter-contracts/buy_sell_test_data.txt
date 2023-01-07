@@ -1,0 +1,19 @@
+Buy Sell Test
+
+(admin, alice, bob, charlie)
+("tz1PwgnoAyphW2iFdbnnYgwWRcNTpAaH7gVY","tz1TZpbZZZTKiJVh7ANXCLKFT3TkADzxRZWM","tz1gtKKyvwQ6u54sbVzano58mFZLqERaCgyW","tz1RLYCL2F82JxXtEGZmtLRDMD4Pe9SRYLZo")
+
+nft storage
+Pair { Pair (Pair "tz1PwgnoAyphW2iFdbnnYgwWRcNTpAaH7gVY" False) None; Pair { Elt 0 "tz1PwgnoAyphW2iFdbnnYgwWRcNTpAaH7gVY" } 1; { }; { } } { }
+
+nft address
+KT1DzFfsdA7ygqvJvm3sFnfe9qvwaVBZLoJ7
+
+bonding curve storage
+{ Pair (Pair "tz1PwgnoAyphW2iFdbnnYgwWRcNTpAaH7gVY" False) None; "KT1DzFfsdA7ygqvJvm3sFnfe9qvwaVBZLoJ7"; 100; 0; { Elt "decimals" 0x3132; Elt "name" 0x546869732069732061207465737421205b6e616d655d; Elt "symbol" 0x746573745f73796d626f6c }; 100; Pair { } { 10; 20; 30 }; 0 }
+
+bonding curve address
+KT1H4rKfL5WmvCgvuMEpWXr3Drrzw3GLqFVb
+
+admin -> nft: update_operators
+{ Left { "tz1PwgnoAyphW2iFdbnnYgwWRcNTpAaH7gVY"; "KT1H4rKfL5WmvCgvuMEpWXr3Drrzw3GLqFVb"; 0 } }

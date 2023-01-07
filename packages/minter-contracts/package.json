@@ -14,7 +14,7 @@
     "lint": "yarn eslint . --ext .js,.ts",
     "test-contract": "yarn start-sandbox && jest",
     "test-contracts": "jest --runInBand",
-    "test-bonding-curve": "yarn start-sandbox && jest --runInBand -t 'bonding-curve'; yarn kill-sandbox",
+    "test-bonding-curve": "yarn start-sandbox && jest --runInBand test/bonding-curve.test.ts; yarn kill-sandbox",
     "start-sandbox": "../../flextesa/start-sandbox.sh",
     "kill-sandbox": "../../flextesa/kill-sandbox.sh",
     "build:watch": "tsc -w -p .",

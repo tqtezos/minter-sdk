@@ -2,7 +2,7 @@ import { $log } from '@tsed/logger';
 import {
   MichelsonMap,
 } from '@taquito/taquito';
-// import { BigNumber } from 'bignumber.js';
+import { BigNumber } from 'bignumber.js';
 
 import { bootstrapWithoutLambdaView, TestTz } from './bootstrap-sandbox';
 import { Contract, bytes, address, nat } from '../src/type-aliases';
@@ -10,10 +10,17 @@ import { Contract, bytes, address, nat } from '../src/type-aliases';
 import { originateBondingCurve } from '../src/bonding-curve';
 import { char2Bytes } from '@taquito/tzip16';
 // import { originateNft } from '../src/nft-contracts';
-// import {
-//   transfer,
-// } from '../src/fa2-interface';
+import {
+  addOperator,
+  // transfer,
+} from '../src/fa2-interface';
 // import { QueryBalances, queryBalancesWithLambdaView, hasTokens } from './fa2-balance-inspector';
+
+// because originateNft doesn't allow raw storage
+// could fix by making originateNftRawStorage
+import { originateContract } from '../src/ligo';
+import { Fa2MultiNftAssetCode } from '../bin-ts';
+
 
 jest.setTimeout(180000); // 3 minutes
 
@@ -34,15 +41,18 @@ describe('bonding-curve: test NFT auction', () => {
   // let nftEditionsBob: Contract;
   let tezos: TestTz;
 
-  let bondingCurveBob: Contract;
+  let bondingCurve: Contract;
+  let nft: Contract;
 
   // let nftEditionsAlice: Contract;
   // let nft1: MintEditionParam;
   // let nft2: MintEditionParam;
   let edition_1_metadata: MichelsonMap<string, bytes>;
   let edition_2_metadata: MichelsonMap<string, bytes>;
+  let adminAddress: address;
   let aliceAddress: address;
-  // let bobAddress: address;
+  let bobAddress: address;
+  let charlieAddress: address;
   // let queryBalances: QueryBalances;
 
   beforeAll(async () => {
@@ -55,15 +65,19 @@ describe('bonding-curve: test NFT auction', () => {
     edition_2_metadata = new MichelsonMap();
     edition_2_metadata.setType({ prim: "map", args: [{ prim: "string" }, { prim: "bytes" }] });
     edition_2_metadata.set("name", "74657374206e616d65");
+
+    // eve is admin
+    adminAddress = await tezos.eve.signer.publicKeyHash();
     aliceAddress = await tezos.alice.signer.publicKeyHash();
-    // bobAddress = await tezos.bob.signer.publicKeyHash();
+    bobAddress = await tezos.bob.signer.publicKeyHash();
+    charlieAddress = await tezos.charlie.signer.publicKeyHash();
 
     // queryBalances = queryBalancesWithLambdaView(tezos.lambdaView);
     //
     // $log.info('originating editions contract');
     // nftEditionsBob = await originateEditionsNftContract(tezos.bob, bobAddress);
 
-    // const bondingCurveBobStorage: BondingCurveContractType["storage"] =
+    // const bondingCurveStorage: BondingCurveContractType["storage"] =
     // {
     //   admin: {
     //     admin: bobAddress as bin_address,
@@ -116,34 +130,7 @@ describe('bonding-curve: test NFT auction', () => {
     // storage for distinguishing fields:
 
 
-    const adminAddress = aliceAddress;
-    const market_contractAddress = aliceAddress;
-    const auction_price = 0;
-    const token_index = 0;
-    const basis_points = 100;
-
-    const token_name = "test_symbol";
-    const token_symbol = "This is a test! [name]";
-    const token_decimals = "12";
-
-    // examplePiecewisePolynomial' = PiecewisePolynomial
-    //   { segments = [(6, [7, 8])]
-    //   , last_segment = [4, 5]
-    //   }
-    const segments = '{ Pair 6 { 7; 8 } }';
-    const last_segment = '{ 4; 5 }';
-    const unclaimed_mutez = 0;
-
-    const bondingCurveBobStorageString = `
-      { Pair (Pair "${adminAddress}" False) None; "${market_contractAddress}"; ${auction_price}; ${token_index};
-        {
-          Elt "decimals" 0x${char2Bytes(token_decimals)};
-          Elt "name" 0x${char2Bytes(token_name)};
-          Elt "symbol" 0x${char2Bytes(token_symbol)} };
-        ${basis_points}; Pair ${segments} ${last_segment}; ${unclaimed_mutez}
-      }`;
-
-    // const bondingCurveBobStorageString2 = `
+    // const bondingCurveStorageString2 = `
     //   { Pair (Pair "${adminAddress}" False) None; "${market_contractAddress}"; ${auction_price}; ${token_index};
     //     {
     //       Elt "decimals" 0x3132;
@@ -151,15 +138,15 @@ describe('bonding-curve: test NFT auction', () => {
     //       Elt "symbol" 0x746573745f73796d626f6c };
     //     ${basis_points}; Pair { Pair 6 { 7; 8 } } { 4; 5 }; 0 }`;
 
-    // expect(bondingCurveBobStorageString).toBe(bondingCurveBobStorageString2);
+    // expect(bondingCurveStorageString).toBe(bondingCurveStorageString2);
 
-    // const bondingCurveBobStorageString = "{ Pair (Pair \"tz2C97sask3WgSSg27bJhFxuBwW6MMU4uTPK\" False) None;
+    // const bondingCurveStorageString = "{ Pair (Pair \"tz2C97sask3WgSSg27bJhFxuBwW6MMU4uTPK\" False) None;
     // \"tz2UXHa5WU79MnWF5uKFRM6qUowX13pdgJGy\"; 0; 0; { Elt \"decimals\" 0x3132;
     // Elt \"name\" 0x546869732069732061207465737421205b6e616d655d;
     // Elt \"symbol\" 0x746573745f73796d626f6c }; 100; Pair { Pair 6 { 7; 8 } } { 4; 5 }; 0 }";
 
     // before storage update
-    // const bondingCurveBobStorageString = `
+    // const bondingCurveStorageString = `
     //   { Pair (Pair "${adminAddress}" False) None; "${market_contractAddress}"; ${auction_price}; ${token_index};
     //     Pair 42 {
     //       Elt "decimals" 0x3132;
@@ -168,20 +155,131 @@ describe('bonding-curve: test NFT auction', () => {
     //     ${basis_points}; Pair { Pair 6 { 7; 8 } } { 4; 5 }; 0 }`;
 
 
-    $log.info(`originating bonding curve contract with storage:\n${bondingCurveBobStorageString}`);
-
-    // bondingCurveBob = await originateBondingCurve(tezos.bob, bondingCurveBobStorage as Record<string, any>);
-    bondingCurveBob = await originateBondingCurve(tezos.bob, bondingCurveBobStorageString);
-    $log.info(`bonding curve contract originated: ${bondingCurveBob}`);
-
     // nftEditionsAlice = await tezos.alice.contract.at(nftEditionsBob.address);
     // $log.info(`editions contract originated`);
     // const contractStorage : any = await nftEditionsBob.storage();
     // maxEditions = await contractStorage.max_editions_per_run;
   });
 
-  test('Minimal test to originate', async () => {
-    $log.info("Minimal test to originate");
+  // test('Minimal test to originate', async () => {
+  //   $log.info("Minimal test to originate");
+
+  //   const adminAddress = aliceAddress;
+  //   const market_contractAddress = aliceAddress;
+  //   const auction_price = 0;
+  //   const token_index = 0;
+  //   const basis_points = 100;
+
+  //   const token_name = "test_symbol";
+  //   const token_symbol = "This is a test! [name]";
+  //   const token_decimals = "12";
+
+  //   // examplePiecewisePolynomial' = PiecewisePolynomial
+  //   //   { segments = [(6, [7, 8])]
+  //   //   , last_segment = [4, 5]
+  //   //   }
+  //   const segments = '{ Pair 6 { 7; 8 } }';
+  //   const last_segment = '{ 4; 5 }';
+  //   const unclaimed_mutez = 0;
+
+  //   const bondingCurveStorageString = `
+  //     { Pair (Pair "${adminAddress}" False) None; "${market_contractAddress}"; ${auction_price}; ${token_index};
+  //       {
+  //         Elt "decimals" 0x${char2Bytes(token_decimals)};
+  //         Elt "name" 0x${char2Bytes(token_name)};
+  //         Elt "symbol" 0x${char2Bytes(token_symbol)} };
+  //       ${basis_points}; Pair ${segments} ${last_segment}; ${unclaimed_mutez}
+  //     }`;
+
+  //   $log.info(`originating bonding curve contract with storage:\n${bondingCurveStorageString}`);
+  //   // bondingCurve = await originateBondingCurve(tezos.bob, bondingCurveStorage as Record<string, any>);
+  //   bondingCurve = await originateBondingCurve(tezos.bob, bondingCurveStorageString);
+  //   $log.info(`bonding curve contract originated: ${bondingCurve}`);
+
+  //   expect('ok').toBe('ok');
+  // });
+
+
+  test('Buy sell test', async () => {
+
+    // (admin, alice, bob, charlie)
+    // ("admin_address","alice_address","bob_address","charlie_address")
+
+    const admin_address = adminAddress;
+    const admin_toolkit = tezos.eve;
+
+    // nft storage
+    // const nft_storage =
+    //   `Pair { Pair (Pair "${admin_address}" False) None; Pair { Elt 0 "${admin_address}" } 1; { }; { } } { }`;
+
+    const meta_uri = char2Bytes('tezos-storage:content');
+    const sample_metadata = {
+      name: 'example_name',
+      description: 'sample_token',
+      interfaces: ['TZIP-012', 'TZIP-016'],
+    };
+    const meta_content = char2Bytes(JSON.stringify(sample_metadata, null, 2));
+
+    const nft_storage = `(Pair (Pair (Pair (Pair "${admin_address}" False) None) (Pair (Pair { Elt 0 "${admin_address}" } 1) (Pair { } { }))) { Elt "" 0x${meta_uri} ; Elt "content" 0x${meta_content} })`;
+
+
+    $log.info(`originating nft contract with storage:\n${nft_storage}`);
+    const nft_contract = await originateContract(tezos.bob, Fa2MultiNftAssetCode.code, nft_storage, 'nft');
+    const nft_address = nft_contract.address;
+
+    const bonding_curve_storage =
+      `{ Pair (Pair "${admin_address}" False) None; "${nft_address}"; 100; 0; { Elt "decimals" 0x3132; Elt "name" 0x546869732069732061207465737421205b6e616d655d; Elt "symbol" 0x746573745f73796d626f6c }; 100; Pair { } { 10; 20; 30 }; 0 }`;
+
+    $log.info(`originating bonding curve contract with storage:\n${bonding_curve_storage}`);
+    const bonding_curve_contract = await originateBondingCurve(tezos.bob, bonding_curve_storage);
+    const bonding_curve_address = bonding_curve_contract.address;
+
+    $log.info("admin -> nft: update_operators (bonding curve -> token_id=0)");
+    const op_update_operators = await addOperator(nft_address, admin_toolkit, bonding_curve_address, new BigNumber(0));
+
+    const bonding_curve_alice = await tezos.alice.contract.at(bonding_curve_contract.address);
+    const bonding_curve_bob = await tezos.bob.contract.at(bonding_curve_contract.address);
+    const bonding_curve_charlie = await tezos.charlie.contract.at(bonding_curve_contract.address);
+
+    // alice -> bondingCurve: buy
+    $log.info(`alice -> bondingCurve: buy`);
+    const alice_buy_op = await bonding_curve_alice.methods.buy().send({ amount: 111, mutez: true });
+    await alice_buy_op.confirmation();
+
+    try {
+
+      // bob -> bondingCurve: buy
+      $log.info(`bob -> bondingCurve: buy`);
+      const bob_buy_op = await bonding_curve_bob.methods.buy().send({ amount: 161, mutez: true });
+      await bob_buy_op.confirmation();
+
+    } catch (ex:any) {
+      $log.info(`ex str: ${JSON.stringify(ex, null, 2)}`);
+      $log.info(`message: ${ex.message}`);
+
+      expect(ex.message).toMatch('test');
+    }
+
+    // charlie -> bondingCurve: buy
+    $log.info(`charlie -> bondingCurve: buy`);
+    const charlie_buy_op = await bonding_curve_charlie.methods.buy().send({ amount: 272, mutez: true });
+    await charlie_buy_op.confirmation();
+
+
+    // $log.info(`charlie -> bondingCurve: sell(3)`);
+    // charlie -> bondingCurve: sell
+    // parameter: 3
+
+    // $log.info(`bob -> bondingCurve: sell(2)`);
+    // bob -> bondingCurve: sell
+    // parameter: 2
+
+    // $log.info(`alice -> bondingCurve: sell(1)`);
+    // alice -> bondingCurve: sell
+    // parameter: 1
+
+    // admin -> bondingCurve: withdraw
+    // parameter: Unit
 
     expect('ok').toBe('ok');
   });

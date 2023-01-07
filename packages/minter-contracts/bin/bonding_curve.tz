@@ -138,13 +138,24 @@
              IF_NONE { PUSH string "DIV by 0" ; FAILWITH } {} ;
              CAR ;
              DUP ;
-             DIG 2 ;
+             DUP 3 ;
              ADD ;
              AMOUNT ;
              COMPARE ;
              NEQ ;
-             IF { DROP 3 ; PUSH string "WRONG_TEZ_PRICE" ; FAILWITH }
-                { DUP 3 ;
+             IF { DIG 2 ;
+                  DROP ;
+                  DIG 2 ;
+                  DROP ;
+                  ADD ;
+                  AMOUNT ;
+                  PUSH string "WRONG_TEZ_PRICE" ;
+                  PAIR ;
+                  PAIR ;
+                  FAILWITH }
+                { SWAP ;
+                  DROP ;
+                  DUP 3 ;
                   CDR ;
                   CAR ;
                   CONTRACT %mint
