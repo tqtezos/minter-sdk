@@ -24,7 +24,7 @@ import Lorentz.Contracts.MinterCollection.Nft.Types
 
 import Test.Util
 
-import Test.BondingCurve (originateBondingCurve, originateDebugBondingCurve)
+import Test.BondingCurve
 import Test.MinterCollection.Nft (originateNft)
 
 -- TestData in a format where we get Arbitrary for free
@@ -255,7 +255,7 @@ testPiecewisePolynomialUsingCost TestData{piecewisePoly, polyInput} =
     setup <- doFA2Setup @("addresses" :# 1) @("tokens" :# 0)
     let admin ::< SNil = sAddresses setup
     let bondingCurveStorage = (exampleStorageWithAdmin admin) { cost_mutez = piecewisePoly }
-    bondingCurve <- originateDebugBondingCurve bondingCurveStorage
+    bondingCurve <- originateDebugBondingCurvePiecewise bondingCurveStorage
     let expectedCost = runPiecewisePolynomial piecewisePoly polyInput
     call bondingCurve (Call @"Cost") polyInput
       & expectError (WrappedValue expectedCost)
@@ -407,14 +407,14 @@ hprop_batch_buy_sell =
         { assets = exampleNftTokenStorage { ledger = [(TokenId 0, admin)]
                                           , next_token_id = TokenId 1
                                           } })
-      let bondingCurveStorage :: Storage =
+      let bondingCurveStorage :: Storage PiecewisePolynomial =
             (exampleStorageWithAdmin admin)
               { auction_price = auctionPrice
               , market_contract = toAddress nft
               , cost_mutez = piecewisePoly
               , basis_points = basisPoints
               }
-      bondingCurve <- originateBondingCurve bondingCurveStorage
+      bondingCurve <- originateBondingCurvePiecewise bondingCurveStorage
 
       -- admin needs to set operator on (TokenId 0) to allow bondingCurve to mint
       withSender admin $

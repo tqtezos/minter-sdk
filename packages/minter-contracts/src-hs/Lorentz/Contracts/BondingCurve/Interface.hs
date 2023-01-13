@@ -9,6 +9,11 @@ import Lorentz.Contracts.SimpleAdmin (AdminEntrypoints(..), AdminStorage(..))
 import qualified Lorentz.Contracts.FA2 as FA2 () -- TokenMetadata(..))
 import Lorentz.Contracts.Spec.FA2Interface (TokenId(..), TokenMetadata, mkTokenMetadata)
 
+import Michelson.Parser (parseExpandValue)
+import Michelson.Text (unsafeMkMText)
+import Michelson.TypeCheck
+import Michelson.Typed.Value (Value'(..))
+
 -- | "`calculateBasisPointFee` basisPoints amount" gives the expected basis point fee
 calculateBasisPointFee :: Natural -> Integer -> Integer
 calculateBasisPointFee basisPoints x =
@@ -84,21 +89,180 @@ examplePiecewisePolynomial' = PiecewisePolynomial
   , last_segment = [4, 5]
   }
 
-data Storage = Storage
+
+constantLambda :: Mutez -> Lambda Natural Mutez
+constantLambda constant =
+  Lorentz.drop #
+  push constant
+
+
+
+-- piecewisePolynomialToLambda :: PiecewisePolynomial -> Lambda Natural Mutez
+-- piecewisePolynomialToLambda piecewisePoly =
+--   push runPiecewisePolynomialLambda #
+--   Lorentz.swap #
+--   push piecewisePoly #
+--   pair #
+--   exec #
+--   isNat #
+--   ifNone
+--     (push (unsafeMkMText "piecewisePolynomialToLambda: not nat" :: MText) #
+--       failWith)
+--     (push (toEnum 1 :: Mutez) #
+--       mul)
+
+-- runPiecewisePolynomialLambda :: Lambda (PiecewisePolynomial, Natural) Integer
+-- runPiecewisePolynomialLambda = _
+
+-- runPiecewisePolynomialLambda' :: Lambda (([(Natural, [Integer])], [Integer]), Natural) Integer
+-- runPiecewisePolynomialLambda' =
+--   unpair #
+--   push @Natural 0 #
+--   none @[Integer] #
+--   pair #
+--   Lorentz.swap #
+--   dup #
+--   dug @2 #
+--   car #
+
+--   iter (
+--     Lorentz.swap #
+--     dup #
+--     car #
+--     ifNone
+--       ( Lorentz.swap #
+--         dup #
+--         dug @2 #
+--         car #
+--         Lorentz.swap #
+--         dup #
+--         dug @2 #
+--         cdr #
+--         add #
+--         dup #
+--         dupN @6 #
+--         Lorentz.compare #
+--         le #
+--         if_
+--           ( Lorentz.drop # cdr # Lorentz.swap # cdr # Lorentz.some # pair )
+--           ( dig @2 # Lorentz.drop # Lorentz.swap # car # pair ) )
+--       ( Lorentz.drop #
+--         Lorentz.swap #
+--         Lorentz.drop )
+
+--     ) #
+--   dig @2 #
+--   int #
+--   Lorentz.swap #
+--   car #
+--   _
+
+--   -- IF_NONE { SWAP # CDR } { DIG 2 # DROP } #
+--   -- PUSH int 1 #
+--   -- PUSH int 0 #
+--   -- PAIR #
+--   -- SWAP #
+--   -- ITER { SWAP #
+--   --        DUP #
+--   --        CDR #
+--   --        DUP #
+--   --        DUP 5 #
+--   --        MUL #
+--   --        SWAP #
+--   --        DIG 3 #
+--   --        MUL #
+--   --        DIG 2 #
+--   --        CAR #
+--   --        ADD #
+--   --        PAIR } #
+--   -- SWAP #
+--   -- DROP #
+--   -- CAR }
+
+
+  -- case parseExpandValue runPiecewisePolynomialLambdaText of
+  --   Left err -> error $ "runPiecewisePolynomialLambda: parse failed: " <> show err
+  --   Right untypedValue -> case typeCheckingWith def . runTypeCheckInstrIsolated $ typeCheckValue @(ToT (Lambda (PiecewisePolynomial, Natural) Integer)) untypedValue of
+  --                    Left err -> error $ "runPiecewisePolynomialLambda: type check failed: " <> show err
+  --                    Right value -> case value of
+  --                                     VLam lambda' -> LorentzInstr lambda'
+  --                                     _ -> error $ "runPiecewisePolynomial: expected lambda, but got: " <> show value
+
+-- runPiecewisePolynomialLambdaText :: Text
+-- runPiecewisePolynomialLambdaText =
+--   "LAMBDA\
+--     \(pair (pair (list (pair nat (list int))) (list int)) nat)\
+--     \int\
+--     \{ UNPAIR ;\
+--       \PUSH nat 0 ;\
+--       \NONE (list int) ;\
+--       \PAIR ;\
+--       \SWAP ;\
+--       \DUP ;\
+--       \DUG 2 ;\
+--       \CAR ;\
+--       \ITER { SWAP ;\
+--              \DUP ;\
+--              \CAR ;\
+--              \IF_NONE\
+--                \{ SWAP ;\
+--                  \DUP ;\
+--                  \DUG 2 ;\
+--                  \CAR ;\
+--                  \SWAP ;\
+--                  \DUP ;\
+--                  \DUG 2 ;\
+--                  \CDR ;\
+--                  \ADD ;\
+--                  \DUP ;\
+--                  \DUP 6 ;\
+--                  \COMPARE ;\
+--                  \LE ;\
+--                  \IF { DROP ; CDR ; SWAP ; CDR ; SOME ; PAIR }\
+--                     \{ DIG 2 ; DROP ; SWAP ; CAR ; PAIR } }\
+--                \{ DROP ; SWAP ; DROP } } ;\
+--       \DIG 2 ;\
+--       \INT ;\
+--       \SWAP ;\
+--       \CAR ;\
+--       \IF_NONE { SWAP ; CDR } { DIG 2 ; DROP } ;\
+--       \PUSH int 1 ;\
+--       \PUSH int 0 ;\
+--       \PAIR ;\
+--       \SWAP ;\
+--       \ITER { SWAP ;\
+--              \DUP ;\
+--              \CDR ;\
+--              \DUP ;\
+--              \DUP 5 ;\
+--              \MUL ;\
+--              \SWAP ;\
+--              \DIG 3 ;\
+--              \MUL ;\
+--              \DIG 2 ;\
+--              \CAR ;\
+--              \ADD ;\
+--              \PAIR } ;\
+--       \SWAP ;\
+--       \DROP ;\
+--       \CAR } ;"
+
+
+data Storage c = Storage
   { admin :: AdminStorage
   , market_contract :: Address
   , auction_price :: Mutez
   , token_index :: Natural
   , token_metadata :: TokenMetadata
   , basis_points :: Natural
-  , cost_mutez :: PiecewisePolynomial
+  , cost_mutez :: c
   , unclaimed :: Mutez
   } deriving stock (Eq, Show)
 
 customGeneric "Storage" ligoCombLayout
-deriving anyclass instance IsoValue Storage
-deriving anyclass instance HasAnnotation Storage
-instance Buildable Storage where build = genericF
+deriving anyclass instance IsoValue c => IsoValue (Storage c)
+deriving anyclass instance HasAnnotation c => HasAnnotation (Storage c)
+instance Buildable c => Buildable (Storage c) where build = genericF
 
 exampleAdminStorage :: AdminStorage
 exampleAdminStorage = AdminStorage
@@ -114,8 +278,8 @@ exampleTokenMetadata = mkTokenMetadata symbol name decimals
     name = "This is a test! [name]"
     decimals = "12"
 
-exampleStorage :: Storage
-exampleStorage = Storage
+exampleStoragePiecewise :: Storage PiecewisePolynomial
+exampleStoragePiecewise = Storage
   { admin = exampleAdminStorage
   , market_contract = detGenKeyAddress "dummy-impossible-contract-key"
   , auction_price = toMutez 0
@@ -127,13 +291,30 @@ exampleStorage = Storage
   }
 
 -- | exampleStorage with admin set
-exampleStorageWithAdmin :: Address -> Storage
+exampleStoragePiecewiseWithAdmin :: Address -> Storage PiecewisePolynomial
+exampleStoragePiecewiseWithAdmin admin =
+  exampleStoragePiecewise { admin = AdminStorage admin Nothing False }
+
+exampleStorage :: Storage (Lambda Natural Mutez)
+exampleStorage = Storage
+  { admin = exampleAdminStorage
+  , market_contract = detGenKeyAddress "dummy-impossible-contract-key"
+  , auction_price = toMutez 0
+  , token_index = 0
+  , token_metadata = exampleTokenMetadata
+  , basis_points = 100
+  , cost_mutez = constantLambda (toEnum 0) -- examplePiecewisePolynomial'
+  , unclaimed = toMutez 0
+  }
+
+-- | exampleStorage with admin set
+exampleStorageWithAdmin :: Address -> Storage (Lambda Natural Mutez)
 exampleStorageWithAdmin admin =
   exampleStorage { admin = AdminStorage admin Nothing False }
 
--- | exampleStorage w/ distinct values
-exampleStorage' :: Storage
-exampleStorage' = Storage
+-- | exampleStoragePiecewise w/ distinct values
+exampleStoragePiecewise' :: Storage PiecewisePolynomial
+exampleStoragePiecewise' = Storage
   { admin = exampleAdminStorage
   , market_contract = detGenKeyAddress "dummy-impossible-contract-key"
   , auction_price = toMutez 0
@@ -154,16 +335,15 @@ exampleStorage' = Storage
 -- exampleStorage:
 -- "{ Pair (Pair \"tz2C97sask3WgSSg27bJhFxuBwW6MMU4uTPK\" False) None; \"tz2UXHa5WU79MnWF5uKFRM6qUowX13pdgJGy\"; 0; 0; Pair 42 { Elt \"decimals\" 0x3132; Elt \"name\" 0x546869732069732061207465737421205b6e616d655d; Elt \"symbol\" 0x746573745f73796d626f6c }; 100; Pair { Pair 6 { 7; 8 } } { 4; 5 }; 0 }"printExampleStorage' :: IO ()
 --
-printExampleStorage' :: IO ()
-printExampleStorage' = do
+printExampleStoragePiecewise' :: IO ()
+printExampleStoragePiecewise' = do
   print $ ("admin" :: String, printLorentzValue False exampleAdminStorage)
-  print $ ("market_contract" :: String, printLorentzValue False $ market_contract exampleStorage')
+  print $ ("market_contract" :: String, printLorentzValue False $ market_contract exampleStoragePiecewise')
   putStrLn ("storage for distinguishing fields:" :: Text)
-  print $ printLorentzValue False exampleStorage'
+  print $ printLorentzValue False exampleStoragePiecewise'
   putStrLn ("" :: Text)
   putStrLn ("exampleStorage:" :: Text)
-  print $ printLorentzValue False exampleStorage
-
+  print $ printLorentzValue False exampleStoragePiecewise
 
 storageStr :: String
 storageStr = "{ Pair (Pair \"tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb\" False) None; \"tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb\"; 0; 0; { Elt \"decimals\" 0x3132; Elt \"name\" 0x546869732069732061207465737421205b6e616d655d; Elt \"symbol\" 0x746573745f73796d626f6c }; 100; Pair { Pair 6 { 7; 8 } } { 4; 5 }; 3 }"

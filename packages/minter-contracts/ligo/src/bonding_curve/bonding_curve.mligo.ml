@@ -224,8 +224,17 @@ type bonding_curve_storage =
     // the percentage (in basis points) cost of buying and selling a token at the same index
     basis_points : nat;
 
+#if PIECEWISE_BONDING_CURVE
+
     // bonding curve formula
     cost_mutez : piecewise_polynomial;
+
+#else
+
+    // bonding curve formula
+    cost_mutez : (nat -> tez);
+
+#endif // PIECEWISE_BONDING_CURVE
 
     // unclaimed tez (i.e. the result of the `basis_points` fee)
     unclaimed : tez;
@@ -293,10 +302,22 @@ let basis_points_per_unit : nat = 10000n
 let buy_offchain_no_admin (buyer_addr, storage : offchain_buyer * bonding_curve_storage)
     : (operation list) * bonding_curve_storage =
     (* cost = auction_price + cost_mutez(token_index) + basis_point_fee *)
+
+#if PIECEWISE_BONDING_CURVE
+
     let cost_tez : price_tez = match is_nat (run_piecewise_polynomial(storage.cost_mutez, storage.token_index)) with
     | None -> (failwith error_negative_cost : tez)
     | Some nat_cost_tez -> 1mutez * nat_cost_tez
-    in let current_price : price_tez = storage.auction_price + cost_tez
+    in
+
+#else
+
+    let cost_tez : price_tez = storage.cost_mutez(storage.token_index)
+    in
+
+#endif // PIECEWISE_BONDING_CURVE
+
+    let current_price : price_tez = storage.auction_price + cost_tez
     in let basis_point_fee : tez =
         (current_price * storage.basis_points) / basis_points_per_unit in
 
@@ -346,12 +367,24 @@ let sell_offchain_no_admin ((token_to_sell, seller_addr), storage : (token_id * 
     | None -> (failwith error_no_token_to_sell : nat)
     | Some token_index -> token_index
     in
+
+#if PIECEWISE_BONDING_CURVE
+
     let previous_cost_tez : price_tez = match is_nat (run_piecewise_polynomial(storage.cost_mutez, previous_token_index)) with
     | None -> (failwith error_negative_cost : tez)
     | Some nat_cost_tez -> storage.auction_price + 1mutez * nat_cost_tez
+    in
+
+#else
+
+    let previous_cost_tez : price_tez = storage.cost_mutez(previous_token_index)
+    in
+
+#endif // PIECEWISE_BONDING_CURVE
+
     (* - burn token -> market contract *)
     (* - send -> market contract *)
-    in let burn_entrypoint_opt : ((token_id * (bytes * address)) contract) option =
+    let burn_entrypoint_opt : ((token_id * (bytes * address)) contract) option =
       Tezos.get_entrypoint_opt "%burn" storage.market_contract
     in
 
@@ -434,10 +467,18 @@ let bonding_curve_main (param, storage : bonding_curve_entrypoints * bonding_cur
 
 // Debug-only
 #if DEBUG_BONDING_CURVE
+#if PIECEWISE_BONDING_CURVE
 
      // (n : nat) -> failwith (price in mutez of n-th token w/o basis_points)
      | Cost n ->
        (failwith (run_piecewise_polynomial(storage.cost_mutez, n)) : (operation list) * bonding_curve_storage)
 
+#else
+
+     // (n : nat) -> failwith (price in tez of n-th token w/o basis_points)
+     | Cost n ->
+       ([%Michelson ({| { FAILWITH } |} : tez -> (operation list) * bonding_curve_storage)] (storage.cost_mutez(n)) : (operation list) * bonding_curve_storage)
+
+#endif // PIECEWISE_BONDING_CURVE
 #endif // DEBUG_BONDING_CURVE
 

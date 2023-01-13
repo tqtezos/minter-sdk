@@ -17,3 +17,45 @@ KT1H4rKfL5WmvCgvuMEpWXr3Drrzw3GLqFVb
 
 admin -> nft: update_operators
 { Left { "tz1PwgnoAyphW2iFdbnnYgwWRcNTpAaH7gVY"; "KT1H4rKfL5WmvCgvuMEpWXr3Drrzw3GLqFVb"; 0 } }
+
+buyer -> bondingCurve: buy
+buyer:
+tz1TZpbZZZTKiJVh7ANXCLKFT3TkADzxRZWM
+amount:
+111
+
+buyer -> bondingCurve: buy
+buyer:
+tz1gtKKyvwQ6u54sbVzano58mFZLqERaCgyW
+amount:
+161
+
+buyer -> bondingCurve: buy
+buyer:
+tz1RLYCL2F82JxXtEGZmtLRDMD4Pe9SRYLZo
+amount:
+272
+
+seller -> bondingCurve: sell
+seller:
+tz1RLYCL2F82JxXtEGZmtLRDMD4Pe9SRYLZo
+parameter:
+3
+
+seller -> bondingCurve: sell
+seller:
+tz1gtKKyvwQ6u54sbVzano58mFZLqERaCgyW
+parameter:
+2
+
+seller -> bondingCurve: sell
+seller:
+tz1TZpbZZZTKiJVh7ANXCLKFT3TkADzxRZWM
+parameter:
+1
+
+admin -> bondingCurve: withdraw
+admin:
+tz1PwgnoAyphW2iFdbnnYgwWRcNTpAaH7gVY
+parameter:
+Unit

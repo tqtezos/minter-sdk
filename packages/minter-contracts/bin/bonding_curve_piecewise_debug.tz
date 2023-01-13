@@ -10,7 +10,11 @@
                 (pair (mutez %auction_price)
                       (pair (nat %token_index)
                             (pair (map %token_metadata string bytes)
-                                  (pair (nat %basis_points) (pair (lambda %cost_mutez nat mutez) (mutez %unclaimed)))))))) ;
+                                  (pair (nat %basis_points)
+                                        (pair (pair %cost_mutez
+                                                 (list %segments (pair (nat %length) (list %poly int)))
+                                                 (list %last_segment int))
+                                              (mutez %unclaimed)))))))) ;
   code { LAMBDA
            (pair (pair address bool) (option address))
            unit
@@ -21,15 +25,79 @@
              NEQ ;
              IF { PUSH string "NOT_AN_ADMIN" ; FAILWITH } { UNIT } } ;
          LAMBDA
-           (pair address
-                 (pair (pair (pair address bool) (option address))
-                       (pair address
-                             (pair mutez (pair nat (pair (map string bytes) (pair nat (pair (lambda nat mutez) mutez))))))))
+           (pair (pair (list (pair nat (list int))) (list int)) nat)
+           int
+           { UNPAIR ;
+             PUSH nat 0 ;
+             NONE (list int) ;
+             PAIR ;
+             SWAP ;
+             DUP ;
+             DUG 2 ;
+             CAR ;
+             ITER { SWAP ;
+                    DUP ;
+                    CAR ;
+                    IF_NONE
+                      { SWAP ;
+                        DUP ;
+                        DUG 2 ;
+                        CAR ;
+                        SWAP ;
+                        DUP ;
+                        DUG 2 ;
+                        CDR ;
+                        ADD ;
+                        DUP ;
+                        DUP 6 ;
+                        COMPARE ;
+                        LE ;
+                        IF { DROP ; CDR ; SWAP ; CDR ; SOME ; PAIR }
+                           { DIG 2 ; DROP ; SWAP ; CAR ; PAIR } }
+                      { DROP ; SWAP ; DROP } } ;
+             DIG 2 ;
+             INT ;
+             SWAP ;
+             CAR ;
+             IF_NONE { SWAP ; CDR } { DIG 2 ; DROP } ;
+             PUSH int 1 ;
+             PUSH int 0 ;
+             PAIR ;
+             SWAP ;
+             ITER { SWAP ;
+                    DUP ;
+                    CDR ;
+                    DUP ;
+                    DUP 5 ;
+                    MUL ;
+                    SWAP ;
+                    DIG 3 ;
+                    MUL ;
+                    DIG 2 ;
+                    CAR ;
+                    ADD ;
+                    PAIR } ;
+             SWAP ;
+             DROP ;
+             CAR } ;
+         DUP ;
+         LAMBDA
+           (pair (lambda (pair (pair (list (pair nat (list int))) (list int)) nat) int)
+                 (pair address
+                       (pair (pair (pair address bool) (option address))
+                             (pair address
+                                   (pair mutez
+                                         (pair nat
+                                               (pair (map string bytes) (pair nat (pair (pair (list (pair nat (list int))) (list int)) mutez)))))))))
            (pair (list operation)
                  (pair (pair (pair address bool) (option address))
                        (pair address
-                             (pair mutez (pair nat (pair (map string bytes) (pair nat (pair (lambda nat mutez) mutez))))))))
+                             (pair mutez
+                                   (pair nat
+                                         (pair (map string bytes) (pair nat (pair (pair (list (pair nat (list int))) (list int)) mutez))))))))
            { UNPAIR ;
+             SWAP ;
+             UNPAIR ;
              SWAP ;
              DUP ;
              DUG 2 ;
@@ -45,8 +113,12 @@
              CDR ;
              CDR ;
              CAR ;
+             PAIR ;
+             DIG 3 ;
              SWAP ;
              EXEC ;
+             ISNAT ;
+             IF_NONE { PUSH string "NEGATIVE_COST" ; FAILWITH } { PUSH mutez 1 ; MUL } ;
              DUP 3 ;
              CDR ;
              CDR ;
@@ -198,16 +270,28 @@
                   DIG 2 ;
                   CONS ;
                   PAIR } } ;
+         SWAP ;
+         APPLY ;
+         SWAP ;
+         DUP ;
+         DUG 2 ;
          LAMBDA
-           (pair (pair nat address)
-                 (pair (pair (pair address bool) (option address))
-                       (pair address
-                             (pair mutez (pair nat (pair (map string bytes) (pair nat (pair (lambda nat mutez) mutez))))))))
+           (pair (lambda (pair (pair (list (pair nat (list int))) (list int)) nat) int)
+                 (pair (pair nat address)
+                       (pair (pair (pair address bool) (option address))
+                             (pair address
+                                   (pair mutez
+                                         (pair nat
+                                               (pair (map string bytes) (pair nat (pair (pair (list (pair nat (list int))) (list int)) mutez)))))))))
            (pair (list operation)
                  (pair (pair (pair address bool) (option address))
                        (pair address
-                             (pair mutez (pair nat (pair (map string bytes) (pair nat (pair (lambda nat mutez) mutez))))))))
+                             (pair mutez
+                                   (pair nat
+                                         (pair (map string bytes) (pair nat (pair (pair (list (pair nat (list int))) (list int)) mutez))))))))
            { UNPAIR ;
+             SWAP ;
+             UNPAIR ;
              UNPAIR ;
              PUSH nat 1 ;
              DUP 4 ;
@@ -227,8 +311,14 @@
              CDR ;
              CDR ;
              CAR ;
+             PAIR ;
+             DIG 5 ;
              SWAP ;
              EXEC ;
+             ISNAT ;
+             IF_NONE
+               { PUSH string "NEGATIVE_COST" ; FAILWITH }
+               { PUSH mutez 1 ; MUL ; DUP 5 ; CDR ; CDR ; CAR ; ADD } ;
              DUP 5 ;
              CDR ;
              CAR ;
@@ -279,13 +369,17 @@
              PAIR ;
              SWAP ;
              PAIR } ;
-         DIG 3 ;
+         SWAP ;
+         APPLY ;
+         DIG 4 ;
          UNPAIR ;
          IF_LEFT
            { DIG 2 ;
              DROP ;
              IF_LEFT
-               { IF_LEFT
+               { DIG 3 ;
+                 DROP ;
+                 IF_LEFT
                    { DIG 2 ;
                      DROP ;
                      SWAP ;
@@ -350,10 +444,21 @@
                      PAIR }
                    { DROP ; DIG 2 ; DROP ; SENDER ; PAIR ; EXEC } }
                { IF_LEFT
-                   { SWAP ; DUP ; DUG 2 ; CAR ; DIG 4 ; SWAP ; EXEC ; DROP ; PAIR ; EXEC }
+                   { DIG 3 ;
+                     DROP ;
+                     SWAP ;
+                     DUP ;
+                     DUG 2 ;
+                     CAR ;
+                     DIG 4 ;
+                     SWAP ;
+                     EXEC ;
+                     DROP ;
+                     PAIR ;
+                     EXEC }
                    { DIG 2 ;
                      DROP ;
-                     DIG 2 ;
+                     DIG 3 ;
                      DROP ;
                      SWAP ;
                      CDR ;
@@ -363,10 +468,12 @@
                      CDR ;
                      CDR ;
                      CAR ;
-                     SWAP ;
+                     PAIR ;
                      EXEC ;
                      FAILWITH } } }
            { DIG 3 ;
+             DROP ;
+             DIG 3 ;
              DROP ;
              IF_LEFT
                { IF_LEFT
