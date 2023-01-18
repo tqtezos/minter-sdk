@@ -2,27 +2,16 @@
 module Lorentz.Contracts.BondingCurve.Interface where
 
 import Fmt (Buildable(..), genericF)
-import Lorentz
 import Tezos.Address (detGenKeyAddress)
 
-import Lorentz.Contracts.SimpleAdmin (AdminEntrypoints(..), AdminStorage(..))
-import qualified Lorentz.Contracts.FA2 as FA2 () -- TokenMetadata(..))
-import Lorentz.Contracts.Spec.FA2Interface (TokenId(..), TokenMetadata, mkTokenMetadata)
-
-import Michelson.Parser (parseExpandValue)
-import Michelson.Text (unsafeMkMText)
-import Michelson.Typed.Instr
-import Michelson.TypeCheck
-import Michelson.Typed.Value (Value'(..), RemFail(..))
-
--- import Util.Typeable (gcastE)
-import Lorentz.Test.Import (embedContractM)
+import Lorentz
 import Lorentz.Contracts.MinterSdk (inBinFolder)
+import Lorentz.Contracts.SimpleAdmin (AdminEntrypoints(..), AdminStorage(..))
+import Lorentz.Contracts.Spec.FA2Interface (TokenId(..), TokenMetadata, mkTokenMetadata)
+import qualified Lorentz.Contracts.FA2 as FA2 () -- TokenMetadata(..))
 
+import Michelson.Typed.Value (Value'(..))
 import Michelson.Test.Import (importValue)
-
-bondingCurveExampleFormula0Contract :: Lorentz.Contract Natural ()
-bondingCurveExampleFormula0Contract = $$(embedContractM (inBinFolder "bonding_curve_example_formula_0_contract.tz"))
 
 
 valueToLambda :: Value (ToT (Lambda a b)) -> Lambda a b

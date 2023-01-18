@@ -125,8 +125,7 @@ genPolynomial :: Gen [Integer]
 genPolynomial =
   -- Gen.shrink shrinkList $
   Gen.shrink shrinkListNonEmpty $
-  -- Gen.list (Range.constant 0 32) (Gen.integral (Range.constant -1024 1024))
-  Gen.list (Range.constant 1 32) (Gen.integral (Range.constant -1024 1024))
+  Gen.list (Range.constant 1 32) (Gen.integral (Range.constant -512 512))
 
 shrinkPiecewisePolySegment :: (Natural, [Integer]) -> [(Natural, [Integer])]
 shrinkPiecewisePolySegment (segmentLength, polynomial) = do

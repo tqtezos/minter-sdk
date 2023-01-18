@@ -198,10 +198,10 @@ let run_piecewise_polynomial (piecewise_poly, x : piecewise_polynomial * nat)
 (* res := 0 *)
 (* acc := x *)
 (* *)
-(* current_bit := Bitwise.and n 1n *)
-(* res += current_bit * acc *)
+(* current_bit := Bitwise.and n 1n (last bit) *)
+(* res *= if current_bit = 1 then acc else 1 *)
 (* n_next := Bitwise.shift_right n 1n // (n / 2n) *)
-(* acc_next := acc * x *)
+(* acc_next := acc * acc *)
 let rec nat_pow_loop(x, res, acc, n : nat * nat * nat * nat) : nat =
   if n = 0n
   then res
@@ -360,7 +360,7 @@ let buy_offchain_no_admin (buyer_addr, storage : offchain_buyer * bonding_curve_
     (* assert cost = sent tez *)
     if Tezos.amount <> (current_price + basis_point_fee)
 
-    // TODO: verbose error preferred?
+    // here is a less verbose error, if gas is high
     // then (failwith error_wrong_tez_price : (operation list) * bonding_curve_storage)
     then ([%Michelson ({| { FAILWITH } |} : string * tez * tez -> (operation list) * bonding_curve_storage)] ("WRONG_TEZ_PRICE", Tezos.amount, (current_price + basis_point_fee)) : (operation list) * bonding_curve_storage)
 
@@ -525,10 +525,6 @@ let bonding_curve_main (param, storage : bonding_curve_entrypoints * bonding_cur
      // (x : nat) -> failwith example_formula0(x)
      | ExampleFormula0 x ->
          ([%Michelson ({| { FAILWITH } |} : tez -> (operation list) * bonding_curve_storage)] (example_formula0(x)) : (operation list) * bonding_curve_storage)
-
-
-let example_formula0_main (x, storage : nat * unit) : (operation list) * unit =
-  ([%Michelson ({| { FAILWITH } |} : tez -> (operation list) * unit)] (example_formula0(x)) : (operation list) * unit)
 
 #endif // DEBUG_BONDING_CURVE
 
