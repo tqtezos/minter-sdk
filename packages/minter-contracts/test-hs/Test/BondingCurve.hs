@@ -912,6 +912,20 @@ callCostTestPiecewise input expectedOutput storageF =
     call bondingCurve (Call @"Cost") input
       & expectError (WrappedValue expectedOutput)
 
+-- input, expectedOutput, storageF
+--
+-- storageF is applied to the generated admin address
+callPowTest :: Natural -> Natural -> Integer -> (Address -> Storage PiecewisePolynomial) -> TestTree
+callPowTest x n expectedOutput storageF =
+  nettestScenarioCaps ("Call Pow with " ++ show (x, n)) $ do
+    setup <- doFA2Setup @("addresses" :# 1) @("tokens" :# 0)
+    let admin ::< SNil = sAddresses setup
+    let bondingCurveStorage = storageF admin
+    bondingCurve <- originateDebugBondingCurvePiecewise bondingCurveStorage
+
+    call bondingCurve (Call @"Pow") (x, n)
+      & expectError (WrappedValue expectedOutput)
+
 
 -- test cost function using the debug version of the contract
 test_Debug :: TestTree
@@ -922,5 +936,11 @@ test_Debug = testGroup "Debug"
   -- (constantPiecewisePolynomial 0) cost_mutez(12) == 0
   , callCostTestPiecewise 12 0 (\admin -> (exampleStoragePiecewiseWithAdmin admin)
       { cost_mutez = constantPiecewisePolynomial 0 })
+
+  , callPowTest 1 3 1 exampleStoragePiecewiseWithAdmin
+  , callPowTest 2 3 8 exampleStoragePiecewiseWithAdmin
+  , callPowTest 3 4 81 exampleStoragePiecewiseWithAdmin
+  , callPowTest 2 10 1024 exampleStoragePiecewiseWithAdmin
+
   ]
 

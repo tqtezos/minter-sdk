@@ -335,6 +335,75 @@ hprop_piecewise_polynomial_correct_unit =
     testPiecewisePolynomialUsingCost unitTestData2
     testPiecewisePolynomialUsingCost unitTestData3
 
+
+
+-- Assert that calling the "Pow" entrypoint matches the implementation of (^) for natural numbers
+hprop_Pow :: Property -- (MonadIO m, MonadTest m) => m ()
+hprop_Pow =
+  property $ do
+    x <- fromIntegral . getNonNegative @Integer <$> forAll Gen.arbitrary
+    n <- fromIntegral . getNonNegative @Integer <$> forAll Gen.arbitrary
+
+    clevelandProp $ do
+      setup <- doFA2Setup @("addresses" :# 1) @("tokens" :# 0)
+      let admin ::< SNil = sAddresses setup
+      let bondingCurveStorage = exampleStoragePiecewiseWithAdmin admin
+      bondingCurve <- originateDebugBondingCurvePiecewise bondingCurveStorage
+      call bondingCurve (Call @"Pow") (x, n)
+        & expectError (WrappedValue (x ^ n))
+
+
+-- Assert that calling the "Pow" entrypoint matches the implementation of (^) for natural numbers
+hprop_ExampleFormula0 :: Property
+hprop_ExampleFormula0 =
+  property $ do
+    x <- fromIntegral . getNonNegative @Integer <$> forAll Gen.arbitrary
+    x' <- (+ 30000) . fromIntegral . getNonNegative @Integer <$> forAll Gen.arbitrary
+
+    clevelandProp $ do
+      setup <- doFA2Setup @("addresses" :# 1) @("tokens" :# 0)
+      let admin ::< SNil = sAddresses setup
+      let bondingCurveStorage = exampleStoragePiecewiseWithAdmin admin
+      bondingCurve <- originateDebugBondingCurvePiecewise bondingCurveStorage
+
+      let n = id @Natural
+      let exampleFormula0 :: Natural -> Mutez = \y ->
+            if y < 30000
+               then fromIntegral $ y `div` n 3000
+               else fromIntegral $ 10 * (n 1001^y `div` n 1000^y)
+
+      call bondingCurve (Call @"ExampleFormula0") x
+        & expectError (WrappedValue (exampleFormula0 x))
+
+      call bondingCurve (Call @"ExampleFormula0") x'
+        & expectError (WrappedValue (exampleFormula0 x'))
+
+
+-- Assert that calling the "Pow" entrypoint matches the implementation of (^) for natural numbers
+hprop_ExampleFormula0_lambda :: Property
+hprop_ExampleFormula0_lambda =
+  property $ do
+    x <- fromIntegral . getNonNegative @Integer <$> forAll Gen.arbitrary
+
+    exampleFormula0Lambda <- liftIO bondingCurveExampleFormula0Lambda
+
+    clevelandProp $ do
+      setup <- doFA2Setup @("addresses" :# 1) @("tokens" :# 0)
+      let admin ::< SNil = sAddresses setup
+      let bondingCurveStorage = (exampleStorageWithAdmin admin) { cost_mutez = exampleFormula0Lambda }
+      bondingCurve <- originateDebugBondingCurve bondingCurveStorage
+
+      let n = id @Natural
+      let exampleFormula0 :: Natural -> Mutez = \y ->
+            if y < 30000
+               then fromIntegral $ y `div` n 3000
+               else fromIntegral $ 10 * (n 1001^y `div` n 1000^y)
+
+      call bondingCurve (Call @"Cost") x
+        & expectError (WrappedValue (exampleFormula0 x))
+
+
+
 -- safePred n = n - 1, but never underflows
 safePred :: Natural -> Natural
 safePred 0 = 0

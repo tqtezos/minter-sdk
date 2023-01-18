@@ -19,6 +19,12 @@ data DebugEntrypoints
 
   -- | Get the current cost (debug only)
   | Cost Natural
+
+  -- | Get the Michelson implementation of (x ^ n) for (x, n) input (debug only)
+  | Pow (Natural, Natural)
+
+  -- | Get the Michelson implementation of the example formula 0 (debug only)
+  | ExampleFormula0 Natural
   deriving stock (Eq, Show)
 
 customGeneric "DebugEntrypoints" ligoLayout

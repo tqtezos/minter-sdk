@@ -64,6 +64,20 @@ const compileSources: CompileSourceEntry[] = [
     contract: true,
   },
   {
+    srcFile: 'bonding_curve/bonding_curve.mligo',
+    mainFn: 'example_formula0',
+    dstFile: 'bonding_curve_example_formula_0.tz',
+    contract: false,
+  },
+  {
+    srcFile: 'bonding_curve/bonding_curve_debug.mligo',
+    mainFn: 'example_formula0_main',
+    dstFile: 'bonding_curve_example_formula_0_contract.tz',
+    contract: true,
+  },
+
+
+  {
     srcFile: 'minter_collection/nft/fa2_multi_nft_asset_simple_admin.mligo',
     mainFn: 'nft_asset_main',
     dstFile: 'fa2_multi_nft_asset.tz',

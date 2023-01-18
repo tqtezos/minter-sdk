@@ -195,6 +195,36 @@ let run_piecewise_polynomial (piecewise_poly, x : piecewise_polynomial * nat)
 
 // ////////////////////////////////////////////////////////////////
 
+(* res := 0 *)
+(* acc := x *)
+(* *)
+(* current_bit := Bitwise.and n 1n *)
+(* res += current_bit * acc *)
+(* n_next := Bitwise.shift_right n 1n // (n / 2n) *)
+(* acc_next := acc * x *)
+let rec nat_pow_loop(x, res, acc, n : nat * nat * nat * nat) : nat =
+  if n = 0n
+  then res
+  else
+    let next_res : nat = if Bitwise.and n 1n = 0n then res else res * acc
+    in let next_acc : nat = acc * acc
+    in let next_n : nat = Bitwise.shift_right n 1n
+    in nat_pow_loop(x, next_res, next_acc, next_n)
+
+(* The n-th power of x *)
+let nat_pow(x, n : nat * nat) : nat =
+  nat_pow_loop(x, 1n, x, n)
+
+
+(* x/3000 when x between 3,000 and 30,000.  10 * 1.001^(x-30000) when x > 30,000 *)
+(* x < 3,000 is undefined, so defaults to (x / 3000), i.e. 0 *)
+(* Note: pow(1001, x) / pow(1000, x) is an approximation for pow(1.001, x) *)
+let example_formula0 (x : nat) : tez =
+  (if x < 30000n
+  then (x / 3000n)
+  else 10n * (nat_pow(1001n, x) / nat_pow(1000n, x))) * 1mutez
+
+// ////////////////////////////////////////////////////////////////
 
 
 (** Tez used as a price *)
@@ -283,6 +313,12 @@ type bonding_curve_entrypoints =
 
   // nat -> price in mutez of next token
   | Cost of nat
+
+  // nat -> nat -> nat
+  | Pow of (nat * nat)
+
+  // nat -> tez
+  | ExampleFormula0 of nat
 
 #endif // DEBUG_BONDING_CURVE
 
@@ -480,5 +516,19 @@ let bonding_curve_main (param, storage : bonding_curve_entrypoints * bonding_cur
        ([%Michelson ({| { FAILWITH } |} : tez -> (operation list) * bonding_curve_storage)] (storage.cost_mutez(n)) : (operation list) * bonding_curve_storage)
 
 #endif // PIECEWISE_BONDING_CURVE
+
+     // (x, n : nat * nat) -> failwith (x ^ n)
+     | Pow xn ->
+         let x, n = xn
+         in (failwith (nat_pow(x, n)) : (operation list) * bonding_curve_storage)
+
+     // (x : nat) -> failwith example_formula0(x)
+     | ExampleFormula0 x ->
+         ([%Michelson ({| { FAILWITH } |} : tez -> (operation list) * bonding_curve_storage)] (example_formula0(x)) : (operation list) * bonding_curve_storage)
+
+
+let example_formula0_main (x, storage : nat * unit) : (operation list) * unit =
+  ([%Michelson ({| { FAILWITH } |} : tez -> (operation list) * unit)] (example_formula0(x)) : (operation list) * unit)
+
 #endif // DEBUG_BONDING_CURVE
 

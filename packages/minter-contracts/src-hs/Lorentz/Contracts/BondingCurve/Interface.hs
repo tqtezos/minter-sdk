@@ -11,8 +11,31 @@ import Lorentz.Contracts.Spec.FA2Interface (TokenId(..), TokenMetadata, mkTokenM
 
 import Michelson.Parser (parseExpandValue)
 import Michelson.Text (unsafeMkMText)
+import Michelson.Typed.Instr
 import Michelson.TypeCheck
-import Michelson.Typed.Value (Value'(..))
+import Michelson.Typed.Value (Value'(..), RemFail(..))
+
+-- import Util.Typeable (gcastE)
+import Lorentz.Test.Import (embedContractM)
+import Lorentz.Contracts.MinterSdk (inBinFolder)
+
+import Michelson.Test.Import (importValue)
+
+bondingCurveExampleFormula0Contract :: Lorentz.Contract Natural ()
+bondingCurveExampleFormula0Contract = $$(embedContractM (inBinFolder "bonding_curve_example_formula_0_contract.tz"))
+
+
+valueToLambda :: Value (ToT (Lambda a b)) -> Lambda a b
+valueToLambda x =
+  case x of
+    VLam xs -> LorentzInstr xs
+
+bondingCurveExampleFormula0Value :: IO (Value (ToT (Lambda Natural Mutez)))
+bondingCurveExampleFormula0Value = importValue =<< inBinFolder "bonding_curve_example_formula_0.tz"
+
+bondingCurveExampleFormula0Lambda :: IO (Lambda Natural Mutez)
+bondingCurveExampleFormula0Lambda = valueToLambda <$> bondingCurveExampleFormula0Value
+
 
 -- | "`calculateBasisPointFee` basisPoints amount" gives the expected basis point fee
 calculateBasisPointFee :: Natural -> Integer -> Integer
@@ -94,158 +117,6 @@ constantLambda :: Mutez -> Lambda Natural Mutez
 constantLambda constant =
   Lorentz.drop #
   push constant
-
-
-
--- piecewisePolynomialToLambda :: PiecewisePolynomial -> Lambda Natural Mutez
--- piecewisePolynomialToLambda piecewisePoly =
---   push runPiecewisePolynomialLambda #
---   Lorentz.swap #
---   push piecewisePoly #
---   pair #
---   exec #
---   isNat #
---   ifNone
---     (push (unsafeMkMText "piecewisePolynomialToLambda: not nat" :: MText) #
---       failWith)
---     (push (toEnum 1 :: Mutez) #
---       mul)
-
--- runPiecewisePolynomialLambda :: Lambda (PiecewisePolynomial, Natural) Integer
--- runPiecewisePolynomialLambda = _
-
--- runPiecewisePolynomialLambda' :: Lambda (([(Natural, [Integer])], [Integer]), Natural) Integer
--- runPiecewisePolynomialLambda' =
---   unpair #
---   push @Natural 0 #
---   none @[Integer] #
---   pair #
---   Lorentz.swap #
---   dup #
---   dug @2 #
---   car #
-
---   iter (
---     Lorentz.swap #
---     dup #
---     car #
---     ifNone
---       ( Lorentz.swap #
---         dup #
---         dug @2 #
---         car #
---         Lorentz.swap #
---         dup #
---         dug @2 #
---         cdr #
---         add #
---         dup #
---         dupN @6 #
---         Lorentz.compare #
---         le #
---         if_
---           ( Lorentz.drop # cdr # Lorentz.swap # cdr # Lorentz.some # pair )
---           ( dig @2 # Lorentz.drop # Lorentz.swap # car # pair ) )
---       ( Lorentz.drop #
---         Lorentz.swap #
---         Lorentz.drop )
-
---     ) #
---   dig @2 #
---   int #
---   Lorentz.swap #
---   car #
---   _
-
---   -- IF_NONE { SWAP # CDR } { DIG 2 # DROP } #
---   -- PUSH int 1 #
---   -- PUSH int 0 #
---   -- PAIR #
---   -- SWAP #
---   -- ITER { SWAP #
---   --        DUP #
---   --        CDR #
---   --        DUP #
---   --        DUP 5 #
---   --        MUL #
---   --        SWAP #
---   --        DIG 3 #
---   --        MUL #
---   --        DIG 2 #
---   --        CAR #
---   --        ADD #
---   --        PAIR } #
---   -- SWAP #
---   -- DROP #
---   -- CAR }
-
-
-  -- case parseExpandValue runPiecewisePolynomialLambdaText of
-  --   Left err -> error $ "runPiecewisePolynomialLambda: parse failed: " <> show err
-  --   Right untypedValue -> case typeCheckingWith def . runTypeCheckInstrIsolated $ typeCheckValue @(ToT (Lambda (PiecewisePolynomial, Natural) Integer)) untypedValue of
-  --                    Left err -> error $ "runPiecewisePolynomialLambda: type check failed: " <> show err
-  --                    Right value -> case value of
-  --                                     VLam lambda' -> LorentzInstr lambda'
-  --                                     _ -> error $ "runPiecewisePolynomial: expected lambda, but got: " <> show value
-
--- runPiecewisePolynomialLambdaText :: Text
--- runPiecewisePolynomialLambdaText =
---   "LAMBDA\
---     \(pair (pair (list (pair nat (list int))) (list int)) nat)\
---     \int\
---     \{ UNPAIR ;\
---       \PUSH nat 0 ;\
---       \NONE (list int) ;\
---       \PAIR ;\
---       \SWAP ;\
---       \DUP ;\
---       \DUG 2 ;\
---       \CAR ;\
---       \ITER { SWAP ;\
---              \DUP ;\
---              \CAR ;\
---              \IF_NONE\
---                \{ SWAP ;\
---                  \DUP ;\
---                  \DUG 2 ;\
---                  \CAR ;\
---                  \SWAP ;\
---                  \DUP ;\
---                  \DUG 2 ;\
---                  \CDR ;\
---                  \ADD ;\
---                  \DUP ;\
---                  \DUP 6 ;\
---                  \COMPARE ;\
---                  \LE ;\
---                  \IF { DROP ; CDR ; SWAP ; CDR ; SOME ; PAIR }\
---                     \{ DIG 2 ; DROP ; SWAP ; CAR ; PAIR } }\
---                \{ DROP ; SWAP ; DROP } } ;\
---       \DIG 2 ;\
---       \INT ;\
---       \SWAP ;\
---       \CAR ;\
---       \IF_NONE { SWAP ; CDR } { DIG 2 ; DROP } ;\
---       \PUSH int 1 ;\
---       \PUSH int 0 ;\
---       \PAIR ;\
---       \SWAP ;\
---       \ITER { SWAP ;\
---              \DUP ;\
---              \CDR ;\
---              \DUP ;\
---              \DUP 5 ;\
---              \MUL ;\
---              \SWAP ;\
---              \DIG 3 ;\
---              \MUL ;\
---              \DIG 2 ;\
---              \CAR ;\
---              \ADD ;\
---              \PAIR } ;\
---       \SWAP ;\
---       \DROP ;\
---       \CAR } ;"
 
 
 data Storage c = Storage

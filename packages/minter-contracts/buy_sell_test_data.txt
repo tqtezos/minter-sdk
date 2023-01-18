@@ -13,10 +13,10 @@ bonding curve storage
 { Pair (Pair "tz1PwgnoAyphW2iFdbnnYgwWRcNTpAaH7gVY" False) None; "KT1DzFfsdA7ygqvJvm3sFnfe9qvwaVBZLoJ7"; 100; 0; { Elt "decimals" 0x3132; Elt "name" 0x546869732069732061207465737421205b6e616d655d; Elt "symbol" 0x746573745f73796d626f6c }; 100; Pair { } { 10; 20; 30 }; 0 }
 
 bonding curve address
-KT1H4rKfL5WmvCgvuMEpWXr3Drrzw3GLqFVb
+KT1CAmDtt9GKo7w4aK2iGXhQoPgK8AKGgraA
 
 admin -> nft: update_operators
-{ Left { "tz1PwgnoAyphW2iFdbnnYgwWRcNTpAaH7gVY"; "KT1H4rKfL5WmvCgvuMEpWXr3Drrzw3GLqFVb"; 0 } }
+{ Left { "tz1PwgnoAyphW2iFdbnnYgwWRcNTpAaH7gVY"; "KT1CAmDtt9GKo7w4aK2iGXhQoPgK8AKGgraA"; 0 } }
 
 buyer -> bondingCurve: buy
 buyer:
