@@ -10,13 +10,32 @@ nft address
 KT1DzFfsdA7ygqvJvm3sFnfe9qvwaVBZLoJ7
 
 bonding curve storage
-{ Pair (Pair "tz1PwgnoAyphW2iFdbnnYgwWRcNTpAaH7gVY" False) None; "KT1DzFfsdA7ygqvJvm3sFnfe9qvwaVBZLoJ7"; 100; 0; { Elt "decimals" 0x3132; Elt "name" 0x546869732069732061207465737421205b6e616d655d; Elt "symbol" 0x746573745f73796d626f6c }; 100; Pair { } { 10; 20; 30 }; 0 }
+{ Pair (Pair "tz1PwgnoAyphW2iFdbnnYgwWRcNTpAaH7gVY" False) None; "KT1DzFfsdA7ygqvJvm3sFnfe9qvwaVBZLoJ7"; 100; 0; { Elt "decimals" 0x3132; Elt "name" 0x546869732069732061207465737421205b6e616d655d; Elt "symbol" 0x746573745f73796d626f6c }; 100; { LEFT mutez;
+                                                                                                                                                                                                                                                     PUSH
+                                                                                                                                                                                                                                                       (list mutez)
+                                                                                                                                                                                                                                                       { 10; 60; 170; 340; 570; 860 };
+                                                                                                                                                                                                                                                     SWAP;
+                                                                                                                                                                                                                                                     LOOP_LEFT { PUSH nat 1;
+                                                                                                                                                                                                                                                                 SWAP;
+                                                                                                                                                                                                                                                                 SUB;
+                                                                                                                                                                                                                                                                 ISNAT;
+                                                                                                                                                                                                                                                                 IF_NONE { IF_CONS { RIGHT nat }
+                                                                                                                                                                                                                                                                                   { PUSH string "list too short for index (by 1)";
+                                                                                                                                                                                                                                                                                     FAILWITH } }
+                                                                                                                                                                                                                                                                         { SWAP;
+                                                                                                                                                                                                                                                                           IF_CONS { DROP;
+                                                                                                                                                                                                                                                                                     SWAP;
+                                                                                                                                                                                                                                                                                     LEFT mutez }
+                                                                                                                                                                                                                                                                                   { PUSH string "list too short for index";
+                                                                                                                                                                                                                                                                                     FAILWITH } } };
+                                                                                                                                                                                                                                                     SWAP;
+                                                                                                                                                                                                                                                     DROP }; 0 }
 
 bonding curve address
-KT1CAmDtt9GKo7w4aK2iGXhQoPgK8AKGgraA
+KT1Aya7ggmEgRTGw44TtLsHMqfac2by8twSj
 
 admin -> nft: update_operators
-{ Left { "tz1PwgnoAyphW2iFdbnnYgwWRcNTpAaH7gVY"; "KT1CAmDtt9GKo7w4aK2iGXhQoPgK8AKGgraA"; 0 } }
+{ Left { "tz1PwgnoAyphW2iFdbnnYgwWRcNTpAaH7gVY"; "KT1Aya7ggmEgRTGw44TtLsHMqfac2by8twSj"; 0 } }
 
 buyer -> bondingCurve: buy
 buyer:
@@ -41,21 +60,3 @@ seller:
 tz1RLYCL2F82JxXtEGZmtLRDMD4Pe9SRYLZo
 parameter:
 3
-
-seller -> bondingCurve: sell
-seller:
-tz1gtKKyvwQ6u54sbVzano58mFZLqERaCgyW
-parameter:
-2
-
-seller -> bondingCurve: sell
-seller:
-tz1TZpbZZZTKiJVh7ANXCLKFT3TkADzxRZWM
-parameter:
-1
-
-admin -> bondingCurve: withdraw
-admin:
-tz1PwgnoAyphW2iFdbnnYgwWRcNTpAaH7gVY
-parameter:
-Unit

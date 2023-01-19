@@ -4,6 +4,7 @@
 -- | Tests for bonding curve contract
 module Test.BondingCurve where
 
+import Fmt (Buildable)
 import Prelude hiding (swap)
 import System.IO (writeFile)
 
@@ -14,7 +15,7 @@ import Lorentz.Base
 import Lorentz.Value
 import Michelson.Printer
 import Michelson.Text (unsafeMkMText)
-import Michelson.Typed.Scope () -- (ConstantScope)
+import Michelson.Typed.Scope (ConstantScope, ProperPrintedValBetterErrors)
 import Michelson.Typed.Sing () -- (KnownT)
 import Morley.Nettest
 import Morley.Nettest.Tasty
@@ -131,8 +132,8 @@ tokenMetadata0' tokenId = FA2.TokenMetadata
 -- Integration tests
 ----------------------------------------------------------------------------------------
 
-withdrawTest :: TestTree
-withdrawTest = nettestScenarioCaps "Withdraw" $ do
+withdrawTest :: forall c. String -> (forall caps base m. MonadNettest caps base m => Address -> Address -> Mutez -> m (ContractHandler Entrypoints (Storage c))) -> TestTree
+withdrawTest name originator = nettestScenarioCaps ("Withdraw " <> name)  $ do
   setup <- doFA2Setup
   let admin ::< alice ::< SNil = sAddresses setup
   let !SNil = sTokens setup
@@ -143,13 +144,7 @@ withdrawTest = nettestScenarioCaps "Withdraw" $ do
   getBalance admin @@== 0
 
   let withdrawAmount = 1234
-  let bondingCurveStorage :: Storage PiecewisePolynomial =
-        (exampleStoragePiecewiseWithAdmin admin)
-          {
-            market_contract = alice
-          , unclaimed = withdrawAmount
-          }
-  bondingCurve <- originateBondingCurvePiecewiseWithBalance withdrawAmount bondingCurveStorage
+  bondingCurve <- originator admin alice withdrawAmount
 
   -- admin only
   withSender alice $
@@ -161,39 +156,69 @@ withdrawTest = nettestScenarioCaps "Withdraw" $ do
 
   getBalance admin @@== withdrawAmount
 
+withdrawTestPiecewise :: TestTree
+withdrawTestPiecewise = withdrawTest @PiecewisePolynomial "Piecewise" $ \admin alice withdrawAmount -> do
+  let bondingCurveStorage :: Storage PiecewisePolynomial =
+        (exampleStoragePiecewiseWithAdmin admin)
+          {
+            market_contract = alice
+          , unclaimed = withdrawAmount
+          }
+  originateBondingCurvePiecewiseWithBalance withdrawAmount bondingCurveStorage
 
-buyNoMintTest :: TestTree
-buyNoMintTest = nettestScenarioCaps "Buy: NO_MINT" $ do
+withdrawTestLambda :: TestTree
+withdrawTestLambda = withdrawTest @(Lambda Natural Mutez) "Lambda" $ \admin alice withdrawAmount -> do
+  let bondingCurveStorage :: Storage (Lambda Natural Mutez) =
+        (exampleStorageWithAdmin admin)
+          {
+            market_contract = alice
+          , unclaimed = withdrawAmount
+          }
+  originateBondingCurveWithBalance withdrawAmount bondingCurveStorage
+
+
+buyNoMintTest :: forall c. String -> (forall caps base m. MonadNettest caps base m => Address -> Address -> m (ContractHandler Entrypoints (Storage c))) -> TestTree
+buyNoMintTest name originator = nettestScenarioCaps ("Buy: NO_MINT " <> name) $ do
   setup <- doFA2Setup
   let admin ::< alice ::< SNil = sAddresses setup
   let !SNil = sTokens setup
+
+  bondingCurve <- originator admin alice
+
+  withSender alice $
+    call bondingCurve (Call @"Buy") ()
+      & expectError (unsafeMkMText "NO_MINT")
+
+buyNoMintTestPiecewise :: TestTree
+buyNoMintTestPiecewise = buyNoMintTest @PiecewisePolynomial "Piecewise" $ \admin alice -> do
   let bondingCurveStorage :: Storage PiecewisePolynomial =
         (exampleStoragePiecewiseWithAdmin admin)
           {
             market_contract = alice
           , cost_mutez = constantPiecewisePolynomial 0
           }
-  bondingCurve <- originateBondingCurvePiecewise bondingCurveStorage
+  originateBondingCurvePiecewise bondingCurveStorage
 
-  withSender alice $
-    call bondingCurve (Call @"Buy") ()
-      & expectError (unsafeMkMText "NO_MINT")
+buyNoMintTestLambda :: TestTree
+buyNoMintTestLambda = buyNoMintTest @(Lambda Natural Mutez) "Lambda" $ \admin alice -> do
+  let bondingCurveStorage :: Storage (Lambda Natural Mutez) =
+        (exampleStorageWithAdmin admin)
+          {
+            market_contract = alice
+          , cost_mutez = constantLambda 0
+          }
+  originateBondingCurve bondingCurveStorage
 
 
 -- sell with token_index = 0 always fails with NO_TOKENS
-sellTokenIndex0Test :: TestTree
-sellTokenIndex0Test = nettestScenarioOnEmulatorCaps "Sell: token_index = 0" $ do
+sellTokenIndex0Test :: forall c. String -> (forall caps base m. MonadNettest caps base m => Address -> Address -> m (ContractHandler Entrypoints (Storage c))) -> TestTree
+sellTokenIndex0Test name originator = nettestScenarioOnEmulatorCaps ("Sell: token_index = 0 " <> name) $ do
   setup <- doFA2Setup
   let admin ::< alice ::< SNil = sAddresses setup
   let !SNil = sTokens setup
   nft <- originateNft (exampleNftStorageWithAdmin admin)
-  let bondingCurveStorage :: Storage PiecewisePolynomial =
-        (exampleStoragePiecewiseWithAdmin admin)
-          {
-            market_contract = toAddress nft
-          , token_index = 0
-          }
-  bondingCurve <- originateBondingCurvePiecewise bondingCurveStorage
+
+  bondingCurve <- originator admin (toAddress nft)
 
   withSender admin $
     call bondingCurve (Call @"Sell") (TokenId 0)
@@ -204,21 +229,35 @@ sellTokenIndex0Test = nettestScenarioOnEmulatorCaps "Sell: token_index = 0" $ do
       & expectError (unsafeMkMText "NO_TOKENS")
 
 
+sellTokenIndex0TestPiecewise :: TestTree
+sellTokenIndex0TestPiecewise = sellTokenIndex0Test @PiecewisePolynomial "Piecewise" $ \admin nftAddress -> do
+  let bondingCurveStorage :: Storage PiecewisePolynomial =
+        (exampleStoragePiecewiseWithAdmin admin)
+          {
+            market_contract = nftAddress
+          , token_index = 0
+          }
+  originateBondingCurvePiecewise bondingCurveStorage
+
+sellTokenIndex0TestLambda :: TestTree
+sellTokenIndex0TestLambda = sellTokenIndex0Test @(Lambda Natural Mutez) "Lambda" $ \admin nftAddress -> do
+  let bondingCurveStorage :: Storage (Lambda Natural Mutez) =
+        (exampleStorageWithAdmin admin)
+          {
+            market_contract = nftAddress
+          , token_index = 0
+          }
+  originateBondingCurve bondingCurveStorage
+
+
 -- sell with token_index = 0 always fails with NO_TOKENS
-sellOffchainTokenIndex0Test :: TestTree
-sellOffchainTokenIndex0Test = nettestScenarioOnEmulatorCaps "Sell_offchain: token_index = 0" $ do
+sellOffchainTokenIndex0Test :: forall c. String -> (forall caps base m. MonadNettest caps base m => Address -> Address -> m (ContractHandler Entrypoints (Storage c))) -> TestTree
+sellOffchainTokenIndex0Test name originator = nettestScenarioOnEmulatorCaps ("Sell_offchain: token_index = 0 " <> name) $ do
   setup <- doFA2Setup
   let admin ::< alice ::< SNil = sAddresses setup
   let !SNil = sTokens setup
   nft <- originateNft (exampleNftStorageWithAdmin admin)
-  let bondingCurveStorage :: Storage PiecewisePolynomial =
-        (exampleStoragePiecewiseWithAdmin admin)
-          {
-            market_contract = toAddress nft
-          , cost_mutez = constantPiecewisePolynomial 0
-          , token_index = 0
-          }
-  bondingCurve <- originateBondingCurvePiecewise bondingCurveStorage
+  bondingCurve <- originator admin (toAddress nft)
 
   withSender admin $
     call bondingCurve (Call @"Sell_offchain") (TokenId 0, admin)
@@ -228,12 +267,28 @@ sellOffchainTokenIndex0Test = nettestScenarioOnEmulatorCaps "Sell_offchain: toke
     call bondingCurve (Call @"Sell_offchain") (TokenId 0, alice)
       & expectError (unsafeMkMText "NO_TOKENS")
 
+sellOffchainTokenIndex0TestPiecewise :: TestTree
+sellOffchainTokenIndex0TestPiecewise = sellOffchainTokenIndex0Test @PiecewisePolynomial "Piecewise" $ \admin nftAddress -> do
+  let bondingCurveStorage :: Storage PiecewisePolynomial =
+        (exampleStoragePiecewiseWithAdmin admin)
+          {
+            market_contract = nftAddress
+          , cost_mutez = constantPiecewisePolynomial 0
+          , token_index = 0
+          }
+  originateBondingCurvePiecewise bondingCurveStorage
 
+sellOffchainTokenIndex0TestLambda :: TestTree
+sellOffchainTokenIndex0TestLambda = sellOffchainTokenIndex0Test @(Lambda Natural Mutez) "Lambda" $ \admin nftAddress -> do
+  let bondingCurveStorage :: Storage (Lambda Natural Mutez) =
+        (exampleStorageWithAdmin admin)
+          {
+            market_contract = nftAddress
+          , cost_mutez = constantLambda 0
+          , token_index = 0
+          }
+  originateBondingCurve bondingCurveStorage
 
-
---------------------------------------------------------------------------------
--- TESTS ABOVE PASSING
---------------------------------------------------------------------------------
 
 
 --- too little/much tez
@@ -241,9 +296,8 @@ sellOffchainTokenIndex0Test = nettestScenarioOnEmulatorCaps "Sell_offchain: toke
 --  + Mints token using `token_metadata` from storage to buyer
 --  + Increments `token_index`
 --  + Adds the `basis_points` fee to the `unclaimed` tez in storage
-buyTest :: TestTree
--- buyTest = nettestScenarioCaps "Buy" $ do
-buyTest = nettestScenarioOnEmulatorCaps "Buy" $ do
+buyTest :: forall c. (Buildable c, Eq c) => String -> (forall caps base m. MonadNettest caps base m => Address -> Address -> m (Storage c, ContractHandler DebugEntrypoints (Storage c))) -> TestTree
+buyTest name originator = nettestScenarioOnEmulatorCaps ("Buy " <> name) $ do
   setup <- doFA2Setup
   let admin ::< alice ::< SNil = sAddresses setup
   let !SNil = sTokens setup
@@ -251,15 +305,7 @@ buyTest = nettestScenarioOnEmulatorCaps "Buy" $ do
     { assets = exampleNftTokenStorage { ledger = [(TokenId 0, admin)]
                                       , next_token_id = TokenId 1
                                       } })
-
-  let bondingCurveStorage :: Storage PiecewisePolynomial =
-        (exampleStoragePiecewiseWithAdmin admin)
-          {
-            market_contract = toAddress nft
-          , cost_mutez = constantPiecewisePolynomial 0
-          , auction_price = 10
-          }
-  bondingCurve <- originateDebugBondingCurvePiecewise bondingCurveStorage
+  (bondingCurveStorage, bondingCurve) <- originator admin (toAddress nft)
 
   -- admin needs to set operator on (TokenId 0) to allow bondingCurve to mint
   withSender admin $
@@ -296,9 +342,33 @@ buyTest = nettestScenarioOnEmulatorCaps "Buy" $ do
   postBuyStorage @== bondingCurveStorage { token_index = 1 }
 
 
+buyTestPiecewise :: TestTree
+buyTestPiecewise = buyTest @PiecewisePolynomial "Piecewise" $ \admin nftAddress -> do
+  let bondingCurveStorage :: Storage PiecewisePolynomial =
+        (exampleStoragePiecewiseWithAdmin admin)
+          {
+            market_contract = nftAddress
+          , cost_mutez = constantPiecewisePolynomial 0
+          , auction_price = 10
+          }
+  bondingCurve <- originateDebugBondingCurvePiecewise bondingCurveStorage
+  return (bondingCurveStorage, bondingCurve)
 
-buyOffchainTest :: TestTree
-buyOffchainTest = nettestScenarioOnEmulatorCaps "Buy_offchain" $ do
+buyTestLambda :: TestTree
+buyTestLambda = buyTest @(Lambda Natural Mutez) "Lambda" $ \admin nftAddress -> do
+  let bondingCurveStorage :: Storage (Lambda Natural Mutez) =
+        (exampleStorageWithAdmin admin)
+          {
+            market_contract = nftAddress
+          , cost_mutez = constantLambda 0
+          , auction_price = 10
+          }
+  bondingCurve <- originateDebugBondingCurve bondingCurveStorage
+  return (bondingCurveStorage, bondingCurve)
+
+
+buyOffchainTest :: forall c. (Buildable c, Eq c) => String -> (forall caps base m. MonadNettest caps base m => Address -> Address -> m (Storage c, ContractHandler DebugEntrypoints (Storage c))) -> TestTree
+buyOffchainTest name originator = nettestScenarioOnEmulatorCaps ("Buy_offchain " <> name) $ do
   setup <- doFA2Setup
   let admin ::< alice ::< bob ::< SNil = sAddresses setup
   let !SNil = sTokens setup
@@ -307,14 +377,7 @@ buyOffchainTest = nettestScenarioOnEmulatorCaps "Buy_offchain" $ do
                                       , next_token_id = TokenId 1
                                       } })
 
-  let bondingCurveStorage :: Storage PiecewisePolynomial =
-        (exampleStoragePiecewiseWithAdmin admin)
-          {
-            market_contract = toAddress nft
-          , cost_mutez = constantPiecewisePolynomial 0
-          , token_metadata = tokenMetadata0
-          }
-  bondingCurve <- originateBondingCurvePiecewise bondingCurveStorage
+  (bondingCurveStorage, bondingCurve) <- originator admin (toAddress nft)
 
   -- admin needs to set operator on (TokenId 0) to allow bondingCurve to mint
   withSender admin $
@@ -354,8 +417,34 @@ buyOffchainTest = nettestScenarioOnEmulatorCaps "Buy_offchain" $ do
   postBuyStorage @== bondingCurveStorage { token_index = 2 }
 
 
-buyBatchOffchainTest :: TestTree
-buyBatchOffchainTest = nettestScenarioOnEmulatorCaps "Buy_offchain" $ do
+buyOffchainTestPiecewise :: TestTree
+buyOffchainTestPiecewise = buyOffchainTest @PiecewisePolynomial "Piecewise" $ \admin nftAddress -> do
+  let bondingCurveStorage :: Storage PiecewisePolynomial =
+        (exampleStoragePiecewiseWithAdmin admin)
+          {
+            market_contract = nftAddress
+          , cost_mutez = constantPiecewisePolynomial 0
+          , token_metadata = tokenMetadata0
+          }
+  bondingCurve <- originateDebugBondingCurvePiecewise bondingCurveStorage
+  return (bondingCurveStorage, bondingCurve)
+
+buyOffchainTestLambda :: TestTree
+buyOffchainTestLambda = buyOffchainTest @(Lambda Natural Mutez) "Lambda" $ \admin nftAddress -> do
+  let bondingCurveStorage :: Storage (Lambda Natural Mutez) =
+        (exampleStorageWithAdmin admin)
+          {
+            market_contract = nftAddress
+          , cost_mutez = constantLambda 0
+          , token_metadata = tokenMetadata0
+          }
+  bondingCurve <- originateDebugBondingCurve bondingCurveStorage
+  return (bondingCurveStorage, bondingCurve)
+
+
+
+buyBatchOffchainTest :: forall c. (Buildable c, Eq c) => String -> (forall caps base m. MonadNettest caps base m => Address -> Address -> m (Storage c, ContractHandler DebugEntrypoints (Storage c))) -> TestTree
+buyBatchOffchainTest name originator = nettestScenarioOnEmulatorCaps ("Buy_offchain (batch) " <> name) $ do
   setup <- doFA2Setup
   let admin ::< alice ::< bob ::< SNil = sAddresses setup
   let !SNil = sTokens setup
@@ -363,14 +452,7 @@ buyBatchOffchainTest = nettestScenarioOnEmulatorCaps "Buy_offchain" $ do
     { assets = exampleNftTokenStorage { ledger = [(TokenId 0, admin)]
                                       , next_token_id = TokenId 1
                                       } })
-
-  let bondingCurveStorage :: Storage PiecewisePolynomial =
-        (exampleStoragePiecewiseWithAdmin admin)
-          {
-            market_contract = toAddress nft
-          , cost_mutez = constantPiecewisePolynomial 0
-          }
-  bondingCurve <- originateBondingCurvePiecewise bondingCurveStorage
+  (bondingCurveStorage, bondingCurve) <- originator admin (toAddress nft)
 
   -- admin needs to set operator on (TokenId 0) to allow bondingCurve to mint
   withSender admin $
@@ -402,10 +484,32 @@ buyBatchOffchainTest = nettestScenarioOnEmulatorCaps "Buy_offchain" $ do
       } }
 
   postBuyStorage <- getStorage' bondingCurve
-  postBuyStorage @== bondingCurveStorage
+  postBuyStorage @== bondingCurveStorage { token_index = 2 }
 
 
+buyBatchOffchainTestPiecewise :: TestTree
+buyBatchOffchainTestPiecewise = buyBatchOffchainTest @PiecewisePolynomial "Piecewise" $ \admin nftAddress -> do
+  let bondingCurveStorage :: Storage PiecewisePolynomial =
+        (exampleStoragePiecewiseWithAdmin admin)
+          {
+            market_contract = nftAddress
+          , cost_mutez = constantPiecewisePolynomial 0
+          , token_metadata = tokenMetadata0
+          }
+  bondingCurve <- originateDebugBondingCurvePiecewise bondingCurveStorage
+  return (bondingCurveStorage, bondingCurve)
 
+buyBatchOffchainTestLambda :: TestTree
+buyBatchOffchainTestLambda = buyBatchOffchainTest @(Lambda Natural Mutez) "Lambda" $ \admin nftAddress -> do
+  let bondingCurveStorage :: Storage (Lambda Natural Mutez) =
+        (exampleStorageWithAdmin admin)
+          {
+            market_contract = nftAddress
+          , cost_mutez = constantLambda 0
+          , token_metadata = tokenMetadata0
+          }
+  bondingCurve <- originateDebugBondingCurve bondingCurveStorage
+  return (bondingCurveStorage, bondingCurve)
 
 
 --- call w/ admin (no tokens owned)
@@ -417,8 +521,8 @@ buyBatchOffchainTest = nettestScenarioOnEmulatorCaps "Buy_offchain" $ do
 --  + The token is burned on the FA2 marketplace
 --  + Tez equal to the price is sent to the seller
 -- , nettestScenarioCaps "Sell" $ do
-sellTest :: TestTree
-sellTest = nettestScenarioOnEmulatorCaps "Sell" $ do
+sellTest :: forall c. String -> (forall caps base m. MonadNettest caps base m => Address -> Address -> m (ContractHandler Entrypoints (Storage c))) -> TestTree
+sellTest name originator = nettestScenarioOnEmulatorCaps ("Sell " <> name) $ do
   setup <- doFA2Setup
   let admin ::< minter ::< alice ::< bob ::< SNil = sAddresses setup
   let !SNil = sTokens setup
@@ -426,16 +530,7 @@ sellTest = nettestScenarioOnEmulatorCaps "Sell" $ do
     { assets = exampleNftTokenStorage { ledger = [(TokenId 0, admin)]
                                       , next_token_id = TokenId 1
                                       } })
-
-  let bondingCurveStorage :: Storage PiecewisePolynomial =
-        (exampleStoragePiecewiseWithAdmin admin)
-          {
-            market_contract = toAddress nft
-          , cost_mutez = constantPiecewisePolynomial 0
-          , token_index = 1 -- token_index must be > 0 to sell
-          , token_metadata = tokenMetadata0
-          }
-  bondingCurve <- originateBondingCurvePiecewise bondingCurveStorage
+  bondingCurve <- originator admin (toAddress nft)
 
   -- admin needs to set operator on (TokenId 0) to allow bondingCurve to mint
   withSender admin $
@@ -517,9 +612,33 @@ sellTest = nettestScenarioOnEmulatorCaps "Sell" $ do
       } }
 
 
+sellTestPiecewise :: TestTree
+sellTestPiecewise = sellTest @PiecewisePolynomial "Piecewise" $ \admin nftAddress -> do
+  let bondingCurveStorage :: Storage PiecewisePolynomial =
+        (exampleStoragePiecewiseWithAdmin admin)
+          {
+            market_contract = nftAddress
+          , cost_mutez = constantPiecewisePolynomial 0
+          , token_index = 1 -- token_index must be > 0 to sell
+          , token_metadata = tokenMetadata0
+          }
+  originateBondingCurvePiecewise bondingCurveStorage
 
-sellOffchainTest :: TestTree
-sellOffchainTest = nettestScenarioOnEmulatorCaps "Sell_offchain" $ do
+sellTestLambda :: TestTree
+sellTestLambda = sellTest @(Lambda Natural Mutez) "Lambda" $ \admin nftAddress -> do
+  let bondingCurveStorage :: Storage (Lambda Natural Mutez) =
+        (exampleStorageWithAdmin admin)
+          {
+            market_contract = nftAddress
+          , cost_mutez = constantLambda 0
+          , token_index = 1 -- token_index must be > 0 to sell
+          , token_metadata = tokenMetadata0
+          }
+  originateBondingCurve bondingCurveStorage
+
+
+sellOffchainTest :: forall c. String -> (forall caps base m. MonadNettest caps base m => Mutez -> Address -> Address -> m (ContractHandler Entrypoints (Storage c))) -> TestTree
+sellOffchainTest name originator = nettestScenarioOnEmulatorCaps ("Sell_offchain " <> name) $ do
   setup <- doFA2Setup
   let admin ::< minter ::< alice ::< bob ::< SNil = sAddresses setup
   let !SNil = sTokens setup
@@ -527,16 +646,7 @@ sellOffchainTest = nettestScenarioOnEmulatorCaps "Sell_offchain" $ do
     { assets = exampleNftTokenStorage { ledger = [(TokenId 0, admin)]
                                       , next_token_id = TokenId 1
                                       } })
-
-  let bondingCurveStorage :: Storage PiecewisePolynomial =
-        (exampleStoragePiecewiseWithAdmin admin)
-          {
-            market_contract = toAddress nft
-          , cost_mutez = constantPiecewisePolynomial 10
-          , token_index = 1 -- token_index > 0 to sell tokens, otherwise no tokens to sell
-          , token_metadata = tokenMetadata0
-          }
-  bondingCurve <- originateBondingCurvePiecewiseWithBalance 10 bondingCurveStorage
+  bondingCurve <- originator 10 admin (toAddress nft)
 
   -- admin needs to set operator on (TokenId 0) to allow bondingCurve to mint
   withSender admin $
@@ -627,9 +737,41 @@ sellOffchainTest = nettestScenarioOnEmulatorCaps "Sell_offchain" $ do
       } }
 
 
-buySellTest :: TestTree
-buySellTest = nettestScenarioOnEmulatorCaps "Buy Sell" $ do
+sellOffchainTestPiecewise :: TestTree
+sellOffchainTestPiecewise = sellOffchainTest @PiecewisePolynomial "Piecewise" $ \bondingCurveBalance admin nftAddress -> do
+  let bondingCurveStorage :: Storage PiecewisePolynomial =
+        (exampleStoragePiecewiseWithAdmin admin)
+          {
+            market_contract = nftAddress
+          , cost_mutez = constantPiecewisePolynomial 10
+          , token_index = 1 -- token_index > 0 to sell tokens, otherwise no tokens to sell
+          , token_metadata = tokenMetadata0
+          }
+  originateBondingCurvePiecewiseWithBalance bondingCurveBalance bondingCurveStorage
 
+sellOffchainTestLambda :: TestTree
+sellOffchainTestLambda = sellOffchainTest @(Lambda Natural Mutez) "Lambda" $ \bondingCurveBalance admin nftAddress -> do
+  let bondingCurveStorage :: Storage (Lambda Natural Mutez) =
+        (exampleStorageWithAdmin admin)
+          {
+            market_contract = nftAddress
+          , cost_mutez = constantLambda 10
+          , token_index = 1 -- token_index must be > 0 to sell
+          , token_metadata = tokenMetadata0
+          }
+  originateBondingCurveWithBalance bondingCurveBalance bondingCurveStorage
+
+
+buySellTest :: forall c. (Buildable c, Eq c, ConstantScope (ToT c), IsoValue c, ProperPrintedValBetterErrors (ToT c))
+  => String
+  -> (forall caps base m.  MonadNettest caps base m
+        => Mutez
+        -> Natural
+        -> Address
+        -> Address
+        -> m (Storage c, ContractHandler DebugEntrypoints (Storage c)))
+  -> TestTree
+buySellTest name originator = nettestScenarioOnEmulatorCaps ("Buy Sell " <> name) $ do
   let logFile = "buy_sell_test_data.txt"
   liftIO $ writeFile logFile "Buy Sell Test\n"
 
@@ -659,19 +801,12 @@ buySellTest = nettestScenarioOnEmulatorCaps "Buy Sell" $ do
 
   let auctionPrice = 100
   let basisPoints = 100
-  let bondingCurveStorage :: Storage PiecewisePolynomial =
-        (exampleStoragePiecewiseWithAdmin admin)
-          {
-            market_contract = toAddress nft
-          , cost_mutez = polynomialToPiecewisePolynomial [10, 20, 30]
-          , auction_price = auctionPrice
-          , basis_points = basisPoints
-          }
+  (bondingCurveStorage, bondingCurve) <- originator auctionPrice basisPoints admin (toAddress nft)
+
   log "bonding curve storage"
   log . L.toStrict . printTypedValue dontForceSingleLine $ toVal bondingCurveStorage
   log ""
 
-  bondingCurve <- originateDebugBondingCurvePiecewise bondingCurveStorage
   log "bonding curve address"
   log . formatAddress $ toAddress bondingCurve
   log ""
@@ -771,6 +906,49 @@ buySellTest = nettestScenarioOnEmulatorCaps "Buy Sell" $ do
   postWithdrawStorage @== bondingCurveStorage
 
 
+
+buySellTestPiecewise :: TestTree
+buySellTestPiecewise = buySellTest @PiecewisePolynomial "Piecewise" $ \auctionPrice basisPoints admin nftAddress -> do
+  let bondingCurveStorage :: Storage PiecewisePolynomial =
+        (exampleStoragePiecewiseWithAdmin admin)
+          {
+            market_contract = nftAddress
+          , cost_mutez = polynomialToPiecewisePolynomial [10, 20, 30]
+          , auction_price = auctionPrice
+          , basis_points = basisPoints
+          }
+  bondingCurve <- originateDebugBondingCurvePiecewise bondingCurveStorage
+  return (bondingCurveStorage, bondingCurve)
+
+buySellTestLambda :: TestTree
+buySellTestLambda = buySellTest @(Lambda Natural Mutez) "Lambda" $ \auctionPrice basisPoints admin nftAddress -> do
+  let bondingCurveStorage :: Storage (Lambda Natural Mutez) =
+        (exampleStorageWithAdmin admin)
+          {
+            market_contract = nftAddress
+          , cost_mutez = constantsLambda $ fromInteger . runPiecewisePolynomial (polynomialToPiecewisePolynomial [10, 20, 30]) <$> [0..5]
+          , auction_price = auctionPrice
+          , basis_points = basisPoints
+          }
+  bondingCurve <- originateDebugBondingCurve bondingCurveStorage
+  return (bondingCurveStorage, bondingCurve)
+
+
+  -- let bondingCurveStorage :: Storage PiecewisePolynomial =
+  --       (exampleStoragePiecewiseWithAdmin admin)
+  --         {
+  --           market_contract = toAddress nft
+  --         , cost_mutez = polynomialToPiecewisePolynomial [10, 20, 30]
+  --         , auction_price = auctionPrice
+  --         , basis_points = basisPoints
+  --         }
+  -- -- bondingCurve <- originateDebugBondingCurvePiecewise bondingCurveStorage
+
+
+
+
+
+-- TODO piecewise -> lambda
 buySellOffchainTest :: TestTree
 buySellOffchainTest = nettestScenarioOnEmulatorCaps "Buy Sell Offchain" $ do
   setup <- doFA2Setup
@@ -868,19 +1046,36 @@ buySellOffchainTest = nettestScenarioOnEmulatorCaps "Buy Sell Offchain" $ do
 
 test_Integrational :: TestTree
 test_Integrational = testGroup "Integrational"
-  [ withdrawTest
-  , buyNoMintTest
+  [ withdrawTestPiecewise
+  , withdrawTestLambda
 
-  , buyTest
-  , buyOffchainTest
+  , buyNoMintTestPiecewise
+  , buyNoMintTestLambda
 
-  , sellTokenIndex0Test
-  , sellTest
+  , buyTestPiecewise
+  , buyTestLambda
 
-  , sellOffchainTokenIndex0Test
-  , sellOffchainTest
+  , buyOffchainTestPiecewise
+  , buyOffchainTestLambda
 
-  , buySellTest
+  , buyBatchOffchainTestPiecewise
+  , buyBatchOffchainTestLambda
+
+  , sellTokenIndex0TestPiecewise
+  , sellTokenIndex0TestLambda
+
+  , sellTestPiecewise
+  , sellTestLambda
+
+  , sellOffchainTokenIndex0TestPiecewise
+  , sellOffchainTokenIndex0TestLambda
+
+  , sellOffchainTestPiecewise
+  , sellOffchainTestLambda
+
+  , buySellTestPiecewise
+  , buySellTestLambda
+
   , buySellOffchainTest
   ]
 

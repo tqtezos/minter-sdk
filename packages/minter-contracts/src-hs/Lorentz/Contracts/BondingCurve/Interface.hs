@@ -10,6 +10,7 @@ import Lorentz.Contracts.SimpleAdmin (AdminEntrypoints(..), AdminStorage(..))
 import Lorentz.Contracts.Spec.FA2Interface (TokenId(..), TokenMetadata, mkTokenMetadata)
 import qualified Lorentz.Contracts.FA2 as FA2 () -- TokenMetadata(..))
 
+import Michelson.Text (unsafeMkMText)
 import Michelson.Typed.Value (Value'(..))
 import Michelson.Test.Import (importValue)
 
@@ -106,6 +107,37 @@ constantLambda :: Mutez -> Lambda Natural Mutez
 constantLambda constant =
   Lorentz.drop #
   push constant
+
+constantsLambda :: forall a. NiceConstant a => [a] -> Lambda Natural a
+constantsLambda constants =
+  left @Natural #
+  push @[a] constants #
+  Lorentz.swap #
+  loopLeft
+    ( push @Natural 1 #
+      Lorentz.swap #
+      sub #
+      isNat #
+      ifNone -- if None then Natural was 0 before subtracting 1 from it
+        ( ifCons -- return value
+            right
+            ( push @MText (unsafeMkMText "list too short for index") #
+              failWith
+            )
+        )
+        ( Lorentz.swap # -- continue uncons-ing through list
+          ifCons
+            ( Lorentz.drop #
+              Lorentz.swap #
+              left @Natural
+            )
+            ( push @MText (unsafeMkMText "list too short for index") #
+              failWith
+            )
+        )
+    ) #
+  Lorentz.swap #
+  Lorentz.drop
 
 
 data Storage c = Storage

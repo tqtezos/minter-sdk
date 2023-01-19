@@ -6,6 +6,7 @@ module Test.BondingCurve.Property where
 import Fmt (Buildable, Builder, build, unlinesF)
 
 import Prelude hiding (swap)
+import Data.List (genericIndex)
 
 import Hedgehog ((===), Gen, MonadTest, Property, PropertyT, forAll, property)
 import qualified Hedgehog.Gen as Gen
@@ -402,6 +403,40 @@ hprop_ExampleFormula0_lambda =
         & expectError (WrappedValue (exampleFormula0 x))
 
 
+hprop_contstantLambda :: Property
+hprop_contstantLambda =
+  property $ do
+    x <- fromIntegral . getNonNegative @Integer <$> forAll Gen.arbitrary
+    constant' <- fromInteger . getNonNegative @Integer <$> forAll Gen.arbitrary
+
+    clevelandProp $ do
+      setup <- doFA2Setup @("addresses" :# 1) @("tokens" :# 0)
+      let admin ::< SNil = sAddresses setup
+      let bondingCurveStorage = (exampleStorageWithAdmin admin) { cost_mutez = constantLambda constant' }
+      bondingCurve <- originateDebugBondingCurve bondingCurveStorage
+
+      call bondingCurve (Call @"Cost") x
+        & expectError (WrappedValue constant')
+
+hprop_contstantsLambda :: Property
+hprop_contstantsLambda =
+  property $ do
+    x <- fromInteger . getNonNegative @Integer <$> forAll Gen.arbitrary
+    constants <- fmap (fromInteger . getNonNegative @Integer) <$> forAll Gen.arbitrary
+
+    clevelandProp $ do
+      setup <- doFA2Setup @("addresses" :# 1) @("tokens" :# 0)
+      let admin ::< SNil = sAddresses setup
+      let bondingCurveStorage = (exampleStorageWithAdmin admin) { cost_mutez = constantsLambda constants }
+      bondingCurve <- originateDebugBondingCurve bondingCurveStorage
+
+      if x < toEnum (length constants)
+         then call bondingCurve (Call @"Cost") x
+                & expectError (WrappedValue (constants `genericIndex` x))
+
+         else call bondingCurve (Call @"Cost") x
+                & expectError (WrappedValue (unsafeMkMText "list too short for index"))
+
 
 -- safePred n = n - 1, but never underflows
 safePred :: Natural -> Natural
@@ -457,6 +492,7 @@ testDataSmallEnoughForMutez = do
       ] :: [Builder])
 
 
+-- TODO piecewise -> lambda
 -- buy many tokens, sell all of them, ensure costs and basis_points as expected
 hprop_batch_buy_sell :: Property
 hprop_batch_buy_sell =
