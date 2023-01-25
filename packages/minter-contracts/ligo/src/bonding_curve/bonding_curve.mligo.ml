@@ -236,22 +236,23 @@ type unclaimed_tez = tez
 type bonding_curve_storage =
   [@layout:comb]
   {
+    // Admin storage (see ligo/fa2_modules/admin/simple_admin.mligo for more info)
     admin : admin_storage;
 
     // fa2_entry_points contract
     market_contract : address;
 
-    // final price of the auction
-    // set this price constant based on final price of auction
+    // Final price of the auction
+    // Set this price constant based on final price of auction
     auction_price : tez;
 
-    // number of tokens sold _after_ the auction
+    // Number of tokens sold _after_ the auction
     token_index : nat;
 
-    // token metadata for minting
+    // Token metadata for minting
     token_metadata : (string, bytes) map;
 
-    // the percentage (in basis points) cost of buying and selling a token at the same index
+    // The percentage (in basis points) cost of buying and selling a token at the same index
     basis_points : nat;
 
 #if PIECEWISE_BONDING_CURVE
@@ -329,7 +330,7 @@ let basis_points_per_unit : nat = 10000n
 
 (** Buy single token on-chain (requires tez deposit)
 * calculate current price from index and price constant (run_piecewise_polynomial)
-* ensure sent tez = current price + basis_points
+* ensure sent tez = current price
 * mint token -> user -> market contract
   next token minted same as last?
 * increment current token index
@@ -354,15 +355,14 @@ let buy_offchain_no_admin (buyer_addr, storage : offchain_buyer * bonding_curve_
 #endif // PIECEWISE_BONDING_CURVE
 
     let current_price : price_tez = storage.auction_price + cost_tez
-    in let basis_point_fee : tez =
-        (current_price * storage.basis_points) / basis_points_per_unit in
+    in
 
     (* assert cost = sent tez *)
-    if Tezos.amount <> (current_price + basis_point_fee)
+    if Tezos.amount <> current_price
 
     // here is a less verbose error, if gas is high
     // then (failwith error_wrong_tez_price : (operation list) * bonding_curve_storage)
-    then ([%Michelson ({| { FAILWITH } |} : string * tez * tez -> (operation list) * bonding_curve_storage)] ("WRONG_TEZ_PRICE", Tezos.amount, (current_price + basis_point_fee)) : (operation list) * bonding_curve_storage)
+    then ([%Michelson ({| { FAILWITH } |} : string * tez * tez -> (operation list) * bonding_curve_storage)] ("WRONG_TEZ_PRICE", Tezos.amount, current_price) : (operation list) * bonding_curve_storage)
 
     else
       (* mint using storage.token_metadata *)
@@ -383,14 +383,13 @@ let buy_offchain_no_admin (buyer_addr, storage : offchain_buyer * bonding_curve_
           }
           in Tezos.transaction [mint_token_params] 0mutez contract_ref
       in [mint_op], { storage with
-                      token_index = storage.token_index + 1n;
-                      unclaimed = storage.unclaimed + basis_point_fee }
+                      token_index = storage.token_index + 1n }
 
 
 (** Sell token (returns tez deposit)
 - calculate _previous_ price
 - burn token -> market contract
-- return tez (sans basis_point_fee) to seller
+- return tez (- basis_points fee) to seller
 - decrement current token_index in storage
 *)
 let sell_offchain_no_admin ((token_to_sell, seller_addr), storage : (token_id * offchain_seller) * bonding_curve_storage)
@@ -406,17 +405,32 @@ let sell_offchain_no_admin ((token_to_sell, seller_addr), storage : (token_id * 
 
 #if PIECEWISE_BONDING_CURVE
 
-    let previous_cost_tez : price_tez = match is_nat (run_piecewise_polynomial(storage.cost_mutez, previous_token_index)) with
+    let previous_price_tez : price_tez = match is_nat (run_piecewise_polynomial(storage.cost_mutez, previous_token_index)) with
     | None -> (failwith error_negative_cost : tez)
     | Some nat_cost_tez -> storage.auction_price + 1mutez * nat_cost_tez
     in
 
 #else
 
-    let previous_cost_tez : price_tez = storage.cost_mutez(previous_token_index)
+    let previous_price_tez : price_tez = storage.cost_mutez(previous_token_index)
     in
 
 #endif // PIECEWISE_BONDING_CURVE
+
+    (* TODO: avoid converting to and from mutez with previous_price_tez and then previous_cost_tez *)
+
+    (* previous_cost_tez = previous_price_tez - basis_point_fee *)
+    (* If basis_point_fee >= previous_cost_tez, the entire basis_point_fee is stored in unclaimed *)
+    let basis_point_fee : tez =
+        (previous_price_tez * storage.basis_points) / basis_points_per_unit
+
+    (* Note: the arguments to subtraction are converted to nat so that we can *)
+    (* check for underflow of tez, which otherwise produces an uncatchable *)
+    (* runtime error *)
+    in let (basis_point_fee, previous_cost_tez) : tez * price_tez = match is_nat (previous_price_tez / 1mutez - basis_point_fee / 1mutez) with
+    | None -> (previous_price_tez, 0mutez)
+    | Some nat_cost_tez -> (basis_point_fee, 1mutez * nat_cost_tez)
+    in
 
     (* - burn token -> market contract *)
     (* - send -> market contract *)
@@ -444,7 +458,9 @@ let sell_offchain_no_admin ((token_to_sell, seller_addr), storage : (token_id * 
                    then ([] : operation list)
                    else [Tezos.transaction unit previous_cost_tez seller_contract_ref])
 
-    in operations, { storage with token_index = previous_token_index }
+    (* update the unclaimed amount *)
+    in operations, { storage with token_index = previous_token_index;
+                                  unclaimed = storage.unclaimed + basis_point_fee }
 
 
 let bonding_curve_main (param, storage : bonding_curve_entrypoints * bonding_curve_storage)
