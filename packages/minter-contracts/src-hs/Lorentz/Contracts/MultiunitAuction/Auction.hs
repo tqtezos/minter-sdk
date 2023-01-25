@@ -31,7 +31,8 @@ data Auction = Auction
   , endTime :: Timestamp
   , bondingCurve :: Natural
   , bidIndex :: Natural
-  , numOffers :: Natural
+  , numOffersToPayoutOrReturn :: Natural
+  , numWinningOffers :: Maybe Natural
   , winningPrice :: Maybe Mutez
   , isCanceled :: Bool
   , nextTokenId :: Natural 

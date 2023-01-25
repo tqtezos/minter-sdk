@@ -9,7 +9,7 @@ import qualified Michelson.Typed as T
 import qualified Data.List as List
 import qualified Data.Map as Map
 import Data.Traversable.WithIndex (TraversableWithIndex, ifor)
-import qualified Hedgehog.Gen as Gen 
+import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import Hedgehog (Gen, Property, forAll, label, property)
 import Morley.Nettest
@@ -24,9 +24,78 @@ import Hedgehog.Gen.Tezos.Core (genMutez')
 
 import qualified Lorentz.Contracts.MultiunitAuction.Auction as Auction
 import Test.MinterCollection.Util
-import Tezos.Core (timestampPlusSeconds, unsafeMulMutez, mulMutez)
+import Tezos.Core (timestampPlusSeconds, unsafeMulMutez, mulMutez, unsafeAddMutez, unsafeSubMutez, toMutez, prettyTez)
 import Fmt ((+|), (|+))
 import Test.Util
+
+hprop_Fees_are_paid_correctly :: Property
+hprop_Fees_are_paid_correctly =
+  property $ do
+    testData@TestData{testExtendTime, testAuctionDuration} <- forAll genTestData
+    bids <- forAll $ genSomeBids testData
+
+    clevelandProp $ do
+      setup@Setup{seller, contract, fa2Contract, reserveAddress, profitAddress} <- testSetup testData
+      bidders <- mkBidders bids
+      let winners = winningBids sampleBondingCurve' (toList bids `zip` toList bidders)
+      sellerBalanceBefore <- getBalance seller
+      auctionContractBalanceBefore <- getBalance contract
+      reserveAddressBalanceBefore <- getBalance reserveAddress
+      profitAddressBalanceBefore <- getBalance profitAddress
+
+      withSender seller $ addSampleBondingCurve contract
+      withSender seller $ configureAuction testData setup
+
+      -- Wait for the auction to start.
+      waitForAuctionToStart testData
+
+      forM_ (toList bids `zip` toList bidders) $ \(bid, bidder) -> do
+        withSender bidder $
+          placeBid contract bid
+
+      -- Wait for the auction to end.
+      advanceTime (sec $ fromIntegral $ testAuctionDuration `max` testExtendTime)
+
+      returnBids contract (Auction.AuctionId 0, 6) --max bids
+      auctionStorage <- getStorage' contract
+      heapSize <- getHeapSize 0 auctionStorage
+      if heapSize > 0
+        then do
+          returnOffers contract (Auction.AuctionId 0, 1000) --max offers in a bid
+        else do
+          pass
+
+      withSender seller $ do
+        resolveAuction contract
+
+      unless (null winners) (payoutWinners contract (Auction.AuctionId 0, 100))
+
+      postPayoutAuctionStorage <- getStorage' contract
+      numWinningOffers <- getNumWinningOffers 0 postPayoutAuctionStorage
+      winningPrice <- getWinningPrice 0 postPayoutAuctionStorage
+
+      let maybeAuctionData = getAuction (Auction.AuctionId 0) postPayoutAuctionStorage
+      auctionData <- case maybeAuctionData of
+            Nothing -> failure $ "Auction not found for auction"
+            Just auction -> pure $ auction
+      let totalFeesSent = winningPrice `unsafeMulMutez` numWinningOffers
+      let highestOffer = Auction.highestOfferPrice auctionData
+      let bondingCurveIntegral = (sampleIntegralCurve' numWinningOffers) `unsafeSubMutez` (sampleIntegralCurve' 0)
+      let expectedReserveAmount = min totalFeesSent (bondingCurveIntegral + highestOffer)
+      let expectedProfitAmount = totalFeesSent `unsafeSubMutez` expectedReserveAmount
+
+      sellerBalanceAfter <- getBalance seller
+      auctionContractBalanceAfter <- getBalance contract
+      reserveAddressBalanceAfter <- getBalance reserveAddress
+      profitAddressBalanceAfter <- getBalance profitAddress
+
+      sellerBalanceBefore @== sellerBalanceAfter
+      reserveAddressBalanceAfter @== reserveAddressBalanceBefore `unsafeAddMutez` expectedReserveAmount
+      profitAddressBalanceAfter @== profitAddressBalanceBefore `unsafeAddMutez` expectedProfitAmount
+      assert (if auctionContractBalanceBefore < auctionContractBalanceAfter
+                then (auctionContractBalanceBefore `unsafeAddMutez` toMutez 1e6) >= auctionContractBalanceAfter
+              else (auctionContractBalanceAfter `unsafeAddMutez` toMutez 1e6) >= auctionContractBalanceBefore
+             ) $ "Contract balance before and after don't match within 1tez of eachother"
 
 hprop_First_bid_is_valid_IFF_it_meets_price_floor :: Property
 hprop_First_bid_is_valid_IFF_it_meets_price_floor =
@@ -46,7 +115,7 @@ hprop_First_bid_is_valid_IFF_it_meets_price_floor =
       withSender bidder $
         if firstBid >= testPriceFloor
           then placeBid contract bid
-          else placeBid contract bid 
+          else placeBid contract bid
                & expectFailedWith
                     ([mt|INVALID_BID_AMOUNT|], (bidder, firstBid, startTime, startTime))
 
@@ -68,7 +137,7 @@ hprop_Auction_ends_if_no_bids_are_placed_within_'round_time'_seconds =
       withSender seller $ addSampleBondingCurve contract
       withSender seller $ configureAuction testData' setup
       waitForAuctionToStart testData'
-      
+
       let
         placeBids ([], _) = pass
         placeBids ((((bid, bidder), waitingTime) : rest), successfulBids) = do
@@ -80,32 +149,32 @@ hprop_Auction_ends_if_no_bids_are_placed_within_'round_time'_seconds =
                 placeBid contract bid
 
               -- `resolve` should fail because auction is still in progress.
-              resolveAuction contract 
+              resolveAuction contract
                 & expectError [mt|AUCTION_NOT_ENDED|]
 
               placeBids (rest, successfulBids + 1)
 
             else do
               withSender bidder $ do
-                placeBid contract bid 
+                placeBid contract bid
                   & expectError [mt|NOT_IN_PROGRESS|]
-              
+
               -- return bids, max 6 bids
               if successfulBids > 0
-                then do 
+                then do
                   returnBids contract (Auction.AuctionId 0, 6) --max bids
-                else do 
+                else do
                   pass
-              
+
               auctionStorage <- getStorage' contract
               heapSize <- getHeapSize 0 auctionStorage
 
-              if heapSize > 0 
-                then do 
+              if heapSize > 0
+                then do
                   returnOffers contract (Auction.AuctionId 0, 1000) --max offers in a bid
-                else do 
+                else do
                   pass
-              
+
               -- `resolve` should succeed.
               resolveAuction contract
 
@@ -127,25 +196,25 @@ hprop_Assets_are_transferred_to_winning_bidders =
       -- Wait for the auction to start.
       waitForAuctionToStart testData
 
-      forM_ (toList bids `zip` toList bidders) \(bid, bidder) -> do
+      forM_ (toList bids `zip` toList bidders) $ \(bid, bidder) -> do
         withSender bidder $
           placeBid contract bid
 
       -- Wait for the auction to end.
       advanceTime (sec $ fromIntegral $ testAuctionDuration `max` testExtendTime)
-     
+
       returnBids contract (Auction.AuctionId 0, 6) --max bids
       auctionStorage <- getStorage' contract
       heapSize <- getHeapSize 0 auctionStorage
-      if heapSize > 0 
-        then do 
+      if heapSize > 0
+        then do
           returnOffers contract (Auction.AuctionId 0, 1000) --max offers in a bid
-        else do 
+        else do
           pass
 
       withSender seller $ do
         resolveAuction contract
-      
+
       let winners = winningBids sampleBondingCurve' (toList bids `zip` toList bidders)
 
       unless (null winners) (payoutWinners contract (Auction.AuctionId 0, 100))
@@ -160,8 +229,8 @@ hprop_Assets_are_transferred_to_winning_bidders =
           winnerBalance <- Nft.balanceOf fa2Contract (FA2I.TokenId tokenId) winner
           winnerBalance @== 1
           modifyIORef' count increment
-      
-----------------------------------------------------------------------------
+
+-------------------------------------
 -- Generators
 ----------------------------------------------------------------------------
 
@@ -212,10 +281,19 @@ genBid testData auctionId = do
 ----------------------------------------------------------------------------
 -- Helpers
 ----------------------------------------------------------------------------
+-- @== safe for off by 1 rounding errors 
+-- (@~==) :: (HasCallStack, MonadNettest caps base m) => Mutez -> Mutez -> m()
+-- (@~==) a b
+--   | a == b = true
+--   | a > b = a @== bPlusOne
+--   | otherwise = b @== aPlusOne
+--   where 
+--     bPlusOne = b `unsafeAddMutez` (toMutez 1 :: Mutez)
+--     aPlusOne = a `unsafeAddMutez` (toMutez 1 :: Mutez)
 
 mkBidders :: (MonadNettest caps base m, TraversableWithIndex Int f) => f Auction.BidParam -> m (f Address)
 mkBidders bids =
-  ifor bids \i _ -> do 
+  ifor bids \i _ -> do
     addr <- newAddress (fromString $ "bidder-" <> show i)
     transferMoney addr 1_000_000_e6 --transfer sufficient tez to bidders
     pure addr
@@ -224,13 +302,17 @@ sampleBondingCurve :: '[Natural] L.:-> '[Mutez]
 sampleBondingCurve = do
   L.push (toMutez 333333 :: Mutez) L.# L.mul
 
-sampleBondingCurve' :: Natural -> Mutez 
-sampleBondingCurve' qty = 
-  (toMutez 333333 :: Mutez) `unsafeMulMutez` qty 
+sampleBondingCurve' :: Natural -> Mutez
+sampleBondingCurve' qty =
+  (toMutez 333333 :: Mutez) `unsafeMulMutez` qty
 
 sampleIntegralCurve :: '[Natural] L.:-> '[Mutez]
 sampleIntegralCurve = do
-  L.dup L.# L.mul L.# L.push (toMutez 166666 :: Mutez) L.# L.mul 
+  L.dup L.# L.mul L.# L.push (toMutez 166666 :: Mutez) L.# L.mul
+
+sampleIntegralCurve' :: Natural -> Mutez
+sampleIntegralCurve' qty = do
+  (toMutez 166666 :: Mutez) `unsafeMulMutez` qty `unsafeMulMutez` qty
 
 data Setup = Setup
   { contract :: ContractHandler Auction.AuctionEntrypoints Auction.AuctionStorage
@@ -248,7 +330,7 @@ testSetup testData = do
   feeCollector <- newAddress "fee-collector"
   reserveAddress <- newAddress "reserve-address"
   profitAddress <- newAddress "profit-address"
-  
+
   seller <- newAddress "seller"
   contract <- originateAuction seller
 
@@ -265,26 +347,46 @@ waitForAuctionToStart :: (HasCallStack, MonadNettest caps base m) => TestData ->
 waitForAuctionToStart TestData{testTimeToStart} =
   advanceTime (sec $ fromIntegral testTimeToStart)
 
-getAuction :: MonadNettest caps base m => Auction.AuctionId -> Auction.AuctionStorage -> m Auction.Auction 
+getAuction :: Auction.AuctionId -> Auction.AuctionStorage -> Maybe Auction.Auction
 getAuction auctionId st = do
-  let auctionOpt =
         st
           & Auction.auctions
           & unBigMap
           & Map.lookup auctionId
-  case auctionOpt of
-    Just auction -> pure auction
-    Nothing -> failure $ "Expected the storage to contain an auction with ID '" +| auctionId |+ "', but it didn't."
 
 getHeapSize :: MonadNettest caps base m => Natural -> Auction.AuctionStorage -> m Natural
-getHeapSize auctionId auctionStorage = do 
-  let heapSize = auctionStorage 
-                    & Auction.heapSizes 
-                    & unBigMap 
+getHeapSize auctionId auctionStorage = do
+  let heapSize = auctionStorage
+                    & Auction.heapSizes
+                    & unBigMap
                     & Map.lookup (Auction.AuctionId auctionId)
   case heapSize of
       Just hs -> pure hs
       Nothing -> pure 0
+
+getNumWinningOffers :: MonadNettest caps base m => Natural -> Auction.AuctionStorage -> m Natural
+getNumWinningOffers auctionId auctionStorage = do
+  let auction = getAuction (Auction.AuctionId auctionId) auctionStorage
+  case auction of
+    Nothing -> failure $ "Auction not found for auction with Auction ID '" +| auctionId |+ "'"
+    Just auction -> do
+      let winnersOpt = Auction.numWinningOffers auction
+      case winnersOpt of
+          Just numWinningOffers -> pure numWinningOffers
+          Nothing -> failure $ "Number of Winning Offers is not determined yet for auction with Auction ID '" +| auctionId |+ "'"
+
+getWinningPrice :: MonadNettest caps base m => Natural -> Auction.AuctionStorage -> m Mutez
+getWinningPrice auctionId auctionStorage = do
+  let auction = getAuction (Auction.AuctionId auctionId) auctionStorage
+  case auction of
+    Nothing -> failure $ "Auction not found for auction with Auction ID '" +| auctionId |+ "'"
+    Just auction -> do
+      let winningPriceOpt = Auction.winningPrice auction
+      case winningPriceOpt of
+          Just winningPrice -> pure winningPrice
+          Nothing -> failure $ "Winning price is not determined yet for auction with Auction ID '" +| auctionId |+ "'"
+
+
 
 --maxAcceptedOffersAtPrice :: ('[Natural] L.:-> '[Mutez]) -> Mutez -> Natural -> Natural 
 --maxAcceptedOffersAtPrice bondingCurve offerPrice totalOffers = do
@@ -292,26 +394,26 @@ getHeapSize auctionId auctionStorage = do
 --  fromMaybe totalOffers maybeMaxAcceptedOffers
 --  where minPriceValidAtQ = \q -> L.exec q bondingCurve 
 
-winningBids :: (Natural -> Mutez) -> [(Auction.BidParam, Address)] -> [(Auction.BidParam, Address)] 
+winningBids :: (Natural -> Mutez) -> [(Auction.BidParam, Address)] -> [(Auction.BidParam, Address)]
 winningBids bondingCurve bids = do
-  let bidsSorted = sort bids 
+  let bidsSorted = sort bids
   let numOffers = foldl (\offers bid -> offers + Auction.quantityParam (fst bid)) 0 bidsSorted
-  let 
+  let
     getValidBidList ([], _) = []
-    getValidBidList ((x:xs), numOffs) = 
-      let expectedMinimumPrice = bondingCurve $ numOffs 
+    getValidBidList ((x:xs), numOffs) =
+      let expectedMinimumPrice = bondingCurve $ numOffs
           bidParam = fst x
           bidder =  snd x
       in
-      if Auction.priceParam bidParam < expectedMinimumPrice 
+      if Auction.priceParam bidParam < expectedMinimumPrice
         then
-          if Auction.quantityParam bidParam == 1 
+          if Auction.quantityParam bidParam == 1
             then getValidBidList (xs, numOffs)
-          else 
+          else
             getValidBidList ((bidParam{Auction.quantityParam = ((Auction.quantityParam $ fst x) - 1)}, bidder) : xs, numOffs - 1)
-        else 
+        else
           x : xs
-  getValidBidList (bidsSorted, numOffers) 
+  getValidBidList (bidsSorted, numOffers)
 --  let maybeMaxAcceptedOffers = find ( (>= offerPrice) . minPriceValidAtQ) [1 .. totalOffers]
 --  fromMaybe totalOffers maybeMaxAcceptedOffers
 --  where minPriceValidAtQ = \q -> L.exec q bondingCurve 
@@ -334,14 +436,14 @@ configureAuction testData Setup{fa2Contract, contract, startTime, endTime, reser
     , initialTokenId = 0
     , reserveAddress = reserveAddress
     , profitAddress = profitAddress
-    , tokenInfo = mempty 
+    , tokenInfo = mempty
     }
 
 placeBid :: (HasCallStack, MonadNettest caps base m) => ContractHandler Auction.AuctionEntrypoints Auction.AuctionStorage -> Auction.BidParam -> m ()
 placeBid contract bidParam =
   transfer TransferData
     { tdTo = contract
-    , tdAmount = (Auction.priceParam bidParam) `unsafeMulMutez` (Auction.quantityParam bidParam) 
+    , tdAmount = (Auction.priceParam bidParam) `unsafeMulMutez` (Auction.quantityParam bidParam)
     , tdEntrypoint = ep "bid"
     , tdParameter = bidParam
     }
@@ -351,20 +453,20 @@ addSampleBondingCurve = addBondingCurve sampleBondingCurve sampleIntegralCurve
 
 addBondingCurve :: (HasCallStack, MonadNettest caps base m) => ('[Natural] L.:-> '[Mutez])  -> ('[Natural] L.:-> '[Mutez])-> ContractHandler Auction.AuctionEntrypoints Auction.AuctionStorage -> m ()
 addBondingCurve bc integral contract = do
-  call contract (Call @"Add_bonding_curve") (bc, integral) 
+  call contract (Call @"Add_bonding_curve") (bc, integral)
 
 resolveAuction :: (HasCallStack, MonadNettest caps base m) => ContractHandler Auction.AuctionEntrypoints Auction.AuctionStorage -> m ()
 resolveAuction contract =
   call contract (Call @"Resolve") (Auction.AuctionId 0)
 
 returnBids :: (HasCallStack, MonadNettest caps base m) => ContractHandler Auction.AuctionEntrypoints Auction.AuctionStorage -> (Auction.AuctionId, Natural) -> m ()
-returnBids contract =  
+returnBids contract =
   call contract (Call @"Return_old_bids")
 
 returnOffers:: (HasCallStack, MonadNettest caps base m) => ContractHandler Auction.AuctionEntrypoints Auction.AuctionStorage -> (Auction.AuctionId, Natural) -> m ()
-returnOffers contract =  
+returnOffers contract =
   call contract (Call @"Return_old_offers")
 
 payoutWinners :: (HasCallStack, MonadNettest caps base m) => ContractHandler Auction.AuctionEntrypoints Auction.AuctionStorage -> (Auction.AuctionId, Natural) -> m ()
-payoutWinners contract = 
+payoutWinners contract =
   call contract (Call @"Payout_winners")

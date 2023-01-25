@@ -49,7 +49,8 @@ type auction =
     end_time : timestamp;
     bonding_curve : nat;
     bid_index : nat;
-    num_offers : nat; 
+    num_offers_to_payout_or_return : nat; 
+    num_winning_offers : nat option;
     winning_price : tez option;
     is_canceled : bool;
     next_token_id : nat;
@@ -341,7 +342,8 @@ let configure_auction_storage(configure_param, seller, storage : configure_param
       bonding_curve = configure_param.bonding_curve;
       bid_index = 0n;
       winning_price = (None : tez option);
-      num_offers = 0n;
+      num_winning_offers = (None : nat option);
+      num_offers_to_payout_or_return = 0n;
       highest_offer_price = 0tez;
       is_canceled = false;
       next_token_id = configure_param.initial_token_id;
@@ -371,21 +373,22 @@ let resolve_auction(auction_id, storage : nat * storage) : return = begin
   assert_msg(not auction_resolved, "AUCTION_ALREADY_RESOLVED");
   
   (
-    if auction.num_offers = 0n 
+    if auction.num_offers_to_payout_or_return = 0n 
     then 
-        let updated_auction_data : auction = {auction with winning_price = Some 0mutez;} in 
+        let updated_auction_data : auction = {auction with winning_price = Some 0mutez; num_winning_offers = Some 0n;} in (*WHY SETTING PRICE TO 0MUTEZ?*)
         let updated_auctions = Big_map.update auction_id (Some updated_auction_data) storage.auctions in
         (([] : operation list), {storage with auctions = updated_auctions;})
     else 
         let min_bid : bid = get_min(auction_id, storage.bids) in 
         let min_price : tez = min_bid.price in 
         let bonding_curve : bonding_curve = get_bonding_curve(auction.bonding_curve, storage.bonding_curves) in
-        let min_price_valid_at_q : tez = bonding_curve auction.num_offers in 
+        let min_price_valid_at_q : tez = bonding_curve auction.num_offers_to_payout_or_return in 
         let u : unit = assert_msg(min_price >= min_price_valid_at_q, "NOT_ALL_INVALID_BIDS_AND_OFFERS_RETURNED") in 
-        let winning_price : tez = min_price_valid_at_q in 
+        let winning_price : tez = min_price_valid_at_q in
+        let num_winning_offers : nat = auction.num_offers_to_payout_or_return in  
         let bonding_curve_integral : bonding_curve = get_bonding_curve(auction.bonding_curve, storage.bonding_curve_integrals) in
-        let total_fee : tez = (winning_price * auction.num_offers) in 
-        let integral_value : tez = (bonding_curve_integral auction.num_offers) - (bonding_curve_integral 0n) in (*Function must be increasing*)
+        let total_fee : tez = (winning_price * auction.num_offers_to_payout_or_return) in 
+        let integral_value : tez = (bonding_curve_integral auction.num_offers_to_payout_or_return) - (bonding_curve_integral 0n) in (*Function must be increasing*)
         let reserve_amount : tez = 
           if integral_value + auction.highest_offer_price > total_fee 
           then total_fee 
@@ -402,7 +405,7 @@ let resolve_auction(auction_id, storage : nat * storage) : return = begin
           else 
             [transfer_reserve_op]
           in 
-        let updated_auction_data : auction = {auction with winning_price = Some winning_price;} in
+        let updated_auction_data : auction = {auction with winning_price = Some winning_price; num_winning_offers = Some num_winning_offers;} in
         let updated_auctions = Big_map.update auction_id (Some updated_auction_data) storage.auctions in
         (op_list , {storage with auctions = updated_auctions;})  
   )
@@ -464,7 +467,7 @@ let place_bid(  bid_param
 
     let bid_heap : bid_heap = insert_bid(new_bid, storage.bids, bid_param.auction_id, current_heap_size) in
 
-    let updated_num_offers : nat = auction.num_offers + new_bid.quantity in 
+    let updated_num_offers : nat = auction.num_offers_to_payout_or_return + new_bid.quantity in 
     
     let new_heap_size : nat = current_heap_size + 1n in 
     let new_heap_size_bm : heap_sizes = update_heap_size(bid_param.auction_id, storage.heap_sizes, new_heap_size) in 
@@ -477,7 +480,7 @@ let place_bid(  bid_param
 
     let updated_auction_data : auction = {auction with last_bid_time = Tezos.now; end_time = new_end_time; 
                                 bid_index = auction.bid_index + 1n; 
-                                num_offers = updated_num_offers;
+                                num_offers_to_payout_or_return = updated_num_offers;
                                 highest_offer_price = new_highest_offer_price } in
     let updated_auctions = Big_map.update bid_param.auction_id (Some updated_auction_data) storage.auctions in
     (([] : operation list) , {storage with auctions = updated_auctions; bids = bid_heap; heap_sizes = new_heap_size_bm;})
@@ -542,12 +545,16 @@ let return_offers(auction_id, num_offers_to_return, storage : auction_id * nat *
     let auction : auction = get_auction_data(auction_id, storage) in
     let bonding_curve : bonding_curve = get_bonding_curve(auction.bonding_curve, storage.bonding_curves) in
     let heap_size : nat = get_heap_size(auction_id, storage.heap_sizes) in
-    assert_msg(heap_size = 1n, "ONLY_CALLABLE_WITH_ONE_BID_LEFT");
+    assert_msg(heap_size > 0n, "NO_OFFERS_LEFT");
     let min_bid : bid = get_min(auction_id, storage.bids) in 
     let bid_price : tez = min_bid.price in 
     let bid_quantity : nat = min_bid.quantity in
     let new_total_offers : nat = num_valid_offers_remaining_after_returning_max_n_offers(bid_quantity, bid_price, bonding_curve, auction.is_canceled, int(num_offers_to_return)) in
-    let op_list : operation list = 
+    
+    (if bid_quantity = new_total_offers 
+    then (([] : operation list), storage)
+    else 
+      let op_list : operation list = 
 #if OFFCHAIN_BID
         if min_bid.is_offchain 
         then ([] : operation list)
@@ -555,26 +562,28 @@ let return_offers(auction_id, num_offers_to_return, storage : auction_id * nat *
 #endif   
           let return_amt : tez = abs(bid_quantity - new_total_offers) * min_bid.price in 
           let offers_return_op : operation = transfer_tez(return_amt, min_bid.bidder) in (*Returns difference of bid and winning_price*)
-          [offers_return_op] in
-    let updated_auction_data : auction = {auction with num_offers = new_total_offers;} in
-    let updated_auctions = Big_map.update auction_id (Some updated_auction_data) storage.auctions in
-    let bid_key : bid_heap_key = {auction_id = auction_id; bid_index = 0n;} in
-    let bid_heap : bid_heap = Big_map.update bid_key (Some {min_bid with quantity = new_total_offers;}) storage.bids in 
-    (op_list, {storage with auctions = updated_auctions; bids = bid_heap;})
+          [offers_return_op] 
+        in
+      let updated_auction_data : auction = {auction with num_offers_to_payout_or_return = new_total_offers;} in
+      let updated_auctions = Big_map.update auction_id (Some updated_auction_data) storage.auctions in
+      let bid_key : bid_heap_key = {auction_id = auction_id; bid_index = 0n;} in
+      let bid_heap : bid_heap = Big_map.update bid_key (Some {min_bid with quantity = new_total_offers;}) storage.bids in 
+      (op_list, {storage with auctions = updated_auctions; bids = bid_heap;})
+    )
   end
 
-let rec return_invalid_bids(bid_heap, num_offers, bonding_curve, auction_id, auction_is_canceled, heap_size, bids_to_return, price_floor, op_list : bid_heap * nat * bonding_curve * auction_id * bool * nat * int * tez * operation list) 
+let rec return_invalid_bids(bid_heap, num_offers_to_payout_or_return, bonding_curve, auction_id, auction_is_canceled, heap_size, bids_to_return, price_floor, op_list : bid_heap * nat * bonding_curve * auction_id * bool * nat * int * tez * operation list) 
   : bid_heap * nat * nat * tez * operation list= 
 
-  if num_offers = 0n || bids_to_return <= 0
-  then (bid_heap, heap_size, num_offers, price_floor, op_list)
+  if num_offers_to_payout_or_return = 0n || bids_to_return <= 0
+  then (bid_heap, heap_size, num_offers_to_payout_or_return, price_floor, op_list)
   else 
     let (possible_min_bid, new_bid_heap, new_heap_size) = extract_min(bid_heap, auction_id, heap_size) in
     match possible_min_bid with 
         Some bid -> 
           let min_bid_price : tez = bid.price in 
-          let min_price_valid_at_old_Q : tez = bonding_curve num_offers in
-          let remaining_offers : nat = abs(num_offers - bid.quantity) in 
+          let min_price_valid_at_old_Q : tez = bonding_curve num_offers_to_payout_or_return in
+          let remaining_offers : nat = abs(num_offers_to_payout_or_return - bid.quantity) in 
           let min_price_valid_at_new_Q_plus_one : tez = bonding_curve (remaining_offers + 1n) in 
           let bid_returnable : bool =  (min_bid_price < min_price_valid_at_old_Q  && min_bid_price < min_price_valid_at_new_Q_plus_one)|| auction_is_canceled in
           if bid_returnable 
@@ -590,8 +599,8 @@ let rec return_invalid_bids(bid_heap, num_offers, bonding_curve, auction_id, auc
                 bid_return_op :: op_list in
             return_invalid_bids(new_bid_heap, remaining_offers, bonding_curve, auction_id, auction_is_canceled, new_heap_size, bids_to_return - 1, min_bid_price, op_list)
           else 
-               (bid_heap, heap_size, num_offers, price_floor, op_list)
-      | None -> (bid_heap, heap_size, num_offers, price_floor, op_list) (*This should not be reached*)
+               (bid_heap, heap_size, num_offers_to_payout_or_return, price_floor, op_list)
+      | None -> (bid_heap, heap_size, num_offers_to_payout_or_return, price_floor, op_list) (*This should not be reached*)
 
 let empty_heap(auction_id, num_bids_to_return, storage : auction_id * nat * storage) : return = begin
     tez_stuck_guard("RETURN_OLD_BIDS");
@@ -601,10 +610,10 @@ let empty_heap(auction_id, num_bids_to_return, storage : auction_id * nat * stor
     let bonding_curve : bonding_curve = get_bonding_curve(auction.bonding_curve, storage.bonding_curves) in
     let heap_size : nat = get_heap_size(auction_id, storage.heap_sizes) in
     assert_msg(heap_size > 0n, "NO_BIDS_LEFT");
-    let (bid_heap, new_heap_size, num_offers, price_floor, op_list) = 
-        return_invalid_bids(storage.bids, auction.num_offers, bonding_curve, auction_id, auction.is_canceled, heap_size, num_bids_to_return, auction.price_floor, ([] : operation list)) in 
+    let (bid_heap, new_heap_size, num_offers_to_payout_or_return, price_floor, op_list) = 
+        return_invalid_bids(storage.bids, auction.num_offers_to_payout_or_return, bonding_curve, auction_id, auction.is_canceled, heap_size, num_bids_to_return, auction.price_floor, ([] : operation list)) in 
     let new_heap_size_bm : heap_sizes = update_heap_size(auction_id, storage.heap_sizes, new_heap_size) in 
-    let updated_auction_data : auction = {auction with num_offers = num_offers; price_floor = price_floor;} in
+    let updated_auction_data : auction = {auction with num_offers_to_payout_or_return = num_offers_to_payout_or_return; price_floor = price_floor;} in
     let updated_auctions = Big_map.update auction_id (Some updated_auction_data) storage.auctions in
     (op_list , {storage with auctions = updated_auctions; bids = bid_heap; heap_sizes = new_heap_size_bm;})
   end  
@@ -623,7 +632,7 @@ let rec mint_n_tokens_to_owner(mint_param, owner, next_token_id, token_info, num
        let mint_param = mint_token :: mint_param in
        mint_n_tokens_to_owner(mint_param, owner, next_token_id + 1n, token_info, num_to_mint - 1)
 
-let rec pay_winning_bids(op_list, bid_heap, mint_param, auction_id, heap_size, winners_to_payout, winning_price, num_offers, next_token_id, token_info : 
+let rec pay_winning_bids(op_list, bid_heap, mint_param, auction_id, heap_size, winners_to_payout, winning_price, num_offers_to_payout_or_return, next_token_id, token_info : 
       operation list * bid_heap * mint_tokens_param * auction_id * nat * int * tez * nat * nat * token_info)
     : operation list * bid_heap * mint_tokens_param * nat * nat * nat= 
   if winners_to_payout > 0
@@ -632,20 +641,23 @@ let rec pay_winning_bids(op_list, bid_heap, mint_param, auction_id, heap_size, w
        match possible_bid with 
            Some bid -> 
              let (mint_param, next_token_id) = mint_n_tokens_to_owner(mint_param, bid.bidder, next_token_id, token_info, int(bid.quantity)) in  
-             let remaining_offers : nat = abs(num_offers - bid.quantity) in 
+             let remaining_offers : nat = abs(num_offers_to_payout_or_return - bid.quantity) in 
              let op_list = 
 #if OFFCHAIN_BID
                  if bid.is_offchain 
                  then op_list 
                  else 
 #endif   
-                      let return_amt : tez = bid.quantity * (bid.price - winning_price) in (*price ALWAYS will be greater than winning_price, asserted in resolve*)
-                      let bid_return_op : operation = transfer_tez(return_amt, bid.bidder) in (*Returns difference of bid and winning_price*)
-                      bid_return_op :: op_list in
+                      if bid.price = winning_price
+                      then op_list
+                      else 
+                        let return_amt : tez = bid.quantity * (bid.price - winning_price) in 
+                        let bid_return_op : operation = transfer_tez(return_amt, bid.bidder) in (*Returns difference of bid and winning_price*)
+                        bid_return_op :: op_list in
              pay_winning_bids(op_list, bid_heap, mint_param, auction_id, heap_size, winners_to_payout - 1, winning_price, remaining_offers, next_token_id, token_info)
-         | None -> (op_list, bid_heap, mint_param, heap_size, num_offers, next_token_id) (*This should never be reached, get_min will fail*)
+         | None -> (op_list, bid_heap, mint_param, heap_size, num_offers_to_payout_or_return, next_token_id) (*This should never be reached, get_min will fail*)
   else 
-       (op_list, bid_heap, mint_param, heap_size, num_offers, next_token_id)
+       (op_list, bid_heap, mint_param, heap_size, num_offers_to_payout_or_return, next_token_id)
 
 let payout(auction_id, num_winners_to_payout, storage : auction_id * nat * storage) : return = begin
     tez_stuck_guard("PAYOUT");
@@ -658,10 +670,10 @@ let payout(auction_id, num_winners_to_payout, storage : auction_id * nat * stora
       in   
     let heap_size : nat = get_heap_size(auction_id, storage.heap_sizes) in
     assert_msg(heap_size > 0n, "NO_WINNERS_LEFT");
-    let (op_list, bid_heap, mint_param, new_heap_size, num_offers, next_token_id) = 
-        pay_winning_bids(([] : operation list), storage.bids, ([] : mint_tokens_param), auction_id, heap_size, num_winners_to_payout, winning_price, auction.num_offers, auction.next_token_id, auction.token_info) in 
+    let (op_list, bid_heap, mint_param, new_heap_size, num_offers_to_payout_or_return, next_token_id) = 
+        pay_winning_bids(([] : operation list), storage.bids, ([] : mint_tokens_param), auction_id, heap_size, num_winners_to_payout, winning_price, auction.num_offers_to_payout_or_return, auction.next_token_id, auction.token_info) in 
     let new_heap_size_bm : heap_sizes = update_heap_size(auction_id, storage.heap_sizes, new_heap_size) in 
-    let updated_auction_data : auction = {auction with num_offers = num_offers; next_token_id = next_token_id;} in
+    let updated_auction_data : auction = {auction with num_offers_to_payout_or_return = num_offers_to_payout_or_return; next_token_id = next_token_id;} in
     let updated_auctions = Big_map.update auction_id (Some updated_auction_data) storage.auctions in
     let mint_tx : operation = mint_tokens(auction.fa2_address, mint_param) in 
     (mint_tx :: op_list, {storage with auctions = updated_auctions; bids = bid_heap; heap_sizes = new_heap_size_bm;})
@@ -672,7 +684,7 @@ let get_auction_results(auction_id, storage : nat * storage) : bonding_curve * n
     let auction : auction = get_auction_data(auction_id, storage) in 
     let bonding_curve : bonding_curve =  get_bonding_curve(auction.bonding_curve, storage.bonding_curves) in 
     match auction.winning_price with 
-        Some wp ->  (bonding_curve, auction.num_offers) (*Auction has ended*)
+        Some wp ->  (bonding_curve, auction.num_offers_to_payout_or_return) (*Auction has ended*)
       | None -> (failwith "AUCTION_NOT_ENDED" : bonding_curve * nat)  
   end
 
@@ -700,6 +712,7 @@ let multiunit_bonding_curve_auction_no_configure (p,storage : auction_without_co
         let new_bonding_curve_integral_bm : bonding_curves = Big_map.add storage.bonding_curve_index bc_integral storage.bonding_curve_integrals in
         (([] : operation list), {storage with bonding_curves = new_bonding_curve_bm; bonding_curve_integrals = new_bonding_curve_integral_bm;
                                    bonding_curve_index = storage.bonding_curve_index + 1n})
+         
 
 let multiunit_auction_tez_main (p,storage : auction_entrypoints * storage) : return = match p with
     | Configure config -> configure_auction(config, storage)
