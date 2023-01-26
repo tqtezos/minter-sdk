@@ -2,9 +2,18 @@
     (or (or %adminAndInteract
            (or (or (or (pair %add_bonding_curve (lambda nat mutez) (lambda nat mutez))
                        (or %admin (or (unit %confirm_admin) (bool %pause)) (address %set_admin)))
-                   (or (pair %bid (nat %auction_id) (pair (mutez %price) (nat %quantity))) (nat %cancel)))
+                   (or (pair %bid
+                          (nat %auction_id)
+                          (pair (mutez %price)
+                                (pair (nat %quantity)
+                                      (option %is_bid_increase (pair (nat %auction_id) (nat %bid_index))))))
+                       (nat %cancel)))
                (or (or (pair %offchain_bid
-                          (pair %bid_param (nat %auction_id) (pair (mutez %price) (nat %quantity)))
+                          (pair %bid_param
+                             (nat %auction_id)
+                             (pair (mutez %price)
+                                   (pair (nat %quantity)
+                                         (option %is_bid_increase (pair (nat %auction_id) (nat %bid_index))))))
                           (pair %permit (key %signerKey) (signature %signature)))
                        (pair %payout_winners nat nat))
                    (or (nat %resolve) (pair %return_old_bids nat nat))))
@@ -187,6 +196,119 @@
              IF_NONE { PUSH string "NO_BIDS" ; FAILWITH } {} } ;
          SWAP ;
          APPLY ;
+         DUP 3 ;
+         DUP 3 ;
+         PAIR ;
+         LAMBDA
+           (pair (pair (lambda
+                          (pair (pair nat nat)
+                                (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair bool timestamp))))))
+                          (option (pair mutez (pair address (pair nat (pair bool timestamp))))))
+                       (lambda
+                          (pair (pair (pair (pair nat nat) (pair nat nat))
+                                      (pair (pair mutez (pair address (pair nat (pair bool timestamp))))
+                                            (pair mutez (pair address (pair nat (pair bool timestamp))))))
+                                (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair bool timestamp))))))
+                          (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair bool timestamp)))))))
+                 (pair (pair (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair bool timestamp)))))
+                             (pair nat nat))
+                       (pair mutez (pair address (pair nat (pair bool timestamp))))))
+           (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair bool timestamp)))))
+           { UNPAIR ;
+             UNPAIR ;
+             DIG 2 ;
+             LEFT (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair bool timestamp))))) ;
+             LOOP_LEFT
+               { UNPAIR ;
+                 UNPAIR ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CDR ;
+                 PUSH nat 0 ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 COMPARE ;
+                 EQ ;
+                 IF { DROP ; PUSH nat 0 }
+                    { PUSH nat 2 ;
+                      PUSH nat 1 ;
+                      DIG 2 ;
+                      SUB ;
+                      ABS ;
+                      EDIV ;
+                      IF_NONE { PUSH string "DIV by 0" ; FAILWITH } {} ;
+                      CAR } ;
+                 DUP 3 ;
+                 CAR ;
+                 PAIR ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 PAIR ;
+                 DUP 6 ;
+                 SWAP ;
+                 EXEC ;
+                 IF_NONE
+                   { DROP ;
+                     SWAP ;
+                     DROP ;
+                     SWAP ;
+                     DROP ;
+                     RIGHT
+                       (pair (pair (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair bool timestamp)))))
+                                   (pair nat nat))
+                             (pair mutez (pair address (pair nat (pair bool timestamp))))) }
+                   { DUP 5 ;
+                     CAR ;
+                     SWAP ;
+                     DUP ;
+                     DUG 2 ;
+                     CAR ;
+                     COMPARE ;
+                     LE ;
+                     PUSH nat 0 ;
+                     DUP 6 ;
+                     CDR ;
+                     COMPARE ;
+                     EQ ;
+                     OR ;
+                     IF { DROP 2 ;
+                          SWAP ;
+                          DROP ;
+                          SWAP ;
+                          DROP ;
+                          RIGHT
+                            (pair (pair (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair bool timestamp)))))
+                                        (pair nat nat))
+                                  (pair mutez (pair address (pair nat (pair bool timestamp))))) }
+                        { DIG 2 ;
+                          DIG 4 ;
+                          DUP 3 ;
+                          PAIR ;
+                          DIG 4 ;
+                          DUP 5 ;
+                          PAIR ;
+                          PAIR ;
+                          PAIR ;
+                          DUP 5 ;
+                          SWAP ;
+                          EXEC ;
+                          SWAP ;
+                          DUG 2 ;
+                          PAIR ;
+                          PAIR ;
+                          LEFT (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair bool timestamp))))) } } } ;
+             SWAP ;
+             DROP ;
+             SWAP ;
+             DROP } ;
+         SWAP ;
+         APPLY ;
          LAMBDA
            (pair nat (big_map nat nat))
            nat
@@ -195,9 +317,9 @@
            (pair (pair nat (big_map nat nat)) nat)
            (big_map nat nat)
            { UNPAIR ; UNPAIR ; SWAP ; DIG 2 ; SOME ; DIG 2 ; UPDATE } ;
-         DIG 5 ;
-         DUP 6 ;
-         DUP 6 ;
+         DIG 6 ;
+         DIG 6 ;
+         DUP 7 ;
          PAIR 3 ;
          LAMBDA
            (pair (pair (lambda
@@ -516,11 +638,12 @@
          DUP 13 ;
          DUP 13 ;
          DIG 10 ;
-         DIG 10 ;
+         DIG 9 ;
          DUP 10 ;
          DUP 10 ;
-         DUP 7 ;
-         PAIR 7 ;
+         DUP 10 ;
+         DUP 8 ;
+         PAIR 8 ;
          LAMBDA
            (pair (pair (lambda
                           (pair address
@@ -538,21 +661,27 @@
                                                                                                   (pair (option mutez)
                                                                                                         (pair bool (pair nat (pair address (pair address (pair mutez (map string bytes)))))))))))))))))))
                           bool)
-                       (pair (lambda (pair (pair nat (big_map nat nat)) nat) (big_map nat nat))
-                             (pair (lambda (pair nat (big_map nat nat)) nat)
-                                   (pair (lambda
-                                            (pair (pair nat nat)
-                                                  (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair bool timestamp))))))
-                                            (option (pair mutez (pair address (pair nat (pair bool timestamp))))))
+                       (pair (lambda
+                                (pair (pair (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair bool timestamp)))))
+                                            nat)
+                                      nat)
+                                (pair (pair (option (pair mutez (pair address (pair nat (pair bool timestamp)))))
+                                            (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair bool timestamp))))))
+                                      nat))
+                             (pair (lambda (pair (pair nat (big_map nat nat)) nat) (big_map nat nat))
+                                   (pair (lambda (pair nat (big_map nat nat)) nat)
                                          (pair (lambda
-                                                  (pair (pair (pair (pair nat nat) (pair nat nat))
-                                                              (pair (pair mutez (pair address (pair nat (pair bool timestamp))))
-                                                                    (pair mutez (pair address (pair nat (pair bool timestamp))))))
-                                                        (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair bool timestamp))))))
+                                                  (pair (pair (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair bool timestamp)))))
+                                                              (pair nat nat))
+                                                        (pair mutez (pair address (pair nat (pair bool timestamp)))))
                                                   (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair bool timestamp))))))
-                                               (pair (lambda (pair bool string) unit)
-                                                     (lambda (option (pair (pair address bool) (option address))) unit)))))))
-                 (pair (pair (pair (pair nat (pair mutez nat))
+                                               (pair (lambda
+                                                        (pair (pair nat nat)
+                                                              (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair bool timestamp))))))
+                                                        (option (pair mutez (pair address (pair nat (pair bool timestamp))))))
+                                                     (pair (lambda (pair bool string) unit)
+                                                           (lambda (option (pair (pair address bool) (option address))) unit))))))))
+                 (pair (pair (pair (pair nat (pair mutez (pair nat (option (pair nat nat)))))
                                    (pair address
                                          (pair mutez
                                                (pair timestamp
@@ -621,8 +750,8 @@
                                                                  (pair (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair bool timestamp)))))
                                                                        (big_map nat nat)))))))))))
            { UNPAIR ;
-             UNPAIR 7 ;
-             DIG 7 ;
+             UNPAIR 8 ;
+             DIG 8 ;
              UNPAIR ;
              UNPAIR ;
              UNPAIR ;
@@ -634,7 +763,7 @@
              COMPARE ;
              EQ ;
              PAIR ;
-             DUP 12 ;
+             DUP 13 ;
              SWAP ;
              EXEC ;
              DROP ;
@@ -642,7 +771,7 @@
              DUP ;
              DUG 2 ;
              CAR ;
-             DIG 12 ;
+             DIG 13 ;
              SWAP ;
              EXEC ;
              DROP ;
@@ -661,7 +790,7 @@
              GE ;
              AND ;
              PAIR ;
-             DUP 11 ;
+             DUP 12 ;
              SWAP ;
              EXEC ;
              DROP ;
@@ -672,51 +801,199 @@
              COMPARE ;
              NEQ ;
              PAIR ;
-             DIG 10 ;
+             DUP 12 ;
              SWAP ;
              EXEC ;
              DROP ;
+             SWAP ;
+             DUP ;
+             DUG 2 ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             CDR ;
+             DUP 4 ;
+             CAR ;
+             PAIR ;
+             DIG 8 ;
+             SWAP ;
+             EXEC ;
              DUP 4 ;
              CDR ;
+             CDR ;
+             CDR ;
+             IF_NONE
+               { DIG 6 ;
+                 DROP ;
+                 DIG 8 ;
+                 DROP ;
+                 DIG 8 ;
+                 DROP ;
+                 DUP 4 ;
+                 CDR ;
+                 CDR ;
+                 CAR ;
+                 DUP 5 ;
+                 CDR ;
+                 CAR ;
+                 MUL ;
+                 DUP 4 ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CAR ;
+                 PAIR }
+               { SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 DUP 4 ;
+                 PAIR ;
+                 DUP 5 ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CDR ;
+                 CAR ;
+                 DUG 2 ;
+                 UNPAIR ;
+                 DUP 4 ;
+                 DUP 4 ;
+                 PAIR ;
+                 DIG 14 ;
+                 SWAP ;
+                 EXEC ;
+                 IF_NONE { PUSH string "INTERNAL_ERROR" ; FAILWITH } {} ;
+                 DUP ;
+                 CDR ;
+                 PUSH mutez 0 ;
+                 PAIR ;
+                 SWAP ;
+                 DUP ;
+                 DUG 2 ;
+                 CDR ;
+                 CAR ;
+                 DIG 3 ;
+                 COMPARE ;
+                 EQ ;
+                 IF { SWAP ;
+                      DUP ;
+                      DUG 2 ;
+                      CDR ;
+                      CDR ;
+                      CAR ;
+                      DIG 2 ;
+                      CAR ;
+                      DIG 5 ;
+                      DUP 4 ;
+                      SOME ;
+                      DUP 7 ;
+                      UPDATE ;
+                      PAIR ;
+                      PAIR }
+                    { SWAP ; DROP ; DIG 3 ; DROP ; PUSH string "INVALID_BID_UPDATER" ; FAILWITH } ;
+                 UNPAIR ;
+                 UNPAIR ;
+                 DIG 3 ;
+                 DUP 6 ;
+                 DIG 2 ;
+                 PAIR ;
+                 PAIR ;
+                 DUP 14 ;
+                 SWAP ;
+                 EXEC ;
+                 DIG 3 ;
+                 DIG 4 ;
+                 CAR ;
+                 DIG 2 ;
+                 PAIR ;
+                 PAIR ;
+                 DIG 9 ;
+                 SWAP ;
+                 EXEC ;
+                 CAR ;
+                 CDR ;
+                 PUSH string "BID_MUST_INCREASE" ;
+                 DUP 3 ;
+                 DUP 9 ;
+                 CDR ;
+                 CAR ;
+                 COMPARE ;
+                 GE ;
+                 DUP 5 ;
+                 DUP 10 ;
+                 CDR ;
+                 CDR ;
+                 CAR ;
+                 COMPARE ;
+                 GE ;
+                 AND ;
+                 PAIR ;
+                 DIG 12 ;
+                 SWAP ;
+                 EXEC ;
+                 DROP ;
+                 DUG 2 ;
+                 MUL ;
+                 DUP 6 ;
+                 CDR ;
+                 CAR ;
+                 DUP 7 ;
+                 CDR ;
+                 CDR ;
+                 CAR ;
+                 MUL ;
+                 SUB ;
+                 SWAP ;
+                 PAIR } ;
+             UNPAIR ;
+             DUP 7 ;
+             CDR ;
              CAR ;
-             DUP 4 ;
+             DUP 7 ;
              CDR ;
              CAR ;
              COMPARE ;
              LT ;
-             DUP 6 ;
+             DUP 9 ;
              NOT ;
-             DUP 5 ;
-             CDR ;
-             CDR ;
-             DUP 6 ;
-             CDR ;
-             CAR ;
-             MUL ;
+             DIG 3 ;
              AMOUNT ;
              COMPARE ;
-             EQ ;
-             NOT ;
+             NEQ ;
              AND ;
              OR ;
              IF { NOW ;
-                  DUP 5 ;
+                  DUP 7 ;
                   CDR ;
                   CDR ;
                   CDR ;
                   CAR ;
                   PAIR ;
-                  DUP 4 ;
+                  DUP 6 ;
                   CDR ;
                   CAR ;
-                  DUP 3 ;
+                  DUP 5 ;
                   PAIR ;
                   PAIR ;
                   PUSH string "INVALID_BID_AMOUNT" ;
                   PAIR ;
                   FAILWITH }
                 {} ;
-             DUP 4 ;
+             DUP 6 ;
              CDR ;
              CDR ;
              CDR ;
@@ -724,7 +1001,7 @@
              CDR ;
              CAR ;
              NOW ;
-             DUP 6 ;
+             DUP 8 ;
              CDR ;
              CDR ;
              CDR ;
@@ -736,52 +1013,28 @@
              SUB ;
              COMPARE ;
              LE ;
-             IF { DUP 4 ; CDR ; CDR ; CDR ; CDR ; CDR ; CAR ; NOW ; ADD }
-                { DUP 4 ; CDR ; CDR ; CDR ; CDR ; CDR ; CDR ; CDR ; CAR } ;
+             IF { DUP 6 ; CDR ; CDR ; CDR ; CDR ; CDR ; CAR ; NOW ; ADD }
+                { DUP 6 ; CDR ; CDR ; CDR ; CDR ; CDR ; CDR ; CDR ; CAR } ;
              NOW ;
-             DIG 6 ;
+             DIG 8 ;
              PAIR ;
-             DUP 5 ;
+             DUP 7 ;
              CDR ;
-             CDR ;
-             PAIR ;
-             DIG 2 ;
-             PAIR ;
-             DUP 4 ;
              CDR ;
              CAR ;
              PAIR ;
-             DUP 3 ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             DUP 5 ;
-             CAR ;
+             DIG 4 ;
              PAIR ;
-             DIG 7 ;
-             SWAP ;
-             EXEC ;
-             DUP ;
              DUP 6 ;
+             CDR ;
              CAR ;
              PAIR ;
-             DUP 5 ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CAR ;
              DUP 4 ;
+             DUP 7 ;
+             CAR ;
+             PAIR ;
+             DIG 3 ;
+             DUP 3 ;
              DIG 2 ;
              SWAP ;
              DUP ;
@@ -798,97 +1051,10 @@
              UPDATE ;
              PAIR ;
              PAIR ;
-             LEFT (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair bool timestamp))))) ;
-             LOOP_LEFT
-               { UNPAIR ;
-                 UNPAIR ;
-                 SWAP ;
-                 DUP ;
-                 DUG 2 ;
-                 CDR ;
-                 PUSH nat 0 ;
-                 SWAP ;
-                 DUP ;
-                 DUG 2 ;
-                 COMPARE ;
-                 EQ ;
-                 IF { DROP ; PUSH nat 0 }
-                    { PUSH nat 2 ;
-                      PUSH nat 1 ;
-                      DIG 2 ;
-                      SUB ;
-                      ABS ;
-                      EDIV ;
-                      IF_NONE { PUSH string "DIV by 0" ; FAILWITH } {} ;
-                      CAR } ;
-                 DUP 3 ;
-                 CAR ;
-                 PAIR ;
-                 SWAP ;
-                 DUP ;
-                 DUG 2 ;
-                 SWAP ;
-                 DUP ;
-                 DUG 2 ;
-                 PAIR ;
-                 DUP 13 ;
-                 SWAP ;
-                 EXEC ;
-                 IF_NONE
-                   { DROP ;
-                     SWAP ;
-                     DROP ;
-                     SWAP ;
-                     DROP ;
-                     RIGHT
-                       (pair (pair (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair bool timestamp)))))
-                                   (pair nat nat))
-                             (pair mutez (pair address (pair nat (pair bool timestamp))))) }
-                   { DUP 5 ;
-                     CAR ;
-                     SWAP ;
-                     DUP ;
-                     DUG 2 ;
-                     CAR ;
-                     COMPARE ;
-                     LE ;
-                     PUSH nat 0 ;
-                     DUP 6 ;
-                     CDR ;
-                     COMPARE ;
-                     EQ ;
-                     OR ;
-                     IF { DROP 2 ;
-                          SWAP ;
-                          DROP ;
-                          SWAP ;
-                          DROP ;
-                          RIGHT
-                            (pair (pair (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair bool timestamp)))))
-                                        (pair nat nat))
-                                  (pair mutez (pair address (pair nat (pair bool timestamp))))) }
-                        { DIG 2 ;
-                          DIG 4 ;
-                          DUP 3 ;
-                          PAIR ;
-                          DIG 4 ;
-                          DUP 5 ;
-                          PAIR ;
-                          PAIR ;
-                          PAIR ;
-                          DUP 12 ;
-                          SWAP ;
-                          EXEC ;
-                          SWAP ;
-                          DUG 2 ;
-                          PAIR ;
-                          PAIR ;
-                          LEFT (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair bool timestamp))))) } } } ;
              DIG 8 ;
-             DROP ;
-             DIG 8 ;
-             DROP ;
-             DIG 2 ;
+             SWAP ;
+             EXEC ;
+             SWAP ;
              CDR ;
              CDR ;
              CAR ;
@@ -906,7 +1072,7 @@
              CAR ;
              ADD ;
              PUSH nat 1 ;
-             DIG 3 ;
+             DIG 4 ;
              ADD ;
              DUP 5 ;
              CDR ;

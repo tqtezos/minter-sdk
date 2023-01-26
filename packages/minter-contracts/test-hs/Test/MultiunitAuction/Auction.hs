@@ -110,7 +110,7 @@ hprop_First_bid_is_valid_IFF_it_meets_price_floor =
       withSender seller $ addSampleBondingCurve contract
       withSender seller $ configureAuction testData setup
       waitForAuctionToStart testData
-      let bid = Auction.BidParam 0 firstBid 1
+      let bid = Auction.BidParam 0 firstBid 1 Nothing 
 
       withSender bidder $
         if firstBid >= testPriceFloor
@@ -274,9 +274,10 @@ genSomeBids testData = do
 genBid :: TestData -> Natural -> Gen Auction.BidParam
 genBid testData auctionId = do
   let minBid = testPriceFloor testData
+  let isBidIncrease = Nothing 
   bidPrice <- genMutez' (Range.linear minBid (minBid + 1_000_000))
   quantity <- Gen.integral (Range.linear 1 1000)
-  pure $ Auction.BidParam auctionId bidPrice quantity
+  pure $ Auction.BidParam auctionId bidPrice quantity isBidIncrease
 
 ----------------------------------------------------------------------------
 -- Helpers

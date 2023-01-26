@@ -68,7 +68,7 @@ data BidHeapKey = BidHeapKey
   {
     auctionId :: AuctionId 
   , bidIndex :: Natural  
-  } deriving stock (Eq, Ord)
+  } deriving stock (Eq, Ord, Show)
 
 customGeneric "BidHeapKey" ligoCombLayout
 deriving anyclass instance IsoValue BidHeapKey
@@ -92,6 +92,7 @@ data BidParam = BidParam
     auctionId :: Natural
   , priceParam :: Mutez
   , quantityParam :: Natural
+  , isBidIncrease :: Maybe BidHeapKey
  } deriving stock (Eq, Ord, Show)
 
 customGeneric "BidParam" ligoCombLayout
