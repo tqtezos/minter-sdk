@@ -220,9 +220,9 @@ hprop_Assets_are_transferred_to_winning_bidders =
       unless (null winners) (payoutWinners contract (Auction.AuctionId 0, 100))
 
 
-      -- All the tokens should have been transferred to the winner.
+      -- All the tokens should have been transferred to the winners.
       let increment n = n + 1
-      count <- newIORef 0
+      count <- newIORef 1
       forM_ winners \(winningBid, winner) -> do
         forM_ [1..(Auction.quantityParam winningBid)] \_ -> do
           tokenId <- readIORef count
@@ -434,7 +434,6 @@ configureAuction testData Setup{fa2Contract, contract, startTime, endTime, reser
     , startTime = startTime
     , endTime = endTime
     , bondingCurve = 0
-    , initialTokenId = 0
     , reserveAddress = reserveAddress
     , profitAddress = profitAddress
     , tokenInfo = mempty

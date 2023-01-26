@@ -35,7 +35,7 @@ data Auction = Auction
   , numWinningOffers :: Maybe Natural
   , winningPrice :: Maybe Mutez
   , isCanceled :: Bool
-  , nextTokenId :: Natural 
+  , nextTokenId :: Maybe Natural 
   , reserveAddress :: Address 
   , profitAddress :: Address
   , highestOfferPrice :: Mutez  
@@ -54,7 +54,6 @@ data ConfigureParam = ConfigureParam
   , startTime :: Timestamp 
   , endTime :: Timestamp
   , bondingCurve :: Natural 
-  , initialTokenId :: Natural  
   , reserveAddress :: Address 
   , profitAddress :: Address 
   , tokenInfo :: FA2I.TokenMetadata

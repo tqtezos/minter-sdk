@@ -61,7 +61,7 @@ type auction =
     num_winning_offers : nat option;
     winning_price : tez option;
     is_canceled : bool;
-    next_token_id : nat;
+    next_token_id : nat option;
     reserve_address : address;
     profit_address : address;
     highest_offer_price : tez;
@@ -78,7 +78,6 @@ type configure_param =
     start_time : timestamp;
     end_time : timestamp;
     bonding_curve : nat;
-    initial_token_id : nat;
     reserve_address : address;
     profit_address : address;
     token_info : (string, bytes) map;
@@ -376,7 +375,7 @@ let configure_auction_storage(configure_param, seller, storage : configure_param
       num_offers_to_payout_or_return = 0n;
       highest_offer_price = 0tez;
       is_canceled = false;
-      next_token_id = configure_param.initial_token_id;
+      next_token_id = (None : nat option);
       reserve_address = configure_param.reserve_address;
       profit_address = configure_param.profit_address;
       token_info = configure_param.token_info;
@@ -435,7 +434,7 @@ let resolve_auction(auction_id, storage : nat * storage) : return = begin
           else 
             [transfer_reserve_op]
           in 
-        let updated_auction_data : auction = {auction with winning_price = Some winning_price; num_winning_offers = Some num_winning_offers;} in
+        let updated_auction_data : auction = {auction with winning_price = Some winning_price; num_winning_offers = Some num_winning_offers; next_token_id = Some num_winning_offers;} in
         let updated_auctions = Big_map.update auction_id (Some updated_auction_data) storage.auctions in
         (op_list , {storage with auctions = updated_auctions;})  
   )
@@ -673,7 +672,7 @@ let rec mint_n_tokens_to_owner(mint_param, owner, next_token_id, token_info, num
          };
        } in
        let mint_param = mint_token :: mint_param in
-       mint_n_tokens_to_owner(mint_param, owner, next_token_id + 1n, token_info, num_to_mint - 1)
+       mint_n_tokens_to_owner(mint_param, owner, abs(next_token_id - 1n), token_info, num_to_mint - 1)
 
 let rec pay_winning_bids(op_list, bid_heap, mint_param, auction_id, heap_size, winners_to_payout, winning_price, num_offers_to_payout_or_return, next_token_id, token_info : 
       operation list * bid_heap * mint_tokens_param * auction_id * nat * int * tez * nat * nat * token_info)
@@ -713,10 +712,14 @@ let payout(auction_id, num_winners_to_payout, storage : auction_id * nat * stora
       in   
     let heap_size : nat = get_heap_size(auction_id, storage.heap_sizes) in
     assert_msg(heap_size > 0n, "NO_WINNERS_LEFT");
+    let initial_token_id : nat = match auction.next_token_id with 
+          Some ntid -> ntid
+        | None -> (failwith "INTERNAL_ERROR" : nat)
+        in
     let (op_list, bid_heap, mint_param, new_heap_size, num_offers_to_payout_or_return, next_token_id) = 
-        pay_winning_bids(([] : operation list), storage.bids, ([] : mint_tokens_param), auction_id, heap_size, num_winners_to_payout, winning_price, auction.num_offers_to_payout_or_return, auction.next_token_id, auction.token_info) in 
+        pay_winning_bids(([] : operation list), storage.bids, ([] : mint_tokens_param), auction_id, heap_size, num_winners_to_payout, winning_price, auction.num_offers_to_payout_or_return, initial_token_id, auction.token_info) in 
     let new_heap_size_bm : heap_sizes = update_heap_size(auction_id, storage.heap_sizes, new_heap_size) in 
-    let updated_auction_data : auction = {auction with num_offers_to_payout_or_return = num_offers_to_payout_or_return; next_token_id = next_token_id;} in
+    let updated_auction_data : auction = {auction with num_offers_to_payout_or_return = num_offers_to_payout_or_return; next_token_id = Some next_token_id;} in
     let updated_auctions = Big_map.update auction_id (Some updated_auction_data) storage.auctions in
     let mint_tx : operation = mint_tokens(auction.fa2_address, mint_param) in 
     (mint_tx :: op_list, {storage with auctions = updated_auctions; bids = bid_heap; heap_sizes = new_heap_size_bm;})
