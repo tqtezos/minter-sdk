@@ -62,7 +62,6 @@ type auction =
     winning_price : tez option;
     is_canceled : bool;
     next_token_id : nat option;
-    reserve_address : address;
     profit_address : address;
     highest_offer_price : tez;
     token_info : (string, bytes) map;
@@ -78,7 +77,6 @@ type configure_param =
     start_time : timestamp;
     end_time : timestamp;
     bonding_curve : nat;
-    reserve_address : address;
     profit_address : address;
     token_info : (string, bytes) map;
   }
@@ -94,8 +92,8 @@ type auction_without_configure_entrypoints =
   | Return_old_bids of auction_id * nat
   | Return_old_offers of auction_id * nat
   | Payout_winners of auction_id * nat
-  | Add_bonding_curve of bonding_curve * bonding_curve
-
+  | Add_bonding_curve of bonding_curve
+ 
 type auction_entrypoints =
   | Configure of configure_param
   | AdminAndInteract of auction_without_configure_entrypoints
@@ -114,7 +112,6 @@ type storage =
     auctions : (nat, auction) big_map;
     bonding_curve_index : nat;
     bonding_curves : bonding_curves;
-    bonding_curve_integrals : bonding_curves;
     bids : bid_heap;
     heap_sizes : heap_sizes;
   }
@@ -376,7 +373,6 @@ let configure_auction_storage(configure_param, seller, storage : configure_param
       highest_offer_price = 0tez;
       is_canceled = false;
       next_token_id = (None : nat option);
-      reserve_address = configure_param.reserve_address;
       profit_address = configure_param.profit_address;
       token_info = configure_param.token_info;
     } in
@@ -415,25 +411,9 @@ let resolve_auction(auction_id, storage : nat * storage) : return = begin
         let u : unit = assert_msg(min_price >= min_price_valid_at_q, "NOT_ALL_INVALID_BIDS_AND_OFFERS_RETURNED") in 
         let winning_price : tez = min_price_valid_at_q in
         let num_winning_offers : nat = auction.num_offers_to_payout_or_return in  
-        let bonding_curve_integral : bonding_curve = get_bonding_curve(auction.bonding_curve, storage.bonding_curve_integrals) in
-        let total_fee : tez = (winning_price * auction.num_offers_to_payout_or_return) in 
-        let integral_value : tez = (bonding_curve_integral auction.num_offers_to_payout_or_return) - (bonding_curve_integral 0n) in (*Function must be increasing*)
-        let reserve_amount : tez = 
-          if integral_value + auction.highest_offer_price > total_fee 
-          then total_fee 
-          else integral_value + auction.highest_offer_price
-          in
-        let transfer_reserve_op : operation = transfer_tez(reserve_amount, auction.reserve_address) in 
-
-        let op_list : operation list =  
-          if total_fee > reserve_amount 
-          then 
-            let auction_profit : tez = total_fee - reserve_amount in 
-            let transfer_profit_op : operation = transfer_tez(auction_profit, auction.profit_address) in 
-            [transfer_reserve_op; transfer_profit_op] 
-          else 
-            [transfer_reserve_op]
-          in 
+        let total_fee : tez = (winning_price * num_winning_offers) in 
+        let transfer_fee_op : operation = transfer_tez(total_fee, auction.profit_address) in 
+        let op_list : operation list = [transfer_fee_op] in
         let updated_auction_data : auction = {auction with winning_price = Some winning_price; num_winning_offers = Some num_winning_offers; next_token_id = Some num_winning_offers;} in
         let updated_auctions = Big_map.update auction_id (Some updated_auction_data) storage.auctions in
         (op_list , {storage with auctions = updated_auctions;})  
@@ -752,12 +732,10 @@ let multiunit_bonding_curve_auction_no_configure (p,storage : auction_without_co
     | Payout_winners payout_param ->
         let (auction_id, num_winners_to_payout) = payout_param in 
         payout(auction_id, num_winners_to_payout, storage)
-    | Add_bonding_curve bc_param -> 
-        let (bc, bc_integral) = bc_param in 
+    | Add_bonding_curve bc -> 
         let new_bonding_curve_bm : bonding_curves = Big_map.add storage.bonding_curve_index bc storage.bonding_curves in 
-        let new_bonding_curve_integral_bm : bonding_curves = Big_map.add storage.bonding_curve_index bc_integral storage.bonding_curve_integrals in
-        (([] : operation list), {storage with bonding_curves = new_bonding_curve_bm; bonding_curve_integrals = new_bonding_curve_integral_bm;
-                                   bonding_curve_index = storage.bonding_curve_index + 1n})
+        (([] : operation list), {storage with bonding_curves = new_bonding_curve_bm;
+                                  bonding_curve_index = storage.bonding_curve_index + 1n})
          
 
 let multiunit_auction_tez_main (p,storage : auction_entrypoints * storage) : return = match p with

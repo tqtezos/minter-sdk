@@ -35,12 +35,11 @@ hprop_Fees_are_paid_correctly =
     bids <- forAll $ genSomeBids testData
 
     clevelandProp $ do
-      setup@Setup{seller, contract, fa2Contract, reserveAddress, profitAddress} <- testSetup testData
+      setup@Setup{seller, contract, fa2Contract, profitAddress} <- testSetup testData
       bidders <- mkBidders bids
       let winners = winningBids sampleBondingCurve' (toList bids `zip` toList bidders)
       sellerBalanceBefore <- getBalance seller
       auctionContractBalanceBefore <- getBalance contract
-      reserveAddressBalanceBefore <- getBalance reserveAddress
       profitAddressBalanceBefore <- getBalance profitAddress
 
       withSender seller $ addSampleBondingCurve contract
@@ -79,18 +78,13 @@ hprop_Fees_are_paid_correctly =
             Nothing -> failure $ "Auction not found for auction"
             Just auction -> pure $ auction
       let totalFeesSent = winningPrice `unsafeMulMutez` numWinningOffers
-      let highestOffer = Auction.highestOfferPrice auctionData
-      let bondingCurveIntegral = (sampleIntegralCurve' numWinningOffers) `unsafeSubMutez` (sampleIntegralCurve' 0)
-      let expectedReserveAmount = min totalFeesSent (bondingCurveIntegral + highestOffer)
-      let expectedProfitAmount = totalFeesSent `unsafeSubMutez` expectedReserveAmount
+      let expectedProfitAmount = totalFeesSent 
 
       sellerBalanceAfter <- getBalance seller
       auctionContractBalanceAfter <- getBalance contract
-      reserveAddressBalanceAfter <- getBalance reserveAddress
       profitAddressBalanceAfter <- getBalance profitAddress
 
       sellerBalanceBefore @== sellerBalanceAfter
-      reserveAddressBalanceAfter @== reserveAddressBalanceBefore `unsafeAddMutez` expectedReserveAmount
       profitAddressBalanceAfter @== profitAddressBalanceBefore `unsafeAddMutez` expectedProfitAmount
       assert (if auctionContractBalanceBefore < auctionContractBalanceAfter
                 then (auctionContractBalanceBefore `unsafeAddMutez` toMutez 1e6) >= auctionContractBalanceAfter
@@ -307,14 +301,6 @@ sampleBondingCurve' :: Natural -> Mutez
 sampleBondingCurve' qty =
   (toMutez 333333 :: Mutez) `unsafeMulMutez` qty
 
-sampleIntegralCurve :: '[Natural] L.:-> '[Mutez]
-sampleIntegralCurve = do
-  L.dup L.# L.mul L.# L.push (toMutez 166666 :: Mutez) L.# L.mul
-
-sampleIntegralCurve' :: Natural -> Mutez
-sampleIntegralCurve' qty = do
-  (toMutez 166666 :: Mutez) `unsafeMulMutez` qty `unsafeMulMutez` qty
-
 data Setup = Setup
   { contract :: ContractHandler Auction.AuctionEntrypoints Auction.AuctionStorage
   , fa2Contract :: ContractHandler Nft.EntrypointsWithMint Nft.StorageWithTokenMetadata
@@ -323,13 +309,11 @@ data Setup = Setup
   , startTime :: Timestamp
   , endTime :: Timestamp
   , profitAddress :: Address
-  , reserveAddress :: Address
   }
 
 testSetup :: MonadNettest caps base m => TestData -> m Setup
 testSetup testData = do
   feeCollector <- newAddress "fee-collector"
-  reserveAddress <- newAddress "reserve-address"
   profitAddress <- newAddress "profit-address"
 
   seller <- newAddress "seller"
@@ -424,7 +408,7 @@ winningBids bondingCurve bids = do
 ----------------------------------------------------------------------------
 
 configureAuction :: (HasCallStack, MonadNettest caps base m) => TestData -> Setup -> m ()
-configureAuction testData Setup{fa2Contract, contract, startTime, endTime, reserveAddress, profitAddress}  = do
+configureAuction testData Setup{fa2Contract, contract, startTime, endTime, profitAddress}  = do
 
   call contract (Call @"Configure") Auction.ConfigureParam
     { priceFloor = testPriceFloor testData
@@ -434,7 +418,6 @@ configureAuction testData Setup{fa2Contract, contract, startTime, endTime, reser
     , startTime = startTime
     , endTime = endTime
     , bondingCurve = 0
-    , reserveAddress = reserveAddress
     , profitAddress = profitAddress
     , tokenInfo = mempty
     }
@@ -449,11 +432,11 @@ placeBid contract bidParam =
     }
 
 addSampleBondingCurve :: (HasCallStack, MonadNettest caps base m) => ContractHandler Auction.AuctionEntrypoints Auction.AuctionStorage -> m ()
-addSampleBondingCurve = addBondingCurve sampleBondingCurve sampleIntegralCurve
+addSampleBondingCurve = addBondingCurve sampleBondingCurve 
 
-addBondingCurve :: (HasCallStack, MonadNettest caps base m) => ('[Natural] L.:-> '[Mutez])  -> ('[Natural] L.:-> '[Mutez])-> ContractHandler Auction.AuctionEntrypoints Auction.AuctionStorage -> m ()
-addBondingCurve bc integral contract = do
-  call contract (Call @"Add_bonding_curve") (bc, integral)
+addBondingCurve :: (HasCallStack, MonadNettest caps base m) => ('[Natural] L.:-> '[Mutez])  -> ContractHandler Auction.AuctionEntrypoints Auction.AuctionStorage -> m ()
+addBondingCurve bc contract = do
+  call contract (Call @"Add_bonding_curve") bc
 
 resolveAuction :: (HasCallStack, MonadNettest caps base m) => ContractHandler Auction.AuctionEntrypoints Auction.AuctionStorage -> m ()
 resolveAuction contract =

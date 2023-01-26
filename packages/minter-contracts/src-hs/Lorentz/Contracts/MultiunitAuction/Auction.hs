@@ -36,7 +36,6 @@ data Auction = Auction
   , winningPrice :: Maybe Mutez
   , isCanceled :: Bool
   , nextTokenId :: Maybe Natural 
-  , reserveAddress :: Address 
   , profitAddress :: Address
   , highestOfferPrice :: Mutez  
   , tokenInfo :: FA2I.TokenMetadata
@@ -54,7 +53,6 @@ data ConfigureParam = ConfigureParam
   , startTime :: Timestamp 
   , endTime :: Timestamp
   , bondingCurve :: Natural 
-  , reserveAddress :: Address 
   , profitAddress :: Address 
   , tokenInfo :: FA2I.TokenMetadata
   }
@@ -116,7 +114,6 @@ data AuctionStorage = AuctionStorage
   , auctions :: BigMap AuctionId Auction
   , bondingCurveIndex :: Natural
   , bondingCurves :: BigMap Natural ('[Natural] :-> '[Mutez])
-  , bondingCurveIntegrals :: BigMap Natural ('[Natural] :-> '[Mutez])
   , bids :: BigMap BidHeapKey BidData
   , heapSizes :: BigMap AuctionId Natural
   }
@@ -135,7 +132,6 @@ initAuctionStorage as = AuctionStorage
   , auctions = mempty
   , bondingCurveIndex = 0 
   , bondingCurves = mempty 
-  , bondingCurveIntegrals = mempty 
   , bids = mempty 
   , heapSizes = mempty
   }
@@ -149,7 +145,7 @@ data AuctionWithoutConfigureEntrypoints
   | Return_old_bids (AuctionId, Natural)
   | Return_old_offers (AuctionId, Natural)
   | Payout_winners (AuctionId, Natural)
-  | Add_bonding_curve (('[Natural] :-> '[Mutez]), ('[Natural] :-> '[Mutez]))
+  | Add_bonding_curve ('[Natural] :-> '[Mutez])
 
 customGeneric "AuctionWithoutConfigureEntrypoints" ligoLayout
 deriving anyclass instance IsoValue AuctionWithoutConfigureEntrypoints

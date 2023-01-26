@@ -139,6 +139,16 @@ let transfer_tez (qty, to_ : tez * address) : operation =
   let destination : unit contract = resolve_address (to_) in
   Tezos.transaction () qty destination
 
+(*transfer tez, safe for rounding errors that make amount to transfer between contract balance and 1tz*)
+let safe_transfer_tez (qty, to_ : tez * address) : operation =
+   let contract_balance : tez = Tezos.balance in 
+   (
+     if qty >= contract_balance && qty <= contract_balance + 1tz
+     then transfer_tez(contract_balance, to_) 
+     else transfer_tez(qty, to_)
+   )
+   
+
 let address_from_key (key : key) : address =
   let a = Tezos.address (Tezos.implicit_account (Crypto.hash_key key)) in
   a
