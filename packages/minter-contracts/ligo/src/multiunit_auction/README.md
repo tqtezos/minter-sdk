@@ -15,15 +15,7 @@ A bid is defined as some number of offers `q` at a price `p`. An auction termina
 
 ## Resolve
 
-After an auction terminates, the auction can be resolved by calling `Resolve`. `Resolve` will handle the auction fees and set the `winning price = WP = f(N)`. 
-
-1. We define `TotalFees` as the net fees bidders will have paid to the contract after the auction is finished. `TotalFees` is determined by `N * f(N)` where `N` is the number of winning bids and `f(N)` is the bonding curve applied to N.  
-
-2. Next, define `I` as `F(N) - F(0)` where `F` is the antiderivative of `f` which is stored as a lambda in contract storage in `bonding_curve_integrals`. Since `f` is non-decreasing, `TotalFees >= I`. Then, define `ReserveAmount = min(TotalFees, I + P(B_M))` where `B_M` is the max priced bid in the set `X` of winning bids. `ReserveAmount` is used to buy back cards when they are sold to the marketplace contract. 
-
-3. Finally, `ProfitAmount = TotalFees - ReserveAmount`. 
-
-4. `Resolve` sends `ProfitAmount` and `ReserveAmount` to their respective addresses.
+After an auction terminates, the auction can be resolved by calling `Resolve`. `Resolve` will handle the auction fees and set the `winning price = WP = f(N)`. We define `TotalFees` as the net fees bidders will have paid to the contract after the auction is finished. `TotalFees` is determined by `N * f(N)` where `N` is the number of winning bids and `f(N)` is the bonding curve applied to N. `Resolve` will send `TotalFees` to the profit address defined in storage. 
 
 ## Payout Winners
 
