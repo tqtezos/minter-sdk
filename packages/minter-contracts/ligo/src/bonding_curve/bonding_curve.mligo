@@ -288,6 +288,9 @@ type offchain_buyer = address
 type offchain_seller = address
 
 type bonding_curve_entrypoints =
+  (* A default entrypoint is required to receive tez, e.g. when receiving baking rewards *)
+  | Default of unit
+
   | Admin of admin_entrypoints
 
   // update staking (admin only)
@@ -466,6 +469,11 @@ let sell_offchain_no_admin ((token_to_sell, seller_addr), storage : (token_id * 
 let bonding_curve_main (param, storage : bonding_curve_entrypoints * bonding_curve_storage)
     : (operation list) * bonding_curve_storage =
     match param with
+    (* Receive tez, which is added to the storage.unclaimed amount *)
+    | Default ->
+        let new_storage = { storage with unclaimed = storage.unclaimed + Tezos.amount }
+        in ([] : operation list), new_storage
+
     (** admin entrypoints *)
     | Admin admin_param ->
       let ops, admin = admin_main (admin_param, storage.admin) in

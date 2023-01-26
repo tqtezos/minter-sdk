@@ -32,12 +32,27 @@ calculateBasisPointFee :: Natural -> Integer -> Integer
 calculateBasisPointFee basisPoints x =
   (fromIntegral basisPoints * x) `div` (100 * 100)
 
--- | Add the basis point fee to the input:
+-- | Remove the basis point fee from the input and ensure that the subtraction
+-- is safe, i.e. no negative results are returned.
 --
--- addBasisPointFee basisPoints x = x + calculateBasisPointFee basisPoints x
-addBasisPointFee :: Natural -> Integer -> Integer
-addBasisPointFee basisPoints x =
-  x + calculateBasisPointFee basisPoints x
+-- If this result is non-negative, it's calculated as:
+--
+-- @
+--   removeBasisPointFee basisPoints x = x - calculateBasisPointFee basisPoints x
+-- @
+--
+-- otherwise an error is thrown.
+removeBasisPointFee :: Natural -> Integer -> Integer
+removeBasisPointFee basisPoints x =
+  if 0 <= unsafeResult
+    then unsafeResult
+    else error $
+      "removeBasisPointFee: basis point fee too large: (basisPoints, calculateBasisPointFee basisPoints x): " <>
+      show (basisPoints, calculateBasisPointFee basisPoints x) <>
+      " while x: " <>
+      show x
+  where
+    unsafeResult = x - calculateBasisPointFee basisPoints x
 
 -- | A piecewise polynomial is composed of a number of (length, coefficients
 -- from x^0..) polynomials, ended by a single (coefficients from x^0..)
@@ -243,7 +258,8 @@ storageStr = "{ Pair (Pair \"tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb\" False) None;
 
 
 data Entrypoints
-  = Admin AdminEntrypoints
+  = Default ()
+  | Admin AdminEntrypoints
   | Set_delegate (Maybe KeyHash)
   | Withdraw ()
   | Buy ()

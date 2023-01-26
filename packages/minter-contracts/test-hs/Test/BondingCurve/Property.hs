@@ -379,6 +379,7 @@ hprop_ExampleFormula0 =
         & expectError (WrappedValue (exampleFormula0 x'))
 
 
+
 -- Assert that calling the "Pow" entrypoint matches the implementation of (^) for natural numbers
 hprop_ExampleFormula0_lambda :: Property
 hprop_ExampleFormula0_lambda =

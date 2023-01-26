@@ -20,7 +20,7 @@ bonding curve storage
                                                                                                                                                                                                                                                                  SUB;
                                                                                                                                                                                                                                                                  ISNAT;
                                                                                                                                                                                                                                                                  IF_NONE { IF_CONS { RIGHT nat }
-                                                                                                                                                                                                                                                                                   { PUSH string "list too short for index (by 1)";
+                                                                                                                                                                                                                                                                                   { PUSH string "list too short for index";
                                                                                                                                                                                                                                                                                      FAILWITH } }
                                                                                                                                                                                                                                                                          { SWAP;
                                                                                                                                                                                                                                                                            IF_CONS { DROP;
@@ -32,28 +32,28 @@ bonding curve storage
                                                                                                                                                                                                                                                      DROP }; 0 }
 
 bonding curve address
-KT1Aya7ggmEgRTGw44TtLsHMqfac2by8twSj
+KT1EuaP24NWeSR9YCizX3HqpVxTsGMr43rpd
 
 admin -> nft: update_operators
-{ Left { "tz1PwgnoAyphW2iFdbnnYgwWRcNTpAaH7gVY"; "KT1Aya7ggmEgRTGw44TtLsHMqfac2by8twSj"; 0 } }
+{ Left { "tz1PwgnoAyphW2iFdbnnYgwWRcNTpAaH7gVY"; "KT1EuaP24NWeSR9YCizX3HqpVxTsGMr43rpd"; 0 } }
 
 buyer -> bondingCurve: buy
 buyer:
 tz1TZpbZZZTKiJVh7ANXCLKFT3TkADzxRZWM
 amount:
-111
+110
 
 buyer -> bondingCurve: buy
 buyer:
 tz1gtKKyvwQ6u54sbVzano58mFZLqERaCgyW
 amount:
-161
+160
 
 buyer -> bondingCurve: buy
 buyer:
 tz1RLYCL2F82JxXtEGZmtLRDMD4Pe9SRYLZo
 amount:
-272
+270
 
 seller -> bondingCurve: sell
 seller:

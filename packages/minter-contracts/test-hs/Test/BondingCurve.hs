@@ -15,7 +15,7 @@ import Lorentz.Base
 import Lorentz.Value
 import Michelson.Printer
 import Michelson.Text (unsafeMkMText)
-import Michelson.Typed.Scope (ConstantScope, ProperPrintedValBetterErrors)
+import Michelson.Typed.Scope (ConstantScope)
 import Michelson.Typed.Sing () -- (KnownT)
 import Morley.Nettest
 import Morley.Nettest.Tasty
@@ -762,7 +762,7 @@ sellOffchainTestLambda = sellOffchainTest @(Lambda Natural Mutez) "Lambda" $ \bo
   originateBondingCurveWithBalance bondingCurveBalance bondingCurveStorage
 
 
-buySellTest :: forall c. (Buildable c, Eq c, ConstantScope (ToT c), IsoValue c, ProperPrintedValBetterErrors (ToT c))
+buySellTest :: forall c. (Buildable c, Eq c, ConstantScope (ToT c), IsoValue c)
   => String
   -> (forall caps base m.  MonadNettest caps base m
         => Mutez
@@ -772,7 +772,7 @@ buySellTest :: forall c. (Buildable c, Eq c, ConstantScope (ToT c), IsoValue c, 
         -> m (Storage c, ContractHandler DebugEntrypoints (Storage c)))
   -> TestTree
 buySellTest name originator = nettestScenarioOnEmulatorCaps ("Buy Sell " <> name) $ do
-  let logFile = "buy_sell_test_data.txt"
+  let logFile = "buy_sell_test_data_" <> name <> ".txt"
   liftIO $ writeFile logFile "Buy Sell Test\n"
 
   let dontForceSingleLine = False
@@ -837,8 +837,8 @@ buySellTest name originator = nettestScenarioOnEmulatorCaps ("Buy Sell " <> name
       call bondingCurve (Call @"Cost") index
         & expectError (WrappedValue amount)
 
-    let insufficientAmount :: Mutez = fromIntegral $ fromIntegral auctionPrice + amount
-    let buyAmount :: Mutez = fromIntegral . addBasisPointFee 100 $ fromIntegral auctionPrice + amount
+    let insufficientAmount :: Mutez = fromIntegral $ amount
+    let buyAmount :: Mutez = fromIntegral $ fromIntegral auctionPrice + amount
 
     -- basis_points fee required
     withSender buyer $
@@ -871,8 +871,6 @@ buySellTest name originator = nettestScenarioOnEmulatorCaps ("Buy Sell " <> name
   forM_ (reverse sellers) $ \(tokenId, (expectedCost, seller)) -> do
     sellerBalanceBefore <- getBalance seller
 
-
-
     log "seller -> bondingCurve: sell"
     log "seller:"
     log $ formatAddress seller
@@ -882,9 +880,13 @@ buySellTest name originator = nettestScenarioOnEmulatorCaps ("Buy Sell " <> name
     withSender seller $
       call bondingCurve (Call @"Sell") (TokenId tokenId)
 
+    let preFeeSellAmount = auctionPrice + fromIntegral expectedCost
+    let calculatedBasisPointFee = calculateBasisPointFee basisPoints $ fromIntegral preFeeSellAmount
+    let sellAmount = fromInteger . removeBasisPointFee basisPoints . fromIntegral $ preFeeSellAmount
+
     -- ensure cost was expected
     sellerBalanceAfter <- getBalance seller
-    (tokenId, (sellerBalanceAfter - sellerBalanceBefore)) @== (tokenId, auctionPrice + fromIntegral expectedCost)
+    ((tokenId, auctionPrice, preFeeSellAmount, calculatedBasisPointFee), (sellerBalanceAfter - sellerBalanceBefore)) @== ((tokenId, auctionPrice, preFeeSellAmount, calculatedBasisPointFee), sellAmount)
 
   -- ensure zero tokens remaining and unclaimed is expected
   postSellStorage <- getStorage' bondingCurve
@@ -994,8 +996,8 @@ buySellOffchainTest = nettestScenarioOnEmulatorCaps "Buy Sell Offchain" $ do
       call bondingCurve (Call @"Cost") index
         & expectError (WrappedValue amount)
 
-    let insufficientAmount :: Mutez = fromIntegral $ fromIntegral auctionPrice + amount
-    let buyAmount :: Mutez = fromIntegral . addBasisPointFee 100 $ fromIntegral auctionPrice + amount
+    let insufficientAmount :: Mutez = fromIntegral amount
+    let buyAmount :: Mutez = fromIntegral $ fromIntegral auctionPrice + amount
 
     -- basis_points fee required
     withSender admin $
@@ -1025,9 +1027,11 @@ buySellOffchainTest = nettestScenarioOnEmulatorCaps "Buy Sell Offchain" $ do
     withSender admin $
       call bondingCurve (Call @"Sell_offchain") (TokenId tokenId, seller)
 
+    let sellAmount = fromInteger . removeBasisPointFee basisPoints . fromIntegral $ auctionPrice + fromIntegral expectedCost
+
     -- ensure cost was expected
     sellerBalanceAfter <- getBalance seller
-    (tokenId, (sellerBalanceAfter - sellerBalanceBefore)) @== (tokenId, auctionPrice + fromIntegral expectedCost)
+    (tokenId, (sellerBalanceAfter - sellerBalanceBefore)) @== (tokenId, sellAmount)
 
   -- ensure zero tokens remaining and unclaimed is expected
   postSellStorage <- getStorage' bondingCurve
