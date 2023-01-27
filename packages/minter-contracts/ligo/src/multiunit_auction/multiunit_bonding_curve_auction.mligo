@@ -133,7 +133,7 @@ let bid_is_less_than(bid1, bid2 : bid * bid) : bool =
   then true 
   else 
        if bid1.price = bid2.price
-       then bid1.bid_time < bid2.bid_time
+       then bid1.bid_time > bid2.bid_time
        else false
 
 let swap_heap_keys (i_key, j_key, i_bid, j_bid, bid_heap : bid_heap_key * bid_heap_key * bid * bid * bid_heap) : bid_heap =
@@ -160,11 +160,11 @@ let rec maintain_min_heap (bid_heap, current_key, current_bid : bid_heap * bid_h
   match parent_bid_option with 
       Some parent_bid -> 
         (
-        if current_key.bid_index = 0n || parent_bid.price <= current_bid.price
+        if current_key.bid_index = 0n || bid_is_less_than(parent_bid, current_bid)
         then bid_heap
         else 
              let bid_heap : bid_heap = swap_heap_keys(parent_key, current_key, parent_bid, current_bid, bid_heap) in 
-             maintain_min_heap (bid_heap, parent_key, parent_bid)
+             maintain_min_heap (bid_heap, parent_key, current_bid)
         )
     | None -> bid_heap
 
@@ -610,7 +610,7 @@ let rec return_invalid_bids(bid_heap, num_offers_to_payout_or_return, bonding_cu
           let bid_returnable : bool =  (min_bid_price < min_price_valid_at_old_Q  && min_bid_price < min_price_valid_at_new_Q_plus_one)|| auction_is_canceled in
           if bid_returnable 
           then 
-            let op_list = 
+            let new_op_list = 
 #if OFFCHAIN_BID
               if bid.is_offchain 
               then op_list 
@@ -618,11 +618,12 @@ let rec return_invalid_bids(bid_heap, num_offers_to_payout_or_return, bonding_cu
 #endif   
                 let return_amt : tez = bid.quantity * bid.price in 
                 let bid_return_op : operation = transfer_tez(return_amt, bid.bidder) in 
-                bid_return_op :: op_list in
-            return_invalid_bids(new_bid_heap, remaining_offers, bonding_curve, auction_id, auction_is_canceled, new_heap_size, bids_to_return - 1, min_bid_price, op_list)
+                bid_return_op :: op_list 
+                in
+            return_invalid_bids(new_bid_heap, remaining_offers, bonding_curve, auction_id, auction_is_canceled, new_heap_size, bids_to_return - 1, min_bid_price, new_op_list)
           else 
                (bid_heap, heap_size, num_offers_to_payout_or_return, price_floor, op_list)
-      | None -> (bid_heap, heap_size, num_offers_to_payout_or_return, price_floor, op_list) (*This should not be reached*)
+      | None -> (failwith "INTERNAL_ERROR_BID_RETURN" : bid_heap * nat * nat * tez * operation list)
 
 let empty_heap(auction_id, num_bids_to_return, storage : auction_id * nat * storage) : return = begin
     tez_stuck_guard("RETURN_OLD_BIDS");

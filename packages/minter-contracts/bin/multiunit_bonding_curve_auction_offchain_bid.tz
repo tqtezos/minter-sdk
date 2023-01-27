@@ -144,7 +144,7 @@
                        CDR ;
                        CDR ;
                        COMPARE ;
-                       LT }
+                       GT }
                      { DROP 2 ; PUSH bool False } } } ;
          LAMBDA
            (pair (pair (pair (pair nat nat) (pair nat nat))
@@ -192,27 +192,32 @@
              IF_NONE { PUSH string "NO_BIDS" ; FAILWITH } {} } ;
          SWAP ;
          APPLY ;
-         DUP 3 ;
-         DUP 3 ;
-         PAIR ;
+         DUP 4 ;
+         DUP 4 ;
+         DUP 4 ;
+         PAIR 3 ;
          LAMBDA
            (pair (pair (lambda
                           (pair (pair nat nat)
                                 (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair bool timestamp))))))
                           (option (pair mutez (pair address (pair nat (pair bool timestamp))))))
-                       (lambda
-                          (pair (pair (pair (pair nat nat) (pair nat nat))
-                                      (pair (pair mutez (pair address (pair nat (pair bool timestamp))))
-                                            (pair mutez (pair address (pair nat (pair bool timestamp))))))
+                       (pair (lambda
+                                (pair (pair (pair (pair nat nat) (pair nat nat))
+                                            (pair (pair mutez (pair address (pair nat (pair bool timestamp))))
+                                                  (pair mutez (pair address (pair nat (pair bool timestamp))))))
+                                      (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair bool timestamp))))))
                                 (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair bool timestamp))))))
-                          (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair bool timestamp)))))))
+                             (lambda
+                                (pair (pair mutez (pair address (pair nat (pair bool timestamp))))
+                                      (pair mutez (pair address (pair nat (pair bool timestamp)))))
+                                bool)))
                  (pair (pair (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair bool timestamp)))))
                              (pair nat nat))
                        (pair mutez (pair address (pair nat (pair bool timestamp))))))
            (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair bool timestamp)))))
            { UNPAIR ;
-             UNPAIR ;
-             DIG 2 ;
+             UNPAIR 3 ;
+             DIG 3 ;
              LEFT (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair bool timestamp))))) ;
              LOOP_LEFT
                { UNPAIR ;
@@ -260,13 +265,13 @@
                                    (pair nat nat))
                              (pair mutez (pair address (pair nat (pair bool timestamp))))) }
                    { DUP 5 ;
-                     CAR ;
                      SWAP ;
                      DUP ;
                      DUG 2 ;
-                     CAR ;
-                     COMPARE ;
-                     LE ;
+                     PAIR ;
+                     DUP 9 ;
+                     SWAP ;
+                     EXEC ;
                      PUSH nat 0 ;
                      DUP 6 ;
                      CDR ;
@@ -283,22 +288,22 @@
                                         (pair nat nat))
                                   (pair mutez (pair address (pair nat (pair bool timestamp))))) }
                         { DIG 2 ;
-                          DIG 4 ;
-                          DUP 3 ;
-                          PAIR ;
-                          DIG 4 ;
                           DUP 5 ;
+                          DIG 2 ;
+                          PAIR ;
+                          DIG 3 ;
+                          DUP 4 ;
                           PAIR ;
                           PAIR ;
                           PAIR ;
                           DUP 5 ;
                           SWAP ;
                           EXEC ;
-                          SWAP ;
-                          DUG 2 ;
                           PAIR ;
                           PAIR ;
                           LEFT (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair bool timestamp))))) } } } ;
+             SWAP ;
+             DROP ;
              SWAP ;
              DROP ;
              SWAP ;
@@ -4323,28 +4328,7 @@
                                       UNPAIR ;
                                       UNPAIR ;
                                       IF_NONE
-                                        { DROP 3 ;
-                                          SWAP ;
-                                          DROP ;
-                                          DIG 2 ;
-                                          DROP ;
-                                          DIG 2 ;
-                                          DROP ;
-                                          DIG 4 ;
-                                          SWAP ;
-                                          DIG 4 ;
-                                          PAIR ;
-                                          DIG 2 ;
-                                          DIG 3 ;
-                                          PAIR ;
-                                          PAIR ;
-                                          PAIR ;
-                                          RIGHT
-                                            (pair (pair (pair (pair (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair bool timestamp)))))
-                                                                    nat)
-                                                              (pair (lambda nat mutez) nat))
-                                                        (pair (pair bool nat) (pair int mutez)))
-                                                  (list operation)) }
+                                        { DROP 11 ; PUSH string "INTERNAL_ERROR_BID_RETURN" ; FAILWITH }
                                         { DUP ;
                                           CAR ;
                                           DUP 12 ;

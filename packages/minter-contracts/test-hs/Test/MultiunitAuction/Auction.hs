@@ -92,11 +92,11 @@ hprop_Fees_are_paid_correctly =
 
       sellerBalanceBefore @== sellerBalanceAfter
       profitAddressBalanceAfter @== profitAddressBalanceBefore `unsafeAddMutez` expectedProfitAmount
-      assert (if auctionContractBalanceBefore < auctionContractBalanceAfter
-                then (auctionContractBalanceBefore `unsafeAddMutez` toMutez 1e6) >= auctionContractBalanceAfter
-              else (auctionContractBalanceAfter `unsafeAddMutez` toMutez 1e6) >= auctionContractBalanceBefore
-             ) $ "Contract balance before and after don't match within 1tez of eachother"
-
+      auctionContractBalanceBefore @== auctionContractBalanceAfter
+    --assert (if auctionContractBalanceBefore < auctionContractBalanceAfter
+    --            then (auctionContractBalanceBefore `unsafeAddMutez` toMutez 1e6) >= auctionContractBalanceAfter
+    --          else (auctionContractBalanceAfter `unsafeAddMutez` toMutez 1e6) >= auctionContractBalanceBefore
+    --         ) $ "Contract balance before and after don't match within 1tez of eachother"
 
 
 hprop_First_bid_is_valid_IFF_it_meets_price_floor :: Property
