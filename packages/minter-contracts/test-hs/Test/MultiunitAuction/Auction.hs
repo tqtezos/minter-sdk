@@ -51,6 +51,12 @@ hprop_Fees_are_paid_correctly =
       forM_ (toList bids `zip` toList bidders) $ \(bid, bidder) -> do
         withSender bidder $
           placeBid contract bid
+      
+      let sumBids = sum $ map (\bid -> Auction.priceParam bid `unsafeMulMutez` Auction.quantityParam bid) bids 
+      
+      contractBalance <- getBalance contract
+      
+      contractBalance @== sumBids
 
       -- Wait for the auction to end.
       advanceTime (sec $ fromIntegral $ testAuctionDuration `max` testExtendTime)
@@ -90,6 +96,8 @@ hprop_Fees_are_paid_correctly =
                 then (auctionContractBalanceBefore `unsafeAddMutez` toMutez 1e6) >= auctionContractBalanceAfter
               else (auctionContractBalanceAfter `unsafeAddMutez` toMutez 1e6) >= auctionContractBalanceBefore
              ) $ "Contract balance before and after don't match within 1tez of eachother"
+
+
 
 hprop_First_bid_is_valid_IFF_it_meets_price_floor :: Property
 hprop_First_bid_is_valid_IFF_it_meets_price_floor =
@@ -393,7 +401,7 @@ winningBids bondingCurve bids = do
       if Auction.priceParam bidParam < expectedMinimumPrice
         then
           if Auction.quantityParam bidParam == 1
-            then getValidBidList (xs, numOffs)
+            then getValidBidList (xs, numOffs - (Auction.quantityParam $ fst x))
           else
             getValidBidList ((bidParam{Auction.quantityParam = ((Auction.quantityParam $ fst x) - 1)}, bidder) : xs, numOffs - 1)
         else
