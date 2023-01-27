@@ -425,7 +425,6 @@ let cancel_auction(auction_id, storage : nat * storage) : return = begin
     let is_seller : bool = Tezos.sender = auction.seller in
     let v : unit = if is_seller then ()
       else fail_if_not_admin_ext (storage.admin, "OR_A_SELLER") in
-    assert_msg (not auction_ended(auction), "AUCTION_ENDED");
     tez_stuck_guard("CANCEL");
     let updated_auction_data : auction = {auction with is_canceled = true;} in
     let updated_auctions = Big_map.update auction_id (Some updated_auction_data) storage.auctions in

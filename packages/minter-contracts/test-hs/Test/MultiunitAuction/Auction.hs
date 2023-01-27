@@ -26,7 +26,52 @@ import qualified Lorentz.Contracts.MultiunitAuction.Auction as Auction
 import Test.MinterCollection.Util
 import Tezos.Core (timestampPlusSeconds, unsafeMulMutez, mulMutez, unsafeAddMutez, unsafeSubMutez, toMutez, prettyTez)
 import Fmt ((+|), (|+))
-import Test.Util
+import Test.Util ( iterateM, clevelandProp )
+
+hprop_Cancel_allows_for_returning_all_bids :: Property
+hprop_Cancel_allows_for_returning_all_bids =
+  property $ do
+    testData@TestData{testExtendTime, testAuctionDuration} <- forAll genTestData
+    bids <- forAll $ genSomeBids testData
+
+    clevelandProp $ do
+      setup@Setup{seller, contract, fa2Contract, profitAddress} <- testSetup testData
+      bidders <- mkBidders bids
+      let winners = winningBids sampleBondingCurve' (toList bids `zip` toList bidders)
+      sellerBalanceBefore <- getBalance seller
+      auctionContractBalanceBefore <- getBalance contract
+      profitAddressBalanceBefore <- getBalance profitAddress
+
+      withSender seller $ addSampleBondingCurve contract
+      withSender seller $ configureAuction testData setup
+
+      -- Wait for the auction to start.
+      waitForAuctionToStart testData
+
+      forM_ (toList bids `zip` toList bidders) $ \(bid, bidder) -> do
+        withSender bidder $
+          placeBid contract bid
+      
+      let sumBids = sum $ map (\bid -> Auction.priceParam bid `unsafeMulMutez` Auction.quantityParam bid) bids 
+      
+      contractBalance <- getBalance contract
+      
+      contractBalance @== sumBids
+
+      -- Wait for the auction to end.
+      advanceTime (sec $ fromIntegral $ testAuctionDuration `max` testExtendTime)
+      
+      withSender seller $ cancelAuction contract 
+
+      returnBids contract (Auction.AuctionId 0, 6) --max bids
+
+      sellerBalanceAfter <- getBalance seller
+      auctionContractBalanceAfter <- getBalance contract
+      profitAddressBalanceAfter <- getBalance profitAddress
+
+      sellerBalanceBefore @== sellerBalanceAfter
+      profitAddressBalanceAfter @== profitAddressBalanceBefore 
+      auctionContractBalanceBefore @== auctionContractBalanceAfter
 
 hprop_Fees_are_paid_correctly :: Property
 hprop_Fees_are_paid_correctly =
@@ -449,6 +494,10 @@ addBondingCurve bc contract = do
 resolveAuction :: (HasCallStack, MonadNettest caps base m) => ContractHandler Auction.AuctionEntrypoints Auction.AuctionStorage -> m ()
 resolveAuction contract =
   call contract (Call @"Resolve") (Auction.AuctionId 0)
+
+cancelAuction :: (HasCallStack, MonadNettest caps base m) => ContractHandler Auction.AuctionEntrypoints Auction.AuctionStorage -> m ()
+cancelAuction contract =
+  call contract (Call @"Cancel") (Auction.AuctionId 0)
 
 returnBids :: (HasCallStack, MonadNettest caps base m) => ContractHandler Auction.AuctionEntrypoints Auction.AuctionStorage -> (Auction.AuctionId, Natural) -> m ()
 returnBids contract =

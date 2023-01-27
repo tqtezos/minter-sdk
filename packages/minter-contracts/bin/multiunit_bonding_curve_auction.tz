@@ -1897,17 +1897,21 @@
                          PAIR ;
                          NIL operation ;
                          PAIR }
-                       { DIG 4 ;
+                       { DIG 2 ;
+                         DROP ;
+                         DIG 3 ;
+                         DROP ;
+                         DIG 3 ;
+                         DROP ;
+                         DIG 3 ;
+                         DROP ;
+                         DIG 3 ;
+                         DROP ;
+                         DIG 3 ;
                          DROP ;
                          DIG 4 ;
                          DROP ;
                          DIG 4 ;
-                         DROP ;
-                         DIG 4 ;
-                         DROP ;
-                         DIG 4 ;
-                         DROP ;
-                         DIG 6 ;
                          DROP ;
                          SWAP ;
                          DUP ;
@@ -1916,7 +1920,7 @@
                          DUP ;
                          DUG 2 ;
                          PAIR ;
-                         DIG 4 ;
+                         DIG 3 ;
                          SWAP ;
                          EXEC ;
                          DUP ;
@@ -1937,19 +1941,6 @@
                                   NEQ ;
                                   IF { PUSH string "_" ; CONCAT ; PUSH string "NOT_AN_ADMIN" ; CONCAT ; FAILWITH }
                                      { DROP ; UNIT } } } ;
-                         DROP ;
-                         PUSH string "AUCTION_ENDED" ;
-                         SWAP ;
-                         DUP ;
-                         DUG 2 ;
-                         DIG 5 ;
-                         SWAP ;
-                         EXEC ;
-                         NOT ;
-                         PAIR ;
-                         DIG 5 ;
-                         SWAP ;
-                         EXEC ;
                          DROP ;
                          PUSH string "CANCEL" ;
                          DIG 4 ;
