@@ -415,7 +415,7 @@ let sell_offchain_no_admin ((token_to_sell, seller_addr), storage : (token_id * 
 
 #else
 
-    let previous_price_tez : price_tez = storage.cost_mutez(previous_token_index)
+    let previous_price_tez : price_tez = storage.auction_price + storage.cost_mutez(previous_token_index)
     in
 
 #endif // PIECEWISE_BONDING_CURVE

@@ -195,6 +195,11 @@
              CAR ;
              SWAP ;
              EXEC ;
+             DUP 5 ;
+             CDR ;
+             CDR ;
+             CAR ;
+             ADD ;
              PUSH nat 10000 ;
              DUP 6 ;
              CDR ;

@@ -132,7 +132,14 @@ tokenMetadata0' tokenId = FA2.TokenMetadata
 -- Integration tests
 ----------------------------------------------------------------------------------------
 
-withdrawTest :: forall c. String -> (forall caps base m. MonadNettest caps base m => Address -> Address -> Mutez -> m (ContractHandler Entrypoints (Storage c))) -> TestTree
+withdrawTest :: forall c.
+     String
+  -> (forall caps base m. MonadNettest caps base m
+      => Address
+      -> Address
+      -> Mutez
+      -> m (ContractHandler Entrypoints (Storage c)))
+  -> TestTree
 withdrawTest name originator = nettestScenarioCaps ("Withdraw " <> name)  $ do
   setup <- doFA2Setup
   let admin ::< alice ::< SNil = sAddresses setup
@@ -177,7 +184,88 @@ withdrawTestLambda = withdrawTest @(Lambda Natural Mutez) "Lambda" $ \admin alic
   originateBondingCurveWithBalance withdrawAmount bondingCurveStorage
 
 
-buyNoMintTest :: forall c. String -> (forall caps base m. MonadNettest caps base m => Address -> Address -> m (ContractHandler Entrypoints (Storage c))) -> TestTree
+withdrawBakingRewardsTest :: forall c. (Buildable c, Eq c)
+  => String
+  -> (forall caps base m. MonadNettest caps base m
+      => Address
+      -> Address
+      -> m (Storage c, ContractHandler Entrypoints (Storage c)))
+  -> TestTree
+withdrawBakingRewardsTest name originator = nettestScenarioOnEmulatorCaps ("Withdraw Baking Rewards " <> name)  $ do
+  setup <- doFA2Setup
+  let admin ::< alice ::< bob ::< SNil = sAddresses setup
+  let !SNil = sTokens setup
+  halfAdminBalance <- (`div` 2) <$> getBalance admin
+
+  -- ensure admin has no tez and that alice, bob have sufficient tez
+  withSender admin $ do
+    transferMoney alice halfAdminBalance
+    transferMoney bob halfAdminBalance
+  getBalance admin @@== 0
+
+  let aliceRewardAmount = 12
+  let bobRewardAmount = 24
+  let withdrawAmount = aliceRewardAmount + bobRewardAmount
+  (bondingCurveStorage, bondingCurve) <- originator admin alice
+
+  withSender alice $
+    transferMoney bondingCurve aliceRewardAmount
+
+  postAliceRewardStorage <- getStorage' bondingCurve
+  postAliceRewardStorage @== bondingCurveStorage { unclaimed = aliceRewardAmount }
+
+  withSender bob $
+    transfer $
+      TransferData
+        { tdTo = bondingCurve
+        , tdAmount = bobRewardAmount
+        , tdEntrypoint = DefEpName
+        , tdParameter = ()
+        }
+
+  postBobRewardStorage <- getStorage' bondingCurve
+  postBobRewardStorage @== bondingCurveStorage { unclaimed = withdrawAmount }
+
+  -- admin only
+  withSender alice $
+    call bondingCurve (Call @"Withdraw") ()
+      & expectError (unsafeMkMText "NOT_AN_ADMIN")
+
+  withSender admin $
+    call bondingCurve (Call @"Withdraw") ()
+
+  getBalance admin @@== withdrawAmount
+
+withdrawBakingRewardsTestPiecewise :: TestTree
+withdrawBakingRewardsTestPiecewise = withdrawBakingRewardsTest @PiecewisePolynomial "Piecewise" $ \admin alice -> do
+  let bondingCurveStorage :: Storage PiecewisePolynomial =
+        (exampleStoragePiecewiseWithAdmin admin)
+          {
+            market_contract = alice
+          , unclaimed = 0
+          }
+  bondingCurve <- originateBondingCurvePiecewise bondingCurveStorage
+  return (bondingCurveStorage, bondingCurve)
+
+withdrawBakingRewardsTestLambda :: TestTree
+withdrawBakingRewardsTestLambda = withdrawBakingRewardsTest @(Lambda Natural Mutez) "Lambda" $ \admin alice -> do
+  let bondingCurveStorage :: Storage (Lambda Natural Mutez) =
+        (exampleStorageWithAdmin admin)
+          {
+            market_contract = alice
+          , unclaimed = 0
+          }
+  bondingCurve <- originateBondingCurve bondingCurveStorage
+  return (bondingCurveStorage, bondingCurve)
+
+
+buyNoMintTest :: forall c.
+     String
+  -> (forall caps base m. MonadNettest caps base m
+      => Address
+      -> Address
+      -> m (ContractHandler Entrypoints (Storage c)))
+  -> TestTree
 buyNoMintTest name originator = nettestScenarioCaps ("Buy: NO_MINT " <> name) $ do
   setup <- doFA2Setup
   let admin ::< alice ::< SNil = sAddresses setup
@@ -211,7 +299,13 @@ buyNoMintTestLambda = buyNoMintTest @(Lambda Natural Mutez) "Lambda" $ \admin al
 
 
 -- sell with token_index = 0 always fails with NO_TOKENS
-sellTokenIndex0Test :: forall c. String -> (forall caps base m. MonadNettest caps base m => Address -> Address -> m (ContractHandler Entrypoints (Storage c))) -> TestTree
+sellTokenIndex0Test :: forall c.
+     String
+  -> (forall caps base m. MonadNettest caps base m
+      => Address
+      -> Address
+      -> m (ContractHandler Entrypoints (Storage c)))
+  -> TestTree
 sellTokenIndex0Test name originator = nettestScenarioOnEmulatorCaps ("Sell: token_index = 0 " <> name) $ do
   setup <- doFA2Setup
   let admin ::< alice ::< SNil = sAddresses setup
@@ -251,7 +345,13 @@ sellTokenIndex0TestLambda = sellTokenIndex0Test @(Lambda Natural Mutez) "Lambda"
 
 
 -- sell with token_index = 0 always fails with NO_TOKENS
-sellOffchainTokenIndex0Test :: forall c. String -> (forall caps base m. MonadNettest caps base m => Address -> Address -> m (ContractHandler Entrypoints (Storage c))) -> TestTree
+sellOffchainTokenIndex0Test :: forall c.
+     String
+  -> (forall caps base m. MonadNettest caps base m
+      => Address
+      -> Address
+      -> m (ContractHandler Entrypoints (Storage c)))
+  -> TestTree
 sellOffchainTokenIndex0Test name originator = nettestScenarioOnEmulatorCaps ("Sell_offchain: token_index = 0 " <> name) $ do
   setup <- doFA2Setup
   let admin ::< alice ::< SNil = sAddresses setup
@@ -296,7 +396,13 @@ sellOffchainTokenIndex0TestLambda = sellOffchainTokenIndex0Test @(Lambda Natural
 --  + Mints token using `token_metadata` from storage to buyer
 --  + Increments `token_index`
 --  + Adds the `basis_points` fee to the `unclaimed` tez in storage
-buyTest :: forall c. (Buildable c, Eq c) => String -> (forall caps base m. MonadNettest caps base m => Address -> Address -> m (Storage c, ContractHandler DebugEntrypoints (Storage c))) -> TestTree
+buyTest :: forall c. (Buildable c, Eq c)
+  => String
+  -> (forall caps base m. MonadNettest caps base m
+      => Address
+      -> Address
+      -> m (Storage c, ContractHandler DebugEntrypoints (Storage c)))
+  -> TestTree
 buyTest name originator = nettestScenarioOnEmulatorCaps ("Buy " <> name) $ do
   setup <- doFA2Setup
   let admin ::< alice ::< SNil = sAddresses setup
@@ -367,7 +473,13 @@ buyTestLambda = buyTest @(Lambda Natural Mutez) "Lambda" $ \admin nftAddress -> 
   return (bondingCurveStorage, bondingCurve)
 
 
-buyOffchainTest :: forall c. (Buildable c, Eq c) => String -> (forall caps base m. MonadNettest caps base m => Address -> Address -> m (Storage c, ContractHandler DebugEntrypoints (Storage c))) -> TestTree
+buyOffchainTest :: forall c. (Buildable c, Eq c)
+  => String
+  -> (forall caps base m. MonadNettest caps base m
+      => Address
+      -> Address
+      -> m (Storage c, ContractHandler DebugEntrypoints (Storage c)))
+  -> TestTree
 buyOffchainTest name originator = nettestScenarioOnEmulatorCaps ("Buy_offchain " <> name) $ do
   setup <- doFA2Setup
   let admin ::< alice ::< bob ::< SNil = sAddresses setup
@@ -443,7 +555,13 @@ buyOffchainTestLambda = buyOffchainTest @(Lambda Natural Mutez) "Lambda" $ \admi
 
 
 
-buyBatchOffchainTest :: forall c. (Buildable c, Eq c) => String -> (forall caps base m. MonadNettest caps base m => Address -> Address -> m (Storage c, ContractHandler DebugEntrypoints (Storage c))) -> TestTree
+buyBatchOffchainTest :: forall c. (Buildable c, Eq c)
+  => String
+  -> (forall caps base m. MonadNettest caps base m
+      => Address
+      -> Address
+      -> m (Storage c, ContractHandler DebugEntrypoints (Storage c)))
+  -> TestTree
 buyBatchOffchainTest name originator = nettestScenarioOnEmulatorCaps ("Buy_offchain (batch) " <> name) $ do
   setup <- doFA2Setup
   let admin ::< alice ::< bob ::< SNil = sAddresses setup
@@ -521,7 +639,13 @@ buyBatchOffchainTestLambda = buyBatchOffchainTest @(Lambda Natural Mutez) "Lambd
 --  + The token is burned on the FA2 marketplace
 --  + Tez equal to the price is sent to the seller
 -- , nettestScenarioCaps "Sell" $ do
-sellTest :: forall c. String -> (forall caps base m. MonadNettest caps base m => Address -> Address -> m (ContractHandler Entrypoints (Storage c))) -> TestTree
+sellTest :: forall c.
+     String
+  -> (forall caps base m. MonadNettest caps base m
+      => Address
+      -> Address
+      -> m (ContractHandler Entrypoints (Storage c)))
+  -> TestTree
 sellTest name originator = nettestScenarioOnEmulatorCaps ("Sell " <> name) $ do
   setup <- doFA2Setup
   let admin ::< minter ::< alice ::< bob ::< SNil = sAddresses setup
@@ -637,7 +761,14 @@ sellTestLambda = sellTest @(Lambda Natural Mutez) "Lambda" $ \admin nftAddress -
   originateBondingCurve bondingCurveStorage
 
 
-sellOffchainTest :: forall c. String -> (forall caps base m. MonadNettest caps base m => Mutez -> Address -> Address -> m (ContractHandler Entrypoints (Storage c))) -> TestTree
+sellOffchainTest :: forall c.
+     String
+  -> (forall caps base m. MonadNettest caps base m
+      => Mutez
+      -> Address
+      -> Address
+      -> m (ContractHandler Entrypoints (Storage c)))
+  -> TestTree
 sellOffchainTest name originator = nettestScenarioOnEmulatorCaps ("Sell_offchain " <> name) $ do
   setup <- doFA2Setup
   let admin ::< minter ::< alice ::< bob ::< SNil = sAddresses setup
@@ -881,12 +1012,11 @@ buySellTest name originator = nettestScenarioOnEmulatorCaps ("Buy Sell " <> name
       call bondingCurve (Call @"Sell") (TokenId tokenId)
 
     let preFeeSellAmount = auctionPrice + fromIntegral expectedCost
-    let calculatedBasisPointFee = calculateBasisPointFee basisPoints $ fromIntegral preFeeSellAmount
     let sellAmount = fromInteger . removeBasisPointFee basisPoints . fromIntegral $ preFeeSellAmount
 
     -- ensure cost was expected
     sellerBalanceAfter <- getBalance seller
-    ((tokenId, auctionPrice, preFeeSellAmount, calculatedBasisPointFee), (sellerBalanceAfter - sellerBalanceBefore)) @== ((tokenId, auctionPrice, preFeeSellAmount, calculatedBasisPointFee), sellAmount)
+    (tokenId, (sellerBalanceAfter - sellerBalanceBefore)) @== (tokenId, sellAmount)
 
   -- ensure zero tokens remaining and unclaimed is expected
   postSellStorage <- getStorage' bondingCurve
@@ -906,7 +1036,6 @@ buySellTest name originator = nettestScenarioOnEmulatorCaps ("Buy Sell " <> name
   -- ensure storage reset after all tokens sold and Withdraw is called
   postWithdrawStorage <- getStorage' bondingCurve
   postWithdrawStorage @== bondingCurveStorage
-
 
 
 buySellTestPiecewise :: TestTree
@@ -936,23 +1065,17 @@ buySellTestLambda = buySellTest @(Lambda Natural Mutez) "Lambda" $ \auctionPrice
   return (bondingCurveStorage, bondingCurve)
 
 
-  -- let bondingCurveStorage :: Storage PiecewisePolynomial =
-  --       (exampleStoragePiecewiseWithAdmin admin)
-  --         {
-  --           market_contract = toAddress nft
-  --         , cost_mutez = polynomialToPiecewisePolynomial [10, 20, 30]
-  --         , auction_price = auctionPrice
-  --         , basis_points = basisPoints
-  --         }
-  -- -- bondingCurve <- originateDebugBondingCurvePiecewise bondingCurveStorage
 
-
-
-
-
--- TODO piecewise -> lambda
-buySellOffchainTest :: TestTree
-buySellOffchainTest = nettestScenarioOnEmulatorCaps "Buy Sell Offchain" $ do
+buySellOffchainTest :: forall c. (Buildable c, Eq c, ConstantScope (ToT c))
+  => String
+  -> (forall caps base m.  MonadNettest caps base m
+        => Mutez
+        -> Natural
+        -> Address
+        -> Address
+        -> m (Storage c, ContractHandler DebugEntrypoints (Storage c)))
+  -> TestTree
+buySellOffchainTest name originator = nettestScenarioOnEmulatorCaps ("Buy Sell Offchain " <> name) $ do
   setup <- doFA2Setup
   let admin ::< alice ::< bob ::< charlie ::< SNil = sAddresses setup
   let !SNil = sTokens setup
@@ -963,16 +1086,7 @@ buySellOffchainTest = nettestScenarioOnEmulatorCaps "Buy Sell Offchain" $ do
 
   let auctionPrice = 100
   let basisPoints = 100
-  let bondingCurveStorage :: Storage PiecewisePolynomial =
-        (exampleStoragePiecewiseWithAdmin admin)
-          {
-            market_contract = toAddress nft
-          , cost_mutez = polynomialToPiecewisePolynomial [10, 20, 30]
-          , auction_price = auctionPrice
-          , basis_points = basisPoints
-          }
-
-  bondingCurve <- originateDebugBondingCurvePiecewise bondingCurveStorage
+  (bondingCurveStorage, bondingCurve) <- originator auctionPrice basisPoints admin (toAddress nft)
 
   -- admin needs to set operator on (TokenId 0) to allow bondingCurve to mint
   withSender admin $
@@ -1047,11 +1161,41 @@ buySellOffchainTest = nettestScenarioOnEmulatorCaps "Buy Sell Offchain" $ do
   postWithdrawStorage @== bondingCurveStorage
 
 
+buySellOffchainTestPiecewise :: TestTree
+buySellOffchainTestPiecewise = buySellOffchainTest @PiecewisePolynomial "Piecewise" $ \auctionPrice basisPoints admin nftAddress -> do
+  let bondingCurveStorage :: Storage PiecewisePolynomial =
+        (exampleStoragePiecewiseWithAdmin admin)
+          {
+            market_contract = nftAddress
+          , cost_mutez = polynomialToPiecewisePolynomial [10, 20, 30]
+          , auction_price = auctionPrice
+          , basis_points = basisPoints
+          }
+  bondingCurve <- originateDebugBondingCurvePiecewise bondingCurveStorage
+  return (bondingCurveStorage, bondingCurve)
+
+buySellOffchainTestLambda :: TestTree
+buySellOffchainTestLambda = buySellOffchainTest @(Lambda Natural Mutez) "Lambda" $ \auctionPrice basisPoints admin nftAddress -> do
+  let bondingCurveStorage :: Storage (Lambda Natural Mutez) =
+        (exampleStorageWithAdmin admin)
+          {
+            market_contract = nftAddress
+          , cost_mutez = constantsLambda $ fromInteger . runPiecewisePolynomial (polynomialToPiecewisePolynomial [10, 20, 30]) <$> [0..5]
+          , auction_price = auctionPrice
+          , basis_points = basisPoints
+          }
+  bondingCurve <- originateDebugBondingCurve bondingCurveStorage
+  return (bondingCurveStorage, bondingCurve)
+
+
 
 test_Integrational :: TestTree
 test_Integrational = testGroup "Integrational"
   [ withdrawTestPiecewise
   , withdrawTestLambda
+
+  , withdrawBakingRewardsTestPiecewise
+  , withdrawBakingRewardsTestLambda
 
   , buyNoMintTestPiecewise
   , buyNoMintTestLambda
@@ -1080,13 +1224,18 @@ test_Integrational = testGroup "Integrational"
   , buySellTestPiecewise
   , buySellTestLambda
 
-  , buySellOffchainTest
+  , buySellOffchainTestPiecewise
+  , buySellOffchainTestLambda
   ]
 
 -- input, expectedOutput, storageF
 --
 -- storageF is applied to the generated admin address
-callCostTest :: Natural -> Integer -> (Address -> Storage (Lambda Natural Mutez)) -> TestTree
+callCostTest ::
+     Natural
+  -> Integer
+  -> (Address -> Storage (Lambda Natural Mutez))
+  -> TestTree
 callCostTest input expectedOutput storageF =
   nettestScenarioCaps ("Call Cost with " ++ show input) $ do
     setup <- doFA2Setup @("addresses" :# 1) @("tokens" :# 0)
@@ -1100,7 +1249,11 @@ callCostTest input expectedOutput storageF =
 -- input, expectedOutput, storageF
 --
 -- storageF is applied to the generated admin address
-callCostTestPiecewise :: Natural -> Integer -> (Address -> Storage PiecewisePolynomial) -> TestTree
+callCostTestPiecewise ::
+     Natural
+  -> Integer
+  -> (Address -> Storage PiecewisePolynomial)
+  -> TestTree
 callCostTestPiecewise input expectedOutput storageF =
   nettestScenarioCaps ("Call Cost with " ++ show input) $ do
     setup <- doFA2Setup @("addresses" :# 1) @("tokens" :# 0)
@@ -1114,7 +1267,12 @@ callCostTestPiecewise input expectedOutput storageF =
 -- input, expectedOutput, storageF
 --
 -- storageF is applied to the generated admin address
-callPowTest :: Natural -> Natural -> Integer -> (Address -> Storage PiecewisePolynomial) -> TestTree
+callPowTest ::
+     Natural
+  -> Natural
+  -> Integer
+  -> (Address -> Storage PiecewisePolynomial)
+  -> TestTree
 callPowTest x n expectedOutput storageF =
   nettestScenarioCaps ("Call Pow with " ++ show (x, n)) $ do
     setup <- doFA2Setup @("addresses" :# 1) @("tokens" :# 0)

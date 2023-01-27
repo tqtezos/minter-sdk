@@ -32,10 +32,10 @@ bonding curve storage
                                                                                                                                                                                                                                                      DROP }; 0 }
 
 bonding curve address
-KT1EuaP24NWeSR9YCizX3HqpVxTsGMr43rpd
+KT1Qq5f5gBdQjR5RkjB7aNvignUfMPZvwypJ
 
 admin -> nft: update_operators
-{ Left { "tz1PwgnoAyphW2iFdbnnYgwWRcNTpAaH7gVY"; "KT1EuaP24NWeSR9YCizX3HqpVxTsGMr43rpd"; 0 } }
+{ Left { "tz1PwgnoAyphW2iFdbnnYgwWRcNTpAaH7gVY"; "KT1Qq5f5gBdQjR5RkjB7aNvignUfMPZvwypJ"; 0 } }
 
 buyer -> bondingCurve: buy
 buyer:
@@ -60,3 +60,21 @@ seller:
 tz1RLYCL2F82JxXtEGZmtLRDMD4Pe9SRYLZo
 parameter:
 3
+
+seller -> bondingCurve: sell
+seller:
+tz1gtKKyvwQ6u54sbVzano58mFZLqERaCgyW
+parameter:
+2
+
+seller -> bondingCurve: sell
+seller:
+tz1TZpbZZZTKiJVh7ANXCLKFT3TkADzxRZWM
+parameter:
+1
+
+admin -> bondingCurve: withdraw
+admin:
+tz1PwgnoAyphW2iFdbnnYgwWRcNTpAaH7gVY
+parameter:
+Unit
