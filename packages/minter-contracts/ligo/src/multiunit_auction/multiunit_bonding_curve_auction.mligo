@@ -453,16 +453,16 @@ let place_bid(  bid_param
     assert_msg(bidder <> auction.seller, "SEllER_CANT_BID");
     
     let current_heap_size : nat = get_heap_size(bid_param.auction_id, storage.heap_sizes) in 
-    let (bid_heap, necessary_fee) :  bid_heap * tez = 
+    let (bid_heap, necessary_fee, current_heap_size) :  bid_heap * tez = 
       (match bid_param.is_bid_increase with
           | Some bid_heap_key -> begin
              let (bid_heap, bid_amount, bid_quantity) = delete_bid(bid_heap_key, storage.bids, bidder, current_heap_size) in 
              assert_msg(bid_param.quantity >= bid_quantity && bid_param.price >= bid_amount, "BID_MUST_INCREASE");
              let fee_needed : tez = (bid_param.quantity * bid_param.price) - (bid_amount * bid_quantity) in 
-             (bid_heap, fee_needed)
+             (bid_heap, fee_needed, abs(current_heap_size - 1n))
             end
           | None ->
-             (storage.bids, bid_param.price * bid_param.quantity)
+             (storage.bids, bid_param.price * bid_param.quantity, current_heap_size)
       ) in
 
     (if (Tezos.amount <> necessary_fee

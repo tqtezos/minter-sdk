@@ -70,6 +70,8 @@ data BidHeapKey = BidHeapKey
 customGeneric "BidHeapKey" ligoCombLayout
 deriving anyclass instance IsoValue BidHeapKey
 deriving anyclass instance HasAnnotation BidHeapKey
+instance Buildable BidHeapKey where build = genericF
+
 
 data BidData = BidData 
   {
@@ -78,11 +80,12 @@ data BidData = BidData
   , quantity :: Natural
   , isOffchain :: Bool
   , bidTime :: Timestamp
-  }
+  } deriving stock (Eq, Ord, Show)
 
 customGeneric "BidData" ligoCombLayout
 deriving anyclass instance IsoValue BidData
 deriving anyclass instance HasAnnotation BidData
+instance Buildable BidData where build = genericF
 
 data BidParam = BidParam 
  {  

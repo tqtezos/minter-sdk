@@ -37,13 +37,12 @@ hprop_Cancel_allows_for_returning_all_bids =
     clevelandProp $ do
       setup@Setup{seller, contract, fa2Contract, profitAddress} <- testSetup testData
       bidders <- mkBidders bids
-      let winners = winningBids sampleBondingCurve' (toList bids `zip` toList bidders)
       sellerBalanceBefore <- getBalance seller
       auctionContractBalanceBefore <- getBalance contract
       profitAddressBalanceBefore <- getBalance profitAddress
 
       withSender seller $ addSampleBondingCurve contract
-      withSender seller $ configureAuction testData setup
+      withSender seller $ configureAuction contract fa2Contract testData setup
 
       -- Wait for the auction to start.
       waitForAuctionToStart testData
@@ -88,7 +87,7 @@ hprop_Fees_are_paid_correctly =
       profitAddressBalanceBefore <- getBalance profitAddress
 
       withSender seller $ addSampleBondingCurve contract
-      withSender seller $ configureAuction testData setup
+      withSender seller $ configureAuction contract fa2Contract testData setup
 
       -- Wait for the auction to start.
       waitForAuctionToStart testData
@@ -138,11 +137,67 @@ hprop_Fees_are_paid_correctly =
       sellerBalanceBefore @== sellerBalanceAfter
       profitAddressBalanceAfter @== profitAddressBalanceBefore `unsafeAddMutez` expectedProfitAmount
       auctionContractBalanceBefore @== auctionContractBalanceAfter
-    --assert (if auctionContractBalanceBefore < auctionContractBalanceAfter
-    --            then (auctionContractBalanceBefore `unsafeAddMutez` toMutez 1e6) >= auctionContractBalanceAfter
-    --          else (auctionContractBalanceAfter `unsafeAddMutez` toMutez 1e6) >= auctionContractBalanceBefore
-    --         ) $ "Contract balance before and after don't match within 1tez of eachother"
 
+hprop_Bid_increase_works_as_expected :: Property
+hprop_Bid_increase_works_as_expected  =
+  property $ do
+    testData@TestData{testExtendTime, testAuctionDuration} <- forAll genTestData
+    bids <- forAll $ genUniqueBids testData
+
+    clevelandProp $ do
+      setup@Setup{seller, contract, fa2Contract, contract2, fa2Contract2, profitAddress} <- testSetup testData
+      bidders1 <- mkBidders bids
+      bidders2 <- mkBidders bids
+
+      withSender seller $ addSampleBondingCurve contract
+      withSender seller $ addSampleBondingCurve contract2
+      withSender seller $ configureAuction contract fa2Contract testData setup
+      withSender seller $ configureAuction contract2 fa2Contract2 testData setup
+
+      -- Wait for the auction to start.
+      waitForAuctionToStart testData
+      
+      let increaseBid :: Auction.BidParam -> (Auction.BidParam, Mutez, Mutez) 
+          increaseBid x = 
+            let oldPrice = Auction.priceParam x
+                newPrice = oldPrice `unsafeAddMutez` 50 in
+              (x {Auction.quantityParam = Auction.quantityParam x + 100, 
+                 Auction.priceParam = newPrice}, oldPrice, newPrice)
+
+      let increaseHeadBid :: NonEmpty Auction.BidParam -> ((NonEmpty Auction.BidParam), Mutez, Mutez)
+          increaseHeadBid (x :| a)  = ((newBid :| a), oldPrice, newPrice)
+            where (newBid, oldPrice, newPrice) = increaseBid x
+
+      let (bidList2, oldBidValue, newBidValue) = increaseHeadBid bids
+
+      forM_ (toList bids `zip` toList bidList2 `zip` toList bidders1 `zip` toList bidders2) $ \(((bid1, bid2), bidder1), bidder2) -> do
+        withSender bidder1 $
+          placeBid contract bid1
+        withSender bidder2 $
+          placeBid contract2 bid2
+      
+      st <- getStorage' contract
+
+      let bidIncreaseKeyValues = st & Auction.bids & unBigMap & Map.filter (\bidValue -> Auction.price bidValue == oldBidValue) & Map.toList
+
+      bidIncreaseKey <- case bidIncreaseKeyValues of
+          [] -> failure $ "Empty list"
+          [x] -> pure $ fst x
+          (x : xs) -> failure $ "Multiple matching keys"
+
+      let increaseBidParam = (head $ bidList2){Auction.isBidIncrease = Just bidIncreaseKey, Auction.priceParam = newBidValue}
+      
+      let originalFirstBid = head bids
+
+      withSender (head bidders1) $
+        placeIncreaseBid contract increaseBidParam (Auction.priceParam originalFirstBid `unsafeMulMutez` Auction.quantityParam originalFirstBid)
+
+      auctionStorage1Bids <- Auction.bids <$> getStorage' contract
+      let contract1Bids = Map.toList $ unBigMap auctionStorage1Bids
+      auctionStorage2Bids <- Auction.bids <$> getStorage' contract2
+      let contract2Bids = Map.toList $ unBigMap auctionStorage2Bids
+      (length contract1Bids) @== (length contract2Bids)
+      --todo: test heaps functions same
 
 hprop_First_bid_is_valid_IFF_it_meets_price_floor :: Property
 hprop_First_bid_is_valid_IFF_it_meets_price_floor =
@@ -152,10 +207,10 @@ hprop_First_bid_is_valid_IFF_it_meets_price_floor =
     firstBid <- forAll $ genMutez' (Range.linear 0 (testPriceFloor * 2))
 
     clevelandProp $ do
-      setup@Setup{seller, startTime, contract} <- testSetup testData
+      setup@Setup{seller, startTime, contract, fa2Contract} <- testSetup testData
       bidder <- newAddress "bidder"
       withSender seller $ addSampleBondingCurve contract
-      withSender seller $ configureAuction testData setup
+      withSender seller $ configureAuction contract fa2Contract testData setup
       waitForAuctionToStart testData
       let bid = Auction.BidParam 0 firstBid 1 Nothing 
 
@@ -179,10 +234,10 @@ hprop_Auction_ends_if_no_bids_are_placed_within_'round_time'_seconds =
     let testData' = testData { testAuctionDuration = auctionDuration, testMaxAuctionTime = auctionDuration}
 
     clevelandProp $ do
-      setup@Setup{seller, contract} <- testSetup testData'
+      setup@Setup{seller, contract, fa2Contract} <- testSetup testData'
       bidders <- mkBidders bids
       withSender seller $ addSampleBondingCurve contract
-      withSender seller $ configureAuction testData' setup
+      withSender seller $ configureAuction contract fa2Contract testData' setup
       waitForAuctionToStart testData'
 
       let
@@ -238,7 +293,7 @@ hprop_Assets_are_transferred_to_winning_bidders =
       setup@Setup{seller, contract, fa2Contract} <- testSetup testData
       bidders <- mkBidders bids
       withSender seller $ addSampleBondingCurve contract
-      withSender seller $ configureAuction testData setup
+      withSender seller $ configureAuction contract fa2Contract testData setup
 
       -- Wait for the auction to start.
       waitForAuctionToStart testData
@@ -317,6 +372,13 @@ genSomeBids testData = do
   moreBids <- iterateM len (\_ -> genBid testData 0) firstBid
   pure $ firstBid :| moreBids
 
+genUniqueBids :: TestData -> Gen (NonEmpty Auction.BidParam)
+genUniqueBids testData = do 
+  len <- Gen.integral (Range.linear 0 5)
+  firstBid <- genBid testData 0
+  moreBids <- forM [1 .. len] (\bidIndex -> genBid testData{testPriceFloor = (toMutez 2e6) `unsafeMulMutez` bidIndex} 0) 
+  pure $ firstBid :| moreBids
+
 -- | Generate a valid bid, such that it is greater than the opening price.
 genBid :: TestData -> Natural -> Gen Auction.BidParam
 genBid testData auctionId = do
@@ -356,7 +418,9 @@ sampleBondingCurve' qty =
 
 data Setup = Setup
   { contract :: ContractHandler Auction.AuctionEntrypoints Auction.AuctionStorage
+  , contract2 :: ContractHandler Auction.AuctionEntrypoints Auction.AuctionStorage
   , fa2Contract :: ContractHandler Nft.EntrypointsWithMint Nft.StorageWithTokenMetadata
+  , fa2Contract2 :: ContractHandler Nft.EntrypointsWithMint Nft.StorageWithTokenMetadata
   , feeCollector :: Address
   , seller :: Address
   , startTime :: Timestamp
@@ -371,9 +435,11 @@ testSetup testData = do
 
   seller <- newAddress "seller"
   contract <- originateAuction seller
+  contract2 <- originateAuction seller
 
   -- The FA2 contracts with the seller's assets, contact is the admin
   fa2Contract <- originateNftContract (toAddress contract)
+  fa2Contract2 <- originateNftContract (toAddress contract2)
 
   now <- getNow
   let startTime = now `timestampPlusSeconds` testTimeToStart testData
@@ -460,8 +526,8 @@ winningBids bondingCurve bids = do
 -- Call entrypoints
 ----------------------------------------------------------------------------
 
-configureAuction :: (HasCallStack, MonadNettest caps base m) => TestData -> Setup -> m ()
-configureAuction testData Setup{fa2Contract, contract, startTime, endTime, profitAddress}  = do
+configureAuction :: (HasCallStack, MonadNettest caps base m) => ContractHandler Auction.AuctionEntrypoints Auction.AuctionStorage -> ContractHandler Nft.EntrypointsWithMint Nft.StorageWithTokenMetadata -> TestData -> Setup -> m ()
+configureAuction contract fa2Contract testData Setup{startTime, endTime, profitAddress}  = do
 
   call contract (Call @"Configure") Auction.ConfigureParam
     { priceFloor = testPriceFloor testData
@@ -477,12 +543,21 @@ configureAuction testData Setup{fa2Contract, contract, startTime, endTime, profi
 
 placeBid :: (HasCallStack, MonadNettest caps base m) => ContractHandler Auction.AuctionEntrypoints Auction.AuctionStorage -> Auction.BidParam -> m ()
 placeBid contract bidParam =
-  transfer TransferData
-    { tdTo = contract
-    , tdAmount = (Auction.priceParam bidParam) `unsafeMulMutez` (Auction.quantityParam bidParam)
-    , tdEntrypoint = ep "bid"
-    , tdParameter = bidParam
-    }
+    transfer TransferData
+      { tdTo = contract
+      , tdAmount = (Auction.priceParam bidParam) `unsafeMulMutez` (Auction.quantityParam bidParam)
+      , tdEntrypoint = ep "bid"
+      , tdParameter = bidParam
+      }
+
+placeIncreaseBid :: (HasCallStack, MonadNettest caps base m) => ContractHandler Auction.AuctionEntrypoints Auction.AuctionStorage -> Auction.BidParam -> Mutez -> m ()
+placeIncreaseBid contract bidParam oldFee =
+    transfer TransferData
+      { tdTo = contract
+      , tdAmount = ((Auction.priceParam bidParam) `unsafeMulMutez` (Auction.quantityParam bidParam)) `unsafeSubMutez` oldFee
+      , tdEntrypoint = ep "bid"
+      , tdParameter = bidParam
+      }    
 
 addSampleBondingCurve :: (HasCallStack, MonadNettest caps base m) => ContractHandler Auction.AuctionEntrypoints Auction.AuctionStorage -> m ()
 addSampleBondingCurve = addBondingCurve sampleBondingCurve 

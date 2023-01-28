@@ -943,6 +943,7 @@
                              CDR ;
                              CDR ;
                              CAR ;
+                             PAIR ;
                              PAIR }
                            { SWAP ;
                              DUP ;
@@ -1047,8 +1048,15 @@
                              CAR ;
                              MUL ;
                              SUB ;
+                             PUSH nat 1 ;
+                             DIG 3 ;
+                             SUB ;
+                             ABS ;
                              SWAP ;
+                             DIG 2 ;
+                             PAIR ;
                              PAIR } ;
+                         UNPAIR ;
                          UNPAIR ;
                          DUP 7 ;
                          CDR ;
