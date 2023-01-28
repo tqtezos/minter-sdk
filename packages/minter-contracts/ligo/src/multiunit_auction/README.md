@@ -7,7 +7,7 @@ After all bids are received, winning bids are defined as the largest set `X` of 
 
 ### Increase Bid
 
-After bidding, a user can also increase their previous bid, granted their new bid is greater than or equal to the previous bid in both quantity and price. In this case, they only have to pay the difference betweent their new bid and their old bid. 
+After bidding, a user can also increase their previous bid, granted their new bid is greater than or equal to the previous bid in both quantity and price. In this case, they only have to pay the difference betweent their new bid and their old bid. They place such a bid by setting the field in the bid param to `Some bid_heap_key`  where  `bid_heap_key` is the big_map key for where the previous bid of their's that they would like to increase is located. 
 
 
 ## Returning Bids and Offers

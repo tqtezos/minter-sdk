@@ -199,6 +199,48 @@ hprop_Bid_increase_works_as_expected  =
       (length contract1Bids) @== (length contract2Bids)
       --todo: test heaps functions same
 
+hprop_Bid_and_return_commute :: Property
+hprop_Bid_and_return_commute  =
+  property $ do
+    testData@TestData{testExtendTime, testAuctionDuration} <- forAll genTestData
+    bids <- forAll $ genUniqueBids testData
+
+    clevelandProp $ do
+      setup@Setup{seller, contract, fa2Contract, contract2, fa2Contract2, profitAddress} <- testSetup testData
+      bidders1 <- mkBidders bids
+      bidders2 <- mkBidders bids
+
+      withSender seller $ addSampleBondingCurve contract
+      withSender seller $ addSampleBondingCurve contract2
+      withSender seller $ configureAuction contract fa2Contract testData setup
+      withSender seller $ configureAuction contract2 fa2Contract2 testData setup
+
+      -- Wait for the auction to start.
+      waitForAuctionToStart testData
+
+      forM_ (toList bids `zip` toList bidders1 `zip` toList bidders2) $ \((bid, bidder1), bidder2) -> do
+        withSender bidder1 $
+          placeBid contract bid
+        withSender seller $
+          returnBids contract (Auction.AuctionId 0, 1) 
+        withSender bidder2 $
+          placeBid contract2 bid
+      
+      withSender seller$ 
+        returnBids contract2 (Auction.AuctionId 0, 6)
+      
+      auctionStorage1Bids <- Auction.bids <$> getStorage' contract
+      let contract1Bids = Map.toList $ unBigMap auctionStorage1Bids
+      auctionStorage2Bids <- Auction.bids <$> getStorage' contract2
+      let contract2Bids = Map.toList $ unBigMap auctionStorage2Bids
+      (length contract1Bids) @== (length contract2Bids)
+      --todo: test heaps functions same
+
+      contract1Balance <- getBalance contract
+      contract2Balance <- getBalance contract2
+      contract1Balance @== contract2Balance
+
+
 hprop_First_bid_is_valid_IFF_it_meets_price_floor :: Property
 hprop_First_bid_is_valid_IFF_it_meets_price_floor =
   property $ do
@@ -498,6 +540,7 @@ getWinningPrice auctionId auctionStorage = do
 --  fromMaybe totalOffers maybeMaxAcceptedOffers
 --  where minPriceValidAtQ = \q -> L.exec q bondingCurve 
 
+--Builds list in reverse order from highest to lowest bids as we would expect
 winningBids :: (Natural -> Mutez) -> [(Auction.BidParam, Address)] -> [(Auction.BidParam, Address)]
 winningBids bondingCurve bids = do
   let bidsSorted = sort bids
