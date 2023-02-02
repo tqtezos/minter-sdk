@@ -1,5 +1,5 @@
 #include "../../fa2/fa2_interface.mligo"
-#include "../../fa2_modules/pauseable_admin_option.mligo"
+#include "../../fa2_modules/admin/simple_admin.mligo"
 #include "../minter_collection/nft/fa2_multi_nft_manager.mligo"
 #include "../common.mligo"
 
@@ -85,7 +85,7 @@ type auction_without_configure_entrypoints =
   | Bid of bid_param
   | Cancel of auction_id
   | Resolve of auction_id
-  | Admin of pauseable_admin
+  | Admin of admin_entrypoints
 #if OFFCHAIN_BID
   | Offchain_bid of permit_multiunit_bid_param
 #endif
@@ -105,7 +105,7 @@ type heap_sizes = (auction_id, nat) big_map
 type storage =
   [@layout:comb]
   {
-    admin : pauseable_admin_storage;
+    admin : admin_storage;
     auction_id : nat;
     max_auction_time : nat;
     max_config_to_start_time : nat;
@@ -452,17 +452,17 @@ let place_bid(  bid_param
     assert_msg (auction_in_progress(auction), "NOT_IN_PROGRESS");
     assert_msg(bidder <> auction.seller, "SEllER_CANT_BID");
     
-    let current_heap_size : nat = get_heap_size(bid_param.auction_id, storage.heap_sizes) in 
-    let (bid_heap, necessary_fee, current_heap_size) :  bid_heap * tez = 
+    let current_heap_size : nat = get_heap_size(bid_param.auction_id, storage.heap_sizes) in
+    let (bid_heap, necessary_fee, current_heap_size, quantity_diff) :  bid_heap * tez  * nat * nat= 
       (match bid_param.is_bid_increase with
           | Some bid_heap_key -> begin
              let (bid_heap, bid_amount, bid_quantity) = delete_bid(bid_heap_key, storage.bids, bidder, current_heap_size) in 
              assert_msg(bid_param.quantity >= bid_quantity && bid_param.price >= bid_amount, "BID_MUST_INCREASE");
              let fee_needed : tez = (bid_param.quantity * bid_param.price) - (bid_amount * bid_quantity) in 
-             (bid_heap, fee_needed, abs(current_heap_size - 1n))
+             (bid_heap, fee_needed, abs(current_heap_size - 1n), abs(bid_param.quantity - bid_quantity))
             end
           | None ->
-             (storage.bids, bid_param.price * bid_param.quantity, current_heap_size)
+             (storage.bids, bid_param.price * bid_param.quantity, current_heap_size, bid_param.quantity)
       ) in
 
     (if (Tezos.amount <> necessary_fee
@@ -488,7 +488,7 @@ let place_bid(  bid_param
 
     let new_bid_heap : bid_heap = insert_bid(new_bid, bid_heap, bid_param.auction_id, current_heap_size) in
 
-    let updated_num_offers : nat = auction.num_offers_to_payout_or_return + new_bid.quantity in 
+    let updated_num_offers : nat = auction.num_offers_to_payout_or_return + quantity_diff in 
     
     let new_heap_size : nat = current_heap_size + 1n in 
     let new_heap_size_bm : heap_sizes = update_heap_size(bid_param.auction_id, storage.heap_sizes, new_heap_size) in 
@@ -538,11 +538,6 @@ let bid_with_permit (p, storage : permit_multiunit_bid_param * storage)  : retur
     (ops, storage)
   end
 #endif
-
-let admin(admin_param, storage : pauseable_admin * storage) : return =
-    let ops, admin = pauseable_admin(admin_param, storage.admin) in
-    let new_storage = { storage with admin = admin; } in
-    ops, new_storage
 
 let rec num_valid_offers_remaining_after_returning_max_n_offers(num_offers_remaining, bid_price, bonding_curve, auction_is_canceled, offers_to_return : nat * tez * bonding_curve * bool * int) 
   : nat = 
@@ -719,7 +714,9 @@ let multiunit_bonding_curve_auction_no_configure (p,storage : auction_without_co
     | Bid bid_param -> place_bid_onchain(bid_param, storage)
     | Cancel auction_id -> cancel_auction(auction_id, storage)
     | Resolve auction_id -> resolve_auction(auction_id, storage)
-    | Admin a -> admin(a, storage)
+    | Admin a -> 
+        let (ops, admin_storage) = admin_main(a, storage.admin) in
+        (ops, { storage with admin = admin_storage })
 #if OFFCHAIN_BID
     | Offchain_bid permit -> bid_with_permit(permit, storage)
 #endif

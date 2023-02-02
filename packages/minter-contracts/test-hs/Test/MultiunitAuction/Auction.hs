@@ -146,8 +146,8 @@ hprop_Bid_increase_works_as_expected  =
 
     clevelandProp $ do
       setup@Setup{seller, contract, fa2Contract, contract2, fa2Contract2, profitAddress} <- testSetup testData
-      bidders1 <- mkBidders bids
-      bidders2 <- mkBidders bids
+      bidders <- mkBidders bids
+      let winners = winningBids sampleBondingCurve' (toList bids `zip` toList bidders)
 
       withSender seller $ addSampleBondingCurve contract
       withSender seller $ addSampleBondingCurve contract2
@@ -170,10 +170,10 @@ hprop_Bid_increase_works_as_expected  =
 
       let (bidList2, oldBidValue, newBidValue) = increaseHeadBid bids
 
-      forM_ (toList bids `zip` toList bidList2 `zip` toList bidders1 `zip` toList bidders2) $ \(((bid1, bid2), bidder1), bidder2) -> do
-        withSender bidder1 $
+      forM_ (toList bids `zip` toList bidList2 `zip` toList bidders) $ \((bid1, bid2), bidder) -> do
+        withSender bidder $
           placeBid contract bid1
-        withSender bidder2 $
+        withSender bidder $
           placeBid contract2 bid2
       
       st <- getStorage' contract
@@ -189,7 +189,7 @@ hprop_Bid_increase_works_as_expected  =
       
       let originalFirstBid = head bids
 
-      withSender (head bidders1) $
+      withSender (head bidders) $
         placeIncreaseBid contract increaseBidParam (Auction.priceParam originalFirstBid `unsafeMulMutez` Auction.quantityParam originalFirstBid)
 
       auctionStorage1Bids <- Auction.bids <$> getStorage' contract
@@ -197,7 +197,51 @@ hprop_Bid_increase_works_as_expected  =
       auctionStorage2Bids <- Auction.bids <$> getStorage' contract2
       let contract2Bids = Map.toList $ unBigMap auctionStorage2Bids
       (length contract1Bids) @== (length contract2Bids)
-      --todo: test heaps functions same
+      
+      --Now, testing pays out the same
+
+      advanceTime (sec $ fromIntegral $ testAuctionDuration `max` testExtendTime)
+
+      returnBids contract (Auction.AuctionId 0, 6) --max bids
+      returnBids contract2 (Auction.AuctionId 0, 6) --max bids
+
+      auctionStorage <- getStorage' contract
+      auctionStorage2 <- getStorage' contract2
+
+      heapSize <- getHeapSize 0 auctionStorage
+      if heapSize > 0
+        then do
+          returnOffers contract (Auction.AuctionId 0, 1000) --max offers in a bid
+        else do
+          pass
+      
+      heapSize2 <- getHeapSize 0 auctionStorage2
+      if heapSize2 > 0
+        then do
+          returnOffers contract2 (Auction.AuctionId 0, 1000) --max offers in a bid
+        else do
+          pass
+
+      withSender seller $ do
+        resolveAuction contract
+        resolveAuction contract2
+
+      unless (null winners) (payoutWinners contract (Auction.AuctionId 0, 100))
+      unless (null winners) (payoutWinners contract2 (Auction.AuctionId 0, 100))
+
+      postPayoutAuctionStorage1 <- getStorage' contract
+      postPayoutAuctionStorage2 <- getStorage' contract2
+      numWinningOffers1 <- getNumWinningOffers 0 postPayoutAuctionStorage1
+      numWinningOffers2 <- getNumWinningOffers 0 postPayoutAuctionStorage2
+      winningPrice1 <- getWinningPrice 0 postPayoutAuctionStorage1
+      winningPrice2 <- getWinningPrice 0 postPayoutAuctionStorage2
+      numWinningOffers1 @== numWinningOffers2
+      winningPrice1 @== winningPrice2
+
+      contract1Balance <- getBalance contract
+      contract2Balance <- getBalance contract2
+      contract1Balance @== contract2Balance
+      
 
 hprop_Bid_and_return_commute :: Property
 hprop_Bid_and_return_commute  =
@@ -207,8 +251,8 @@ hprop_Bid_and_return_commute  =
 
     clevelandProp $ do
       setup@Setup{seller, contract, fa2Contract, contract2, fa2Contract2, profitAddress} <- testSetup testData
-      bidders1 <- mkBidders bids
-      bidders2 <- mkBidders bids
+      bidders <- mkBidders bids
+      let winners = winningBids sampleBondingCurve' (toList bids `zip` toList bidders)
 
       withSender seller $ addSampleBondingCurve contract
       withSender seller $ addSampleBondingCurve contract2
@@ -218,13 +262,12 @@ hprop_Bid_and_return_commute  =
       -- Wait for the auction to start.
       waitForAuctionToStart testData
 
-      forM_ (toList bids `zip` toList bidders1 `zip` toList bidders2) $ \((bid, bidder1), bidder2) -> do
-        withSender bidder1 $
+      forM_ (toList bids `zip` toList bidders) $ \(bid, bidder) -> do
+        withSender bidder $ do
           placeBid contract bid
+          placeBid contract2 bid
         withSender seller $
           returnBids contract (Auction.AuctionId 0, 1) 
-        withSender bidder2 $
-          placeBid contract2 bid
       
       withSender seller$ 
         returnBids contract2 (Auction.AuctionId 0, 6)
@@ -234,7 +277,43 @@ hprop_Bid_and_return_commute  =
       auctionStorage2Bids <- Auction.bids <$> getStorage' contract2
       let contract2Bids = Map.toList $ unBigMap auctionStorage2Bids
       (length contract1Bids) @== (length contract2Bids)
-      --todo: test heaps functions same
+      --Now, testing pays out the same
+
+      advanceTime (sec $ fromIntegral $ testAuctionDuration `max` testExtendTime)
+
+      auctionStorage <- getStorage' contract
+      auctionStorage2 <- getStorage' contract2
+
+      heapSize <- getHeapSize 0 auctionStorage
+      if heapSize > 0
+        then do
+          returnOffers contract (Auction.AuctionId 0, 1000) --max offers in a bid
+        else do
+          pass
+      
+      heapSize2 <- getHeapSize 0 auctionStorage2
+      if heapSize2 > 0
+        then do
+          returnOffers contract2 (Auction.AuctionId 0, 1000) --max offers in a bid
+        else do
+          pass
+
+      withSender seller $ do
+        resolveAuction contract
+        resolveAuction contract2
+
+      unless (null winners) (payoutWinners contract (Auction.AuctionId 0, 100))
+      unless (null winners) (payoutWinners contract2 (Auction.AuctionId 0, 100))
+
+      postPayoutAuctionStorage1 <- getStorage' contract
+      postPayoutAuctionStorage2 <- getStorage' contract2
+      numWinningOffers1 <- getNumWinningOffers 0 postPayoutAuctionStorage1
+      numWinningOffers2 <- getNumWinningOffers 0 postPayoutAuctionStorage2
+      winningPrice1 <- getWinningPrice 0 postPayoutAuctionStorage1
+      winningPrice2 <- getWinningPrice 0 postPayoutAuctionStorage2
+      numWinningOffers1 @== numWinningOffers2
+      winningPrice1 @== winningPrice2
+
 
       contract1Balance <- getBalance contract
       contract2Balance <- getBalance contract2

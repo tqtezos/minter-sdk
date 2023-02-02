@@ -8,7 +8,7 @@ import qualified Lorentz.Contracts.AllowlistToken as AllowlistToken
 import qualified Lorentz.Contracts.EnglishAuction.TezPermit as Permit
 import Lorentz.Contracts.MinterSdk
 import qualified Lorentz.Contracts.NoAllowlist as NoAllowlist
-import Lorentz.Contracts.PausableAdminOption
+import Lorentz.Contracts.SimpleAdmin
 import Lorentz.Test.Import (embedContractM)
 import qualified Michelson.Typed as T
 import qualified Lorentz.Contracts.Spec.FA2Interface as FA2I
@@ -110,7 +110,7 @@ deriving anyclass instance IsoValue PermitMultiunitBidParam
 deriving anyclass instance HasAnnotation PermitMultiunitBidParam
 
 data AuctionStorage = AuctionStorage
-  { pausableAdmin :: AdminStorage
+  { admin :: AdminStorage
   , auctionId :: AuctionId
   , maxAuctionTime :: Natural
   , maxConfigToStartTime :: Natural
@@ -128,7 +128,7 @@ deriving anyclass instance HasAnnotation AuctionStorage
 
 initAuctionStorage :: AdminStorage -> AuctionStorage
 initAuctionStorage as = AuctionStorage
-  { pausableAdmin = as
+  { admin = as
   , auctionId = AuctionId 0
   , maxAuctionTime = 99999999999999999999
   , maxConfigToStartTime = 99999999999999999

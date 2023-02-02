@@ -5,7 +5,7 @@ import Morley.Nettest
 
 import qualified Lorentz.Contracts.MultiunitAuction.Auction as Auction
 import qualified Lorentz.Contracts.MultiunitAuction.Contract as AuctionContract
-import qualified Lorentz.Contracts.PausableAdminOption as PausableAdminOption 
+import qualified Lorentz.Contracts.SimpleAdmin as SimpleAdmin 
 
 originateAuction
   :: MonadNettest caps base m
@@ -15,5 +15,5 @@ originateAuction
        Auction.AuctionStorage
 originateAuction admin = do
   originateSimple "multiunit-auction"
-    (Auction.initAuctionStorage (PausableAdminOption.initAdminStorage admin))
+    (Auction.initAuctionStorage (SimpleAdmin.initAdminStorage admin))
     AuctionContract.auctionContract
