@@ -138,6 +138,50 @@ hprop_Fees_are_paid_correctly =
       profitAddressBalanceAfter @== profitAddressBalanceBefore `unsafeAddMutez` expectedProfitAmount
       auctionContractBalanceBefore @== auctionContractBalanceAfter
 
+hprop_Failure_if_not_all_bids_returned :: Property
+hprop_Failure_if_not_all_bids_returned =
+  property $ do
+    testData@TestData{testExtendTime, testAuctionDuration} <- forAll genTestData
+    bids <- forAll $ genSomeBids testData
+
+    clevelandProp $ do
+      setup@Setup{seller, contract, fa2Contract, profitAddress} <- testSetup testData
+      bidders <- mkBidders bids
+      let numWinningBids = length $ winningBids sampleBondingCurve' (toList bids `zip` toList bidders)
+      sellerBalanceBefore <- getBalance seller
+      auctionContractBalanceBefore <- getBalance contract
+      profitAddressBalanceBefore <- getBalance profitAddress
+
+      withSender seller $ addSampleBondingCurve contract
+      withSender seller $ configureAuction contract fa2Contract testData setup
+
+      -- Wait for the auction to start.
+      waitForAuctionToStart testData
+
+      forM_ (toList bids `zip` toList bidders) $ \(bid, bidder) -> do
+        withSender bidder $
+          placeBid contract bid
+      
+      -- Wait for the auction to end.
+      advanceTime (sec $ fromIntegral $ testAuctionDuration `max` testExtendTime)
+      let correctNumBidsToReturn = length bids - numWinningBids
+
+      if correctNumBidsToReturn <= 1
+        then 
+          pass 
+        else
+          returnBids contract (Auction.AuctionId 0, fromIntegral $ correctNumBidsToReturn - 1) --max bids
+      
+
+      if correctNumBidsToReturn >= 1
+        then 
+          withSender seller $ do
+            resolveAuction contract
+            & expectError errNotEmptied
+      else pass
+
+      
+
 hprop_Bid_increase_works_as_expected :: Property
 hprop_Bid_increase_works_as_expected  =
   property $ do
@@ -241,10 +285,16 @@ hprop_Bid_increase_works_as_expected  =
       contract1Balance <- getBalance contract
       contract2Balance <- getBalance contract2
       contract1Balance @== contract2Balance
+
+      fa2Storage1 <- getStorage' fa2Contract 
+      fa2Storage2 <- getStorage' fa2Contract2
+      let ledger1 = NftToken.ledger' $ Nft.assets' fa2Storage1
+      let ledger2 = NftToken.ledger' $ Nft.assets' fa2Storage1
+      ledger1 @== ledger2
       
 
-hprop_Bid_and_return_commute :: Property
-hprop_Bid_and_return_commute  =
+hprop_Bid_and_return_commute_for_increasing_bids :: Property
+hprop_Bid_and_return_commute_for_increasing_bids  =
   property $ do
     testData@TestData{testExtendTime, testAuctionDuration} <- forAll genTestData
     bids <- forAll $ genUniqueBids testData
@@ -262,12 +312,15 @@ hprop_Bid_and_return_commute  =
       -- Wait for the auction to start.
       waitForAuctionToStart testData
 
+      --Returning all possible bids and offers for contract1 iteratively
+      --Only returning possible bids/offers at end for contract2
+
       forM_ (toList bids `zip` toList bidders) $ \(bid, bidder) -> do
         withSender bidder $ do
           placeBid contract bid
           placeBid contract2 bid
         withSender seller $
-          returnBids contract (Auction.AuctionId 0, 1) 
+          returnBids contract (Auction.AuctionId 0, 6) 
       
       withSender seller$ 
         returnBids contract2 (Auction.AuctionId 0, 6)
@@ -282,15 +335,14 @@ hprop_Bid_and_return_commute  =
       advanceTime (sec $ fromIntegral $ testAuctionDuration `max` testExtendTime)
 
       auctionStorage <- getStorage' contract
-      auctionStorage2 <- getStorage' contract2
-
       heapSize <- getHeapSize 0 auctionStorage
       if heapSize > 0
         then do
           returnOffers contract (Auction.AuctionId 0, 1000) --max offers in a bid
         else do
           pass
-      
+
+      auctionStorage2 <- getStorage' contract2
       heapSize2 <- getHeapSize 0 auctionStorage2
       if heapSize2 > 0
         then do
@@ -318,6 +370,12 @@ hprop_Bid_and_return_commute  =
       contract1Balance <- getBalance contract
       contract2Balance <- getBalance contract2
       contract1Balance @== contract2Balance
+
+      fa2Storage1 <- getStorage' fa2Contract 
+      fa2Storage2 <- getStorage' fa2Contract2
+      let ledger1 = NftToken.ledger' $ Nft.assets' fa2Storage1
+      let ledger2 = NftToken.ledger' $ Nft.assets' fa2Storage1
+      ledger1 @== ledger2
 
 
 hprop_First_bid_is_valid_IFF_it_meets_price_floor :: Property
@@ -707,3 +765,6 @@ returnOffers contract =
 payoutWinners :: (HasCallStack, MonadNettest caps base m) => ContractHandler Auction.AuctionEntrypoints Auction.AuctionStorage -> (Auction.AuctionId, Natural) -> m ()
 payoutWinners contract =
   call contract (Call @"Payout_winners")
+
+errNotEmptied :: MText
+errNotEmptied = [mt|NOT_ALL_INVALID_BIDS_AND_OFFERS_RETURNED|]

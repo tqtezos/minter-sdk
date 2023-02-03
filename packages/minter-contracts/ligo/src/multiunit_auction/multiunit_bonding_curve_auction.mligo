@@ -557,8 +557,12 @@ let rec num_valid_offers_remaining_after_returning_max_n_offers(num_offers_remai
 (*Claim is that after returning these offers, either we can still return more or property is satisfied and returning 1 less would have made it unsatisfied*)
 let return_offers(auction_id, num_offers_to_return, storage : auction_id * nat * storage) : return = begin 
     tez_stuck_guard("RETURN_OLD_OFFERS");
-    (fail_if_paused storage.admin);
+    (fail_if_paused storage.admin); 
     let auction : auction = get_auction_data(auction_id, storage) in
+    let u : unit = match auction.winning_price with 
+        Some wp -> (failwith "AUCTION_ALREADY_RESOLVED" : unit)
+      | None -> ()
+      in  
     let bonding_curve : bonding_curve = get_bonding_curve(auction.bonding_curve, storage.bonding_curves) in
     let heap_size : nat = get_heap_size(auction_id, storage.heap_sizes) in
     assert_msg(heap_size > 0n, "NO_OFFERS_LEFT");
@@ -624,6 +628,10 @@ let empty_heap(auction_id, num_bids_to_return, storage : auction_id * nat * stor
     (fail_if_paused storage.admin);
     let num_bids_to_return : int = int(num_bids_to_return) in (*Cast to int for recursion, decrementing by 1 each step*)
     let auction : auction = get_auction_data(auction_id, storage) in
+    let u : unit = match auction.winning_price with 
+        Some wp -> (failwith "AUCTION_ALREADY_RESOLVED" : unit)
+      | None -> ()
+      in  
     let bonding_curve : bonding_curve = get_bonding_curve(auction.bonding_curve, storage.bonding_curves) in
     let heap_size : nat = get_heap_size(auction_id, storage.heap_sizes) in
     assert_msg(heap_size > 0n, "NO_BIDS_LEFT");

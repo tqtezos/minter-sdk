@@ -5,7 +5,7 @@ module Lorentz.Contracts.MinterCollection.Nft.Contract
 import Lorentz
 import Lorentz.Test.Import (embedContractM)
 import Lorentz.Contracts.MinterSdk (inBinFolder)
-import Lorentz.Contracts.MinterCollection.Nft.Asset
+import qualified Lorentz.Contracts.MinterCollection.Nft.Asset as NftAsset
 
-nftContract :: Contract EntrypointsWithMint StorageWithTokenMetadata
+nftContract :: Contract NftAsset.EntrypointsWithMint NftAsset.StorageWithTokenMetadata
 nftContract = $$(embedContractM (inBinFolder "fa2_multi_nft_asset.tz"))

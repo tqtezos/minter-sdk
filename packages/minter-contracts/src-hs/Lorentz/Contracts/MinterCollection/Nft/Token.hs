@@ -14,10 +14,10 @@ import Util ()
 import Fmt (Buildable(..), genericF)
 
 data StorageWithMetadata = StorageWithMetadata
-  { ledger :: BigMap FA2I.TokenId Address
-  , nextTokenId :: Natural
-  , operators :: FA2.OperatorStorage
-  , tokenMetadata :: BigMap FA2I.TokenId FA2.TokenMetadata 
+  { ledger' :: BigMap FA2I.TokenId Address
+  , nextTokenId' :: Natural
+  , operators' :: FA2.OperatorStorage
+  , tokenMetadata' :: BigMap FA2I.TokenId FA2.TokenMetadata 
   }
   deriving stock (Show, Eq)
 customGeneric "StorageWithMetadata" ligoLayout
@@ -26,10 +26,10 @@ deriving anyclass instance HasAnnotation StorageWithMetadata
 
 initNftTokenStorageWithMetadata :: StorageWithMetadata
 initNftTokenStorageWithMetadata = StorageWithMetadata
-  {  ledger = mempty
-   , operators = mempty
-   , nextTokenId = 0
-   , tokenMetadata = mempty
+  {  ledger' = mempty
+   , operators' = mempty
+   , nextTokenId' = 0
+   , tokenMetadata' = mempty
   }
 
 data Storage = Storage

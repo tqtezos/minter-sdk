@@ -60,9 +60,9 @@ instance ParameterHasEntrypoints EntrypointsWithMint where
 -- Note: Hardcoded to use 'PausableAdminOption' (Simple admin),
 -- but should be generalized to work with any admin.
 data StorageWithTokenMetadata = StorageWithTokenMetadata
-  { assets :: NftToken.StorageWithMetadata
-  , admin :: Admin.AdminStorage
-  , metadata :: BigMap MText ByteString
+  { assets' :: NftToken.StorageWithMetadata
+  , admin' :: Admin.AdminStorage
+  , metadata' :: BigMap MText ByteString
   }
   deriving stock (Show, Eq)
 customGeneric "StorageWithTokenMetadata" ligoLayout
@@ -71,9 +71,9 @@ deriving anyclass instance HasAnnotation StorageWithTokenMetadata
 
 initNftContractStorageWithTokenMetadata :: Address -> StorageWithTokenMetadata
 initNftContractStorageWithTokenMetadata admin = StorageWithTokenMetadata
-  { admin = Admin.initAdminStorage admin
-  , metadata = mempty
-  , assets = NftToken.initNftTokenStorageWithMetadata
+  { admin' = Admin.initAdminStorage admin
+  , metadata' = mempty
+  , assets' = NftToken.initNftTokenStorageWithMetadata
   }
 
 data Storage = Storage
