@@ -72,6 +72,17 @@ deriving anyclass instance IsoValue BidHeapKey
 deriving anyclass instance HasAnnotation BidHeapKey
 instance Buildable BidHeapKey where build = genericF
 
+data BidRegistryKey = BidRegistryKey 
+  {
+    auctionId :: AuctionId 
+  , bidId :: Natural  
+  } deriving stock (Eq, Ord, Show)
+
+customGeneric "BidRegistryKey" ligoCombLayout
+deriving anyclass instance IsoValue BidRegistryKey
+deriving anyclass instance HasAnnotation BidRegistryKey
+instance Buildable BidRegistryKey where build = genericF
+
 
 data BidData = BidData 
   {
@@ -80,6 +91,7 @@ data BidData = BidData
   , quantity :: Natural
   , isOffchain :: Bool
   , bidTime :: Timestamp
+  , heapIndex :: Natural
   } deriving stock (Eq, Ord, Show)
 
 customGeneric "BidData" ligoCombLayout
@@ -92,7 +104,7 @@ data BidParam = BidParam
     auctionId :: Natural
   , priceParam :: Mutez
   , quantityParam :: Natural
-  , isBidIncrease :: Maybe BidHeapKey
+  , isBidIncrease :: Maybe BidRegistryKey
  } deriving stock (Eq, Ord, Show)
 
 customGeneric "BidParam" ligoCombLayout
@@ -117,7 +129,8 @@ data AuctionStorage = AuctionStorage
   , auctions :: BigMap AuctionId Auction
   , bondingCurveIndex :: Natural
   , bondingCurves :: BigMap Natural ('[Natural] :-> '[Mutez])
-  , bids :: BigMap BidHeapKey BidData
+  , bids :: BigMap BidRegistryKey BidData
+  , bidHeap :: BigMap BidHeapKey Natural
   , heapSizes :: BigMap AuctionId Natural
   }
 
@@ -136,6 +149,7 @@ initAuctionStorage as = AuctionStorage
   , bondingCurveIndex = 0 
   , bondingCurves = mempty 
   , bids = mempty 
+  , bidHeap = mempty
   , heapSizes = mempty
   }
 
