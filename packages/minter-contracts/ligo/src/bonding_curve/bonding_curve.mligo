@@ -437,20 +437,14 @@ let sell_offchain_no_admin ((token_to_sell, seller_addr), storage : (token_id * 
 
     (* - burn token -> market contract *)
     (* - send -> market contract *)
-    let burn_entrypoint_opt : ((token_id * (bytes * address)) contract) option =
+    let burn_entrypoint_opt : ((token_id * address) contract) option =
       Tezos.get_entrypoint_opt "%burn" storage.market_contract
-    in
-
-    let token_to_sell_symbol : bytes =
-      match Map.find_opt "symbol" storage.token_metadata with
-      | None -> (failwith error_token_metadata_symbol_missing : bytes)
-      | Some token_to_sell_symbol -> token_to_sell_symbol
     in
 
     let burn_op : operation = match burn_entrypoint_opt with
     | None -> (failwith error_no_burn_entrypoint : operation)
     | Some contract_ref ->
-        Tezos.transaction (token_to_sell, (token_to_sell_symbol, seller_addr)) 0mutez contract_ref
+        Tezos.transaction (token_to_sell, seller_addr) 0mutez contract_ref
     in let return_tez_entrypoint : (unit contract) option =
       Tezos.get_contract_opt seller_addr
 

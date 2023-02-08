@@ -7,10 +7,10 @@ nft storage
 Pair { Pair (Pair "tz1PwgnoAyphW2iFdbnnYgwWRcNTpAaH7gVY" False) None; Pair { Elt 0 "tz1PwgnoAyphW2iFdbnnYgwWRcNTpAaH7gVY" } 1; { }; { } } { }
 
 nft address
-KT1DzFfsdA7ygqvJvm3sFnfe9qvwaVBZLoJ7
+KT1GSkFwEJM9GdMPo4HmwVfU4j5fa2MLrZGD
 
 bonding curve storage
-{ Pair (Pair "tz1PwgnoAyphW2iFdbnnYgwWRcNTpAaH7gVY" False) None; "KT1DzFfsdA7ygqvJvm3sFnfe9qvwaVBZLoJ7"; 100; 0; { Elt "decimals" 0x3132; Elt "name" 0x546869732069732061207465737421205b6e616d655d; Elt "symbol" 0x746573745f73796d626f6c }; 100; { LEFT mutez;
+{ Pair (Pair "tz1PwgnoAyphW2iFdbnnYgwWRcNTpAaH7gVY" False) None; "KT1GSkFwEJM9GdMPo4HmwVfU4j5fa2MLrZGD"; 100; 0; { Elt "decimals" 0x3132; Elt "name" 0x546869732069732061207465737421205b6e616d655d; Elt "symbol" 0x746573745f73796d626f6c }; 100; { LEFT mutez;
                                                                                                                                                                                                                                                      PUSH
                                                                                                                                                                                                                                                        (list mutez)
                                                                                                                                                                                                                                                        { 10; 60; 170; 340; 570; 860 };
@@ -32,10 +32,10 @@ bonding curve storage
                                                                                                                                                                                                                                                      DROP }; 0 }
 
 bonding curve address
-KT1Qq5f5gBdQjR5RkjB7aNvignUfMPZvwypJ
+KT1B4ggQ54eKFC4TagXWydCZM4rJLWXxtq4G
 
 admin -> nft: update_operators
-{ Left { "tz1PwgnoAyphW2iFdbnnYgwWRcNTpAaH7gVY"; "KT1Qq5f5gBdQjR5RkjB7aNvignUfMPZvwypJ"; 0 } }
+{ Left { "tz1PwgnoAyphW2iFdbnnYgwWRcNTpAaH7gVY"; "KT1B4ggQ54eKFC4TagXWydCZM4rJLWXxtq4G"; 0 } }
 
 buyer -> bondingCurve: buy
 buyer:

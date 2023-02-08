@@ -458,7 +458,7 @@ mintUpdateBurnStorageTest = nettestScenarioOnEmulatorCaps "Mint update burn: sto
 
   -- admin is not an operator, so can't burn
   withSender admin $
-    call nft (Call @"Burn") (TokenId 1, ("nft-symbol-1", alice))
+    call nft (Call @"Burn") (TokenId 1, alice)
       & expectError (unsafeMkMText "NOT_BURNER")
 
   postOperatorStorage <- getStorage' nft
@@ -476,17 +476,17 @@ mintUpdateBurnStorageTest = nettestScenarioOnEmulatorCaps "Mint update burn: sto
       } }
 
   withSender bob $
-    call nft (Call @"Burn") (TokenId 1, ("nft-symbol-1", alice))
+    call nft (Call @"Burn") (TokenId 1, alice)
       & expectError (unsafeMkMText "NOT_BURNER")
 
   -- admin is not an operator of token_id=0, so can't burn
   withSender admin $
-    call nft (Call @"Burn") (TokenId 1, ("nft-symbol-1", alice))
+    call nft (Call @"Burn") (TokenId 1, alice)
       & expectError (unsafeMkMText "NOT_BURNER")
 
   -- minter is an operator of token_id=0, so can burn
   withSender minter $
-    call nft (Call @"Burn") (TokenId 1, ("nft-symbol-1", alice))
+    call nft (Call @"Burn") (TokenId 1, alice)
 
   -- ensure token no longer in ledger
   postBurnStorage <- getStorage' nft
@@ -533,7 +533,7 @@ mintUpdateBurnTest = nettestScenarioCaps "Mint burn" $ do
 
   -- alice is not an operator, so can't burn
   withSender alice $
-    call nft (Call @"Burn") (TokenId 1, ("nft-symbol-1", bob))
+    call nft (Call @"Burn") (TokenId 1, bob)
       & expectError (unsafeMkMText "NOT_BURNER")
 
   -- admin makes alice an operator of token_id=0
@@ -546,12 +546,12 @@ mintUpdateBurnTest = nettestScenarioCaps "Mint burn" $ do
 
   -- bob's not an operator, so can't burn
   withSender bob $
-    call nft (Call @"Burn") (TokenId 1, ("nft-symbol-1", bob))
+    call nft (Call @"Burn") (TokenId 1, bob)
       & expectError (unsafeMkMText "NOT_BURNER")
 
   -- alice is now an operator of token_id=0, so can burn
   withSender minter $
-    call nft (Call @"Burn") (TokenId 1, ("nft-symbol-1", bob))
+    call nft (Call @"Burn") (TokenId 1, bob)
 
   -- the token can no longer be transferred and fails with an error
   -- demonstrating it doesn't exist

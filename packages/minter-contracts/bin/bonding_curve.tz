@@ -191,20 +191,10 @@
              DUP 6 ;
              CDR ;
              CAR ;
-             CONTRACT %burn (pair nat (pair bytes address)) ;
-             DUP 7 ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CDR ;
-             CAR ;
-             PUSH string "symbol" ;
-             GET ;
-             IF_NONE { PUSH string "NO_SYMBOL" ; FAILWITH } {} ;
-             SWAP ;
+             CONTRACT %burn (pair nat address) ;
              IF_NONE
-               { DROP ; DIG 3 ; DROP ; PUSH string "NO_BURN" ; FAILWITH }
-               { PUSH mutez 0 ; DUP 8 ; DIG 3 ; PAIR ; DIG 6 ; PAIR ; TRANSFER_TOKENS } ;
+               { DIG 3 ; DROP ; PUSH string "NO_BURN" ; FAILWITH }
+               { PUSH mutez 0 ; DUP 7 ; DIG 6 ; PAIR ; TRANSFER_TOKENS } ;
              DIG 4 ;
              CONTRACT unit ;
              IF_NONE

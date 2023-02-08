@@ -11,7 +11,7 @@
                    (list %update_operators
                       (or (pair %add_operator (address %owner) (pair (address %operator) (nat %token_id)))
                           (pair %remove_operator (address %owner) (pair (address %operator) (nat %token_id)))))))
-            (or (pair %burn nat (pair bytes address))
+            (or (pair %burn nat address)
                 (list %mint
                    (pair (pair %token_metadata (nat %token_id) (map %token_info string bytes))
                          (address %owner)))))
@@ -423,34 +423,13 @@
                    { DIG 2 ;
                      DROP ;
                      UNPAIR ;
-                     SWAP ;
-                     UNPAIR ;
-                     DUP 4 ;
-                     CAR ;
-                     CDR ;
-                     CDR ;
-                     CDR ;
-                     NONE (pair nat (map string bytes)) ;
-                     DUP 5 ;
-                     GET_AND_UPDATE ;
-                     IF_NONE
-                       { SWAP ; DROP ; PUSH string "WRONG_ID" ; FAILWITH }
-                       { DIG 2 ;
-                         SOME ;
-                         SWAP ;
-                         CDR ;
-                         PUSH string "symbol" ;
-                         GET ;
-                         COMPARE ;
-                         EQ ;
-                         IF { NONE address } { PUSH string "WRONG_SYMBOL" ; FAILWITH } } ;
-                     DUP 5 ;
+                     DUP 3 ;
                      CAR ;
                      CDR ;
                      CAR ;
                      CAR ;
-                     SWAP ;
-                     DIG 4 ;
+                     NONE address ;
+                     DUP 3 ;
                      GET_AND_UPDATE ;
                      IF_NONE
                        { DIG 2 ; DROP ; PUSH string "WRONG_ID" ; FAILWITH }
@@ -484,7 +463,14 @@
                      DIG 4 ;
                      PAIR ;
                      PAIR ;
-                     DIG 3 ;
+                     DUP 5 ;
+                     CAR ;
+                     CDR ;
+                     CDR ;
+                     CDR ;
+                     NONE (pair nat (map string bytes)) ;
+                     DIG 5 ;
+                     UPDATE ;
                      SWAP ;
                      DUP ;
                      DUG 2 ;

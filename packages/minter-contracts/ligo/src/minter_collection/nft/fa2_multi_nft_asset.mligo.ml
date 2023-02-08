@@ -12,7 +12,7 @@ type nft_asset_storage = {
 type nft_asset_entrypoints =
   | Assets of fa2_entry_points
   | Mint of mint_tokens_param
-  | Burn of (token_id * (bytes * address))
+  | Burn of (token_id * address)
   | Update_metadata of (token_metadata list)
   | Admin of admin_entrypoints
 
@@ -48,26 +48,18 @@ let nft_asset_main (param, storage : nft_asset_entrypoints * nft_asset_storage)
     ops, new_storage
 
 
-  (** Check 'symbol' is the given symbol and remove token from ledger and
-      token_metadata (minter only, forwarded_sender must be token owner) *)
-  | Burn token_to_burn_and_symbol_address ->
-    let token_to_burn, (token_to_burn_symbol, forwarded_sender) : token_id * (bytes * address) = token_to_burn_and_symbol_address in
+  (* Remove token from ledger and token_metadata *)
+  (* (minter only, forwarded_sender must be token owner) *)
+  | Burn token_to_burn_and_address ->
+    let token_to_burn, forwarded_sender : token_id * address = token_to_burn_and_address in
 
-    // delete token from token_metadata and return its token_metadata for assertions
-    let token_to_burn_metadata_opt, new_token_metadata : token_metadata option * nft_meta =
-      Big_map.get_and_update token_to_burn (None : token_metadata option) storage.assets.token_metadata in
-
-    // assert token_metadata exists and its "symbol" field is token_to_burn_symbol
-    let burn_token : address option = match token_to_burn_metadata_opt with
-    | None -> (failwith "WRONG_ID" : address option)
-    | Some token_to_burn_metadata ->
-      if Map.find_opt "symbol" token_to_burn_metadata.token_info = Some token_to_burn_symbol
-        then (None : address option)
-        else (failwith "WRONG_SYMBOL" : address option)
+    // delete token from token_metadata
+    let new_token_metadata : nft_meta =
+      Big_map.update token_to_burn (None : token_metadata option) storage.assets.token_metadata in
 
     // delete token from ledger
-    in let token_to_burn_owner_opt, new_ledger : address * ledger =
-      Big_map.get_and_update token_to_burn burn_token storage.assets.ledger in
+    let token_to_burn_owner_opt, new_ledger : address * ledger =
+      Big_map.get_and_update token_to_burn (None : address option) storage.assets.ledger in
 
     // ensure sender is an operator for the owner of the token
     let operations : operation list = match token_to_burn_owner_opt with
