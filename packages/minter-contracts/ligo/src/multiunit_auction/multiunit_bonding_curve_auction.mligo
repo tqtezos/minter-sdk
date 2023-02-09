@@ -180,29 +180,38 @@ let swap_heap_keys (i_key, j_key, i_id, j_id, bid_heap, bid_registry : bid_heap_
 let get_bid_from_registry (registry_key, bid_registry : bid_registry_key * bid_registry) : bid option = 
   Big_map.find_opt registry_key bid_registry
 
-let get_bid (index_key, bid_heap, bid_registry : bid_heap_key * bid_heap * bid_registry) : bid_id * bid option = 
+let get_bid (index_key, bid_heap, bid_registry, error : bid_heap_key * bid_heap * bid_registry * string) : (bid_id * bid) option = 
   let possible_id = Big_map.find_opt index_key bid_heap in 
   let {auction_id = auction_id; bid_index = bid_index;} = index_key in 
-  match possible_id with 
-      Some id -> 
-        let bid_registry_key : bid_registry_key = {auction_id = auction_id; bid_id = id;} in
-        let possible_bid : bid option = get_bid_from_registry(bid_registry_key, bid_registry) in 
-        (id, possible_bid)
-    | None -> (failwith "NO_BIDS" : bid_id * bid option)
+  (
+    match possible_id with 
+        Some id -> 
+          let bid_registry_key : bid_registry_key = {auction_id = auction_id; bid_id = id;} in
+          let possible_bid : bid option = get_bid_from_registry(bid_registry_key, bid_registry) in 
+          (match possible_bid with 
+              Some bid -> Some (id, bid)
+            | None -> (failwith "INTERNAL_ERROR" : (bid_id * bid) option)
+          )
+             
+      | None -> (None : (bid_id * bid) option)
+  )   
+    
 
-let get_min (auction_id, bid_heap, bid_registry : auction_id * bid_heap * bid_registry) : bid = 
+let get_min (auction_id, bid_heap, bid_registry : auction_id * bid_heap * bid_registry) : nat * bid = 
   let min_key : bid_heap_key = {auction_id = auction_id; bid_index = 0n;} in 
-  let (_, possible_min_bid) : bid_id * bid option = get_bid(min_key, bid_heap, bid_registry) in 
-  match possible_min_bid with 
-        Some min -> min 
-      | None -> (failwith "INTERNAL_ERROR" : bid) 
-
+  let possible_bid_info : (bid_id * bid) option = get_bid(min_key, bid_heap, bid_registry, "get_min") in  
+  (
+    match possible_bid_info with 
+        Some bid_info -> bid_info
+      | None -> (failwith "INTERNAL_ERROR" : bid_id * bid) 
+  )
 (*Maintains min heap for bid inserted at end, swaps with parent bids who have a smaller index*)
 let rec maintain_min_heap (bid_heap, bid_registry, current_key, current_id, current_bid : bid_heap * bid_registry * bid_heap_key * bid_id * bid) : bid_heap * bid_registry=
   let parent_key : bid_heap_key = {auction_id = current_key.auction_id; bid_index = parent(current_key.bid_index);} in
-  let (parent_id, parent_bid_option) : bid_id * bid option = get_bid(parent_key, bid_heap, bid_registry) in 
-  match parent_bid_option with 
-      Some parent_bid -> 
+  let parent_bid_info_option : (bid_id * bid) option = get_bid(parent_key, bid_heap, bid_registry, "maintain_min_heap") in 
+  match parent_bid_info_option with 
+      Some parent_bid_info -> 
+        let (parent_id, parent_bid) = parent_bid_info in
         (
         if current_key.bid_index = 0n || bid_is_less_than(parent_bid, current_bid)
         then (bid_heap, bid_registry)
@@ -231,21 +240,22 @@ let insert_bid (bid, bid_heap, auction_id, insert_index, bid_registry : bid * bi
   (bid_heap, bid_registry)
 
 (*Assumes non-empty heap; Maintains min heap by percolating small bids with low index in direction of their children*)
-let rec min_heapify (index_key, bid_heap, heap_size, bid_registry : bid_heap_key * bid_heap * nat * bid_registry) : bid_heap = 
-   let (index_bid_id, index_bid_option) : bid_id * bid option = get_bid(index_key, bid_heap, bid_registry) in
-   let index_bid : bid = match index_bid_option with 
-        Some bid -> bid 
-      | None -> (failwith "INTERNAL_ERROR" : bid)
+let rec min_heapify (index_key, bid_heap, heap_size, bid_registry : bid_heap_key * bid_heap * nat * bid_registry) : bid_heap * bid_registry= 
+   let index_bid_info_option : (bid_id * bid) option = get_bid(index_key, bid_heap, bid_registry, "min_heapify") in
+   let (index_bid_id, index_bid) : (bid_id * bid) = match index_bid_info_option with 
+        Some index_bid_info -> index_bid_info
+      | None -> (failwith "INTERNAL_ERROR" : bid_id * bid)
    in 
    let (smallest_key, smallest_bid_id, smallest_bid) = (index_key, index_bid_id, index_bid) in
 
    let l_index : nat = left_child(index_key.bid_index) in 
    let l_key : bid_heap_key =  {auction_id = index_key.auction_id; bid_index = l_index;} in
-   let (l_bid_id, l_bid_option) : bid_id * bid option = get_bid(l_key, bid_heap, bid_registry) in 
+   let l_bid_info_option : (bid_id * bid) option = get_bid(l_key, bid_heap, bid_registry, "min heapify L") in 
    
-   let (smallest_key, smallest_bid_id, smallest_bid) : bid_heap_key * bid_id = 
-     match l_bid_option with 
-         Some l_bid -> 
+   let (smallest_key, smallest_bid_id, smallest_bid) : bid_heap_key * bid_id * bid= 
+     match l_bid_info_option with 
+         Some l_bid_info -> 
+             let (l_bid_id, l_bid) = l_bid_info in 
              if l_index < heap_size && bid_is_less_than(l_bid, index_bid)
              then (l_key, l_bid_id, l_bid) 
              else (smallest_key, smallest_bid_id, smallest_bid)
@@ -254,11 +264,12 @@ let rec min_heapify (index_key, bid_heap, heap_size, bid_registry : bid_heap_key
 
    let r_index : nat = right_child(index_key.bid_index) in 
    let r_key : bid_heap_key =  {auction_id = index_key.auction_id; bid_index = r_index;} in
-   let (r_bid_id, r_bid_option) : bid_id * bid option = get_bid(r_key, bid_heap, bid_registry) in 
+   let r_bid_info_option : (bid_id * bid) option = get_bid(r_key, bid_heap, bid_registry, "min heapify R") in 
 
    let (smallest_key, smallest_bid_id, smallest_bid) : bid_heap_key * bid_id * bid = 
-     match r_bid_option with 
-         Some r_bid -> 
+     match r_bid_info_option with 
+         Some r_bid_info -> 
+           let (r_bid_id, r_bid) = r_bid_info in
            if r_index < heap_size && bid_is_less_than(r_bid, smallest_bid)
            then (r_key, r_bid_id, r_bid)
            else (smallest_key, smallest_bid_id, smallest_bid)
@@ -270,36 +281,43 @@ let rec min_heapify (index_key, bid_heap, heap_size, bid_registry : bid_heap_key
           let (bid_heap, bid_registry) : bid_heap * bid_registry = swap_heap_keys(smallest_key, index_key, smallest_bid_id, index_bid_id, bid_heap, bid_registry) in 
           min_heapify(smallest_key, bid_heap, heap_size, bid_registry)
      else 
-          bid_heap
+          (bid_heap, bid_registry)
    )
    
-let extract_min (bid_heap, auction_id, heap_size, bid_registry : bid_heap * auction_id * nat * bid_registry) : bid option * bid_heap * nat = 
+let extract_min (bid_heap, auction_id, heap_size, bid_registry : bid_heap * auction_id * nat * bid_registry) : 
+   bid option * bid_heap * nat * bid_registry = 
    ( 
     if heap_size <= 0n 
-    then ((None : bid option), bid_heap, heap_size)
+    then ((None : bid option), bid_heap, heap_size, bid_registry)
     else  
           let new_heap_size : nat = abs(heap_size - 1n) in 
           let percolate_bid_key : bid_heap_key = {auction_id = auction_id; bid_index = new_heap_size;} in
-          let (percolate_bid_id, percolate_bid_option) : bid_id * bid option 
-              = get_bid(percolate_bid_key, bid_heap, bid_registry) in
-          let bid_heap : bid_heap = Big_map.update percolate_bid_key (None : bid_id option) bid_heap in 
-          let percolate_bid : bid =  match percolate_bid_option with 
-               Some bid -> bid 
-            |  None -> (failwith "HEAP_GET_FAILS_INTERNAL_ERROR" : bid )
+          let percolate_bid_info_option : (bid_id * bid) option 
+              = get_bid(percolate_bid_key, bid_heap, bid_registry, "extract min") in
+          let (percolate_bid_id, percolate_bid) : (bid_id * bid) =  match percolate_bid_info_option with 
+               Some percolate_bid_info -> percolate_bid_info
+            |  None -> (failwith "HEAP_GET_FAILS_INTERNAL_ERROR" : bid_id * bid )
             in 
+          let percolate_registry_key : bid_registry_key = {auction_id = auction_id; bid_id = percolate_bid_id;} in
+          let bid_heap : bid_heap = Big_map.update percolate_bid_key (None : bid_id option) bid_heap in 
          ( 
           if new_heap_size <= 0n
-          then ((Some percolate_bid), bid_heap, new_heap_size) (*Case of single bid*)
+          then ((Some percolate_bid), bid_heap, new_heap_size, bid_registry) (*Case of single bid*)
           else 
               let min_bid_key : bid_heap_key = {auction_id = auction_id; bid_index = 0n;} in
-              let (min_id, min_bid_option) : bid_id * bid option 
-                  = get_bid(min_bid_key, bid_heap, bid_registry) in 
-              let bid_heap = Big_map.update min_bid_key (Some percolate_bid_id) bid_heap in 
-              ( match min_bid_option with 
-                    Some min_bid -> 
-                      let new_heap : bid_heap = min_heapify(min_bid_key, bid_heap, new_heap_size, bid_registry) in 
-                      ((Some min_bid), new_heap, new_heap_size)
-                  | None -> (failwith "HEAP_GET_FAILS_INTERNAL_ERROR" : bid option * bid_heap * nat) (*Case of single bid*)
+              let min_bid_info_option : (bid_id * bid) option 
+                  = get_bid(min_bid_key, bid_heap, bid_registry, "extract min 2nd part") in
+              ( match min_bid_info_option with 
+                    Some min_bid_info -> 
+                        let (min_id, min_bid) = min_bid_info in
+                        let min_bid_registry_key : bid_registry_key = {auction_id = auction_id; bid_id = min_id;} in 
+                        let bid_heap = Big_map.update min_bid_key (Some percolate_bid_id) bid_heap in 
+                        let bid_registry = Big_map.update percolate_registry_key (Some {percolate_bid with heap_index = 0n;}) bid_registry in
+                        let bid_registry = Big_map.update min_bid_registry_key (None : bid option) bid_registry in
+                        let (bid_heap, bid_registry) : bid_heap * bid_registry
+                            = min_heapify(min_bid_key, bid_heap, new_heap_size, bid_registry) in 
+                        ((Some min_bid), bid_heap, new_heap_size, bid_registry)
+                  | None -> (failwith "HEAP_GET_FAILS_INTERNAL_ERROR" : bid option * bid_heap * nat * bid_registry) (*Case of single bid*)
               )
          )
    )
@@ -326,11 +344,11 @@ let delete_bid(key, bid_registry, deleter, heap_size, bid_heap : bid_registry_ke
      else (failwith "INVALID_BID_UPDATER" : bid_registry * tez * nat)
      in 
    
-   let (heap_with_min_to_extract, bid_registry) 
+   let (bid_heap, bid_registry) 
         = maintain_min_heap(bid_heap, bid_registry, bid_heap_key, key.bid_id, bid) in 
-   let (_, new_min_heap, _) : bid option * bid_heap * nat 
+   let (_, new_min_heap, _, new_bid_registry) : bid option * bid_heap * nat * bid_registry
          = extract_min(bid_heap, key.auction_id, heap_size, bid_registry) in 
-   (bid_registry, new_min_heap, bid_price, bid_quantity)
+   (new_bid_registry, new_min_heap, bid_price, bid_quantity)
 
 let get_bonding_curve(bc_id, bonding_curve_bm : nat * bonding_curves) : bonding_curve = 
   let bonding_curve : bonding_curve = match (Big_map.find_opt bc_id bonding_curve_bm) with 
@@ -455,7 +473,7 @@ let resolve_auction(auction_id, storage : nat * storage) : return = begin
         let updated_auctions = Big_map.update auction_id (Some updated_auction_data) storage.auctions in
         (([] : operation list), {storage with auctions = updated_auctions;})
     else 
-        let min_bid : bid = get_min(auction_id, storage.bid_heap, storage.bids) in 
+        let (_, min_bid) : nat * bid = get_min(auction_id, storage.bid_heap, storage.bids) in 
         let min_price : tez = min_bid.price in 
         let bonding_curve : bonding_curve = get_bonding_curve(auction.bonding_curve, storage.bonding_curves) in
         let min_price_valid_at_q : tez = bonding_curve auction.num_offers_to_payout_or_return in 
@@ -619,7 +637,7 @@ let return_offers(auction_id, num_offers_to_return, storage : auction_id * nat *
     let bonding_curve : bonding_curve = get_bonding_curve(auction.bonding_curve, storage.bonding_curves) in
     let heap_size : nat = get_heap_size(auction_id, storage.heap_sizes) in
     assert_msg(heap_size > 0n, "NO_OFFERS_LEFT");
-    let min_bid : bid = get_min(auction_id, storage.bid_heap, storage.bids) in 
+    let (min_id, min_bid) : nat * bid = get_min(auction_id, storage.bid_heap, storage.bids) in 
     let bid_price : tez = min_bid.price in 
     let bid_quantity : nat = min_bid.quantity in
     let new_total_offers : nat = num_valid_offers_remaining_after_returning_max_n_offers(bid_quantity, bid_price, bonding_curve, auction.is_canceled, int(num_offers_to_return)) in
@@ -639,7 +657,7 @@ let return_offers(auction_id, num_offers_to_return, storage : auction_id * nat *
         in
       let updated_auction_data : auction = {auction with num_offers_to_payout_or_return = new_total_offers;} in
       let updated_auctions = Big_map.update auction_id (Some updated_auction_data) storage.auctions in
-      let bid_key : bid_registry_key = {auction_id = auction_id; bid_id = 0n;} in
+      let bid_key : bid_registry_key = {auction_id = auction_id; bid_id = min_id;} in
       let bid_registry : bid_registry = Big_map.update bid_key (Some {min_bid with quantity = new_total_offers;}) storage.bids in 
       (op_list, {storage with auctions = updated_auctions; bids = bid_registry;})
     )
@@ -651,7 +669,7 @@ let rec return_invalid_bids(bid_heap, bid_registry, num_offers_to_payout_or_retu
   if num_offers_to_payout_or_return = 0n || bids_to_return <= 0
   then (bid_heap, bid_registry, heap_size, num_offers_to_payout_or_return, price_floor, op_list)
   else 
-    let (possible_min_bid, new_bid_heap, new_heap_size) = extract_min(bid_heap, auction_id, heap_size, bid_registry) in
+    let (possible_min_bid, new_bid_heap, new_heap_size, new_bid_registry) = extract_min(bid_heap, auction_id, heap_size, bid_registry) in
     match possible_min_bid with 
         Some bid -> 
           let min_bid_price : tez = bid.price in 
@@ -671,7 +689,7 @@ let rec return_invalid_bids(bid_heap, bid_registry, num_offers_to_payout_or_retu
                 let bid_return_op : operation = transfer_tez(return_amt, bid.bidder) in 
                 bid_return_op :: op_list 
                 in
-            return_invalid_bids(new_bid_heap, bid_registry, remaining_offers, bonding_curve, auction_id, auction_is_canceled, new_heap_size, bids_to_return - 1, min_bid_price, new_op_list)
+            return_invalid_bids(new_bid_heap, new_bid_registry, remaining_offers, bonding_curve, auction_id, auction_is_canceled, new_heap_size, bids_to_return - 1, min_bid_price, new_op_list)
           else 
                (bid_heap, bid_registry, heap_size, num_offers_to_payout_or_return, price_floor, op_list)
       | None -> (failwith "INTERNAL_ERROR_BID_RETURN" : bid_heap * bid_registry * nat * nat * tez * operation list)
@@ -715,7 +733,7 @@ let rec pay_winning_bids(op_list, bid_heap, mint_param, auction_id, heap_size, w
     : operation list * bid_heap * mint_tokens_param * nat * nat * nat * bid_registry = 
   if winners_to_payout > 0
   then 
-       let (possible_bid, bid_heap, heap_size) = extract_min(bid_heap, auction_id, heap_size, bid_registry) in 
+       let (possible_bid, bid_heap, heap_size, bid_registry) = extract_min(bid_heap, auction_id, heap_size, bid_registry) in 
        match possible_bid with 
            Some bid -> 
              let (mint_param, next_token_id) = mint_n_tokens_to_owner(mint_param, bid.bidder, next_token_id, token_info, int(bid.quantity)) in  

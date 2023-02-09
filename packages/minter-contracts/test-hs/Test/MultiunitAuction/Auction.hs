@@ -236,9 +236,11 @@ hprop_Bid_increase_works_as_expected  =
       withSender (head bidders) $
         placeIncreaseBid contract increaseBidParam (Auction.priceParam originalFirstBid `unsafeMulMutez` Auction.quantityParam originalFirstBid)
 
-      auctionStorage1Bids <- Auction.bids <$> getStorage' contract
+      auctionStorage1Bids <- Auction.bidHeap <$> getStorage' contract
+      print $ auctionStorage1Bids
       let contract1Bids = Map.toList $ unBigMap auctionStorage1Bids
-      auctionStorage2Bids <- Auction.bids <$> getStorage' contract2
+      auctionStorage2Bids <- Auction.bidHeap <$> getStorage' contract2
+      print $ auctionStorage2Bids
       let contract2Bids = Map.toList $ unBigMap auctionStorage2Bids
       (length contract1Bids) @== (length contract2Bids)
       
@@ -289,7 +291,7 @@ hprop_Bid_increase_works_as_expected  =
       fa2Storage1 <- getStorage' fa2Contract 
       fa2Storage2 <- getStorage' fa2Contract2
       let ledger1 = NftToken.ledger' $ Nft.assets' fa2Storage1
-      let ledger2 = NftToken.ledger' $ Nft.assets' fa2Storage1
+      let ledger2 = NftToken.ledger' $ Nft.assets' fa2Storage2
       ledger1 @== ledger2
       
 
