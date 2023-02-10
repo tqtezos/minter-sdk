@@ -231,22 +231,18 @@
                           (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair timestamp nat))))))
                     (option (pair mutez (pair address (pair nat (pair timestamp nat))))))
                  (pair (pair (pair nat nat) (big_map (pair nat nat) nat))
-                       (pair (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair timestamp nat)))))
-                             string)))
+                       (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair timestamp nat)))))))
            (option (pair nat (pair mutez (pair address (pair nat (pair timestamp nat))))))
            { UNPAIR ;
              SWAP ;
              UNPAIR ;
              UNPAIR ;
-             DIG 2 ;
-             UNPAIR ;
-             DUP 3 ;
+             DUP ;
              CAR ;
-             DIG 4 ;
-             DIG 4 ;
+             DUG 2 ;
              GET ;
              IF_NONE
-               { DROP 4 ;
+               { DROP 3 ;
                  NONE (pair nat (pair mutez (pair address (pair nat (pair timestamp nat))))) }
                { DIG 2 ;
                  SWAP ;
@@ -255,18 +251,19 @@
                  DIG 3 ;
                  PAIR ;
                  PAIR ;
-                 DIG 3 ;
+                 DIG 2 ;
                  SWAP ;
                  EXEC ;
-                 IF_NONE { DROP ; FAILWITH } { DIG 2 ; DROP ; SWAP ; PAIR ; SOME } } } ;
+                 IF_NONE
+                   { DROP ; PUSH string "INTERNAL_ERROR_GET" ; FAILWITH }
+                   { SWAP ; PAIR ; SOME } } } ;
          SWAP ;
          APPLY ;
          DUP ;
          LAMBDA
            (pair (lambda
                     (pair (pair (pair nat nat) (big_map (pair nat nat) nat))
-                          (pair (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair timestamp nat)))))
-                                string))
+                          (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair timestamp nat))))))
                     (option (pair nat (pair mutez (pair address (pair nat (pair timestamp nat)))))))
                  (pair (pair nat (big_map (pair nat nat) nat))
                        (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair timestamp nat)))))))
@@ -275,10 +272,7 @@
              SWAP ;
              UNPAIR ;
              UNPAIR ;
-             PUSH string "get_min" ;
-             DIG 3 ;
-             PAIR ;
-             DIG 2 ;
+             DUG 2 ;
              PUSH nat 0 ;
              DIG 3 ;
              PAIR ;
@@ -295,8 +289,7 @@
          LAMBDA
            (pair (pair (lambda
                           (pair (pair (pair nat nat) (big_map (pair nat nat) nat))
-                                (pair (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair timestamp nat)))))
-                                      string))
+                                (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair timestamp nat))))))
                           (option (pair nat (pair mutez (pair address (pair nat (pair timestamp nat)))))))
                        (pair (lambda
                                 (pair (pair (pair (pair nat nat) (pair nat nat)) (pair nat nat))
@@ -347,9 +340,7 @@
                  DUG 2 ;
                  CAR ;
                  PAIR ;
-                 PUSH string "maintain_min_heap" ;
-                 DUP 6 ;
-                 PAIR ;
+                 DUP 5 ;
                  DUP 5 ;
                  DUP 3 ;
                  PAIR ;
@@ -438,8 +429,7 @@
          LAMBDA
            (pair (pair (lambda
                           (pair (pair (pair nat nat) (big_map (pair nat nat) nat))
-                                (pair (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair timestamp nat)))))
-                                      string))
+                                (big_map (pair nat nat) (pair mutez (pair address (pair nat (pair timestamp nat))))))
                           (option (pair nat (pair mutez (pair address (pair nat (pair timestamp nat)))))))
                        (pair (lambda
                                 (pair (pair (pair (pair nat nat) (pair nat nat)) (pair nat nat))
@@ -491,9 +481,7 @@
                   DUP ;
                   DUP 5 ;
                   PAIR ;
-                  PUSH string "extract min" ;
-                  DUP 4 ;
-                  PAIR ;
+                  DUP 3 ;
                   DUP 5 ;
                   DUP 3 ;
                   PAIR ;
@@ -501,7 +489,7 @@
                   DUP 7 ;
                   SWAP ;
                   EXEC ;
-                  IF_NONE { PUSH string "HEAP_GET_FAILS_INTERNAL_ERROR" ; FAILWITH } {} ;
+                  IF_NONE { PUSH string "INTERNAL_ERROR_HEAP_GET" ; FAILWITH } {} ;
                   UNPAIR ;
                   DIG 5 ;
                   NONE nat ;
@@ -532,9 +520,7 @@
                      { PUSH nat 0 ;
                        DUP 7 ;
                        PAIR ;
-                       PUSH string "extract min 2nd part" ;
-                       DUP 7 ;
-                       PAIR ;
+                       DUP 6 ;
                        DUP 3 ;
                        DUP 3 ;
                        PAIR ;
@@ -592,9 +578,9 @@
                                UNPAIR ;
                                DIG 2 ;
                                UNPAIR ;
-                               PUSH string "min_heapify" ;
-                               DUP 3 ;
-                               PAIR ;
+                               SWAP ;
+                               DUP ;
+                               DUG 2 ;
                                DUP 5 ;
                                DUP 5 ;
                                PAIR ;
@@ -621,9 +607,7 @@
                                DUP 10 ;
                                CAR ;
                                PAIR ;
-                               PUSH string "min heapify L" ;
-                               DUP 10 ;
-                               PAIR ;
+                               DUP 9 ;
                                DUP 12 ;
                                DUP 3 ;
                                PAIR ;
@@ -659,9 +643,7 @@
                                DUP 9 ;
                                CAR ;
                                PAIR ;
-                               PUSH string "min heapify R" ;
-                               DUP 9 ;
-                               PAIR ;
+                               DUP 8 ;
                                DUP 11 ;
                                DUP 3 ;
                                PAIR ;
@@ -1242,18 +1224,7 @@
                              DUP ;
                              DUG 2 ;
                              GET ;
-                             IF_NONE { PUSH string "NO_BID_ID_STORED_IN_HEAP" ; FAILWITH } {} ;
-                             PUSH string "BID IDs do not match" ;
-                             DUP 7 ;
-                             CDR ;
-                             DIG 2 ;
-                             COMPARE ;
-                             EQ ;
-                             PAIR ;
-                             DUP 17 ;
-                             SWAP ;
-                             EXEC ;
-                             DROP ;
+                             IF_NONE { PUSH string "INTERNAL_ERROR_DELETE" ; FAILWITH } { DROP } ;
                              SWAP ;
                              DUP ;
                              DUG 2 ;
@@ -1283,41 +1254,29 @@
                              EXEC ;
                              UNPAIR ;
                              SWAP ;
-                             DUP 4 ;
+                             DIG 3 ;
                              PAIR ;
-                             DIG 4 ;
+                             DIG 3 ;
                              CAR ;
                              DIG 2 ;
                              PAIR ;
                              PAIR ;
-                             DIG 8 ;
+                             DIG 7 ;
                              SWAP ;
                              EXEC ;
                              UNPAIR ;
                              UNPAIR ;
                              DIG 2 ;
-                             UNPAIR ;
-                             DIG 2 ;
+                             CDR ;
+                             SWAP ;
                              IF_NONE
-                               { PUSH string "NO_BID_DELETED" ; FAILWITH }
+                               { PUSH string "INTERNAL_ERROR_NO_BID_DELETED" ; FAILWITH }
                                { PUSH mutez 0 ;
                                  SWAP ;
                                  CAR ;
                                  COMPARE ;
                                  EQ ;
-                                 IF {} { PUSH string "WRONG_BID_DELETED" ; FAILWITH } } ;
-                             PUSH string "EXTRACT_FAILURE" ;
-                             DIG 5 ;
-                             PUSH nat 1 ;
-                             DIG 3 ;
-                             ADD ;
-                             COMPARE ;
-                             EQ ;
-                             PAIR ;
-                             DUP 12 ;
-                             SWAP ;
-                             EXEC ;
-                             DROP ;
+                                 IF {} { PUSH string "INTERNAL_ERROR_WRONG_BID_DELETED" ; FAILWITH } } ;
                              DUP 3 ;
                              CDR ;
                              CDR ;

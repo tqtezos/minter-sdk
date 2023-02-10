@@ -328,16 +328,8 @@ hprop_Bid_and_return_commute_for_increasing_bids  =
       
       auctionStorage1BidHeap <- Auction.bidHeap <$> getStorage' contract
       let contract1BidHeap = Map.toList $ unBigMap auctionStorage1BidHeap
-      auctionStorageBidRegistry <- Auction.bids <$> getStorage' contract
-      let contract1BidRegistry = Map.toList $ unBigMap auctionStorageBidRegistry
-      print $ "contract 1 Registry" ++ (show contract1BidRegistry)
-      print $ "contract 1 heap" ++ (show contract1BidHeap)
       auctionStorage2BidHeap <- Auction.bidHeap <$> getStorage' contract2
       let contract2BidHeap = Map.toList $ unBigMap auctionStorage2BidHeap
-      print $ "contract 2 heap" ++ (show contract2BidHeap)
-      auctionStorage2BidRegistry <- Auction.bids <$> getStorage' contract2
-      let contract2BidRegistry = Map.toList $ unBigMap auctionStorage2BidRegistry
-      print $ "Contract 2 Registry" ++ (show contract2BidRegistry)
       (length contract1BidHeap) @== (length contract2BidHeap)
       --Now, testing pays out the same
 
