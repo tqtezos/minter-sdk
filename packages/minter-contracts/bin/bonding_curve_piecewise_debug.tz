@@ -497,22 +497,11 @@
                          SWAP ;
                          PAIR }
                        { DROP ; DIG 2 ; DROP ; SENDER ; PAIR ; EXEC } }
-                   { IF_LEFT
-                       { DIG 3 ;
-                         DROP ;
-                         SWAP ;
-                         DUP ;
-                         DUG 2 ;
-                         CAR ;
-                         DIG 4 ;
-                         SWAP ;
-                         EXEC ;
-                         DROP ;
-                         PAIR ;
-                         EXEC }
+                   { DIG 4 ;
+                     DROP ;
+                     IF_LEFT
+                       { DIG 3 ; DROP ; PAIR ; EXEC }
                        { DIG 2 ;
-                         DROP ;
-                         DIG 3 ;
                          DROP ;
                          SWAP ;
                          CDR ;

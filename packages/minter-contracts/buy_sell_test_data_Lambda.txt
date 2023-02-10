@@ -32,10 +32,10 @@ bonding curve storage
                                                                                                                                                                                                                                                      DROP }; 0 }
 
 bonding curve address
-KT1B4ggQ54eKFC4TagXWydCZM4rJLWXxtq4G
+KT1Dzpd58KJ5Jr5bXKeKaZTtYkJJRn8rtdD1
 
 admin -> nft: update_operators
-{ Left { "tz1PwgnoAyphW2iFdbnnYgwWRcNTpAaH7gVY"; "KT1B4ggQ54eKFC4TagXWydCZM4rJLWXxtq4G"; 0 } }
+{ Left { "tz1PwgnoAyphW2iFdbnnYgwWRcNTpAaH7gVY"; "KT1Dzpd58KJ5Jr5bXKeKaZTtYkJJRn8rtdD1"; 0 } }
 
 buyer -> bondingCurve: buy
 buyer:

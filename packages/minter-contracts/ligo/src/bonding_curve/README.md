@@ -72,7 +72,7 @@ indefinitely without creating new auctions.
 - `Buy_offchain`
   + Parameter: `address`
   + Spec:
-    * Admin-only
+    * Anyone can call it (equivalent to calling buy as admin and then transferring to the offchain_address)
     * Has all requirements of the `Buy` entrypoint
     * `address` is the buyer's address, the minted NFT is sent here
     * This entrypoint is the same as `Buy`, except the minted token is sent to

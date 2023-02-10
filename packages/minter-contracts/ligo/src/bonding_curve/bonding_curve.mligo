@@ -302,7 +302,7 @@ type bonding_curve_entrypoints =
   // buy single token on-chain (requires tez deposit)
   | Buy of buy_order
 
-  // buy tokens off-chain (admin only, requires tez deposit)
+  // buy tokens off-chain (requires tez deposit and sends minted token to the offchain_buyer)
   | Buy_offchain of offchain_buyer
 
   // sell token on-chain (returns tez deposit)
@@ -500,11 +500,9 @@ let bonding_curve_main (param, storage : bonding_curve_entrypoints * bonding_cur
       buy_offchain_no_admin(Tezos.sender, storage)
 
     (** buy tokens off-chain (requires all tez deposits)
-        I.e. admin buys, but tokens sent -> given address
+        I.e. 3rd party buys, but tokens sent -> given address
         see buy_offchain_no_admin *)
     | Buy_offchain offchain_buyer_address ->
-      (* ADMIN ONLY *)
-      let assert_admin = fail_if_not_admin storage.admin in
       buy_offchain_no_admin(offchain_buyer_address, storage)
 
     (** sell token on-chain (returns tez deposit)

@@ -482,13 +482,12 @@ buyOffchainTest :: forall c. (Buildable c, Eq c)
   -> TestTree
 buyOffchainTest name originator = nettestScenarioOnEmulatorCaps ("Buy_offchain " <> name) $ do
   setup <- doFA2Setup
-  let admin ::< alice ::< bob ::< SNil = sAddresses setup
+  let admin ::< alice ::< bob ::< charlie ::< SNil = sAddresses setup
   let !SNil = sTokens setup
   nft <- originateNft ((exampleNftStorageWithAdmin admin)
     { assets = exampleNftTokenStorage { ledger = [(TokenId 0, admin)]
                                       , next_token_id = TokenId 1
                                       } })
-
   (bondingCurveStorage, bondingCurve) <- originator admin (toAddress nft)
 
   -- admin needs to set operator on (TokenId 0) to allow bondingCurve to mint
@@ -501,32 +500,72 @@ buyOffchainTest name originator = nettestScenarioOnEmulatorCaps ("Buy_offchain "
           }
       ]
 
-  -- admin only
+  -- not admin only
   withSender alice $
     call bondingCurve (Call @"Buy_offchain") alice
-      & expectError (unsafeMkMText "NOT_AN_ADMIN")
 
   withSender admin $
     call bondingCurve (Call @"Buy_offchain") alice
 
-  withSender admin $
+  withSender bob $
     call bondingCurve (Call @"Buy_offchain") bob
+
+  withSender admin $
+    call bondingCurve (Call @"Buy") ()
+
+  -- the token admin bought can't be transferred by charlie
+  withSender charlie $
+    call nft (Call @"Transfer")
+      [ TransferItem
+        { tiFrom = admin
+        , tiTxs = [ TransferDestination
+            { tdTo = charlie
+            , tdTokenId = TokenId 4
+            , tdAmount = 1
+            } ]
+        }
+      ]
+    & expectError (unsafeMkMText "FA2_NOT_OPERATOR")
+
+  -- the token admin bought can be transferred by admin to charlie
+  withSender admin $
+    call nft (Call @"Transfer")
+      [ TransferItem
+        { tiFrom = admin
+        , tiTxs = [ TransferDestination
+            { tdTo = charlie
+            , tdTokenId = TokenId 4
+            , tdAmount = 1
+            } ]
+        }
+      ]
 
   postBuyNftStorage <- getStorage' nft
   postBuyNftStorage @== (exampleNftStorageWithAdmin admin) {
     assets = exampleNftTokenStorage {
-        next_token_id = TokenId 3
-      , ledger = [(TokenId 0, admin), (TokenId 1, alice), (TokenId 2, bob)]
+        next_token_id = TokenId 5
+      , ledger =
+          [ (TokenId 0, admin)
+          , (TokenId 1, alice)
+          , (TokenId 2, alice)
+          , (TokenId 3, bob)
+          , (TokenId 4, charlie)
+          ]
       , operators = [(FA2.OperatorKey
             { owner = admin
             , operator = toAddress bondingCurve
             , tokenId = TokenId 0
             }, ())]
-      , token_metadata = [(TokenId 1, tokenMetadata0' (TokenId 1)), (TokenId 2, tokenMetadata0' (TokenId 2))]
+      , token_metadata =
+          [ (TokenId 1, tokenMetadata0' (TokenId 1))
+          , (TokenId 2, tokenMetadata0' (TokenId 2))
+          , (TokenId 3, tokenMetadata0' (TokenId 3))
+          , (TokenId 4, tokenMetadata0' (TokenId 4))
+          ]
       } }
 
   postBuyStorage <- getStorage' bondingCurve
-  postBuyStorage @== bondingCurveStorage { token_index = 2 }
+  postBuyStorage @== bondingCurveStorage { token_index = 4 }
 
 
 buyOffchainTestPiecewise :: TestTree
@@ -1237,7 +1276,7 @@ callCostTest ::
   -> (Address -> Storage (Lambda Natural Mutez))
   -> TestTree
 callCostTest input expectedOutput storageF =
-  nettestScenarioCaps ("Call Cost with " ++ show input) $ do
+  nettestScenarioCaps ("Call Lambda Cost with " ++ show input) $ do
     setup <- doFA2Setup @("addresses" :# 1) @("tokens" :# 0)
     let admin ::< SNil = sAddresses setup
     let bondingCurveStorage = storageF admin
@@ -1255,7 +1294,7 @@ callCostTestPiecewise ::
   -> (Address -> Storage PiecewisePolynomial)
   -> TestTree
 callCostTestPiecewise input expectedOutput storageF =
-  nettestScenarioCaps ("Call Cost with " ++ show input) $ do
+  nettestScenarioCaps ("Call Piecewise Polynomial Cost with " ++ show input) $ do
     setup <- doFA2Setup @("addresses" :# 1) @("tokens" :# 0)
     let admin ::< SNil = sAddresses setup
     let bondingCurveStorage = storageF admin
