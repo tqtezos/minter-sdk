@@ -1,0 +1,546 @@
+// resolve_address
+#include "../common.mligo"
+
+// admin_storage
+// admin_entrypoints
+#include "../../fa2_modules/admin/simple_admin.mligo"
+
+// fa2_entry_points
+// token_metadata
+#include "../../fa2/fa2_interface.mligo"
+
+// mint_token_param
+// mint_tokens_param
+#include "../minter_collection/nft/fa2_multi_nft_manager.mligo"
+
+// ////////////////////////////////////////////////////////////////
+// ERRORS
+// ////////////////////////////////////////////////////////////////
+
+(**
+  storage.unclaimed == 0
+*)
+[@inline]
+let error_unclaimed_is_zero = "UNCLAIMED=0"
+
+(**
+  Wrong tez price sent when buying
+*)
+[@inline]
+let error_wrong_tez_price = "WRONG_TEZ_PRICE"
+
+(**
+  run_piecewise_polynomial gave a negative cost
+*)
+[@inline]
+let error_negative_cost = "NEGATIVE_COST"
+
+(**
+  market_contract address does not refer to a contract with a '%mint'
+  entrypoint with type mint_tokens_param
+*)
+[@inline]
+let error_no_mint_entrypoint = "NO_MINT"
+
+(**
+  market_contract address does not refer to a contract with a '%burn'
+  entrypoint with type (token_id * bytes)
+*)
+[@inline]
+let error_no_burn_entrypoint = "NO_BURN"
+
+(**
+  token_index = 0,
+  i.e. no tokens have been sold to the bonding curve,
+  i.e. there are no tokens to sell
+*)
+[@inline]
+let error_no_token_to_sell = "NO_TOKENS"
+
+(**
+  "symbol" field not found in storage.token_metadata
+*)
+[@inline]
+let error_token_metadata_symbol_missing = "NO_SYMBOL"
+
+(**
+  Can't return tez to the given seller address because it doesn't have a default
+  entrypoint to send tez to
+*)
+[@inline]
+let error_no_default_entrypoint = "CANT_RETURN"
+
+(**
+  Entrypoint is unimplemented
+*)
+[@inline]
+let error_unimplemented_entrypoint = "UNIMPLEMENTED"
+
+// ////////////////////////////////////////////////////////////////
+
+// length of one of the segments in a piecewise_polynomial
+type piecewise_length = nat
+
+// A list of coefficients for a polynomial over the integers.
+//
+// See run_polynomial for more info.
+type polynomial =
+  [@layout:comb]
+  {
+    coefficients : int list;
+  }
+
+// Accumulator for run_polynomial
+type polynomial_acc =
+  {
+    result : int;
+
+    (** x^i for some i
+    *)
+    x_pow : int;
+  }
+
+// Run a polynomial [a0; a1; .. ; an] on an input 'x' as
+// a0 * x^0 + a1 * x^1 + .. + an * x^n
+[@inline]
+let run_polynomial (poly, x : polynomial * int)
+    : int =
+    let output = List.fold_left
+      (fun (poly_acc, coefficient : polynomial_acc * int) ->
+        let x_pow = poly_acc.x_pow in
+        let x_pow_next = x * x_pow in
+        let output : polynomial_acc =
+          {
+            result = poly_acc.result + coefficient * x_pow;
+            x_pow = x_pow_next;
+          }
+        in output
+      )
+      {
+        result = 0;
+        x_pow = 1;
+      }
+      poly.coefficients in
+    output.result
+
+// A segment of a piecewise function
+type piecewise_segment = 
+  {
+    length : piecewise_length;
+    poly : polynomial;
+  }
+
+// The 'piecewise_length' is the length of each segment
+// and the formula for each segment is given by the associated 'polynomial'
+//
+// [ (length_0, polynomial_0); (length_1, polynomial_1); .. ]
+//
+// ->
+//
+// f(x) :=
+//    { polynomial_0(x) | 0 <= x < length_0
+//    { polynomial_1(x) | length_0 <= x < length_0 + length_1
+//    ..
+//    { polynomial_i(x) | sum_{0 <= j <= i-1} length_j <= x < sum_{0 <= j <= i} length_j
+//    ..
+//    { polynomial_last(x) | sum_{0 <= j < last-1} length_j <= x
+type piecewise_polynomial =
+  [@layout:comb]
+  {
+    segments : piecewise_segment list;
+    last_segment : polynomial;
+  }
+
+// Accumulator for run_piecewise_polynomial
+type piecewise_polynomial_acc =
+  {
+    // Current segment offset, i.e. sum of piecewise_length's up to the current
+    // location in piecewise_polynomial.segments
+    offset : nat;
+
+    // The input was found in this polynomial when Some
+    in_poly : polynomial option
+  }
+
+// Run a piecewise polynomial by finding the segment for the current offset and
+// calling run_polynomial
+//
+// Given all of the piecewise_length's as a list piecewise_lengths, the current
+// segment can be considered the unique (n) for which the following holds:
+//   sum (take n piecewise_lengths) <= x < sum (take (n+1) piecewise_lengths)
+// Or else the 'last_segment'
+let run_piecewise_polynomial (piecewise_poly, x : piecewise_polynomial * nat)
+    : int =
+    let output : piecewise_polynomial_acc = List.fold_left
+      (fun (piecewise_acc, segment : piecewise_polynomial_acc * piecewise_segment) ->
+        match piecewise_acc.in_poly with
+        | Some poly -> piecewise_acc
+        | None ->
+            let offset_next : nat = piecewise_acc.offset + segment.length in
+            if x <= offset_next
+            then {piecewise_acc with in_poly = Some segment.poly}
+            else {piecewise_acc with offset = offset_next}
+      )
+      {
+        offset = 0n;
+        in_poly = (None : polynomial option);
+      }
+      piecewise_poly.segments in
+
+    let x_in_poly : polynomial = (
+      match output.in_poly with
+      | Some poly -> poly
+      | None -> piecewise_poly.last_segment) in
+    run_polynomial(x_in_poly, int x)
+
+// ////////////////////////////////////////////////////////////////
+
+(* res := 0 *)
+(* acc := x *)
+(* *)
+(* current_bit := Bitwise.and n 1n (last bit) *)
+(* res *= if current_bit = 1 then acc else 1 *)
+(* n_next := Bitwise.shift_right n 1n // (n / 2n) *)
+(* acc_next := acc * acc *)
+let rec nat_pow_loop(x, res, acc, n : nat * nat * nat * nat) : nat =
+  if n = 0n
+  then res
+  else
+    let next_res : nat = if Bitwise.and n 1n = 0n then res else res * acc
+    in let next_acc : nat = acc * acc
+    in let next_n : nat = Bitwise.shift_right n 1n
+    in nat_pow_loop(x, next_res, next_acc, next_n)
+
+(* The n-th power of x *)
+let nat_pow(x, n : nat * nat) : nat =
+  nat_pow_loop(x, 1n, x, n)
+
+
+(* x/3000 when x between 3,000 and 30,000.  10 * 1.001^(x-30000) when x > 30,000 *)
+(* x < 3,000 is undefined, so defaults to (x / 3000), i.e. 0 *)
+(* Note: pow(1001, x) / pow(1000, x) is an approximation for pow(1.001, x) *)
+let example_formula0 (x : nat) : tez =
+  (if x < 30000n
+  then (x / 3000n)
+  else 10n * (nat_pow(1001n, x) / nat_pow(1000n, x))) * 1mutez
+
+// ////////////////////////////////////////////////////////////////
+
+
+(** Tez used as a price *)
+type price_tez = tez
+
+(** Tez unclaimed that can be withdrawn *)
+type unclaimed_tez = tez
+
+type bonding_curve_storage =
+  [@layout:comb]
+  {
+    // Admin storage (see ligo/fa2_modules/admin/simple_admin.mligo for more info)
+    admin : admin_storage;
+
+    // fa2_entry_points contract
+    market_contract : address;
+
+    // Final price of the auction
+    // Set this price constant based on final price of auction
+    auction_price : tez;
+
+    // Number of tokens sold _after_ the auction
+    token_index : nat;
+
+    // Token metadata for minting
+    token_metadata : (string, bytes) map;
+
+    // The percentage (in basis points) cost of buying and selling a token at the same index
+    basis_points : nat;
+
+#if PIECEWISE_BONDING_CURVE
+
+    // bonding curve formula
+    cost_mutez : piecewise_polynomial;
+
+#else
+
+    // bonding curve formula
+    cost_mutez : (nat -> tez);
+
+#endif // PIECEWISE_BONDING_CURVE
+
+    // unclaimed tez (i.e. the result of the `basis_points` fee)
+    unclaimed : tez;
+  }
+
+// Parameters to buy a single NFT from the bonding curve
+type buy_order =
+  [@layout:comb]
+  {
+    buy_order_contents : unit;
+  }
+
+// Parameters for selling a single NFT from the bonding curve
+type sell_order = token_id
+
+// alias for user receiving an NFT through a call to the Buy_offchain entrypoint
+type offchain_buyer = address
+
+// alias for user receiving an NFT through a call to the Sell_offchain entrypoint
+type offchain_seller = address
+
+type bonding_curve_entrypoints =
+  (* A default entrypoint is required to receive tez, e.g. when receiving baking rewards *)
+  | Default of unit
+
+  | Admin of admin_entrypoints
+
+  // update staking (admin only)
+  | Set_delegate of key_hash option
+
+  // withdraw profits or fail
+  | Withdraw of unit
+
+  // buy single token on-chain (requires tez deposit)
+  | Buy of buy_order
+
+  // buy tokens off-chain (requires tez deposit and sends minted token to the offchain_buyer)
+  | Buy_offchain of offchain_buyer
+
+  // sell token on-chain (returns tez deposit)
+  | Sell of sell_order
+
+  // sell single/multi tokens off-chain (returns tez deposit)
+  | Sell_offchain of (sell_order * offchain_seller)
+
+
+// Debug-only
+#if DEBUG_BONDING_CURVE
+
+  // nat -> price in mutez of next token
+  | Cost of nat
+
+  // nat -> nat -> nat
+  | Pow of (nat * nat)
+
+  // nat -> tez
+  | ExampleFormula0 of nat
+
+#endif // DEBUG_BONDING_CURVE
+
+
+(** 10,000 basis points per 1 *)
+[@inline]
+let basis_points_per_unit : nat = 10000n
+
+(** Buy single token on-chain (requires tez deposit)
+* calculate current price from index and price constant (run_piecewise_polynomial)
+* ensure sent tez = current price
+* mint token -> user -> market contract
+  next token minted same as last?
+* increment current token index
+* update 'unclaimed'
+*)
+let buy_offchain_no_admin (buyer_addr, storage : offchain_buyer * bonding_curve_storage)
+    : (operation list) * bonding_curve_storage =
+    (* cost = auction_price + cost_mutez(token_index) + basis_point_fee *)
+
+#if PIECEWISE_BONDING_CURVE
+
+    let cost_tez : price_tez = match is_nat (run_piecewise_polynomial(storage.cost_mutez, storage.token_index)) with
+    | None -> (failwith error_negative_cost : tez)
+    | Some nat_cost_tez -> 1mutez * nat_cost_tez
+    in
+
+#else
+
+    let cost_tez : price_tez = storage.cost_mutez(storage.token_index)
+    in
+
+#endif // PIECEWISE_BONDING_CURVE
+
+    let current_price : price_tez = storage.auction_price + cost_tez
+    in
+
+    (* assert cost = sent tez *)
+    if Tezos.amount <> current_price
+
+    // here is a less verbose error, if gas is high
+    // then (failwith error_wrong_tez_price : (operation list) * bonding_curve_storage)
+    then ([%Michelson ({| { FAILWITH } |} : string * tez * tez -> (operation list) * bonding_curve_storage)] ("WRONG_TEZ_PRICE", Tezos.amount, current_price) : (operation list) * bonding_curve_storage)
+
+    else
+      (* mint using storage.token_metadata *)
+      let mint_entrypoint_opt : (mint_tokens_param contract) option =
+          Tezos.get_entrypoint_opt "%mint" storage.market_contract in
+      let mint_op : operation = match mint_entrypoint_opt with
+      | None -> (failwith error_no_mint_entrypoint : operation)
+      | Some contract_ref ->
+          let token_metadata : token_metadata =
+            {
+              token_id = 0n; // dummy token_id
+              token_info = storage.token_metadata;
+            } in
+
+          let mint_token_params : mint_token_param = {
+            token_metadata = token_metadata;
+            owner = buyer_addr;
+          }
+          in Tezos.transaction [mint_token_params] 0mutez contract_ref
+      in [mint_op], { storage with
+                      token_index = storage.token_index + 1n }
+
+
+(** Sell token (returns tez deposit)
+- calculate _previous_ price
+- burn token -> market contract
+- return tez (- basis_points fee) to seller
+- decrement current token_index in storage
+*)
+let sell_offchain_no_admin ((token_to_sell, seller_addr), storage : (token_id * offchain_seller) * bonding_curve_storage)
+    : (operation list) * bonding_curve_storage =
+    (* - previous_token_index = storage.token_index - 1n *)
+    (* - if not is_nat previous_token_index, fail *)
+    (* - cost_tez = run_piecewise_polynomial(.., previous_token_index) *)
+    (* - current_price = storage.auction_price + cost_tez *)
+    let previous_token_index : nat = match is_nat (storage.token_index - 1n) with
+    | None -> (failwith error_no_token_to_sell : nat)
+    | Some token_index -> token_index
+    in
+
+#if PIECEWISE_BONDING_CURVE
+
+    let previous_price_tez : price_tez = match is_nat (run_piecewise_polynomial(storage.cost_mutez, previous_token_index)) with
+    | None -> (failwith error_negative_cost : tez)
+    | Some nat_cost_tez -> storage.auction_price + 1mutez * nat_cost_tez
+    in
+
+#else
+
+    let previous_price_tez : price_tez = storage.auction_price + storage.cost_mutez(previous_token_index)
+    in
+
+#endif // PIECEWISE_BONDING_CURVE
+
+    (* TODO: avoid converting to and from mutez with previous_price_tez and then previous_cost_tez *)
+
+    (* previous_cost_tez = previous_price_tez - basis_point_fee *)
+    (* If basis_point_fee >= previous_cost_tez, the entire basis_point_fee is stored in unclaimed *)
+    let basis_point_fee : tez =
+        (previous_price_tez * storage.basis_points) / basis_points_per_unit
+
+    (* Note: the arguments to subtraction are converted to nat so that we can *)
+    (* check for underflow of tez, which otherwise produces an uncatchable *)
+    (* runtime error *)
+    in let (basis_point_fee, previous_cost_tez) : tez * price_tez = match is_nat (previous_price_tez / 1mutez - basis_point_fee / 1mutez) with
+    | None -> (previous_price_tez, 0mutez)
+    | Some nat_cost_tez -> (basis_point_fee, 1mutez * nat_cost_tez)
+    in
+
+    (* - burn token -> market contract *)
+    (* - send -> market contract *)
+    let burn_entrypoint_opt : ((token_id * address) contract) option =
+      Tezos.get_entrypoint_opt "%burn" storage.market_contract
+    in
+
+    let burn_op : operation = match burn_entrypoint_opt with
+    | None -> (failwith error_no_burn_entrypoint : operation)
+    | Some contract_ref ->
+        Tezos.transaction (token_to_sell, seller_addr) 0mutez contract_ref
+    in let return_tez_entrypoint : (unit contract) option =
+      Tezos.get_contract_opt seller_addr
+
+    in let operations : operation list = match return_tez_entrypoint with
+    | None -> (failwith error_no_default_entrypoint : operation list)
+    | Some seller_contract_ref ->
+        burn_op :: (if 0mutez = previous_cost_tez
+                   then ([] : operation list)
+                   else [Tezos.transaction unit previous_cost_tez seller_contract_ref])
+
+    (* update the unclaimed amount *)
+    in operations, { storage with token_index = previous_token_index;
+                                  unclaimed = storage.unclaimed + basis_point_fee }
+
+
+let bonding_curve_main (param, storage : bonding_curve_entrypoints * bonding_curve_storage)
+    : (operation list) * bonding_curve_storage =
+    match param with
+    (* Receive tez, which is added to the storage.unclaimed amount *)
+    | Default ->
+        let new_storage = { storage with unclaimed = storage.unclaimed + Tezos.amount }
+        in ([] : operation list), new_storage
+
+    (** admin entrypoints *)
+    | Admin admin_param ->
+      let ops, admin = admin_main (admin_param, storage.admin) in
+      let new_storage = { storage with admin = admin } in
+      ops, new_storage
+
+    (** update staking *)
+    | Set_delegate delegate_opt ->
+      (* ADMIN ONLY *)
+      let assert_admin = fail_if_not_admin storage.admin in
+      let ops = [Tezos.set_delegate delegate_opt] in
+      ops, storage
+
+    (** withdraw unclaimed profits (tracked in storage as 'unclaimed') or fail
+        with error_unclaimed_is_zero *)
+    | Withdraw withdraw_param ->
+      (* ADMIN ONLY *)
+      let assert_admin = fail_if_not_admin storage.admin in
+      if 0mutez < storage.unclaimed
+      then
+        let admin : unit contract = resolve_address(storage.admin.admin) in
+        let send_op : operation = Tezos.transaction () storage.unclaimed admin in
+        let new_storage = { storage with unclaimed = 0mutez } in
+        [send_op], new_storage
+      else (failwith error_unclaimed_is_zero : (operation list) * bonding_curve_storage)
+
+    (** buy single token on-chain (requires tez deposit)
+        see buy_offchain_no_admin *)
+    | Buy buy_order_param ->
+      buy_offchain_no_admin(Tezos.sender, storage)
+
+    (** buy tokens off-chain (requires all tez deposits)
+        I.e. 3rd party buys, but tokens sent -> given address
+        see buy_offchain_no_admin *)
+    | Buy_offchain offchain_buyer_address ->
+      buy_offchain_no_admin(offchain_buyer_address, storage)
+
+    (** sell token on-chain (returns tez deposit)
+        see sell_offchain_no_admin *)
+    | Sell sell_order_param ->
+      sell_offchain_no_admin((sell_order_param, Tezos.sender), storage)
+
+    (** sell single/multi tokens off-chain (returns all tez deposits)
+        see sell_offchain_no_admin *)
+    | Sell_offchain sell_order_param_offchain_seller_address ->
+      (* ADMIN ONLY *)
+      let assert_admin = fail_if_not_admin storage.admin in
+      sell_offchain_no_admin(sell_order_param_offchain_seller_address, storage)
+
+// Debug-only
+#if DEBUG_BONDING_CURVE
+#if PIECEWISE_BONDING_CURVE
+
+     // (n : nat) -> failwith (price in mutez of n-th token w/o basis_points)
+     | Cost n ->
+       (failwith (run_piecewise_polynomial(storage.cost_mutez, n)) : (operation list) * bonding_curve_storage)
+
+#else
+
+     // (n : nat) -> failwith (price in tez of n-th token w/o basis_points)
+     | Cost n ->
+       ([%Michelson ({| { FAILWITH } |} : tez -> (operation list) * bonding_curve_storage)] (storage.cost_mutez(n)) : (operation list) * bonding_curve_storage)
+
+#endif // PIECEWISE_BONDING_CURVE
+
+     // (x, n : nat * nat) -> failwith (x ^ n)
+     | Pow xn ->
+         let x, n = xn
+         in (failwith (nat_pow(x, n)) : (operation list) * bonding_curve_storage)
+
+     // (x : nat) -> failwith example_formula0(x)
+     | ExampleFormula0 x ->
+         ([%Michelson ({| { FAILWITH } |} : tez -> (operation list) * bonding_curve_storage)] (example_formula0(x)) : (operation list) * bonding_curve_storage)
+
+#endif // DEBUG_BONDING_CURVE
+

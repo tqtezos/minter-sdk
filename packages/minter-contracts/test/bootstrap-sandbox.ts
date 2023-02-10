@@ -8,6 +8,7 @@ type TestKeys = {
     bob: Signer;
     alice: Signer;
     eve: Signer;
+    charlie: Signer;
     lambdaView?: string;
 };
 
@@ -21,13 +22,18 @@ async function flextesaKeys(): Promise<TestKeys> {
   const eve = await InMemorySigner.fromSecretKey(
     'edsk3Sb16jcx9KrgMDsbZDmKnuN11v4AbTtPBgBSBTqYftd8Cq3i1e',
   );
-  return { bob, alice, eve };
+  const charlie = await InMemorySigner.fromSecretKey(
+    'edsk3nM41ygNfSxVU4w1uAW3G9EnTQEB5rjojeZedLTGmiGRcierVv',
+  );
+
+  return { bob, alice, eve, charlie };
 }
 
 export type TestTz = {
     bob: TezosToolkit;
     alice: TezosToolkit;
     eve: TezosToolkit;
+    charlie: TezosToolkit;
     lambdaView?: string;
 };
 
@@ -59,12 +65,30 @@ export async function awaitForNetwork(tz: TezosToolkit): Promise<void> {
   $log.info('connected to Tezos network');
 }
 
-export async function bootstrap(): Promise<TestTz> {
-  const { bob, alice, eve } = await flextesaKeys();
+export async function bootstrapWithoutLambdaView(): Promise<TestTz> {
+  const { bob, alice, eve, charlie } = await flextesaKeys();
   const rpc = 'http://localhost:20000';
   const bobToolkit = signerToToolkit(bob, rpc);
   const aliceToolkit = signerToToolkit(alice, rpc);
   const eveToolkit = signerToToolkit(eve, rpc);
+  const charlieToolkit = signerToToolkit(charlie, rpc);
+
+  await awaitForNetwork(bobToolkit);
+  return {
+    bob: bobToolkit,
+    alice: aliceToolkit,
+    eve: eveToolkit,
+    charlie: charlieToolkit,
+  };
+}
+
+export async function bootstrap(): Promise<TestTz> {
+  const { bob, alice, eve, charlie } = await flextesaKeys();
+  const rpc = 'http://localhost:20000';
+  const bobToolkit = signerToToolkit(bob, rpc);
+  const aliceToolkit = signerToToolkit(alice, rpc);
+  const eveToolkit = signerToToolkit(eve, rpc);
+  const charlieToolkit = signerToToolkit(charlie, rpc);
 
   await awaitForNetwork(bobToolkit);
 
@@ -79,6 +103,8 @@ export async function bootstrap(): Promise<TestTz> {
     bob: bobToolkit,
     alice: aliceToolkit,
     eve: eveToolkit,
+    charlie: charlieToolkit,
     lambdaView: lambdaContract.address,
   };
 }
+

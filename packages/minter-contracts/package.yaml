@@ -50,9 +50,12 @@ tests:
       - minter-sdk
       - sized
       - tasty
+      - text
       - type-natural
       - hedgehog
       - tasty-hedgehog
+      - hedgehog-quickcheck
       - indexed-traversable
       - morley-client
       - integer-gmp
+      - QuickCheck

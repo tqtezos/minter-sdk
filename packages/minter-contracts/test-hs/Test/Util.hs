@@ -1,6 +1,8 @@
 {-# OPTIONS_GHC -Wno-redundant-constraints #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
+{-# LANGUAGE InstanceSigs #-}
+
 module Test.Util
   ( (-:)
   , type (:#)
@@ -15,6 +17,7 @@ module Test.Util
   , balanceOf
   , mkAllowlistSimpleParam
   , originateWithAdmin
+  , WrappedValue(..)
 
   -- * Property-based tests
   , clevelandProp
@@ -23,7 +26,6 @@ module Test.Util
     -- Re-exports
   , Sized
   ) where
-
 
 import qualified Data.Foldable as F
 import qualified Data.Map as Map
@@ -37,8 +39,11 @@ import GHC.TypeLits (Symbol)
 import GHC.TypeNats (Nat, type (+))
 import Hedgehog (Gen, MonadTest)
 
+import Lorentz.Errors
 import Lorentz.Test.Consumer
 import Lorentz.Value
+import Michelson.Typed.Scope (ConstantScope)
+import Michelson.Typed.Sing (KnownT)
 
 import qualified Indigo.Contracts.FA2Sample as FA2
 import Lorentz.Contracts.FA2
@@ -315,3 +320,26 @@ iterateM 0 _ _ = pure []
 iterateM len gen previous = do
   current <- gen previous
   (current :) <$> iterateM (len - 1) gen current
+
+
+-- | Wrap an IsoValue type so that is can be used with expectError
+newtype WrappedValue a = WrappedValue
+  { unwrapValue :: a
+  } deriving stock (Eq, Ord, Show)
+
+-- | Note: these are undefined because they're not needed to use WrappedValue to test
+instance Typeable a => ErrorHasDoc (WrappedValue a) where
+  type ErrorRequirements _ = ()
+
+  errorDocName = error "ErrorHasDoc (WrappedValue a): undefined errorDocName"
+  errorDocMdCause = error "ErrorHasDoc (WrappedValue a): undefined errorDocMdCause"
+  errorDocHaskellRep = error "ErrorHasDoc (WrappedValue a): undefined errorDocHaskellRep"
+  errorDocDependencies = error "ErrorHasDoc (WrappedValue a): undefined errorDocDependencies"
+
+instance (IsoValue a, Typeable a, ConstantScope (ToT a)) => IsError (WrappedValue a) where
+  errorToVal :: WrappedValue a -> (forall t. ErrorScope t => Value t -> r) -> r
+  errorToVal xs ys = isoErrorToVal (unwrapValue xs) ys
+
+  errorFromVal :: forall t. (KnownT t) => Value t -> Either Text (WrappedValue a)
+  errorFromVal = fmap WrappedValue . isoErrorFromVal @t @a
+
