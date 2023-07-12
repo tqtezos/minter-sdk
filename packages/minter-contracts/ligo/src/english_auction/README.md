@@ -51,11 +51,7 @@ pauseable_admin_storage %pauseable_admin
 
 We determine whether a given bid is of a sufficiently high value as follows: 
 
-The bid is greater than the the previous bid plus the ceiling of the `min_raise_percent` of it. 
-
-OR
-
-The bid is greater than the previous bid plus the `min_raise`
+The bid is greater than the the previous bid plus the ceiling of the `min_raise_percent` of it AND the bid is greater than the previous bid plus the `min_raise`
 
 OR 
                                   
